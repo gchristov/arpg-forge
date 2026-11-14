@@ -1,9 +1,10 @@
 import * as THREE from 'three';
-import { clamp, type Vec2 } from '../core/math';
+import { clamp, hash2, type Vec2 } from '../core/math';
 import type { Level, LevelLight } from '../world/level';
 import { ActorFigure, type ActorMoment } from './actor-figure';
 import { Effects } from './effects';
 import type { Look, PropLook } from './look';
+import { fitMatrix, instancedModel } from './model-instancing';
 import { ModelLibrary } from './models';
 
 /** 30° above the ground gives the classic 2:1 isometric look: a tile is twice as wide as it is tall on screen. */
@@ -33,6 +34,7 @@ export class SceneRenderer {
   private readonly scene = new THREE.Scene();
   private readonly camera = new THREE.OrthographicCamera();
   private readonly ambient = new THREE.AmbientLight();
+  private readonly fill = new THREE.HemisphereLight();
   private readonly moon = new THREE.DirectionalLight();
   private readonly heroLight = new THREE.PointLight(0xfff1dd, 1.4, 6, 1);
   private readonly pointLights: THREE.PointLight[] = [];
@@ -66,7 +68,7 @@ export class SceneRenderer {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    this.scene.add(this.ambient, this.moon, this.moon.target, this.heroLight, this.levelGroup);
+    this.scene.add(this.ambient, this.fill, this.moon, this.moon.target, this.heroLight, this.levelGroup);
     this.moon.castShadow = true;
     this.moon.shadow.mapSize.set(2048, 2048);
     const s = this.moon.shadow.camera;
@@ -125,8 +127,15 @@ export class SceneRenderer {
       this.moon.intensity = mood.moon.intensity;
     }
     this.heroLight.distance = mood.heroLightRadius * 1.6;
+    this.fill.visible = Boolean(mood.fill);
+    if (mood.fill) {
+      this.fill.color.set(mood.fill.sky);
+      this.fill.groundColor.set(mood.fill.ground);
+      this.fill.intensity = mood.fill.intensity;
+    }
 
     this.levelGroup.add(this.buildGround(level));
+    for (const mesh of this.buildFloors(level)) this.levelGroup.add(mesh);
     for (const mesh of this.buildProps(level)) this.levelGroup.add(mesh);
     this.structures = this.buildStructures(level);
     for (const mesh of this.structures) this.levelGroup.add(mesh);
@@ -343,6 +352,11 @@ export class SceneRenderer {
     const meshes: THREE.InstancedMesh[] = [];
     for (const [kind, tiles] of tilesByKind) {
       const look = this.look.prop(kind, level.id)!;
+      const fromModels = look.model && this.modelledProps(map.width, tiles, look.model, kind);
+      if (fromModels) {
+        meshes.push(...fromModels);
+        continue;
+      }
       const material = new THREE.MeshLambertMaterial({ color: look.colour, emissive: look.emissive ?? 0 });
       const mesh = new THREE.InstancedMesh(propGeometry(look), material, tiles.length);
       tiles.forEach((i, n) => {
@@ -356,10 +370,63 @@ export class SceneRenderer {
     return meshes;
   }
 
+  /**
+   * Props drawn from models, each tile picking one of the variants and a turn from the map's stable hash, so a
+   * level looks the same on every visit. Null if none of the models loaded.
+   */
+  private modelledProps(
+    mapWidth: number,
+    tiles: number[],
+    model: NonNullable<PropLook['model']>,
+    salt: number,
+  ): THREE.InstancedMesh[] | null {
+    const variants = model.names.map((name) => this.models.get(name));
+    if (variants.every((v) => !v)) return null;
+    const placements = variants.map(() => [] as THREE.Matrix4[]);
+    for (const i of tiles) {
+      const tx = i % mapWidth;
+      const ty = Math.floor(i / mapWidth);
+      let v = Math.floor(hash2(tx, ty, 31 + salt) * variants.length);
+      if (!variants[v]) v = variants.findIndex(Boolean);
+      const turn = model.turn === 'random' ? hash2(tx, ty, 37 + salt) * Math.PI * 2 : (model.turn ?? 0);
+      placements[v]!.push(new THREE.Matrix4().makeTranslation(tx + 0.5, 0, ty + 0.5).multiply(new THREE.Matrix4().makeRotationY(turn)));
+    }
+    return variants.flatMap((template, v) =>
+      template && placements[v]!.length ? instancedModel(template, fitMatrix(template, model.fit), placements[v]!) : [],
+    );
+  }
+
+  /** Floor models laid over the ground tiles of the kinds that have one. */
+  private buildFloors(level: Level): THREE.InstancedMesh[] {
+    const { map } = level;
+    const byName = new Map<string, THREE.Matrix4[]>();
+    for (let ty = 0; ty < map.height; ty++) {
+      for (let tx = 0; tx < map.width; tx++) {
+        const name = this.look.floorModel?.(map.ground[ty * map.width + tx]!, level.id);
+        if (!name || !this.models.get(name)) continue;
+        let list = byName.get(name);
+        if (!list) byName.set(name, (list = []));
+        list.push(new THREE.Matrix4().makeTranslation(tx + 0.5, 0.001, ty + 0.5));
+      }
+    }
+    return [...byName].flatMap(([name, placements]) => {
+      const template = this.models.get(name)!;
+      return instancedModel(template, fitMatrix(template, { type: 'width', width: 1 }), placements);
+    });
+  }
+
   private buildStructures(level: Level): THREE.Object3D[] {
     return level.structures.map((s, index) => {
       const look = this.look.structure(s.kind);
       const group = new THREE.Group();
+      const template = look.model && this.models.get(look.model.name);
+      if (template && look.model) {
+        const fit = fitMatrix(template, { type: 'footprint', width: s.width + 0.4, depth: s.depth + 0.4 }, look.model.rotation);
+        for (const mesh of instancedModel(template, fit, [new THREE.Matrix4()])) group.add(mesh);
+        group.position.set(s.x + s.width / 2, 0, s.y + s.depth / 2);
+        group.userData.structureIndex = index;
+        return group;
+      }
       const walls = new THREE.Mesh(
         new THREE.BoxGeometry(s.width, look.wallHeight, s.depth),
         new THREE.MeshLambertMaterial({ color: look.wall }),
@@ -403,8 +470,15 @@ function propGeometry(look: PropLook): THREE.BufferGeometry {
   }
 }
 
+/** Frees a level's own geometry and materials. Model geometry belongs to the model library and stays. */
 function disposeTree(root: THREE.Object3D): void {
   root.traverse((o) => {
+    if (o instanceof THREE.InstancedMesh && o.userData.fromModel) {
+      o.dispose();
+      const materials = Array.isArray(o.material) ? o.material : [o.material];
+      for (const m of materials) if (m.userData.ownCopy) m.dispose();
+      return;
+    }
     if (o instanceof THREE.Mesh) {
       o.geometry.dispose();
       const materials = Array.isArray(o.material) ? o.material : [o.material];
