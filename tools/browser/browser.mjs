@@ -3,8 +3,10 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { createRequire } from 'node:module';
 
-// Playwright is installed in the Docker image, not in the repo.
-const { chromium } = createRequire('/opt/browser-tool/')('playwright');
+// Playwright comes from the Docker image locally. On CI, where Google Chrome is already installed, the test-web job
+// installs just playwright-core and sets BROWSER_CHANNEL=chrome, which skips building the image.
+const CHANNEL = process.env.BROWSER_CHANNEL;
+const { chromium } = CHANNEL ? createRequire(import.meta.url)('playwright-core') : createRequire('/opt/browser-tool/')('playwright');
 
 const TYPES = {
   '.html': 'text/html',
@@ -34,5 +36,8 @@ export function serveDist() {
 
 /** Chromium with WebGL through SwiftShader, which works without a GPU, in Docker and on CI. */
 export function launchBrowser() {
-  return chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+  return chromium.launch({
+    ...(CHANNEL ? { channel: CHANNEL } : {}),
+    args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
+  });
 }

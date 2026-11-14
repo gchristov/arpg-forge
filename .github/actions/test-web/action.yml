@@ -7,9 +7,18 @@ runs:
     - name: Build
       shell: bash
       run: npm run build
+    # The runner already has Google Chrome, so CI drives it directly instead of building the Docker image that
+    # ./tools/browser/run.sh uses locally. Keep the version in step with tools/browser/Dockerfile.
+    - name: Set up the browser
+      shell: bash
+      run: npm install --no-save playwright-core@1.64.1
     - name: Smoke test in a browser
       shell: bash
-      run: ./tools/browser/run.sh smoke
+      env:
+        BROWSER_CHANNEL: chrome
+      run: |
+        mkdir -p tools/browser/out
+        node tools/browser/smoke.mjs
     - name: Artifacts
       uses: actions/upload-artifact@v7
       if: always() # Ensure screenshots are collected, even after failures
