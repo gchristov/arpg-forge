@@ -74,6 +74,17 @@ Merging a PR:
 
 The repository's GitHub settings (merge options, protection of `main`) live in `scripts/github-settings.sh`. Change them there and re-run the script rather than changing them in the web UI.
 
+## Testing
+
+Like Everlog: many fast unit tests that check things in isolation, a few scenario tests that play a whole game headless, and a small browser smoke test for what only the real page shows.
+
+- **Unit tests** (`*.test.ts` next to the code) cover rules one at a time: core, world, simulation and the parts of rendering that run without a GPU, such as animation blending (`engine/render/actor-figure.test.ts`). Rules tests build small synthetic arenas with `engine/sim/testing.ts` (`arena`, `run`, `ofType`) and a fixed seed, so outcomes are exact. Most tests belong here.
+- **Scenario tests** (`games/<name>/scenarios.test.ts`) play the real game's content headless with scripted commands: the whole quest, clearing a camp, doors, the chest, and the same seed giving the same game. Add one when a change crosses several systems.
+- **Architecture tests** (`tests/architecture.test.ts`) keep the layers apart. Extend them when a new rule about dependencies is agreed.
+- **Browser smoke test** (`tools/browser/smoke.mjs`, the `test-web` job) loads every page at desktop and phone size, fails on any page error, taps through the title and checks a tap moves the hero. Keep it to a handful of checks of how everything fits together: the page loads, models load, input reaches the game. Add a check only for wiring the other tests can't reach.
+- **Every change to how a game plays comes with tests in the same PR.** A bug fix comes with a test that fails before the fix, such as the animation tests that reproduce the hero walking on after a fight.
+- **Not covered automatically:** sound (CI has no audio), phone performance (CI draws in software) and how things look. Check those on the PR's preview page, and say in "How is this change tested?" what was checked and what wasn't.
+
 ## Working with the user
 
 Claude runs the project and owns the business side: which pilots to make, platforms, store pages, pricing, marketing, timelines and spending. Make those calls and say why, rather than asking. The user is an experienced software engineer who is new to games. They guide the engineering, so bring engineering trade-offs to them. They also carry out what needs a human (accounts, payments, identity checks, uploads, posts) when they have time, often in the evening and sometimes not for days. Give a recommendation, not a menu. Batch what needs the user into small, clearly scoped steps, and build lead time into anything with external waiting (Steam account checks, store page timing).
