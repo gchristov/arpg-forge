@@ -34,6 +34,14 @@ export default defineConfig({
   // Relative asset paths, so a build works from any folder, including GitHub Pages under /arpg-forge/.
   base: './',
   plugins: [prototypes()],
+  build: {
+    rollupOptions: {
+      input: {
+        index: 'index.html',
+        'ashen-hollow-engine': 'games/ashen-hollow/index.html',
+      },
+    },
+  },
   // Listen on all interfaces, so the servers are reachable from outside the Docker container.
   server: { host: true, port: 5173, strictPort: true },
   preview: { host: true, port: 4173, strictPort: true },

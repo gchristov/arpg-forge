@@ -1,0 +1,79 @@
+import * as THREE from 'three';
+import { hash2, valueNoise } from '../../../engine/core/math';
+import type { ActorLook, Look, Mood, PropLook, StructureLook } from '../../../engine/render/look';
+import { Ground, Prop } from '../content/tiles';
+
+/** Simple shapes in the prototype's palette. */
+
+const colour = new THREE.Color();
+const hsl = (h: number, s: number, l: number): number => colour.setHSL(h / 360, s / 100, l / 100).getHex();
+
+const NIGHT: Mood = {
+  background: 0x050407,
+  ambient: 0x3a4a78,
+  ambientIntensity: 0.9,
+  moon: { colour: 0x8fa6e0, intensity: 0.9 },
+  heroLightRadius: 5.4,
+};
+
+const PROPS: Partial<Record<number, PropLook>> = {
+  [Prop.Tree]: { shape: 'cone', width: 1.1, height: 1.9, colour: 0x2b4426 },
+  [Prop.DeadTree]: { shape: 'cylinder', width: 0.2, height: 1.4, colour: 0x4a3c2c },
+  [Prop.Rock]: { shape: 'sphere', width: 0.7, height: 0.5, colour: 0x6b6862 },
+  [Prop.Bush]: { shape: 'sphere', width: 0.7, height: 0.5, colour: 0x2c4528 },
+  [Prop.Lamp]: { shape: 'cylinder', width: 0.12, height: 1.5, colour: 0x2a2724, emissive: 0x3a2008 },
+  [Prop.Well]: { shape: 'cylinder', width: 0.95, height: 0.55, colour: 0x6d6a66 },
+  [Prop.Brazier]: { shape: 'cylinder', width: 0.5, height: 0.45, colour: 0x3a3030, emissive: 0x552200 },
+  [Prop.Grave]: { shape: 'box', width: 0.45, height: 0.6, colour: 0x7a7a80 },
+};
+
+/** Wall and roof heights from the prototype's pixel heights, converted to tiles. */
+const PIXELS_PER_TILE_OF_HEIGHT = 39.2;
+const structure = (wall: number, roof: number, wallPx: number, roofPx: number): StructureLook => ({
+  wall,
+  roof,
+  wallHeight: wallPx / PIXELS_PER_TILE_OF_HEIGHT,
+  roofHeight: roofPx / PIXELS_PER_TILE_OF_HEIGHT,
+});
+const STRUCTURES: Record<string, StructureLook> = {
+  tavern: structure(0xa8916c, 0x7b3527, 46, 34),
+  smithy: structure(0x77736d, 0x46505e, 40, 28),
+  cottage: structure(0xb39e78, 0x8a7340, 36, 30),
+  crypt: structure(0x5d5c66, 0x2e2c36, 44, 18),
+};
+
+const LIGHTS: Record<string, number> = { warm: 0xff9b3c, purple: 0xaa5aff, cold: 0x82aaff };
+
+const ACTORS: Record<string, ActorLook> = {
+  hero: { colour: 0x9a8a70, height: 0.95, radius: 0.24 },
+};
+
+export const ashenHollowLook: Look = {
+  mood: () => NIGHT,
+  groundColour(kind, tx, ty, levelId) {
+    const n = valueNoise(tx * 0.18 + (levelId === 'town' ? 0 : 50), ty * 0.18);
+    const h = hash2(tx, ty, 5);
+    switch (kind) {
+      case Ground.Grass:
+        return hsl(88 + n * 22, 26 + n * 12, 21 + n * 8 + h * 3);
+      case Ground.DeadGrass:
+        return hsl(38 + n * 10, 16 + n * 6, 20 + n * 6 + h * 3);
+      case Ground.Path:
+        return hsl(30 + n * 6, 22 + n * 6, 26 + n * 6 + h * 3);
+      case Ground.Stone:
+        return hsl(30 + h * 15, 5 + h * 4, 33 + n * 5 + h * 5);
+      case Ground.Water:
+        return hsl(205 + n * 8, 45, 16 + n * 5);
+      case Ground.Wood:
+        return hsl(26 + h * 6, 36 + n * 6, 22 + n * 4 + h * 4);
+      case Ground.Crypt:
+        return hsl(250 + h * 20, 5 + h * 4, 18 + n * 5 + h * 4);
+      default:
+        return 0x000000;
+    }
+  },
+  prop: (kind) => PROPS[kind] ?? null,
+  structure: (kind) => STRUCTURES[kind] ?? STRUCTURES.cottage!,
+  lightColour: (name) => LIGHTS[name] ?? LIGHTS.warm!,
+  actor: (kind) => ACTORS[kind] ?? ACTORS.hero!,
+};

@@ -39,25 +39,25 @@ These differ on purpose and don't count against parity:
 ## Levels
 
 - [ ] **Village** (54×54, outdoors), as in `genTown`:
-  - [ ] Ground: grass; a stone square (12–21, 12–19); dirt roads along the listed waypoints; an oval pond; a dead-grass graveyard.
-  - [ ] Graves at x 35, 37, 42, 44 by y 38, 40, 42, 44, plus two dead trees.
-  - [ ] Buildings with doors and window lights:
+  - [x] Ground: grass; a stone square (12–21, 12–19); dirt roads along the listed waypoints; an oval pond; a dead-grass graveyard.
+  - [x] Graves at x 35, 37, 42, 44 by y 38, 40, 42, 44, plus two dead trees.
+  - [x] Buildings with doors and window lights:
     - The Sleeping Boar (8,5, 7×4, door 11,8)
     - The Smithy (19,6, 5×4, door 21,9)
     - Maren's Cottage (5,14, 4×4, door 6,17)
     - The Old Crypt (38,30, 4×4, door 39,33), lit purple
-  - [ ] Props:
+  - [x] Props:
     - Four lamps at the square's corners
     - A well at 16,15
     - Two purple braziers by the crypt
     - Three camps with braziers, at 40,13, 15,42 and 45,25
-  - [ ] Tree border two tiles deep, then thinning; trees, rocks and bushes scattered by noise, denser in the wilds (x > 26 or y > 24). The layout comes from the same hash and noise functions, so it matches tile for tile.
+  - [x] Tree border two tiles deep, then thinning; trees, rocks and bushes scattered by noise, denser in the wilds (x > 26 or y > 24). The layout comes from the same hash and noise functions, so it matches tile for tile.
   - [ ] Spawns:
     - Four skeletons in the graveyard
     - Goblin camps at the first two camps (four goblins each)
     - A skeleton camp at the third (three skeletons)
     - Elder Maren at 14.5, 15.6
-  - [ ] The player starts at 16.5, 22.5, facing up and to the right.
+  - [x] The player starts at 16.5, 22.5, facing up and to the right.
 - [ ] **Interiors** from the text grids in `LAYOUTS`, with the legend: `#` wall, `L` wall torch, `D` exit, `t` table, `b` barrel, `x` crate, `a` anvil, `k` bed, `C` chest, `p` pillar, `f` brazier, `g` bones (walkable), `s` skeleton, `r` archer, `B` boss, `n` the room's NPC.
   - [ ] Tavern (wood floor, Brann), Smithy (stone floor, Hilde), Cottage (wood floor, chest), Crypt (crypt floor, purple braziers, the boss in the north chamber).
   - [ ] Entering an interior puts the player just inside the exit. Leaving puts them one tile in front of the building's door.
@@ -72,7 +72,7 @@ These differ on purpose and don't count against parity:
 
 ## Controls
 
-- [ ] Tap or hold the ground: walk there by pathfinding to the nearest free tile, with a marker. Holding re-targets every 0.14 s.
+- [x] Tap or hold the ground: walk there by pathfinding to the nearest free tile, with a marker. Holding re-targets every 0.14 s.
 - [ ] Tap an enemy (within 34 px of its body, scaled with zoom and enemy size): target it, chase it and attack, with a red marker.
 - [ ] Tap an NPC: walk up and talk when within 1.45 tiles.
 - [ ] Tap a building: walk to its door, with a marker.
