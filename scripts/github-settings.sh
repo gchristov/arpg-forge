@@ -21,15 +21,20 @@ gh api -X PATCH "repos/$REPO" --silent \
   -f squash_merge_commit_title=PR_TITLE \
   -f squash_merge_commit_message=BLANK
 
-# Changes go through a PR with one approval, history stays linear, and main
-# can't be force-pushed or deleted. Admins aren't bound by the rules, so a
-# solo developer merges with `gh pr merge --admin`.
-# Once CI exists, list its jobs under required_status_checks, e.g.
-#   "required_status_checks": {"strict": true, "checks": [{"context": "test"}]},
+# Changes go through a PR with one approval, CI must pass on an up-to-date
+# branch, history stays linear, and main can't be force-pushed or deleted.
+# Admins aren't bound by the rules, so a solo developer merges with
+# `gh pr merge --admin`. App 15368 is GitHub Actions.
 echo "Protection for $BRANCH"
 gh api -X PUT "repos/$REPO/branches/$BRANCH/protection" --silent --input - <<'JSON'
 {
-  "required_status_checks": null,
+  "required_status_checks": {
+    "strict": true,
+    "checks": [
+      {"context": "unit-test", "app_id": 15368},
+      {"context": "build-web", "app_id": 15368}
+    ]
+  },
   "enforce_admins": false,
   "required_pull_request_reviews": {
     "required_approving_review_count": 1,
@@ -43,5 +48,13 @@ gh api -X PUT "repos/$REPO/branches/$BRANCH/protection" --silent --input - <<'JS
   "required_conversation_resolution": false
 }
 JSON
+
+# GitHub Pages serves what the staging-check workflow deploys.
+echo "GitHub Pages"
+if gh api "repos/$REPO/pages" --silent 2>/dev/null; then
+  gh api -X PUT "repos/$REPO/pages" --silent -f build_type=workflow
+else
+  gh api -X POST "repos/$REPO/pages" --silent -f build_type=workflow
+fi
 
 echo "Done"

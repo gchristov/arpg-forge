@@ -1,0 +1,52 @@
+name: staging-check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  unit-test:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      checks: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-unit-test
+      cancel-in-progress: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Test
+        uses: ./.github/actions/unit-test
+
+  build-web:
+    runs-on: ubuntu-24.04
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-build-web
+      cancel-in-progress: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Build web
+        uses: ./.github/actions/build-web
+
+  # Publishes main's build to GitHub Pages, so the latest version can be played on any device.
+  deploy-web-staging:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [unit-test, build-web]
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    concurrency:
+      group: ${{ github.workflow }}-deploy-web-staging
+      cancel-in-progress: true
+    steps:
+      - name: Deploy
+        id: deploy
+        uses: actions/deploy-pages@v4

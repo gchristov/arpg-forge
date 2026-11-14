@@ -4,7 +4,20 @@ One shared engine for small isometric action RPGs (Diablo-style: tap or click to
 
 ## Current state
 
-The refactor hasn't started. The whole game is still `index.html`, the original one-file prototype of Ashen Hollow (dense one-liners, globals `G` and `P`, `Math.random()` throughout). Next is step 0 of `PLAN.md`: move it to `prototypes/ashen-hollow.html` and set up TypeScript, Vite and Vitest. Update this section as the steps land.
+Step 0 of `PLAN.md` is done: TypeScript, Vite, Vitest and CI are set up, and `engine/`, `games/`, `tools/` and `tests/` exist but are empty. The whole game is still `prototypes/ashen-hollow.html`, the original one-file prototype of Ashen Hollow (dense one-liners, globals `G` and `P`, `Math.random()` throughout). It stays frozen as the reference to compare against. Next is step 1: pull the engine out into `engine/` and `games/ashen-hollow/`, keeping the game playing exactly the same. Update this section as the steps land.
+
+## Commands
+
+Node 26 (`.nvmrc`). Run `npm install` once.
+
+- Dev server: `npm run dev`, then open the printed URL. The root page links to each game and prototype.
+- Unit tests: `npm test` (`npm run test:watch` to re-run on change). Tests sit next to the code as `*.test.ts`, or in `tests/`.
+- Type check: `npm run typecheck`
+- Build: `npm run build` writes `dist/`; `npm run preview` serves it. Prototypes are copied byte for byte, not bundled.
+
+## CI/CD
+
+`.github/workflows/staging-check.yml` runs on PRs into `main` and on pushes to `main`, built from composite actions in `.github/actions/`: `unit-test` (Vitest, with a `unit-test-results` report) and `build-web` (type check and build) are required checks. On `main`, `deploy-web-staging` publishes the build to GitHub Pages at https://gchristov.github.io/arpg-forge/, so the latest version can be played on a phone.
 
 ## Rules
 
