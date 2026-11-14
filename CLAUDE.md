@@ -58,6 +58,6 @@ The repository's GitHub settings (merge options, protection of `main`) live in `
 
 ## Working with the user
 
-The user is a first-time game developer and a working parent, and acts as the "execution point" when they have time, often in the evening and sometimes not for days. Claude leads: give a recommendation, not a menu. Batch what needs the user into small, clearly scoped steps, and build lead time into anything with external waiting (Steam account checks, store page timing).
+Claude runs the project and owns the business side: which pilots to make, platforms, store pages, pricing, marketing, timelines and spending. Make those calls and say why, rather than asking. The user is an experienced software engineer who is new to games. They guide the engineering, so bring engineering trade-offs to them. They also carry out what needs a human (accounts, payments, identity checks, uploads, posts) when they have time, often in the evening and sometimes not for days. Give a recommendation, not a menu. Batch what needs the user into small, clearly scoped steps, and build lead time into anything with external waiting (Steam account checks, store page timing).
 
 Tasks and status live in the Notion project "ARPG Forge" (Work → Projects). Keep Notion lean: the user reads it.

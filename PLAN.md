@@ -92,6 +92,8 @@ Steps 1 to 3 of the original plan, done as one refactor. When it's done, Ashen H
 - **Rules apart from presentation:** the game rules become one update step, `step(state, input, dt)`, which returns events (`Damaged`, `Killed`, `EnteredMap`, `LevelUp`, `QuestAdvanced`). The renderer, audio and HUD listen to those events and never change the game state. Today, for example, `hurtPlayer` flashes a DOM element and plays a sound, `bossSpecial` shows the boss bar, and `drawActor` decides whether to show health bars.
 - **Deterministic:** use a seeded random generator instead of `Math.random()`, and run the rules at a fixed 60 updates a second. Drawing still follows the real frame rate.
 - **Remove the fantasy from the engine:** everything named after Ashen Hollow moves into `games/ashen-hollow/`. Today that includes the `G_GRASS`…`G_DEAD` and `O_TREE`…`O_DOORWAY` constants, `PAL`, `ETYPES`, `WALLS`, the `switch` in `talkTo` that checks NPC kinds, the quest text in `updateHud`, the banner in `bossDefeated`, the Cinzel font and the colours in `:root`.
+- **Platform layer:** the engine reaches saves, achievements, full screen, quitting and store features only through a small `Platform` interface (see "Shipping"). Step 1 builds the web version. Game and engine code never call browser storage or a store's API directly.
+- **Everything bundled:** fonts and any other assets ship with the build instead of loading from the internet, so the game works offline and inside a desktop wrapper. Today the prototype loads Cinzel and Alegreya Sans from Google Fonts.
 - **Tests alongside it:** unit tests for pathfinding, line of sight and the screen-to-map conversion, plus the content checks from step 4.
 
 ## Step 2: make content data
@@ -121,9 +123,27 @@ What a game needs before it goes on Steam, built once in the engine:
 
 - **Desktop controls:** mouse (click to move, click to attack, hold to keep moving), keyboard hotkeys and a gamepad. Today the game is touch-first. Keep touch for the web version and the Steam Deck.
 - **Shell:** title screen, pause, settings (volume, screen shake, resolution), save and load (which falls out of step 1 almost for free), and credits.
-- **Desktop wrapper:** package the HTML build with Electron and steamworks.js (the best-supported route; the Steam overlay is reported not to work with Tauri), set up Steam achievements later, and handle full screen and window size.
+- **Desktop wrapper:** the Steam wrapper from "Shipping", plus full screen and window size. Steam achievements come later.
+- **Any screen and input:** any aspect ratio, pausing when the window loses focus, and full gamepad play (Steam Deck's "Verified" badge needs it).
+- **Versioned saves,** so updates and Steam Cloud don't break older saves.
 - **A small amount of juice:** hit pause, screen shake, damage numbers, death effects and a music layer. This is where the "feel" lives, and it should be shared.
 - **Scope for each pilot:** about 30–60 minutes of play. One hub, two or three dungeons, four to six enemy types, two bosses, a few weapon upgrades. A Steam page and a short trailer can go up before the game is finished.
+
+## Shipping
+
+The game stays a web game. The web build is the one artifact, and each store gets a thin wrapper around it:
+
+| Where | Wrapper | Cost to list |
+| --- | --- | --- |
+| Web: GitHub Pages, itch.io, web portals (CrazyGames, Poki) | none | free |
+| Steam: Windows, Mac, Linux, Steam Deck | Electron plus steamworks.js | $100 per game, recouped after $1,000 in sales |
+| iOS and Android | Capacitor | Apple $99 a year, Google $25 once |
+| Consoles | a port, only for a game that already sells | developer programmes and porting work |
+
+- **Electron rather than Tauri or NW.js:** it bundles its own Chromium, so rendering, audio and performance are the same on every machine. Tauri uses each system's webview, which differs between Windows, Mac and Linux, and the Steam overlay is reported not to work with it. Electron adds about 100 MB, which doesn't matter on Steam.
+- **Web technology rather than Godot or Unity:** consoles only matter once a game sells, and a port can happen then. Until then, the web keeps pilots cheap: instant playtest links and a phone build for free.
+- **One `Platform` interface** per target (web, Steam, mobile) covers saves, achievements, full screen, quitting and store features. Each wrapper supplies its own implementation, so nothing else changes between targets.
+- **Order:** every pilot goes on the web first, to see what catches on. The one that does gets the Steam wrapper and a store page. Mobile comes only if a game earns it, because of Apple's yearly fee and store reviews.
 
 ## Tests at three levels
 
