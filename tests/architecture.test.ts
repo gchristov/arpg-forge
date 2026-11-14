@@ -26,6 +26,14 @@ function sourceFiles(dir: string): string[] {
 }
 
 describe('architecture', () => {
+  it('keeps browser storage behind the Platform interface', () => {
+    const problems = ['engine', 'games'].flatMap(sourceFiles)
+      .filter((file) => !file.startsWith(join('engine', 'platform')))
+      .filter((file) => /\b(localStorage|sessionStorage|indexedDB)\b/.test(readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')))
+      .map((file) => `${file} uses browser storage directly`);
+    expect(problems).toEqual([]);
+  });
+
   for (const layer of PURE_LAYERS) {
     it(`keeps ${layer} free of the browser, Three.js, the clock and outer layers`, () => {
       const problems = sourceFiles(layer).flatMap((file) => {

@@ -15,6 +15,7 @@ import { createGameState } from '../../engine/sim/setup';
 import { servicePrice } from '../../engine/sim/interaction';
 import { currentLevel, type Actor, type Command, type SimEvent } from '../../engine/sim/state';
 import { step } from '../../engine/sim/step';
+import { webPlatform } from '../../engine/platform/web';
 import { ScreenFade } from '../../engine/ui/fade';
 import { WorldLabels, type Project } from '../../engine/ui/world-labels';
 import { tileIndex } from '../../engine/world/tile-map';
@@ -47,7 +48,9 @@ const modelsLoaded = models.load(MODEL_URLS);
 const pointer = new PointerInput(canvas);
 const fade = new ScreenFade(document.body, FADE_SECONDS);
 const labels = new WorldLabels(document.body);
+const platform = webPlatform('ashen-hollow');
 const synth = new Synth();
+synth.muted = platform.load('muted') === 'true';
 const sfx = ashenHollowSounds(synth);
 const debugMode = new URLSearchParams(location.search).has('debug');
 const debug = debugMode ? new DebugOverlay(document.body) : null;
@@ -106,8 +109,13 @@ $('mute').addEventListener('pointerdown', (e) => {
   e.stopPropagation();
   synth.unlock();
   synth.muted = !synth.muted;
-  $('waves').style.display = synth.muted ? 'none' : '';
+  platform.save('muted', String(synth.muted));
+  showMuted();
 });
+function showMuted(): void {
+  $('waves').style.display = synth.muted ? 'none' : '';
+}
+showMuted();
 document.addEventListener('pointerdown', () => synth.unlock(), { capture: true });
 
 bindKeys({
