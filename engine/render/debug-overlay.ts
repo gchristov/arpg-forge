@@ -10,6 +10,7 @@ export class DebugOverlay {
   private readonly updates = new Float32Array(WINDOW);
   private readonly draws = new Float32Array(WINDOW);
   private index = 0;
+  private extra = '';
 
   constructor(parent: HTMLElement) {
     this.element = document.createElement('pre');
@@ -17,6 +18,11 @@ export class DebugOverlay {
       'position:fixed;left:8px;bottom:8px;margin:0;padding:6px 8px;font:12px/1.4 ui-monospace,monospace;' +
       'color:#d8f0c8;background:rgba(0,0,0,.6);border-radius:4px;pointer-events:none;z-index:99';
     parent.appendChild(this.element);
+  }
+
+  /** A line of extra detail shown under the timings, such as draw calls. */
+  note(extra: string): void {
+    this.extra = extra;
   }
 
   record(frameMs: number, updateMs: number, drawMs: number): void {
@@ -32,6 +38,7 @@ export class DebugOverlay {
     const frame = average(this.frames);
     this.element.textContent =
       `${(1000 / frame).toFixed(0)} fps  frame ${frame.toFixed(1)} ms (worst ${Math.max(...this.frames).toFixed(1)})\n` +
-      `rules ${average(this.updates).toFixed(2)} ms  draw ${average(this.draws).toFixed(2)} ms`;
+      `rules ${average(this.updates).toFixed(2)} ms  draw ${average(this.draws).toFixed(2)} ms` +
+      (this.extra ? `\n${this.extra}` : '');
   }
 }

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { mergeCharacter } from './merge-character';
 
 /** A loaded model, ready to be copied for each actor or prop that uses it. */
 export interface ModelTemplate {
@@ -43,7 +44,9 @@ export class ModelLibrary {
   }
 }
 
+/** Characters are merged into one mesh per material as they load, so each costs one or two draw calls. */
 function toTemplate(gltf: GLTF): ModelTemplate {
+  mergeCharacter(gltf.scene);
   const box = new THREE.Box3().setFromObject(gltf.scene);
   return { scene: gltf.scene, animations: gltf.animations, height: Math.max(0.001, box.max.y - box.min.y) };
 }
