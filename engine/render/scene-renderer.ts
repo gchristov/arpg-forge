@@ -92,7 +92,7 @@ export class SceneRenderer {
     this.effects = new Effects(this.scene, look.effects);
   }
 
-  /** How much the view is zoomed, 1 at the prototype's base size. */
+  /** How much the view is zoomed, 1 when a tile is 64 pixels wide. */
   get zoom(): number {
     return (this.pixelsPerUnit * Math.SQRT2) / TILE_PIXELS;
   }
@@ -270,7 +270,7 @@ export class SceneRenderer {
     this.moon.target.position.copy(this.target);
   }
 
-  /** Lights the closest level lights, with the prototype's flicker applied to their reach. */
+  /** Lights the closest level lights, with a flicker applied to their reach. */
   private updateLights(seconds: number): void {
     const count = Math.min(MAX_POINT_LIGHTS, this.levelLights.length);
     this.closestDistances.fill(Infinity);

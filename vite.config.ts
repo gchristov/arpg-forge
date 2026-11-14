@@ -1,30 +1,36 @@
-import { readFileSync } from 'node:fs';
 import { defineConfig, type Plugin } from 'vitest/config';
 
-// Published path → frozen prototype file. Each game has its own path, which serves its prototype until the
-// game has an engine entry under games/<name>.
-const prototypePages: Record<string, string> = {
-  'prototypes/ashen-hollow.html': 'prototypes/ashen-hollow.html',
-  'ashen-hollow/index.html': 'prototypes/ashen-hollow.html',
+/** Each game's short address, such as `/ashen-hollow/`, and the folder its build lives in. */
+const GAMES: Record<string, string> = {
+  'ashen-hollow': 'games/ashen-hollow/',
 };
 
-// Prototypes are frozen references, so the build copies them byte for byte instead of bundling them, and
-// the dev server serves the same paths.
-function prototypes(): Plugin {
+/** A page that sends the visitor on to the game, keeping any `?query` and `#hash`. */
+function redirectPage(to: string): string {
+  return `<!doctype html><meta charset="utf-8"><title>Loading…</title>
+<script>location.replace(${JSON.stringify(to)} + location.search + location.hash)</script>
+<meta http-equiv="refresh" content="0;url=${to}">`;
+}
+
+/**
+ * Serves each game at a short address. A redirect rather than moving the game's build, since its pages and assets
+ * are linked by relative paths from where they're built.
+ */
+function gameAddresses(): Plugin {
   return {
-    name: 'prototypes',
+    name: 'game-addresses',
     generateBundle() {
-      for (const [fileName, source] of Object.entries(prototypePages)) {
-        this.emitFile({ type: 'asset', fileName, source: readFileSync(source) });
+      for (const [game, folder] of Object.entries(GAMES)) {
+        this.emitFile({ type: 'asset', fileName: `${game}/index.html`, source: redirectPage(`../${folder}`) });
       }
     },
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        const path = (req.url ?? '').split('?')[0]!.replace(/^\//, '').replace(/\/$/, '/index.html');
-        const source = prototypePages[path];
-        if (!source || path === source) return next();
+        const game = (req.url ?? '').split(/[?#]/)[0]!.replace(/^\/|\/$/g, '');
+        const folder = GAMES[game];
+        if (!folder) return next();
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        res.end(readFileSync(source));
+        res.end(redirectPage(`/${folder}`));
       });
     },
   };
@@ -33,12 +39,12 @@ function prototypes(): Plugin {
 export default defineConfig({
   // Relative asset paths, so a build works from any folder, including GitHub Pages under /arpg-forge/.
   base: './',
-  plugins: [prototypes()],
+  plugins: [gameAddresses()],
   build: {
     rollupOptions: {
       input: {
         index: 'index.html',
-        'ashen-hollow-engine': 'games/ashen-hollow/index.html',
+        'ashen-hollow': 'games/ashen-hollow/index.html',
       },
     },
   },

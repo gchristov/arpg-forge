@@ -31,7 +31,7 @@ import { Hud } from './ui/hud';
 const WALK_MARKER = 0xe8d6a6;
 const TARGET_MARKER = 0xff5a4a;
 const FADE_SECONDS = 0.3;
-/** The prototype measured heights in pixels; this many make one tile. */
+/** Heights below are in screen pixels at zoom 1; this many make one tile. */
 const PX = 1 / 39.2;
 /** Taps within this many pixels (at zoom 1) of an enemy's body pick it. */
 const TAP_REACH_PX = 34;
@@ -138,7 +138,7 @@ function showCurrentLevel(): void {
 }
 
 /**
- * Turns a tap into a command, in the prototype's order: enemies, NPCs, buildings, the chest, doorways, then the
+ * Turns a tap into a command, checking in this order: enemies, NPCs, buildings, the chest, doorways, then the
  * ground. Any tap closes an open dialogue.
  */
 function commandForTap(x: number, y: number): Command | null {
@@ -191,7 +191,7 @@ const REFUSALS = {
   fullHealth: ['Already healthy', '#e0d3b5'],
 } as const;
 
-/** Ashen Hollow's sounds for the rules' events, as in the prototype. */
+/** Ashen Hollow's sounds for the rules' events. */
 function playSounds(events: SimEvent[]): void {
   const heroHurt = events.some((e) => e.type === 'HeroHurt');
   for (const e of events) {
@@ -423,7 +423,7 @@ function animateWindUps(): void {
   }
 }
 
-/** Smoke drifts from each chimney, as in the prototype's village. */
+/** Smoke drifts from each chimney. */
 function puffChimneys(): void {
   if (state.time < nextSmokeAt) return;
   nextSmokeAt = state.time + SMOKE_SECONDS;
