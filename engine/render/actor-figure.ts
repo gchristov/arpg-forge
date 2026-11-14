@@ -34,6 +34,7 @@ export class ActorFigure {
       return;
     }
     model.scale.setScalar(look.height / template.height);
+    model.position.y = look.hover ?? 0;
     const tint = look.model.tint === undefined ? null : new THREE.Color(look.model.tint);
     model.traverse((o) => {
       if (!(o instanceof THREE.Mesh)) return;

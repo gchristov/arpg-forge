@@ -5,7 +5,7 @@ Every asset that ships with the game, where it comes from and its licence. All o
 | Asset | Source | Licence |
 | --- | --- | --- |
 | Alegreya Sans font | Juan Pablo del Peral (Huerta Tipográfica), via `@fontsource/alegreya-sans` | SIL Open Font License 1.1 |
-| The salvager (hero) | Kay Lousberg, [KayKit Character Pack: Adventurers 1.0](https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0) | CC0 1.0 |
+| The salvager (hero, KayKit's hooded rogue) | Kay Lousberg, [KayKit Character Pack: Adventurers 1.0](https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0) | CC0 1.0 |
 | Crawlers, loaders, sentries and the Order Engine; crates, barrels, lockers, shelves and desks | Quaternius, [Sci-Fi Essentials Kit](https://opengameart.org/content/sci-fi-essentials-kit) | CC0 1.0 |
 | Pipe columns and computers | Quaternius, [Modular Sci-Fi MegaKit, Standard](https://opengameart.org/content/modular-sci-fi-megakit) | CC0 1.0 |
 

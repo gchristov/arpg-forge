@@ -15,15 +15,16 @@
     {
       "name": "hero",
       "pack": "adventurers",
-      "path": "Characters/gltf/Barbarian.glb",
+      "path": "Characters/gltf/Rogue_Hooded.glb",
       "keepMeshes": [
-        "1H_Axe",
-        "Barbarian_ArmLeft",
-        "Barbarian_ArmRight",
-        "Barbarian_Body",
-        "Barbarian_Head",
-        "Barbarian_LegLeft",
-        "Barbarian_LegRight"
+        "Knife",
+        "Rogue_Cape",
+        "Rogue_ArmLeft",
+        "Rogue_ArmRight",
+        "Rogue_Body",
+        "Rogue_Head_Hooded",
+        "Rogue_LegLeft",
+        "Rogue_LegRight"
       ],
       "animations": [
         "Idle",

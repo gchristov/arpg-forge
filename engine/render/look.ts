@@ -41,6 +41,10 @@ export interface ActorLook {
   radius: number;
   /** Body size relative to an ordinary actor, 1 if not given: taps reach further and labels sit higher on bigger ones. */
   scale?: number;
+  /** Tiles above the ground the model floats, for flying machines and spirits. */
+  hover?: number;
+  /** A light the actor carries, such as a lantern or a glowing eye, which fades as it dies. */
+  light?: { colour: number; radius: number; intensity: number };
   /** The mark a killed enemy leaves on the ground, such as blood or bone dust. */
   remains?: { radius: number; colour: number; opacity: number };
   /** A model from the game's model library, scaled to `height`. */

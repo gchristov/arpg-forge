@@ -4,11 +4,11 @@ import { Ground, Prop } from '../content/tiles';
 
 /** The Foundry's first floor: crates and lockers along the walls, machines in the middle, the Order Engine at the back. */
 const ROWS = [
-  '####L#####L#####L####',
-  '#.....s.......s.....#',
+  '####L####A#A####L####',
+  '#.....s...FFF.s.....#',
   '#.C..c.........c..lh#',
   '#.C.......E.......lh#',
-  'L...b...........b...L',
+  'A...b...........b...A',
   '#......cc...cc......#',
   '#..o....l...l....o..#',
   '#...................#',
@@ -25,6 +25,8 @@ const KEY: Record<string, RoomKey> = {
   '.': {},
   '#': { prop: Prop.Wall, frontProp: Prop.WallLow, solid: true },
   L: { prop: Prop.WallLight, solid: true, light: { radius: 3.6, intensity: 0.9, colour: 'cyan', flicker: 0.3, lean: 0.7 } },
+  A: { prop: Prop.WallLight, solid: true, light: { radius: 3.2, intensity: 1, colour: 'amber', flicker: 0.8, lean: 0.7 } },
+  F: { prop: Prop.Furnace, solid: true, light: { radius: 3.8, intensity: 1.2, colour: 'molten', flicker: 1.4 } },
   C: solid(Prop.Column),
   c: solid(Prop.Crate),
   b: solid(Prop.Barrel),

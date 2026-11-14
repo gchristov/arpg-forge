@@ -15,4 +15,5 @@ export const Prop = {
   Column: 8,
   Computer: 9,
   WallLight: 10,
+  Furnace: 11,
 } as const;

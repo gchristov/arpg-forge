@@ -2,11 +2,11 @@ import { hash2, valueNoise } from '../../../engine/core/math';
 import type { ActorLook, Look, Mood, PropLook } from '../../../engine/render/look';
 import { Ground, Prop } from '../content/tiles';
 
-/** Unrecalled's look: KayKit people and Quaternius machines under cold workshop light. */
+/** Unrecalled's look: KayKit people and Quaternius machines, cold workshop light against furnace glow. */
 
 const FOUNDRY: Mood = {
-  background: 0x040507, ambient: 0x2a3440, ambientIntensity: 0.45, heroLightRadius: 4.6,
-  fill: { sky: 0xa8d8ff, ground: 0x181410, intensity: 0.55 },
+  background: 0x050505, ambient: 0x343538, ambientIntensity: 0.5, heroLightRadius: 4.6,
+  fill: { sky: 0xd8e0e8, ground: 0x201810, intensity: 0.55 },
 };
 
 const tall = (name: string, height: number, turn: number | 'random' = 0): PropLook['model'] => ({
@@ -14,9 +14,10 @@ const tall = (name: string, height: number, turn: number | 'random' = 0): PropLo
 });
 
 const PROPS: Partial<Record<number, PropLook>> = {
-  [Prop.Wall]: { shape: 'box', width: 1, height: 1.2, colour: 0x2e3238 },
-  [Prop.WallLow]: { shape: 'box', width: 1, height: 0.35, colour: 0x2e3238 },
-  [Prop.WallLight]: { shape: 'box', width: 1, height: 1.2, colour: 0x2e3238, emissive: 0x0a3040 },
+  [Prop.Wall]: { shape: 'box', width: 1, height: 1.2, colour: 0x3a3936 },
+  [Prop.WallLow]: { shape: 'box', width: 1, height: 0.35, colour: 0x3a3936 },
+  [Prop.WallLight]: { shape: 'box', width: 1, height: 1.2, colour: 0x3a3936, emissive: 0x1a1a14 },
+  [Prop.Furnace]: { shape: 'box', width: 1, height: 0.9, colour: 0x2a2420, emissive: 0x7a2a08 },
   [Prop.Crate]: { shape: 'box', width: 0.8, height: 0.7, colour: 0x6a5a3a, model: tall('crate', 0.75, 'random') },
   [Prop.Barrel]: { shape: 'cylinder', width: 0.6, height: 0.8, colour: 0x8a3a2a, model: tall('barrel', 0.85, 'random') },
   [Prop.Locker]: { shape: 'box', width: 0.6, height: 1.3, colour: 0x4a5a6a, model: tall('locker', 1.3) },
@@ -26,7 +27,7 @@ const PROPS: Partial<Record<number, PropLook>> = {
   [Prop.Computer]: { shape: 'box', width: 0.6, height: 0.9, colour: 0x2a3a4a, emissive: 0x0a4050, model: tall('computer', 0.95) },
 };
 
-const LIGHTS: Record<string, number> = { cyan: 0x6ad8ff, amber: 0xffa040 };
+const LIGHTS: Record<string, number> = { cyan: 0x6ad8ff, amber: 0xffa040, molten: 0xff6a20 };
 
 const robot = (
   name: string,
@@ -44,13 +45,20 @@ const ACTORS: Record<string, ActorLook> = {
   hero: {
     colour: 0x9a8a70, height: 1.15, radius: 0.24,
     model: {
-      name: 'hero',
+      name: 'hero', tint: 0x9a9488,
       animations: { idle: 'Idle', move: 'Running_A', attack: '1H_Melee_Attack_Chop', cast: 'Spellcast_Shoot', hit: 'Hit_A', death: 'Death_A' },
     },
   },
-  crawler: robot('crawler', 0.6, { idle: 'Idle', move: 'Run', attack: 'Attack', hit: 'Hit', death: 'TurnOff' }, 0.8),
+  crawler: {
+    ...robot('crawler', 0.6, { idle: 'Idle', move: 'Run', attack: 'Attack', hit: 'Hit', death: 'TurnOff' }, 0.8),
+    light: { colour: 0xffa040, radius: 0.9, intensity: 0.4 },
+  },
   loader: robot('loader', 1.0, { idle: 'Idle', move: 'Walk', attack: 'Attack', hit: 'Hit', death: 'TurnOff' }, 1.3),
-  sentry: robot('sentry', 1.0, { idle: 'Idle', attack: 'Attack', hit: 'Hit' }),
+  sentry: {
+    ...robot('sentry', 0.75, { idle: 'Idle', attack: 'Attack', hit: 'Hit' }),
+    hover: 0.55,
+    light: { colour: 0xff4a30, radius: 1.2, intensity: 0.45 },
+  },
   orderEngine: robot('loader', 2.0, { idle: 'Idle', move: 'Walk', attack: 'Attack', cast: 'Attack', hit: 'Hit', death: 'TurnOff' }, 2.0, 0xffb070),
 };
 

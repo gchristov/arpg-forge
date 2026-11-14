@@ -141,12 +141,14 @@ export class WorldView {
   }
 
   private drawActor(actor: Actor & { dead?: boolean }, alpha: number, fade = 1): void {
+    const x = lerp(actor.prevX, actor.x, alpha);
+    const y = lerp(actor.prevY, actor.y, alpha);
     this.renderer.setActor(
-      String(actor.id), actor.kind,
-      lerp(actor.prevX, actor.x, alpha), lerp(actor.prevY, actor.y, alpha),
-      actor.facingX, actor.facingY,
+      String(actor.id), actor.kind, x, y, actor.facingX, actor.facingY,
       { moving: actor.moving, dead: Boolean(actor.dead), flash: (this.flashes.get(actor.id) ?? 0) > 0 ? 1 : 0, fade },
     );
+    const light = this.look.actor(actor.kind).light;
+    if (light && fade > 0) this.renderer.glow(x, y, light.radius, light.colour, light.intensity * fade);
   }
 
   /** Starts an enemy's attack animation as its wind-up begins, timed so the blow lands as the attack does. */
