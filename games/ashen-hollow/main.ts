@@ -98,7 +98,7 @@ if (goLabel) {
   goLabel.textContent = 'Loading…';
   void modelsLoaded.then(() => {
     goLabel.textContent = ready;
-    renderer.clearActors();
+    showCurrentLevel();
   });
 }
 $('mute').addEventListener('pointerdown', (e) => {
