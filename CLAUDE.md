@@ -30,7 +30,7 @@ Local tools run in Docker, not on this machine: don't install Node, npm packages
 
 ## CI/CD
 
-`.github/workflows/staging-check.yml` runs on PRs into `main` and on pushes to `main`, built from composite actions in `.github/actions/`. Three jobs are required checks: `unit-test` (Vitest, with a `unit-test-results` report), `build-web` (type check and build) and `test-web` (`./tools/browser/run.sh smoke` on the build, with screenshots uploaded as an artifact). On `main`, `deploy-web-staging` publishes the build to the root of the `gh-pages` branch, which GitHub Pages serves at https://gchristov.github.io/arpg-forge/. Each game has a short address such as https://gchristov.github.io/arpg-forge/ashen-hollow/.
+`.github/workflows/staging-check.yml` runs on PRs into `main` and on pushes to `main`, built from composite actions in `.github/actions/`. Three jobs are required checks: `unit-test` (Vitest, with a `unit-test-results` report), `build-web` (type check and build) and `test-web` (`./tools/browser/run.sh smoke` on the build, with screenshots uploaded as an artifact). On `main`, `deploy-web-staging` publishes the build to the root of the `gh-pages` branch, which GitHub Pages serves at https://gchristov.github.io/arpg-forge/. Each game has a short address such as https://gchristov.github.io/arpg-forge/ashen-hollow/. The repo page's **Deployments** sidebar links the live site (`github-pages`) and the latest PR preview (`preview`); a closed PR's preview is marked inactive there.
 
 `.github/workflows/pr-preview.yml` gives every PR its own copy of the site at `https://gchristov.github.io/arpg-forge/pr-preview/pr-<number>/`, linked from the PR's "View deployment" button (the `preview` environment) and a comment with a QR code for phones. It updates on every push and is removed when the PR closes. Previews and the main site share the `gh-pages` branch, so the main deploy never force-pushes or touches `pr-preview/`. Mention the preview link when handing a PR over for testing.
 
@@ -69,8 +69,7 @@ Every PR that changes how the game plays, looks or sounds is tried in the browse
 Merging a PR:
 - Before merging, review the entire diff (`gh pr diff <n>`) the way a reviewer would, not just the files you remember changing. Look for bugs, for edge cases nobody has raised (low or uneven frame rates, a tab left in the background, touch versus mouse, small screens, saves from an older version) and for anything missing (tests, docs, the Notion task). Fix what you can in the PR and say what you changed. Stop and ask about anything unexpected, anything you can't resolve yourself, or an edge case so unlikely that fixing it is a judgement call.
 - Merge only once all checks pass, never while one is pending or failing.
-- Always squash merge without a commit description: `gh pr merge <n> --squash --admin --body "" --delete-branch`. `main` requires an approval that a solo repo never gets, so the admin override is expected.
-- Afterwards, clean up local git: switch to `main`, pull, and delete the merged local branch.
+- Merge with `scripts/merge-pr.sh <n>`. It waits until every required check has appeared and passed, then squash merges without a commit description, using the admin override (`main` requires an approval a solo repo never gets), deletes the branch and updates local `main`. Don't merge with `gh pr merge` directly: right after a push the checks aren't listed yet, and an admin merge would skip them.
 
 The repository's GitHub settings (merge options, protection of `main`) live in `scripts/github-settings.sh`. Change them there and re-run the script rather than changing them in the web UI.
 
