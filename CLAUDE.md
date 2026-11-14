@@ -18,7 +18,7 @@ Local tools run in Docker, not on this machine: don't install Node, npm packages
 
 ## CI/CD
 
-`.github/workflows/staging-check.yml` runs on PRs into `main` and on pushes to `main`, built from composite actions in `.github/actions/`: `unit-test` (Vitest, with a `unit-test-results` report) and `build-web` (type check and build) are required checks. On `main`, `deploy-web-staging` publishes the build to GitHub Pages at https://gchristov.github.io/arpg-forge/, so the latest version can be played on a phone.
+`.github/workflows/staging-check.yml` runs on PRs into `main` and on pushes to `main`, built from composite actions in `.github/actions/`: `unit-test` (Vitest, with a `unit-test-results` report) and `build-web` (type check and build) are required checks. On `main`, `deploy-web-staging` publishes the build to GitHub Pages at https://gchristov.github.io/arpg-forge/, so the latest version can be played on a phone. Each game has its own path (`/ashen-hollow/`), which serves the game's prototype until the game has an engine entry under `games/<name>`. Prototypes are also kept at `/prototypes/<name>.html` for comparison.
 
 ## Rules
 
