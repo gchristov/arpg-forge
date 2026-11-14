@@ -53,6 +53,11 @@ export class ActorFigure {
       }
     }
     this.root.add(model);
+    model.traverse((o) => {
+      // Three.js keeps every object's `rotation` angles in step with its quaternion. Animation moves bones by their
+      // quaternions dozens of times a frame per character, and nothing reads a bone's angles, so skip that work.
+      if (o instanceof THREE.Bone) o.quaternion._onChange(() => {});
+    });
     this.mixer = new THREE.AnimationMixer(model);
     for (const clip of template.animations) this.actions.set(clip.name, this.mixer.clipAction(clip));
     this.mixer.addEventListener('finished', (e) => {
