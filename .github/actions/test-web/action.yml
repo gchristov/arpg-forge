@@ -1,0 +1,18 @@
+name: 'test-web'
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Node
+      uses: ./.github/actions/setup-node
+    - name: Build
+      shell: bash
+      run: npm run build
+    - name: Smoke test in a browser
+      shell: bash
+      run: ./tools/browser/run.sh smoke
+    - name: Artifacts
+      uses: actions/upload-artifact@v7
+      if: always() # Ensure screenshots are collected, even after failures
+      with:
+        name: Screenshots
+        path: tools/browser/out/

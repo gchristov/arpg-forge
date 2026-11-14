@@ -10,8 +10,11 @@ set -euo pipefail
 REPO=$(gh repo view --json nameWithOwner --jq .nameWithOwner)
 BRANCH=main
 
+# The repo stays quiet about what it is: no description, website or topics.
 echo "Merge settings for $REPO"
 gh api -X PATCH "repos/$REPO" --silent \
+  -f description= \
+  -f homepage= \
   -F allow_merge_commit=false \
   -F allow_squash_merge=true \
   -F allow_rebase_merge=false \
@@ -32,7 +35,8 @@ gh api -X PUT "repos/$REPO/branches/$BRANCH/protection" --silent --input - <<'JS
     "strict": true,
     "checks": [
       {"context": "unit-test", "app_id": 15368},
-      {"context": "build-web", "app_id": 15368}
+      {"context": "build-web", "app_id": 15368},
+      {"context": "test-web", "app_id": 15368}
     ]
   },
   "enforce_admins": false,
@@ -50,6 +54,8 @@ gh api -X PUT "repos/$REPO/branches/$BRANCH/protection" --silent --input - <<'JS
 JSON
 
 # GitHub Pages serves what the staging-check workflow deploys.
+gh api -X PUT "repos/$REPO/topics" --silent --input - <<< '{"names": []}'
+
 echo "GitHub Pages"
 if gh api "repos/$REPO/pages" --silent 2>/dev/null; then
   gh api -X PUT "repos/$REPO/pages" --silent -f build_type=workflow
