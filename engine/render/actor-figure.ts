@@ -77,7 +77,8 @@ export class ActorFigure {
     this.moment = action;
     action.reset();
     action.setLoop(THREE.LoopOnce, 1);
-    action.clampWhenFinished = false;
+    // Hold the last frame, so the blend back to the pose starts from it rather than from the rest pose.
+    action.clampWhenFinished = true;
     action.timeScale = seconds ? action.getClip().duration / seconds : 1;
     action.play();
     if (from && from !== action) action.crossFadeFrom(from, 0.08, false);
@@ -98,6 +99,16 @@ export class ActorFigure {
     return [...this.actions]
       .filter(([, action]) => action.isScheduled() && action.getEffectiveWeight() > 0.01)
       .map(([name]) => name);
+  }
+
+  /**
+   * How much of the pose comes from animations, from 0 to 1. Below 1 the model sags towards its rest pose, which
+   * shows as a glitch.
+   */
+  poseWeight(): number {
+    let total = 0;
+    for (const action of this.actions.values()) if (action.isScheduled()) total += action.getEffectiveWeight();
+    return total;
   }
 
   update(frameSeconds: number): void {

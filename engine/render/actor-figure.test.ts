@@ -25,8 +25,12 @@ function figure(): ActorFigure {
   return new ActorFigure(look, library);
 }
 
+/** Advances the animations, checking at every frame that the model never sags towards its rest pose. */
 function run(f: ActorFigure, seconds: number): void {
-  for (let t = 0; t < seconds; t += 1 / 60) f.update(1 / 60);
+  for (let t = 0; t < seconds; t += 1 / 60) {
+    f.update(1 / 60);
+    expect(f.poseWeight()).toBeGreaterThan(0.95);
+  }
 }
 
 describe('ActorFigure animation', () => {
@@ -64,6 +68,19 @@ describe('ActorFigure animation', () => {
     }
     f.pose(false, false);
     run(f, 1);
+    expect(f.activeAnimations()).toEqual(['Idle']);
+  });
+
+  it('never sags to the rest pose while blending out of an attack', () => {
+    const f = figure();
+    run(f, 0.3);
+    f.play('attack', 0.5);
+    let lowest = Infinity;
+    for (let t = 0; t < 1.2; t += 1 / 60) {
+      f.update(1 / 60);
+      lowest = Math.min(lowest, f.poseWeight());
+    }
+    expect(lowest).toBeGreaterThan(0.95);
     expect(f.activeAnimations()).toEqual(['Idle']);
   });
 
