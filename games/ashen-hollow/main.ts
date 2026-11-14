@@ -485,6 +485,11 @@ function frame(now: number): void {
   renderer.render(now / 1000, frameSeconds);
   labels.update(project, frameSeconds);
   hud.update(state);
+  if (debug) {
+    const { calls, triangles } = renderer.stats();
+    const alive = currentLevel(state).enemies.filter((e) => !e.dead).length;
+    debug.note(`${calls} draw calls  ${(triangles / 1000).toFixed(0)}k triangles  ${alive} enemies`);
+  }
   debug?.record(frameSeconds * 1000, t1 - t0, performance.now() - t1);
   requestAnimationFrame(frame);
 }

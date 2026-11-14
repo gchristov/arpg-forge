@@ -191,6 +191,11 @@ export class SceneRenderer {
     return out;
   }
 
+  /** Draw calls and triangles in the last frame, for the debug overlay. */
+  stats(): { calls: number; triangles: number } {
+    return { calls: this.renderer.info.render.calls, triangles: this.renderer.info.render.triangles };
+  }
+
   shake(amount: number): void {
     this.shakeAmount = Math.max(this.shakeAmount, amount);
   }
