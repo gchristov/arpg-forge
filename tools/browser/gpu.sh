@@ -8,6 +8,7 @@ set -e
 # with its own throwaway profile and a debugging port, drives it from the browser tool's Docker image, and prints
 # the debug overlay for each query (fps, frame times, draw calls, triangles). Screenshots go to tools/browser/out.
 # Only the Chrome this script starts is stopped afterwards; any Chrome you have open is left alone.
+# MEASURE_SCRIPT=<path> runs a different measuring script against the same Chrome, for one-off investigations.
 
 cd "$(dirname "$0")/../.."
 if [ $# -lt 2 ]; then
@@ -29,4 +30,4 @@ for _ in $(seq 1 40); do curl -s "http://127.0.0.1:$PORT/json/version" > /dev/nu
 
 docker build -q -t arpg-forge-browser tools/browser > /dev/null
 mkdir -p tools/browser/out
-docker run --rm -e GPU_CHROME_PORT=$PORT -v "$(pwd):/repo" -w /repo arpg-forge-browser node tools/browser/measure.mjs "$@"
+docker run --rm -e GPU_CHROME_PORT=$PORT -v "$(pwd):/repo" -w /repo arpg-forge-browser node "${MEASURE_SCRIPT:-tools/browser/measure.mjs}" "$@"

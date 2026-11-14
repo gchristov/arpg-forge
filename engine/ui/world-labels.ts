@@ -7,6 +7,12 @@ const TEXT_SECONDS = 1.1;
 /** Tiles a second. */
 const TEXT_RISE = 0.75;
 
+/**
+ * Positions a label centred on a screen point. A transform only moves the element's layer, where changing `left` and
+ * `top` every frame would make the browser lay out the page again.
+ */
+const place = (p: Vec2): string => `translate(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px) translate(-50%,-50%)`;
+
 export type Project = (x: number, y: number, height: number, out: Vec2) => Vec2;
 
 interface FloatingText {
@@ -35,15 +41,15 @@ export class WorldLabels {
       const element = document.createElement('div');
       element.className = 'world-text';
       element.style.cssText =
-        'position:absolute;left:0;top:0;white-space:nowrap;font-weight:700;' +
-        'text-shadow:0 0 3px #000,0 1px 3px #000;transform:translate(-50%,-50%);display:none';
+        'position:absolute;left:0;top:0;white-space:nowrap;font-weight:700;will-change:transform;' +
+        'text-shadow:0 0 3px #000,0 1px 3px #000;display:none';
       layer.appendChild(element);
       this.texts.push({ element, x: 0, y: 0, height: 0, age: TEXT_SECONDS });
     }
     for (let i = 0; i < BAR_POOL; i++) {
       const element = document.createElement('div');
       element.className = 'world-bar';
-      element.style.cssText = 'position:absolute;left:0;top:0;height:4px;transform:translate(-50%,-50%);display:none';
+      element.style.cssText = 'position:absolute;left:0;top:0;height:4px;will-change:transform;display:none';
       const fill = document.createElement('i');
       fill.style.cssText = 'display:block;height:100%';
       element.appendChild(fill);
@@ -76,8 +82,7 @@ export class WorldLabels {
     const p = project(x, y, height, this.point);
     bar.element.style.display = '';
     bar.element.style.width = `${widthPx}px`;
-    bar.element.style.left = `${p.x}px`;
-    bar.element.style.top = `${p.y}px`;
+    bar.element.style.transform = place(p);
     bar.fill.style.width = `${Math.max(0, Math.min(1, share)) * 100}%`;
   }
 
@@ -94,8 +99,7 @@ export class WorldLabels {
         continue;
       }
       const p = project(t.x, t.y, t.height + t.age * TEXT_RISE, this.point);
-      t.element.style.left = `${p.x}px`;
-      t.element.style.top = `${p.y}px`;
+      t.element.style.transform = place(p);
       t.element.style.opacity = String(Math.max(0, Math.min(1, 1.4 - t.age * 1.3)));
     }
   }
