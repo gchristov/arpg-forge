@@ -10,11 +10,11 @@ set -euo pipefail
 REPO=$(gh repo view --json nameWithOwner --jq .nameWithOwner)
 BRANCH=main
 
-# The repo stays quiet about what it is: no description or topics. The website is just a link to the live game.
+# The repo stays quiet about what it is: no description, website or topics.
 echo "Merge settings for $REPO"
 gh api -X PATCH "repos/$REPO" --silent \
   -f description= \
-  -f homepage=https://gchristov.github.io/arpg-forge/ashen-hollow/ \
+  -f homepage= \
   -F allow_merge_commit=false \
   -F allow_squash_merge=true \
   -F allow_rebase_merge=false \
