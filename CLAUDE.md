@@ -6,12 +6,13 @@ The roadmap and the engine's design live in Notion: the [Roadmap](https://app.no
 
 ## Current state
 
-Stage 1 of the roadmap is done: the engine is built, and Ashen Hollow runs on it in 3D (KayKit models, Three.js) at `/ashen-hollow/`, matching the original one-file prototype's mechanics, story and levels. The prototype is deleted; the git tag `prototype-ashen-hollow` keeps it. Next is stage 2, making content data: levels, quests, enemy behaviour and models become data a game provides, with nothing in `engine/` naming Ashen Hollow. Update this section as the work lands.
+Stage 1 of the roadmap is done: the engine is built, and Ashen Hollow runs on it in 3D (KayKit models, Three.js) at `/ashen-hollow/`, matching the original one-file prototype's mechanics, story and levels. The prototype is deleted; the git tag `prototype-ashen-hollow` keeps it. Stage 2, making content data, is under way: the engine's `Game` runs the loop, input and drawing (done); next are skills and items, levels, and enemy behaviour as data a game provides, with nothing in `engine/` naming Ashen Hollow. Update this section as the work lands.
 
 ## Layout
 
 - `engine/core` maths, seeded random generator, fixed-rate loop. `engine/world` tile maps, levels, collision, pathfinding, line of sight. `engine/sim` the rules. These three are pure: no browser, Three.js or clock (`tests/architecture.test.ts` enforces it).
 - `engine/render` Three.js scene and the `Look` interface a game implements; `engine/input` pointer, keys and gamepad.
+- `engine/game` runs a game: `Game` owns the fixed-rate loop, turns taps, held pointers and keys into commands, draws the state and shows the rules' events in the world (animations, markers, flashes, explosions, moving between levels). A game's `main.ts` creates a `Game` from its content, look and models, and adds what it names or words through `GameHooks`: sounds, text, banners, dialogue and its HUD.
 - `games/<name>/` a game: `levels/`, `content/`, `art/`, `main.ts` and `index.html`.
 - `tools/<name>/` Docker-based tools; `tests/` architecture tests; `scripts/` repo settings.
 

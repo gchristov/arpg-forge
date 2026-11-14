@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { hash2, valueNoise } from '../../../engine/core/math';
 import type { ActorLook, Look, Mood, PropLook, StructureLook } from '../../../engine/render/look';
+import { ENEMIES } from '../content/enemies';
 import { Ground, Prop } from '../content/tiles';
 
 /** Ashen Hollow's look: KayKit models, with simple shapes in its palette where there's no model. */
@@ -86,6 +87,15 @@ const FLOORS: Partial<Record<number, string>> = {
 
 const LIGHTS: Record<string, number> = { warm: 0xff9b3c, purple: 0xaa5aff, cold: 0x82aaff };
 
+/** What killed enemies leave on the ground, sized for an ordinary body. */
+const BLOOD = { radius: 0.35, colour: 0x4a0808, opacity: 0.75 };
+const BONE_DUST = { radius: 0.3, colour: 0xd8d0b8, opacity: 0.55 };
+/** An enemy's size and remains, scaled to its body. */
+const body = (kind: string, remains: { radius: number; colour: number; opacity: number }) => {
+  const scale = ENEMIES[kind]!.scale;
+  return { scale, remains: { ...remains, radius: remains.radius * scale } };
+};
+
 /** KayKit characters (CC0, see CREDITS.md); `models.json` lists which parts and animations each keeps. */
 const ACTORS: Record<string, ActorLook> = {
   hero: {
@@ -96,28 +106,28 @@ const ACTORS: Record<string, ActorLook> = {
     },
   },
   goblin: {
-    colour: 0x5d7a3a, height: 0.95, radius: 0.25,
+    colour: 0x5d7a3a, height: 0.95, radius: 0.25, ...body('goblin', BLOOD),
     model: {
       name: 'goblin', tint: 0x9fd07a,
       animations: { idle: 'Idle', move: 'Running_A', attack: '1H_Melee_Attack_Stab', hit: 'Hit_A', death: 'Death_A' },
     },
   },
   skeleton: {
-    colour: 0xd8d0b8, height: 1.15, radius: 0.26,
+    colour: 0xd8d0b8, height: 1.15, radius: 0.26, ...body('skeleton', BONE_DUST),
     model: {
       name: 'skeleton', weapon: 'skeleton-blade',
       animations: { idle: 'Idle', move: 'Walking_A', attack: '1H_Melee_Attack_Chop', hit: 'Hit_A', death: 'Death_A' },
     },
   },
   archer: {
-    colour: 0xb8b090, height: 1.15, radius: 0.26,
+    colour: 0xb8b090, height: 1.15, radius: 0.26, ...body('archer', BONE_DUST),
     model: {
       name: 'archer', weapon: 'skeleton-crossbow',
       animations: { idle: 'Idle', move: 'Walking_A', attack: '1H_Ranged_Shoot', hit: 'Hit_A', death: 'Death_A' },
     },
   },
   boss: {
-    colour: 0x8a7ab0, height: 1.8, radius: 0.42,
+    colour: 0x8a7ab0, height: 1.8, radius: 0.42, ...body('boss', BONE_DUST),
     model: {
       name: 'boss', weapon: 'skeleton-axe', tint: 0xcbb8e8,
       animations: { idle: 'Idle', move: 'Walking_A', attack: '2H_Melee_Attack_Chop', cast: 'Spellcast_Shoot', hit: 'Hit_A', death: 'Death_A' },
@@ -136,7 +146,14 @@ export const MODEL_URLS: Record<string, string> = Object.fromEntries(
 );
 
 export const ashenHollowLook: Look = {
-  effects: { blast: 0xffa040, shot: 0xe8e1cc, telegraph: 0xb46bff, items: { gold: 0xe8b84a, healingItem: 0xd2303a } },
+  effects: {
+    blast: 0xffa040, shot: 0xe8e1cc, telegraph: 0xb46bff, items: { gold: 0xe8b84a, healingItem: 0xd2303a },
+    walkMarker: 0xe8d6a6, targetMarker: 0xff5a4a,
+    blastLight: 0xff9b3c, telegraphLight: 0xaa5aff, bossLight: 0xaa5aff,
+    smoke: 0x6b6672,
+    explosion: { flash: 0xff9a3a, scorch: 0x120a06 },
+    slam: { flash: 0xb98cff, scorch: 0x24123a },
+  },
   mood: (levelId) => MOODS[levelId] ?? MOODS.town!,
   groundColour(kind, tx, ty, levelId) {
     const n = valueNoise(tx * 0.18 + (levelId === 'town' ? 0 : 50), ty * 0.18);
