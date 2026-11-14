@@ -4,7 +4,7 @@ One shared engine for small isometric action RPGs (Diablo-style: tap or click to
 
 ## Current state
 
-Step 0 of `PLAN.md` is done: TypeScript, Vite, Vitest and CI are set up, and `engine/`, `games/` and `tests/` exist but are empty. The only playable game is `prototypes/ashen-hollow.html`, the original one-file prototype (dense one-liners, globals `G` and `P`, `Math.random()` throughout, drawn with Canvas 2D). It stays frozen as the spec for the rules, numbers, maps and quests. Step 1 is next: build the engine to the design in `PLAN.md`'s "Architecture" section and rebuild Ashen Hollow on it in 3D with Three.js. Update this section as the steps land.
+Step 0 of `PLAN.md` is done: TypeScript, Vite, Vitest and CI are set up, and `engine/`, `games/` and `tests/` exist but are empty. The only playable game is `prototypes/ashen-hollow.html`, the original one-file prototype (dense one-liners, globals `G` and `P`, `Math.random()` throughout, drawn with Canvas 2D). It stays frozen as the spec. Step 1 is next: build the engine to the design in `PLAN.md`'s "Architecture" section and rebuild Ashen Hollow on it in 3D with Three.js, matching the prototype item for item as listed in `games/ashen-hollow/PARITY.md`. Tick items there as they land. When all are ticked, `/ashen-hollow/` switches to the engine version, and the prototype and `PARITY.md` are deleted. Update this section as the steps land.
 
 ## Commands
 
