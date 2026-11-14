@@ -267,6 +267,7 @@ function playSounds(events: SimEvent[]): void {
 }
 
 function react(events: SimEvent[]): void {
+  if (debug) for (const e of events) debug.mark(e.type);
   playSounds(events);
   for (const e of events) {
     switch (e.type) {
