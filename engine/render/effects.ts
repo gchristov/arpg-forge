@@ -213,6 +213,15 @@ export class Effects {
     p.mesh.visible = true;
   }
 
+  /** Shows or hides every pooled mesh at once, so their shaders can be compiled before they're needed. */
+  setAllVisible(visible: boolean): void {
+    for (const list of [this.blasts, this.shots, this.circles]) for (const m of list) m.visible = visible;
+    for (const f of this.flashes) f.mesh.visible = visible;
+    for (const d of this.decals) d.mesh.visible = visible;
+    for (const p of this.puffs) p.mesh.visible = visible;
+    for (const pool of this.items.values()) for (const m of pool) m.visible = visible;
+  }
+
   update(frameSeconds: number): void {
     for (const d of this.decals) {
       if (d.age >= d.life) continue;

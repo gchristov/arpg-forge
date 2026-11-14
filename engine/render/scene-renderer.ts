@@ -53,6 +53,8 @@ export class SceneRenderer {
   readonly effects: Effects;
   private readonly marker: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>;
   private markerAge = Infinity;
+  /** Set when a level is shown; the next render compiles every shader the level can need. */
+  private warmUpPending = false;
   private levelGroup = new THREE.Group();
   private structures: THREE.Object3D[] = [];
   private levelLights: LevelLight[] = [];
@@ -134,6 +136,7 @@ export class SceneRenderer {
       this.fill.intensity = mood.fill.intensity;
     }
 
+    this.warmUpPending = true;
     this.levelGroup.add(this.buildGround(level));
     for (const mesh of this.buildFloors(level)) this.levelGroup.add(mesh);
     for (const mesh of this.buildProps(level)) this.levelGroup.add(mesh);
@@ -229,6 +232,7 @@ export class SceneRenderer {
   }
 
   render(seconds: number, frameSeconds: number): void {
+    if (this.warmUpPending) this.warmUp();
     this.placeCamera();
     this.applyShake(frameSeconds);
     this.updateLights(seconds);
@@ -238,6 +242,21 @@ export class SceneRenderer {
     for (const figure of this.actors.values()) figure.update(frameSeconds);
     this.renderer.render(this.scene, this.camera);
     this.frame++;
+  }
+
+  /**
+   * Compiles the shaders a level can need before play, so the first fireball, explosion or fading corpse doesn't
+   * stall a frame mid-fight while the GPU compiles them. Effects are briefly shown and actors briefly see-through
+   * (a dying actor's fade uses a different shader) for the compile only.
+   */
+  private warmUp(): void {
+    this.warmUpPending = false;
+    this.effects.setAllVisible(true);
+    for (const figure of this.actors.values()) figure.setLookOf(0, 0.5);
+    this.renderer.compile(this.scene, this.camera);
+    for (const figure of this.actors.values()) figure.setLookOf(0, 1);
+    this.renderer.compile(this.scene, this.camera);
+    this.effects.setAllVisible(false);
   }
 
   private applyShake(frameSeconds: number): void {
