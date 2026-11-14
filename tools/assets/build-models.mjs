@@ -44,6 +44,37 @@ async function fetchModel(packUrl, packName, path) {
   return local;
 }
 
+/**
+ * Drops animation channels that hold a bone at its rest value the whole time. Most of a rig's bones never move or
+ * stretch, yet each channel costs the game an evaluation per character every frame; without the channel the bone simply
+ * stays at rest, so every animation and blend between them looks the same.
+ */
+function dropRestingChannels() {
+  const rest = { translation: (n) => n.getTranslation(), rotation: (n) => n.getRotation(), scale: (n) => n.getScale() };
+  const near = (a, b) => a.every((v, i) => Math.abs(v - b[i]) < 1e-5);
+  return (doc) => {
+    let dropped = 0;
+    for (const animation of doc.getRoot().listAnimations()) {
+      for (const channel of animation.listChannels()) {
+        const node = channel.getTargetNode();
+        const path = channel.getTargetPath();
+        const output = channel.getSampler()?.getOutput();
+        if (!node || !rest[path] || !output) continue;
+        const value = rest[path](node);
+        const same = (v) => near(v, value) || (path === 'rotation' && near(v.map((x) => -x), value));
+        let resting = true;
+        for (let i = 0; i < output.getCount() && resting; i++) resting = same(output.getElement(i, []));
+        if (!resting) continue;
+        const sampler = channel.getSampler();
+        channel.dispose();
+        sampler.dispose();
+        dropped++;
+      }
+    }
+    if (dropped) console.log(`  dropped ${dropped} resting animation channels`);
+  };
+}
+
 await MeshoptEncoder.ready;
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.encoder': MeshoptEncoder });
 
@@ -71,7 +102,7 @@ for (const model of manifest.models) {
       animation.dispose();
     }
   }
-  await doc.transform(prune(), dedup(), resample(), quantize(), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
+  await doc.transform(prune(), dedup(), resample(), dropRestingChannels(), prune(), quantize(), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
   const out = join(outDir, `${model.name}.glb`);
   await writeFile(out, await io.writeBinary(doc));
   const size = (await readFile(out)).length;

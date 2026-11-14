@@ -44,9 +44,25 @@ export class ModelLibrary {
   }
 }
 
-/** Characters are merged into one mesh per material as they load, so each costs one or two draw calls. */
+/**
+ * Animations swing limbs past the rest pose's bounds, so a character's culling bounds get this much room to avoid it
+ * vanishing at the screen's edge mid-swing.
+ */
+const SWING_ROOM = 1.5;
+
+/**
+ * Characters are merged into one mesh per material as they load, so each costs one or two draw calls. Their culling
+ * bounds are measured here once, since every copy inherits them; otherwise each new actor measures every vertex
+ * through its bones the first frame it appears.
+ */
 function toTemplate(gltf: GLTF): ModelTemplate {
   mergeCharacter(gltf.scene);
+  gltf.scene.updateMatrixWorld(true);
+  gltf.scene.traverse((o) => {
+    if (!(o instanceof THREE.SkinnedMesh)) return;
+    o.computeBoundingSphere();
+    o.boundingSphere!.radius *= SWING_ROOM;
+  });
   const box = new THREE.Box3().setFromObject(gltf.scene);
   return { scene: gltf.scene, animations: gltf.animations, height: Math.max(0.001, box.max.y - box.min.y) };
 }
