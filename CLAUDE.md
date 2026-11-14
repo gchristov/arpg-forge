@@ -6,7 +6,7 @@ The roadmap and the engine's design live in Notion: the [Roadmap](https://app.no
 
 ## Current state
 
-Stage 1 of the roadmap is done: the engine is built, and Ashen Hollow runs on it in 3D (KayKit models, Three.js) at `/ashen-hollow/`, matching the original one-file prototype's mechanics, story and levels. The prototype is deleted; the git tag `prototype-ashen-hollow` keeps it. Stage 2, making content data, is under way: the engine's `Game` runs the loop, input and drawing (done); next are skills and items, levels, and enemy behaviour as data a game provides, with nothing in `engine/` naming Ashen Hollow. Update this section as the work lands.
+Stage 1 of the roadmap is done: the engine is built, and Ashen Hollow runs on it in 3D (KayKit models, Three.js) at `/ashen-hollow/`, matching the original one-file prototype's mechanics, story and levels. The prototype is deleted; the git tag `prototype-ashen-hollow` keeps it. Stage 2, making content data, is under way. Done: the engine's `Game` runs the loop, input and drawing; the hero's skills are data (`HeroRules.skills`); rooms are text rows plus a key (`engine/sim/rooms.ts`); `checkContent` checks any game's content. Left: enemy behaviour from reusable states, and generated outdoor maps. Update this section as the work lands.
 
 ## Layout
 

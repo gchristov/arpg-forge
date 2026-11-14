@@ -15,7 +15,7 @@ export function ashenHollowContent(): GameContent {
         level: village.level, spawns: village.spawns, camps: village.camps, npcs: village.npcs,
         campRespawns: { everySeconds: 30, maxAlive: 12, minHeroDistance: 12, kinds: ['goblin', 'skeleton'] },
       },
-      ...interiors.map((i) => ({ level: i.level, spawns: i.spawns, camps: [], npcs: i.npcs, containers: i.containers })),
+      ...interiors,
     ],
     startLevel: 'town',
     hero: HERO,
