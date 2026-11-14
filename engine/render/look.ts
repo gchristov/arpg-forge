@@ -39,6 +39,10 @@ export interface ActorLook {
   colour: number;
   height: number;
   radius: number;
+  /** Body size relative to an ordinary actor, 1 if not given: taps reach further and labels sit higher on bigger ones. */
+  scale?: number;
+  /** The mark a killed enemy leaves on the ground, such as blood or bone dust. */
+  remains?: { radius: number; colour: number; opacity: number };
   /** A model from the game's model library, scaled to `height`. */
   model?: {
     name: string;
@@ -62,9 +66,33 @@ export interface Mood {
   fill?: { sky: number; ground: number; intensity: number };
 }
 
+/** A burst: the flash it makes and the scorch it leaves on the ground. */
+export interface BurstLook {
+  flash: number;
+  scorch: number;
+}
+
+/** Colours of combat effects and markers. */
+export interface EffectsLook {
+  blast: number;
+  shot: number;
+  telegraph: number;
+  items: Record<string, number>;
+  /** Rings where the hero was sent to walk, and under an enemy picked to attack. */
+  walkMarker: number;
+  targetMarker: number;
+  /** Light cast by a flying blast, by a warning circle and around a boss. */
+  blastLight: number;
+  telegraphLight: number;
+  bossLight: number;
+  /** Chimney smoke. */
+  smoke: number;
+  explosion: BurstLook;
+  slam: BurstLook;
+}
+
 export interface Look {
-  /** Colours of projectiles and warning circles. */
-  effects: { blast: number; shot: number; telegraph: number; items: Record<string, number> };
+  effects: EffectsLook;
   mood(levelId: string): Mood;
   groundColour(kind: number, tx: number, ty: number, levelId: string): number;
   /** A floor model laid over ground tiles of this kind, if any. */

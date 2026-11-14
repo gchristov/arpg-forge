@@ -34,6 +34,13 @@ describe('architecture', () => {
     expect(problems).toEqual([]);
   });
 
+  it('keeps the engine free of any game', () => {
+    const problems = sourceFiles('engine')
+      .filter((file) => /['"](\.\.\/)+games\//.test(readFileSync(file, 'utf8')))
+      .map((file) => `${file} imports a game`);
+    expect(problems).toEqual([]);
+  });
+
   for (const layer of PURE_LAYERS) {
     it(`keeps ${layer} free of the browser, Three.js, the clock and outer layers`, () => {
       const problems = sourceFiles(layer).flatMap((file) => {
