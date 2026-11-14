@@ -26,4 +26,4 @@ Open `index.html` in a browser, on a phone or a desktop.
 
 ## Status
 
-This is a first prototype. [PLAN.md](PLAN.md) describes how the code should be restructured to support more levels, more features and tests.
+This is a first prototype, and the first game in **arpg-forge**: one shared engine for small action RPGs, with a folder per game. [PLAN.md](PLAN.md) describes how the code will be split into that engine and the games built on it.
