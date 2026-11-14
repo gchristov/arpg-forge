@@ -3,6 +3,7 @@ import { clamp, hash2, type Vec2 } from '../core/math';
 import type { Level, LevelLight } from '../world/level';
 import { ActorFigure, type ActorMoment } from './actor-figure';
 import { Effects } from './effects';
+import { LightMap } from './light-map';
 import type { Look, PropLook } from './look';
 import { fitMatrix, instancedModel } from './model-instancing';
 import { ModelLibrary } from './models';
@@ -15,8 +16,9 @@ const TILE_PIXELS = 64;
 const HERO_SCREEN_OFFSET_PX = 24;
 const CAMERA_FOLLOW_RATE = 7;
 /** Forward rendering pays for every light on every pixel, so only the closest few level lights are lit. */
-const MAX_POINT_LIGHTS = 8;
-const LIGHT_STRENGTH = 2.2;
+/** Glows reach this many times a level light's radius, and shine this many times its intensity. */
+const GLOW_REACH = 1.5;
+const GLOW_STRENGTH = 0.75;
 const MARKER_SECONDS = 0.6;
 /** Screen shake decays this much a second, and moves the view up to this many pixels at full strength. */
 const SHAKE_DECAY = 1.6;
@@ -37,9 +39,10 @@ export class SceneRenderer {
   private readonly fill = new THREE.HemisphereLight();
   private readonly moon = new THREE.DirectionalLight();
   private readonly heroLight = new THREE.PointLight(0xfff1dd, 1.4, 6, 1);
-  private readonly pointLights: THREE.PointLight[] = [];
-  private readonly closestLights = new Int32Array(MAX_POINT_LIGHTS);
-  private readonly closestDistances = new Float32Array(MAX_POINT_LIGHTS);
+  private readonly lightMap = new LightMap();
+  private readonly glowColour = new THREE.Color();
+  /** Glows added for this frame only, such as a flying fireball. */
+  private readonly extraGlows: Array<{ x: number; y: number; radius: number; colour: number; intensity: number }> = [];
   private readonly raycaster = new THREE.Raycaster();
   private readonly groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   private readonly ndc = new THREE.Vector2();
@@ -80,11 +83,6 @@ export class SceneRenderer {
     s.bottom = -16;
     s.near = 1;
     s.far = 80;
-    for (let i = 0; i < MAX_POINT_LIGHTS; i++) {
-      const light = new THREE.PointLight(0xffffff, 0, 1, 1);
-      this.pointLights.push(light);
-      this.scene.add(light);
-    }
     this.marker = new THREE.Mesh(
       new THREE.RingGeometry(0.22, 0.3, 32).rotateX(-Math.PI / 2),
       new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false }),
@@ -118,6 +116,7 @@ export class SceneRenderer {
     this.levelGroup = new THREE.Group();
     this.scene.add(this.levelGroup);
     this.levelLights = level.lights;
+    this.lightMap.setArea(level.map.width, level.map.height);
 
     const mood = this.look.mood(level.id);
     this.scene.background = new THREE.Color(mood.background);
@@ -142,6 +141,18 @@ export class SceneRenderer {
     for (const mesh of this.buildProps(level)) this.levelGroup.add(mesh);
     this.structures = this.buildStructures(level);
     for (const mesh of this.structures) this.levelGroup.add(mesh);
+    this.levelGroup.traverse((o) => this.lightUp(o));
+  }
+
+  /** Adds a light for the coming frame only, such as one carried by a fireball or an explosion's flash. */
+  glow(x: number, y: number, radius: number, colour: number, intensity: number): void {
+    this.extraGlows.push({ x, y, radius, colour, intensity });
+  }
+
+  /** Makes an object's materials take light from the light map. */
+  private lightUp(o: THREE.Object3D): void {
+    if (!(o instanceof THREE.Mesh)) return;
+    for (const m of Array.isArray(o.material) ? o.material : [o.material]) this.lightMap.light(m);
   }
 
   /**
@@ -160,6 +171,7 @@ export class SceneRenderer {
     let figure = this.actors.get(id);
     if (!figure) {
       figure = new ActorFigure(this.look.actor(kind), this.models);
+      figure.root.traverse((o) => this.lightUp(o));
       this.actors.set(id, figure);
       this.scene.add(figure.root);
     }
@@ -235,7 +247,7 @@ export class SceneRenderer {
     if (this.warmUpPending) this.warmUp();
     this.placeCamera();
     this.applyShake(frameSeconds);
-    this.updateLights(seconds);
+    this.updateLightMap(seconds);
     this.updateMarker(frameSeconds);
     this.effects.update(frameSeconds);
     this.removeUnseenActors();
@@ -294,41 +306,21 @@ export class SceneRenderer {
     this.moon.target.position.copy(this.target);
   }
 
-  /** Lights the closest level lights, with a flicker applied to their reach. */
-  private updateLights(seconds: number): void {
-    const count = Math.min(MAX_POINT_LIGHTS, this.levelLights.length);
-    this.closestDistances.fill(Infinity);
-    this.closestLights.fill(-1);
-    for (let i = 0; i < this.levelLights.length; i++) {
-      const l = this.levelLights[i]!;
-      const d = (l.x - this.target.x) ** 2 + (l.y - this.target.z) ** 2;
-      let slot = count - 1;
-      if (d >= this.closestDistances[slot]!) continue;
-      while (slot > 0 && d < this.closestDistances[slot - 1]!) {
-        this.closestDistances[slot] = this.closestDistances[slot - 1]!;
-        this.closestLights[slot] = this.closestLights[slot - 1]!;
-        slot--;
-      }
-      this.closestDistances[slot] = d;
-      this.closestLights[slot] = i;
-    }
-    for (let slot = 0; slot < MAX_POINT_LIGHTS; slot++) {
-      const light = this.pointLights[slot]!;
-      const index = this.closestLights[slot]!;
-      if (slot >= count || index < 0) {
-        light.intensity = 0;
-        continue;
-      }
-      const l = this.levelLights[index]!;
+  /** Draws every level light, with its flicker, and this frame's extra glows into the light map. */
+  private updateLightMap(seconds: number): void {
+    this.lightMap.begin();
+    for (const l of this.levelLights) {
       const flicker = l.flicker
         ? 1 + Math.sin(seconds * 9 + l.seed) * 0.06 * l.flicker + Math.sin(seconds * 23 + l.seed * 3) * 0.04 * l.flicker
         : 1;
-      light.color.set(this.look.lightColour(l.colour));
-      light.position.set(l.x, 0.9, l.y);
-      light.distance = l.radius * 1.8 * flicker;
-      light.intensity = l.intensity * LIGHT_STRENGTH;
+      this.glowColour.set(this.look.lightColour(l.colour));
+      this.lightMap.add(l.x, l.y, l.radius * GLOW_REACH * flicker, this.glowColour, l.intensity * GLOW_STRENGTH);
     }
+    for (const g of this.extraGlows) this.lightMap.add(g.x, g.y, g.radius, g.colour, g.intensity);
+    this.extraGlows.length = 0;
+    this.lightMap.render(this.renderer);
   }
+
 
   private updateMarker(frameSeconds: number): void {
     this.markerAge += frameSeconds;
