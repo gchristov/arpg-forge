@@ -69,6 +69,10 @@ jobs:
         with:
           name: Web Build
           path: dist/
+      # Only the site root needs .nojekyll, and a preview's copy is left behind when the preview is removed
+      - name: Prepare preview
+        if: github.event_name == 'pull_request'
+        run: rm -f dist/.nojekyll
       - name: Deploy preview
         id: preview
         if: github.event_name == 'pull_request'
@@ -78,7 +82,7 @@ jobs:
           preview-branch: gh-pages
           umbrella-dir: pr-preview
           action: deploy
-          wait-for-pages-deployment: true
+          wait-for-pages-deployment: false
           qr-code: true
       - name: Deploy main
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -88,3 +92,15 @@ jobs:
           branch: gh-pages
           clean-exclude: pr-preview
           force: false
+      # GitHub's Pages API reports a build cancelled by a newer push as errored, so wait on the site itself
+      - name: Wait until the site serves this build
+        env:
+          URL: ${{ steps.preview.outputs.preview-url || 'https://gchristov.github.io/arpg-forge/' }}
+        run: |
+          for attempt in $(seq 1 60); do
+            served=$(curl -fsS "${URL%/}/build.txt?nocache=$attempt" 2>/dev/null || true)
+            if [ "$served" = "$(cat dist/build.txt)" ]; then echo "Serving $served at $URL"; exit 0; fi
+            sleep 10
+          done
+          echo "::error::$URL never served this build"
+          exit 1
