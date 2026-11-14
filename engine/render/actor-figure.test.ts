@@ -5,7 +5,7 @@ import type { ActorLook } from './look';
 import type { ModelLibrary, ModelTemplate } from './models';
 
 /** A model with one bone and short clips, so the real animation mixer can run headless. */
-function figure(): ActorFigure {
+function figure(changes: Partial<ActorLook> = {}): ActorFigure {
   const clip = (name: string, seconds: number) =>
     new THREE.AnimationClip(name, seconds, [new THREE.NumberKeyframeTrack('bone.position[x]', [0, seconds], [0, 1])]);
   const scene = new THREE.Group();
@@ -21,6 +21,7 @@ function figure(): ActorFigure {
   const look: ActorLook = {
     colour: 0, height: 1, radius: 0.3,
     model: { name: 'm', animations: { idle: 'Idle', move: 'Run', attack: 'Attack', death: 'Death' } },
+    ...changes,
   };
   return new ActorFigure(look, library);
 }
@@ -93,5 +94,41 @@ describe('ActorFigure animation', () => {
     f.pose(true, true);
     run(f, 1.5);
     expect(f.activeAnimations()).toEqual(['Death']);
+  });
+});
+
+describe('ActorFigure hovering', () => {
+  const parts = (f: ActorFigure) => {
+    const isShadow = (o: THREE.Object3D) => o instanceof THREE.Mesh && o.geometry instanceof THREE.CircleGeometry;
+    const shadow = f.root.children.find(isShadow) as THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
+    const model = f.root.children.find((o) => !isShadow(o))!;
+    return { model, shadow };
+  };
+
+  it('floats its model, bobbing around its height, over a shadow on the ground', () => {
+    const f = figure({ hover: 0.8 });
+    const { model, shadow } = parts(f);
+    const heights: number[] = [];
+    for (let t = 0; t < 3; t += 1 / 60) {
+      f.update(1 / 60);
+      heights.push(model.position.y);
+    }
+    expect(Math.min(...heights)).toBeGreaterThan(0.7);
+    expect(Math.max(...heights)).toBeLessThan(0.9);
+    expect(Math.max(...heights) - Math.min(...heights)).toBeGreaterThan(0.1);
+    expect(shadow.position.y).toBeLessThan(0.05);
+  });
+
+  it('fades its shadow as it fades out', () => {
+    const f = figure({ hover: 0.8 });
+    f.setLookOf(0, 0.5);
+    expect(parts(f).shadow.material.opacity).toBeCloseTo(0.225);
+  });
+
+  it('keeps grounded actors on the ground, without a shadow of their own', () => {
+    const f = figure();
+    f.update(0.5);
+    expect(f.root.children).toHaveLength(1);
+    expect(f.root.children[0]!.position.y).toBe(0);
   });
 });

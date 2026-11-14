@@ -6,6 +6,9 @@ import type { ModelLibrary } from './models';
 export type ActorMoment = 'attack' | 'cast' | 'hit';
 
 const BLEND_SECONDS = 0.15;
+/** Hovering actors bob this many tiles up and down, this many times a second. */
+const BOB_HEIGHT = 0.07;
+const BOB_RATE = 0.35;
 
 type FlashableMaterial = THREE.Material & { emissive?: THREE.Color };
 
@@ -19,6 +22,8 @@ export class ActorFigure {
   seen = 0;
   private readonly materials: FlashableMaterial[] = [];
   private readonly mixer: THREE.AnimationMixer | null = null;
+  /** For hovering actors: the model, bobbed each frame, and the shadow that shows it's off the ground. */
+  private hovering: { model: THREE.Object3D; shadow: THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial>; age: number } | null = null;
   private readonly actions = new Map<string, THREE.AnimationAction>();
   private base: THREE.AnimationAction | null = null;
   private moment: THREE.AnimationAction | null = null;
@@ -34,7 +39,17 @@ export class ActorFigure {
       return;
     }
     model.scale.setScalar(look.height / template.height);
-    model.position.y = look.hover ?? 0;
+    if (look.hover) {
+      model.position.y = look.hover;
+      // Indoors nothing casts shadows, so without its own a floating actor looks like it stands further back.
+      const shadow = new THREE.Mesh(
+        new THREE.CircleGeometry(look.radius * 1.4, 20).rotateX(-Math.PI / 2),
+        new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.45, depthWrite: false }),
+      );
+      shadow.position.y = 0.02;
+      this.root.add(shadow);
+      this.hovering = { model, shadow, age: Math.random() * 10 };
+    }
     const tint = look.model.tint === undefined ? null : new THREE.Color(look.model.tint);
     model.traverse((o) => {
       if (!(o instanceof THREE.Mesh)) return;
@@ -97,6 +112,7 @@ export class ActorFigure {
       m.opacity = fade;
       m.transparent = fade < 1;
     }
+    if (this.hovering) this.hovering.shadow.material.opacity = 0.45 * fade;
     this.root.scale.set(1, this.mixer ? 1 : 0.3 + 0.7 * fade, 1);
   }
 
@@ -119,6 +135,11 @@ export class ActorFigure {
 
   update(frameSeconds: number): void {
     this.mixer?.update(frameSeconds);
+    if (this.hovering) {
+      const h = this.hovering;
+      h.age += frameSeconds;
+      h.model.position.y = (this.look.hover ?? 0) + Math.sin(h.age * BOB_RATE * Math.PI * 2) * BOB_HEIGHT;
+    }
   }
 
   dispose(): void {
@@ -127,6 +148,10 @@ export class ActorFigure {
       if (o instanceof THREE.Mesh && !this.mixer) o.geometry.dispose();
     });
     for (const m of this.materials) m.dispose();
+    if (this.hovering) {
+      this.hovering.shadow.geometry.dispose();
+      this.hovering.shadow.material.dispose();
+    }
   }
 
   private action(name: keyof NonNullable<ActorLook['model']>['animations']): THREE.AnimationAction | undefined {

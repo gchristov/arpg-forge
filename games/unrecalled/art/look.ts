@@ -56,8 +56,8 @@ const ACTORS: Record<string, ActorLook> = {
   loader: robot('loader', 1.0, { idle: 'Idle', move: 'Walk', attack: 'Attack', hit: 'Hit', death: 'TurnOff' }, 1.3),
   sentry: {
     ...robot('sentry', 0.75, { idle: 'Idle', attack: 'Attack', hit: 'Hit' }),
-    hover: 0.55,
-    light: { colour: 0xff4a30, radius: 1.2, intensity: 0.45 },
+    hover: 0.8,
+    light: { colour: 0xff8a40, radius: 0.9, intensity: 0.2 },
   },
   orderEngine: robot('loader', 2.0, { idle: 'Idle', move: 'Walk', attack: 'Attack', cast: 'Attack', hit: 'Hit', death: 'TurnOff' }, 2.0, 0xffb070),
 };
