@@ -1,10 +1,19 @@
 # arpg-forge
 
-One shared engine for small isometric action RPGs (Diablo-style: tap or click to move, real-time combat, a hub plus dungeons, loot, levels, bosses), plus a folder per game. Each game is a cheap pilot for Steam; the one that catches on gets more work. `PLAN.md` is the source of truth for the architecture and the order of work.
+One shared engine for small isometric action RPGs (tap or click to move, real-time combat, a hub plus dungeons, loot, levels, bosses), plus a folder per game.
+
+The roadmap and the engine's design live in Notion: the [Roadmap](https://app.notion.com/p/418662113da8813dafd0f41bae11f782) page under the ARPG Forge project. It's the source of truth for the order of work, the architecture, the shipping plan and what a game provides. Read it before starting a stage, and update it when the plan changes. Don't add plans or business notes to the repo.
 
 ## Current state
 
-Step 0 of `PLAN.md` is done: TypeScript, Vite, Vitest and CI are set up, and `engine/`, `games/` and `tests/` exist but are empty. The only playable game is `prototypes/ashen-hollow.html`, the original one-file prototype (dense one-liners, globals `G` and `P`, `Math.random()` throughout, drawn with Canvas 2D). It stays frozen as the spec. Step 1 is next: build the engine to the design in `PLAN.md`'s "Architecture" section and rebuild Ashen Hollow on it in 3D with Three.js, matching the prototype item for item as listed in `games/ashen-hollow/PARITY.md`. Tick items there as they land. When all are ticked, `/ashen-hollow/` switches to the engine version, and the prototype and `PARITY.md` are deleted. Update this section as the steps land.
+Stage 1 of the roadmap is under way: build the engine and rebuild Ashen Hollow on it in 3D with Three.js, matching `prototypes/ashen-hollow.html` item for item as listed in `games/ashen-hollow/PARITY.md`. The engine core and world, the first 3D scene of the village (`/games/ashen-hollow/`) and the browser smoke test are merged. Next is the simulation skeleton: `step(state, input, dt)`, input as commands, events, typed actors, the interiors and doors. The prototype (dense one-liners, globals `G` and `P`, `Math.random()` throughout, drawn with Canvas 2D) stays frozen as the spec. Tick `PARITY.md` items as they land. When all are ticked, `/ashen-hollow/` switches to the engine version, and the prototype and `PARITY.md` are deleted. Update this section as the work lands.
+
+## Layout
+
+- `engine/core` maths, seeded random generator, fixed-rate loop. `engine/world` tile maps, levels, collision, pathfinding, line of sight. `engine/sim` the rules. These three are pure: no browser, Three.js or clock (`tests/architecture.test.ts` enforces it).
+- `engine/render` Three.js scene and the `Look` interface a game implements; `engine/input` pointer, keys and gamepad.
+- `games/<name>/` a game: `levels/`, `content/`, `art/`, `main.ts` and `index.html`.
+- `tools/<name>/` Docker-based tools; `tests/` architecture and parity tests; `scripts/` repo settings.
 
 ## Commands
 
