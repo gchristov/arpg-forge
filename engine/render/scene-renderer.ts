@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import { clamp, type Vec2 } from '../core/math';
 import type { Level, LevelLight } from '../world/level';
+import { ActorFigure, type ActorMoment } from './actor-figure';
 import { Effects } from './effects';
 import type { Look, PropLook } from './look';
+import { ModelLibrary } from './models';
 
 /** 30° above the ground gives the classic 2:1 isometric look: a tile is twice as wide as it is tall on screen. */
 const ELEVATION = Math.PI / 6;
@@ -42,7 +44,7 @@ export class SceneRenderer {
   private readonly hit = new THREE.Vector3();
   private readonly target = new THREE.Vector3();
   private readonly cameraUp = new THREE.Vector3();
-  private readonly actors = new Map<string, ActorModel>();
+  private readonly actors = new Map<string, ActorFigure>();
   private readonly projected = new THREE.Vector3();
   private shakeAmount = 0;
   private frame = 0;
@@ -59,6 +61,7 @@ export class SceneRenderer {
   constructor(
     canvas: HTMLCanvasElement,
     private readonly look: Look,
+    private readonly models = new ModelLibrary(),
   ) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.shadowMap.enabled = true;
@@ -130,8 +133,8 @@ export class SceneRenderer {
   }
 
   /**
-   * Places an actor; creates its model the first time an id is seen. `flash` (0 to 1) lights it up when hit, and
-   * `fade` (1 to 0) shrinks and fades it out when it dies. Models not placed in a frame are removed at render.
+   * Places an actor and sets its pose; creates its figure the first time an id is seen. `flash` (0 to 1) lights it
+   * up when hit, and `fade` (1 to 0) fades it out after death. Figures not placed in a frame are removed at render.
    */
   setActor(
     id: string,
@@ -140,31 +143,35 @@ export class SceneRenderer {
     y: number,
     facingX: number,
     facingY: number,
-    flash = 0,
-    fade = 1,
+    pose: { moving: boolean; dead: boolean; flash: number; fade: number },
   ): void {
-    let model = this.actors.get(id);
-    if (!model) {
-      model = this.buildActor(kind);
-      this.actors.set(id, model);
-      this.scene.add(model.root);
+    let figure = this.actors.get(id);
+    if (!figure) {
+      figure = new ActorFigure(this.look.actor(kind), this.models);
+      this.actors.set(id, figure);
+      this.scene.add(figure.root);
     }
-    model.seen = this.frame;
-    model.root.position.set(x, 0, y);
-    if (facingX || facingY) model.root.rotation.y = Math.atan2(facingX, facingY);
-    model.material.emissive.setScalar(flash * 0.8);
-    model.material.opacity = fade;
-    model.material.transparent = fade < 1;
-    model.root.scale.set(1, 0.3 + 0.7 * fade, 1);
+    figure.seen = this.frame;
+    figure.root.position.set(x, 0, y);
+    if (facingX || facingY) figure.root.rotation.y = Math.atan2(facingX, facingY);
+    figure.pose(pose.moving, pose.dead);
+    figure.setLookOf(pose.flash, pose.fade);
   }
 
-  /** Removes every actor's model, for example when a different level is shown. */
+  /** Plays a one-off moment on an actor, such as an attack, stretched to `seconds` if given. */
+  playActor(id: string, moment: ActorMoment, seconds?: number): void {
+    this.actors.get(id)?.play(moment, seconds);
+  }
+
+  /** Removes every actor's figure, for example when a different level is shown. */
   clearActors(): void {
-    for (const model of this.actors.values()) {
-      this.scene.remove(model.root);
-      disposeTree(model.root);
-    }
+    for (const figure of this.actors.values()) this.removeFigure(figure);
     this.actors.clear();
+  }
+
+  private removeFigure(figure: ActorFigure): void {
+    this.scene.remove(figure.root);
+    figure.dispose();
   }
 
   /** Where a world point, `height` tiles above the ground, appears on screen. Writes into `out`. */
@@ -214,6 +221,7 @@ export class SceneRenderer {
     this.updateMarker(frameSeconds);
     this.effects.update(frameSeconds);
     this.removeUnseenActors();
+    for (const figure of this.actors.values()) figure.update(frameSeconds);
     this.renderer.render(this.scene, this.camera);
     this.frame++;
   }
@@ -228,10 +236,9 @@ export class SceneRenderer {
   }
 
   private removeUnseenActors(): void {
-    for (const [id, model] of this.actors) {
-      if (model.seen === this.frame) continue;
-      this.scene.remove(model.root);
-      disposeTree(model.root);
+    for (const [id, figure] of this.actors) {
+      if (figure.seen === this.frame) continue;
+      this.removeFigure(figure);
       this.actors.delete(id);
     }
   }
@@ -380,25 +387,6 @@ export class SceneRenderer {
     });
   }
 
-  private buildActor(kind: string): ActorModel {
-    const look = this.look.actor(kind);
-    const material = new THREE.MeshLambertMaterial({ color: look.colour });
-    const body = new THREE.Mesh(new THREE.CapsuleGeometry(look.radius, look.height - look.radius * 2, 4, 12), material);
-    body.position.y = look.height / 2;
-    const nose = new THREE.Mesh(new THREE.ConeGeometry(look.radius * 0.35, look.radius * 0.9, 8).rotateX(Math.PI / 2), material);
-    nose.position.set(0, look.height * 0.62, look.radius * 0.95);
-    const root = new THREE.Group();
-    root.add(body, nose);
-    root.traverse((o) => (o.castShadow = true));
-    return { root, material, seen: this.frame };
-  }
-}
-
-interface ActorModel {
-  root: THREE.Object3D;
-  material: THREE.MeshLambertMaterial;
-  /** The frame it was last placed in. */
-  seen: number;
 }
 
 function propGeometry(look: PropLook): THREE.BufferGeometry {

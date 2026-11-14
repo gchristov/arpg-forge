@@ -1,0 +1,65 @@
+{
+  "packs": {
+    "adventurers": "https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/672074b73ba276876a19e8816ecdc5241817ab47/addons/kaykit_character_pack_adventures",
+    "skeletons": "https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0/15b62b9bad122f72926c10fb14d622c73819fa54/addons/kaykit_character_pack_skeletons"
+  },
+  "models": [
+    {
+      "name": "hero",
+      "pack": "adventurers",
+      "path": "Characters/gltf/Knight.glb",
+      "keepMeshes": ["1H_Sword", "Round_Shield", "Knight_Helmet", "Knight_Cape", "Knight_ArmLeft", "Knight_ArmRight", "Knight_Body", "Knight_Head", "Knight_LegLeft", "Knight_LegRight"],
+      "animations": ["Idle", "Running_A", "1H_Melee_Attack_Slice_Diagonal", "Spellcast_Shoot", "Hit_A", "Death_A"]
+    },
+    {
+      "name": "goblin",
+      "pack": "adventurers",
+      "path": "Characters/gltf/Rogue_Hooded.glb",
+      "keepMeshes": ["Knife", "Rogue_Cape", "Rogue_ArmLeft", "Rogue_ArmRight", "Rogue_Body", "Rogue_Head_Hooded", "Rogue_LegLeft", "Rogue_LegRight"],
+      "animations": ["Idle", "Running_A", "1H_Melee_Attack_Stab", "Hit_A", "Death_A"]
+    },
+    {
+      "name": "skeleton",
+      "pack": "skeletons",
+      "path": "Characters/gltf/Skeleton_Warrior.glb",
+      "keepMeshes": ["Skeleton_Warrior_ArmLeft", "Skeleton_Warrior_ArmRight", "Skeleton_Warrior_Body", "Skeleton_Warrior_Eyes", "Skeleton_Warrior_Head", "Skeleton_Warrior_Jaw", "Skeleton_Warrior_LegLeft", "Skeleton_Warrior_LegRight"],
+      "animations": ["Idle", "Walking_A", "1H_Melee_Attack_Chop", "Hit_A", "Death_A"]
+    },
+    {
+      "name": "archer",
+      "pack": "skeletons",
+      "path": "Characters/gltf/Skeleton_Rogue.glb",
+      "animations": ["Idle", "Walking_A", "1H_Ranged_Shoot", "Hit_A", "Death_A"]
+    },
+    {
+      "name": "boss",
+      "pack": "skeletons",
+      "path": "Characters/gltf/Skeleton_Warrior.glb",
+      "animations": ["Idle", "Walking_A", "2H_Melee_Attack_Chop", "Spellcast_Shoot", "Hit_A", "Death_A"]
+    },
+    {
+      "name": "elder",
+      "pack": "adventurers",
+      "path": "Characters/gltf/Mage.glb",
+      "keepMeshes": ["2H_Staff", "Mage_Hat", "Mage_Cape", "Mage_ArmLeft", "Mage_ArmRight", "Mage_Body", "Mage_Head", "Mage_LegLeft", "Mage_LegRight"],
+      "animations": ["Idle"]
+    },
+    {
+      "name": "innkeeper",
+      "pack": "adventurers",
+      "path": "Characters/gltf/Barbarian.glb",
+      "keepMeshes": ["Mug", "Barbarian_ArmLeft", "Barbarian_ArmRight", "Barbarian_Body", "Barbarian_Head", "Barbarian_LegLeft", "Barbarian_LegRight"],
+      "animations": ["Idle"]
+    },
+    {
+      "name": "smith",
+      "pack": "adventurers",
+      "path": "Characters/gltf/Rogue.glb",
+      "keepMeshes": ["Rogue_ArmLeft", "Rogue_ArmRight", "Rogue_Body", "Rogue_Head", "Rogue_LegLeft", "Rogue_LegRight"],
+      "animations": ["Idle"]
+    },
+    { "name": "skeleton-blade", "pack": "skeletons", "path": "Assets/gltf/Skeleton_Blade.gltf" },
+    { "name": "skeleton-axe", "pack": "skeletons", "path": "Assets/gltf/Skeleton_Axe.gltf" },
+    { "name": "skeleton-crossbow", "pack": "skeletons", "path": "Assets/gltf/Skeleton_Crossbow.gltf" }
+  ]
+}

@@ -9,6 +9,7 @@ import { lerp, type Vec2 } from '../../engine/core/math';
 import { bindKeys } from '../../engine/input/keys';
 import { PointerInput } from '../../engine/input/pointer';
 import { DebugOverlay } from '../../engine/render/debug-overlay';
+import { ModelLibrary } from '../../engine/render/models';
 import { SceneRenderer } from '../../engine/render/scene-renderer';
 import { createGameState } from '../../engine/sim/setup';
 import { servicePrice } from '../../engine/sim/interaction';
@@ -17,7 +18,7 @@ import { step } from '../../engine/sim/step';
 import { ScreenFade } from '../../engine/ui/fade';
 import { WorldLabels, type Project } from '../../engine/ui/world-labels';
 import { tileIndex } from '../../engine/world/tile-map';
-import { ashenHollowLook } from './art/look';
+import { ashenHollowLook, MODEL_URLS } from './art/look';
 import { ashenHollowSounds } from './audio/sounds';
 import { ENEMIES } from './content/enemies';
 import { BOSS_DEFEATED_STEP, dialogueFor, NPCS } from './content/story';
@@ -39,7 +40,10 @@ const SMOKE_SECONDS = 1.6;
 const HERO_FLASH_SECONDS = 0.15;
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!;
-const renderer = new SceneRenderer(canvas, ashenHollowLook);
+const models = new ModelLibrary();
+const renderer = new SceneRenderer(canvas, ashenHollowLook, models);
+/** Models load behind the title screen; the game can start once they're in. */
+const modelsLoaded = models.load(MODEL_URLS);
 const pointer = new PointerInput(canvas);
 const fade = new ScreenFade(document.body, FADE_SECONDS);
 const labels = new WorldLabels(document.body);
@@ -74,7 +78,9 @@ if (debugMode) Object.assign(window, { game: { state, send: (c: Command) => pend
 
 const $ = (id: string): HTMLElement => document.getElementById(id)!;
 
-function start(): void {
+async function start(): Promise<void> {
+  if (started) return;
+  await modelsLoaded;
   if (started) return;
   started = true;
   synth.unlock();
@@ -84,8 +90,17 @@ function start(): void {
 
 $('title').addEventListener('pointerdown', (e) => {
   e.preventDefault();
-  start();
+  void start();
 });
+const goLabel = document.querySelector<HTMLElement>('#title .go');
+if (goLabel) {
+  const ready = goLabel.textContent;
+  goLabel.textContent = 'Loading…';
+  void modelsLoaded.then(() => {
+    goLabel.textContent = ready;
+    renderer.clearActors();
+  });
+}
 $('mute').addEventListener('pointerdown', (e) => {
   e.preventDefault();
   e.stopPropagation();
@@ -256,7 +271,14 @@ function react(events: SimEvent[]): void {
         if (!state.hero.dead && events.every((other) => other.type !== 'HeroRespawned')) hud.banner(level.name, level.subtitle, 1.8);
         break;
       }
+      case 'Swung':
+        if (e.actorId === state.hero.id) renderer.playActor(String(e.actorId), 'attack', state.rules.hero.melee.swingSeconds * 1.6);
+        break;
+      case 'BlastCast':
+        renderer.playActor(String(state.hero.id), 'cast', 0.45);
+        break;
       case 'EnemyDamaged': {
+        renderer.playActor(String(e.enemyId), 'hit');
         const scale = scaleOf(e.enemyId);
         labels.text(e.x, e.y, 40 * PX * scale, String(e.amount), e.crit ? '#ffd25a' : '#f3ead6', e.crit ? 20 : 15);
         flashes.set(e.enemyId, HIT_FLASH_SECONDS);
@@ -264,6 +286,7 @@ function react(events: SimEvent[]): void {
         break;
       }
       case 'HeroHurt':
+        renderer.playActor(String(state.hero.id), 'hit');
         labels.text(e.x, e.y, 46 * PX, `-${e.amount}`, '#ff5a4a', 15);
         flashes.set(state.hero.id, HERO_FLASH_SECONDS);
         renderer.shake(0.25);
@@ -289,6 +312,7 @@ function react(events: SimEvent[]): void {
         renderer.shake(0.22);
         break;
       case 'SlamWarned':
+        renderer.playActor(String(e.enemyId), 'cast', 1.0);
         labels.text(e.x, e.y, 70 * PX, '!', '#c77dff', 24);
         break;
       case 'SlamLanded':
@@ -369,14 +393,26 @@ function reactToService(npcId: number, index: number, x: number, y: number): voi
   if (dialog.npcId === npcId) showDialogue(npcId, state.quest);
 }
 
-function drawActor(actor: Actor, alpha: number, fadeShare = 1): void {
-  const flash = flashes.get(actor.id) ?? 0;
+function drawActor(actor: Actor & { dead?: boolean }, alpha: number, fade = 1): void {
   renderer.setActor(
     String(actor.id), actor.kind,
     lerp(actor.prevX, actor.x, alpha), lerp(actor.prevY, actor.y, alpha),
     actor.facingX, actor.facingY,
-    flash > 0 ? 1 : 0, fadeShare,
+    { moving: actor.moving, dead: Boolean(actor.dead), flash: (flashes.get(actor.id) ?? 0) > 0 ? 1 : 0, fade },
   );
+}
+
+/** Enemies seen winding up an attack, so each wind-up starts its attack animation once. */
+const windingUp = new Set<number>();
+
+/** Starts an enemy's attack animation as its wind-up begins, timed so the blow lands as the attack does. */
+function animateWindUps(): void {
+  for (const e of currentLevel(state).enemies) {
+    if (e.windUp >= 0 && !windingUp.has(e.id)) {
+      windingUp.add(e.id);
+      renderer.playActor(String(e.id), 'attack', (ENEMIES[e.kind]?.windUp ?? 0.4) * 1.8);
+    } else if (e.windUp < 0) windingUp.delete(e.id);
+  }
 }
 
 /** Smoke drifts from each chimney, as in the prototype's village. */
@@ -395,6 +431,7 @@ function puffChimneys(): void {
 
 function drawWorld(alpha: number, frameSeconds: number): void {
   puffChimneys();
+  animateWindUps();
   for (const [id, left] of flashes) {
     if (left - frameSeconds <= 0) flashes.delete(id);
     else flashes.set(id, left - frameSeconds);
