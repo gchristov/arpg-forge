@@ -10,10 +10,11 @@ Step 0 of `PLAN.md` is done: TypeScript, Vite, Vitest and CI are set up, and `en
 
 Local tools run in Docker, not on this machine: don't install Node, npm packages or other tools on the host unless there's no way around it. Node 26 (`.nvmrc`, `tools/node/Dockerfile`) runs through `./tools/node/run.sh <command>`, which keeps `node_modules` in a Docker volume. Run `./tools/node/run.sh npm install` once.
 
-- Dev server: `./tools/node/run.sh npm run dev`, then open http://localhost:5173. Phones on the same network can use this machine's address. The root page links to each game and prototype.
+- Dev server: `./tools/node/run.sh npm run dev`, then open http://localhost:5173. Phones on the same network can use this machine's address. The root page links to each game and prototype. The engine build of Ashen Hollow is at `/games/ashen-hollow/` until it replaces the prototype at `/ashen-hollow/`. Add `?debug` to a game's URL for frame timings.
 - Unit tests: `./tools/node/run.sh npm test` (`npm run test:watch` to re-run on change). Tests sit next to the code as `*.test.ts`, or in `tests/`.
 - Type check: `./tools/node/run.sh npm run typecheck`
 - Build: `./tools/node/run.sh npm run build` writes `dist/`; `./tools/node/run.sh npm run preview` serves it on http://localhost:4173. Prototypes are copied byte for byte, not bundled.
+- Screenshots: `./tools/browser/run.sh <page path> [out.png] [width] [height] [script]` loads a page from `dist/` in headless Chromium with WebGL and saves a screenshot to `tools/browser/out/`, e.g. `./tools/browser/run.sh /games/ashen-hollow/ tools/browser/out/phone.png 390 844`. The optional script runs in the page first, for example to dispatch taps. It fails if the page logs an error. Use it to look at rendering changes at desktop and phone size.
 - A new tool gets its own `tools/<name>/` folder with a `Dockerfile` and a `run.sh` in the same style.
 
 ## CI/CD
