@@ -206,6 +206,12 @@ export class SceneRenderer {
     return out;
   }
 
+  /** Turns shadows on or off, for measuring what they cost. */
+  setShadows(on: boolean): void {
+    this.renderer.shadowMap.enabled = on;
+    this.moon.castShadow = on;
+  }
+
   /** Draw calls and triangles in the last frame, for the debug overlay. */
   stats(): { calls: number; triangles: number } {
     return { calls: this.renderer.info.render.calls, triangles: this.renderer.info.render.triangles };
