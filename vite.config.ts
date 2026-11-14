@@ -3,6 +3,7 @@ import { defineConfig, type Plugin } from 'vitest/config';
 /** Each game's short address, such as `/ashen-hollow/`, and the folder its build lives in. */
 const GAMES: Record<string, string> = {
   'ashen-hollow': 'games/ashen-hollow/',
+  unrecalled: 'games/unrecalled/',
 };
 
 /** A page that sends the visitor on to the game, keeping any `?query` and `#hash`. */
@@ -45,6 +46,7 @@ export default defineConfig({
       input: {
         index: 'index.html',
         'ashen-hollow': 'games/ashen-hollow/index.html',
+        unrecalled: 'games/unrecalled/index.html',
       },
     },
   },

@@ -17,6 +17,7 @@ const spec = (rows: string[]): RoomSpec => ({
     x: { prop: CRATE, solid: true, container: { gold: 5, healingItems: 1 } },
     s: { spawn: 'ghoul' },
     n: { npc: { kind: 'keeper', name: 'Keeper' } },
+    '@': { heroStart: true },
   },
 });
 
@@ -42,6 +43,10 @@ describe('roomFromRows', () => {
     expect(room.spawns).toEqual([{ kind: 'ghoul', x: 2.5, y: 1.5 }]);
     expect(room.npcs).toEqual([{ kind: 'keeper', name: 'Keeper', x: 3.5, y: 1.5 }]);
     expect(room.containers).toEqual([{ tx: 2, ty: 2, gold: 5, healingItems: 1 }]);
+  });
+
+  it('starts the hero on a marked tile', () => {
+    expect(roomFromRows(spec(['###', '#@#', '###'])).level.start).toEqual({ x: 1.5, y: 1.5 });
   });
 
   it('refuses characters missing from the key and uneven rows', () => {

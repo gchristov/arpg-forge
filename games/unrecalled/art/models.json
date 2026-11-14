@@ -1,0 +1,147 @@
+{
+  "packs": {
+    "adventurers": "https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/672074b73ba276876a19e8816ecdc5241817ab47/addons/kaykit_character_pack_adventures",
+    "essentials": {
+      "zip": "https://opengameart.org/sites/default/files/sci-fi_essentials_kit_models.zip",
+      "sha256": "f5cb9382a029730f9fa8f93e7fdb103c1aaaec094a22b1397833ce0e48bd1016"
+    },
+    "megakit": {
+      "zip": "https://opengameart.org/sites/default/files/modular_scifi_megakitstandard.zip",
+      "sha256": "4ca9acbc7a13e7baa48e24c4853b779889b7ab21587004c36668826e705c8a10",
+      "textures": "Modular SciFi MegaKit[Standard]/Textures"
+    }
+  },
+  "models": [
+    {
+      "name": "hero",
+      "pack": "adventurers",
+      "path": "Characters/gltf/Barbarian.glb",
+      "keepMeshes": [
+        "1H_Axe",
+        "Barbarian_ArmLeft",
+        "Barbarian_ArmRight",
+        "Barbarian_Body",
+        "Barbarian_Head",
+        "Barbarian_LegLeft",
+        "Barbarian_LegRight"
+      ],
+      "animations": [
+        "Idle",
+        "Running_A",
+        "1H_Melee_Attack_Chop",
+        "Spellcast_Shoot",
+        "Hit_A",
+        "Death_A"
+      ]
+    },
+    {
+      "name": "crawler",
+      "pack": "essentials",
+      "path": "glTF/Enemy_Trilobite.gltf",
+      "animations": [
+        "Idle",
+        "Run",
+        "Attack",
+        "Hit",
+        "TurnOff"
+      ],
+      "textures": {
+        "maxSize": 512,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "loader",
+      "pack": "essentials",
+      "path": "glTF/Enemy_QuadShell.gltf",
+      "animations": [
+        "Idle",
+        "Walk",
+        "Attack",
+        "Hit",
+        "TurnOff"
+      ],
+      "textures": {
+        "maxSize": 512,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "sentry",
+      "pack": "essentials",
+      "path": "glTF/Enemy_EyeDrone.gltf",
+      "animations": [
+        "Idle",
+        "Attack",
+        "Hit"
+      ],
+      "textures": {
+        "maxSize": 512,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "crate",
+      "pack": "essentials",
+      "path": "glTF/Prop_Crate.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "barrel",
+      "pack": "essentials",
+      "path": "glTF/Prop_Barrel1.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "locker",
+      "pack": "essentials",
+      "path": "glTF/Prop_Locker.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "shelves",
+      "pack": "essentials",
+      "path": "glTF/Prop_Shelves_WideTall.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "desk",
+      "pack": "essentials",
+      "path": "glTF/Prop_Desk_Medium.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "column",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Columns/Column_Pipes.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "computer",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Props/Prop_Computer.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    }
+  ]
+}

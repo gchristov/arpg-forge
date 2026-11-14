@@ -16,6 +16,8 @@ export interface RoomKey {
   light?: Omit<LevelLight, 'x' | 'y' | 'seed'> & { offset?: Vec2; lean?: number };
   /** A way out to another level. The hero starts the room at the tile's centre plus `start`. */
   portal?: { to: string; stepOut: Vec2; start: Vec2 };
+  /** The hero starts here, for a room that's the first level rather than one entered through a portal. */
+  heroStart?: boolean;
   /** An enemy of this kind spawns here. */
   spawn?: string;
   npc?: { kind: string; name: string };
@@ -67,6 +69,7 @@ export function roomFromRows(spec: RoomSpec): LevelContent {
         level.portals.push({ tx: x, ty: y, to: key.portal.to, stepOut: key.portal.stepOut });
         level.start = { x: x + 0.5 + key.portal.start.x, y: y + 0.5 + key.portal.start.y };
       }
+      if (key.heroStart) level.start = { x: x + 0.5, y: y + 0.5 };
       if (key.spawn) room.spawns.push({ kind: key.spawn, x: x + 0.5, y: y + 0.5 });
       if (key.npc) room.npcs.push({ ...key.npc, x: x + 0.5, y: y + 0.5 });
       if (key.container) room.containers!.push({ tx: x, ty: y, ...key.container });
