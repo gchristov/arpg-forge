@@ -45,17 +45,19 @@ jobs:
       - name: Test web
         uses: ./.github/actions/test-web
 
-  # Publishes main's build to the root of the gh-pages branch, which GitHub Pages serves. PR previews live in
-  # pr-preview/ on the same branch, so they're kept, and the push rebases rather than force-pushing over them.
+  # Deploys the build to GitHub Pages, which serves the gh-pages branch: a pull request's build to its own preview
+  # at pr-preview/pr-<number>/, and main's build to the root. The main deploy keeps pr-preview/ and rebases rather
+  # than force-pushing, so it never removes open previews. staging-cleanup removes a preview when its PR closes.
   deploy-web-staging:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [unit-test, build-web, test-web]
+    needs: [build-web]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+      pull-requests: write
+      deployments: write
     environment:
-      name: github-pages
-      url: https://gchristov.github.io/arpg-forge/
+      name: ${{ github.event_name == 'pull_request' && 'preview' || 'github-pages' }}
+      url: ${{ steps.preview.outputs.preview-url || 'https://gchristov.github.io/arpg-forge/' }}
     concurrency:
       group: gh-pages-branch
       cancel-in-progress: false
@@ -67,7 +69,19 @@ jobs:
         with:
           name: Web Build
           path: dist/
-      - name: Deploy
+      - name: Deploy preview
+        id: preview
+        if: github.event_name == 'pull_request'
+        uses: rossjrw/pr-preview-action@v1.8.2
+        with:
+          source-dir: dist
+          preview-branch: gh-pages
+          umbrella-dir: pr-preview
+          action: deploy
+          wait-for-pages-deployment: true
+          qr-code: true
+      - name: Deploy main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: JamesIves/github-pages-deploy-action@v4.9.0
         with:
           folder: dist

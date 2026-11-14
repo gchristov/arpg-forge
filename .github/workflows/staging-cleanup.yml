@@ -1,0 +1,37 @@
+name: staging-cleanup
+
+# Removes a pull request's staging preview when the PR closes, and marks its deployment inactive so the repo's
+# Deployments sidebar only links pages that exist. staging-check's deploy-web-staging creates the preview.
+on:
+  pull_request:
+    types: [closed]
+    branches: [ main ]
+
+jobs:
+  remove-web-staging:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+      deployments: write
+    concurrency:
+      group: gh-pages-branch
+      cancel-in-progress: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Remove preview
+        uses: rossjrw/pr-preview-action@v1.8.2
+        with:
+          preview-branch: gh-pages
+          umbrella-dir: pr-preview
+          action: remove
+      - name: Mark the preview deployment inactive
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          REF: ${{ github.head_ref }}
+        run: |
+          for id in $(gh api "repos/$REPO/deployments?environment=preview&ref=$REF" --jq '.[].id'); do
+            gh api -X POST "repos/$REPO/deployments/$id/statuses" -f state=inactive --silent
+          done
