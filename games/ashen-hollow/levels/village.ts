@@ -149,7 +149,7 @@ export function generateVillage(): Village {
 
   return {
     level,
-    spawns: [[36, 36], [43, 37], [36, 43], [44, 42]].map(([x, y]) => ({ kind: 'skeleton', x: x! + 0.5, y: y! + 0.5 })),
+    spawns: [[36, 36], [43, 37], [36, 43], [45, 42]].map(([x, y]) => ({ kind: 'skeleton', x: x! + 0.5, y: y! + 0.5 })),
     camps: CAMPS,
     npcs: [{ kind: 'elder', name: 'Elder Maren', x: 14.5, y: 15.6 }],
   };
