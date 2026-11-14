@@ -11,7 +11,7 @@ import { PointerInput } from '../../engine/input/pointer';
 import { DebugOverlay } from '../../engine/render/debug-overlay';
 import { ModelLibrary } from '../../engine/render/models';
 import { SceneRenderer } from '../../engine/render/scene-renderer';
-import { createGameState } from '../../engine/sim/setup';
+import { createGameState, makeEnemy } from '../../engine/sim/setup';
 import { servicePrice } from '../../engine/sim/interaction';
 import { currentLevel, type Actor, type Command, type SimEvent } from '../../engine/sim/state';
 import { step } from '../../engine/sim/step';
@@ -463,6 +463,41 @@ function drawWorld(alpha: number, frameSeconds: number): void {
   renderer.effects.showItems(ls.items, performance.now() / 1000);
 }
 
+/**
+ * `?debug&stress=N` keeps N enemies chasing an unkillable hero who casts a fireball every half second, to measure
+ * how the game copes with crowds and combat effects.
+ */
+const stressCount = debugMode ? Number(new URLSearchParams(location.search).get('stress') ?? 0) : 0;
+if (debugMode && new URLSearchParams(location.search).has('noshadows')) renderer.setShadows(false);
+let stressCastIn = 0;
+const STRESS_KINDS = ['goblin', 'skeleton', 'archer'];
+function stress(frameSeconds: number): void {
+  const { hero } = state;
+  hero.hp = hero.maxHp = 1e9;
+  hero.resource = hero.maxResource;
+  const ls = currentLevel(state);
+  const { map } = ls.level;
+  let alive = ls.enemies.filter((e) => !e.dead).length;
+  for (let tries = 0; alive < stressCount && tries < 200; tries++) {
+    const a = Math.random() * Math.PI * 2;
+    const r = 4 + Math.random() * 8;
+    const x = hero.x + Math.cos(a) * r;
+    const y = hero.y + Math.sin(a) * r;
+    const tx = Math.floor(x);
+    const ty = Math.floor(y);
+    if (tx < 0 || ty < 0 || tx >= map.width || ty >= map.height || map.solid[tileIndex(map, tx, ty)]) continue;
+    const e = makeEnemy(state, STRESS_KINDS[alive % STRESS_KINDS.length]!, x, y);
+    e.mode = 'chase';
+    ls.enemies.push(e);
+    alive++;
+  }
+  stressCastIn -= frameSeconds;
+  if (stressCastIn <= 0) {
+    stressCastIn = 0.5;
+    pending.push({ type: 'blast' });
+  }
+}
+
 const loop = createFixedLoop();
 let last = performance.now();
 function frame(now: number): void {
@@ -485,6 +520,12 @@ function frame(now: number): void {
   renderer.render(now / 1000, frameSeconds);
   labels.update(project, frameSeconds);
   hud.update(state);
+  if (debug) {
+    const { calls, triangles } = renderer.stats();
+    const alive = currentLevel(state).enemies.filter((e) => !e.dead).length;
+    debug.note(`${calls} draw calls  ${(triangles / 1000).toFixed(0)}k triangles  ${alive} enemies`);
+  }
+  if (stressCount && started) stress(frameSeconds);
   debug?.record(frameSeconds * 1000, t1 - t0, performance.now() - t1);
   requestAnimationFrame(frame);
 }
