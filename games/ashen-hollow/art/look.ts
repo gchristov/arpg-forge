@@ -58,16 +58,54 @@ const STRUCTURES: Record<string, StructureLook> = {
 
 const LIGHTS: Record<string, number> = { warm: 0xff9b3c, purple: 0xaa5aff, cold: 0x82aaff };
 
+/** KayKit characters (CC0, see CREDITS.md); `models.json` lists which parts and animations each keeps. */
 const ACTORS: Record<string, ActorLook> = {
-  hero: { colour: 0x9a8a70, height: 0.95, radius: 0.24 },
-  goblin: { colour: 0x5d7a3a, height: 0.78, radius: 0.25 },
-  skeleton: { colour: 0xd8d0b8, height: 0.98, radius: 0.26 },
-  archer: { colour: 0xb8b090, height: 0.98, radius: 0.26 },
-  boss: { colour: 0x8a7ab0, height: 1.5, radius: 0.42 },
-  elder: { colour: 0x7a6a9a, height: 0.92, radius: 0.26 },
-  innkeeper: { colour: 0x8a5a3a, height: 0.95, radius: 0.28 },
-  smith: { colour: 0x5a5a6a, height: 0.98, radius: 0.28 },
+  hero: {
+    colour: 0x9a8a70, height: 1.15, radius: 0.24,
+    model: {
+      name: 'hero',
+      animations: { idle: 'Idle', move: 'Running_A', attack: '1H_Melee_Attack_Slice_Diagonal', cast: 'Spellcast_Shoot', hit: 'Hit_A', death: 'Death_A' },
+    },
+  },
+  goblin: {
+    colour: 0x5d7a3a, height: 0.95, radius: 0.25,
+    model: {
+      name: 'goblin', tint: 0x9fd07a,
+      animations: { idle: 'Idle', move: 'Running_A', attack: '1H_Melee_Attack_Stab', hit: 'Hit_A', death: 'Death_A' },
+    },
+  },
+  skeleton: {
+    colour: 0xd8d0b8, height: 1.15, radius: 0.26,
+    model: {
+      name: 'skeleton', weapon: 'skeleton-blade',
+      animations: { idle: 'Idle', move: 'Walking_A', attack: '1H_Melee_Attack_Chop', hit: 'Hit_A', death: 'Death_A' },
+    },
+  },
+  archer: {
+    colour: 0xb8b090, height: 1.15, radius: 0.26,
+    model: {
+      name: 'archer', weapon: 'skeleton-crossbow',
+      animations: { idle: 'Idle', move: 'Walking_A', attack: '1H_Ranged_Shoot', hit: 'Hit_A', death: 'Death_A' },
+    },
+  },
+  boss: {
+    colour: 0x8a7ab0, height: 1.8, radius: 0.42,
+    model: {
+      name: 'boss', weapon: 'skeleton-axe', tint: 0xcbb8e8,
+      animations: { idle: 'Idle', move: 'Walking_A', attack: '2H_Melee_Attack_Chop', cast: 'Spellcast_Shoot', hit: 'Hit_A', death: 'Death_A' },
+    },
+  },
+  elder: { colour: 0x7a6a9a, height: 1.1, radius: 0.26, model: { name: 'elder', animations: { idle: 'Idle' } } },
+  innkeeper: { colour: 0x8a5a3a, height: 1.15, radius: 0.28, model: { name: 'innkeeper', animations: { idle: 'Idle' } } },
+  smith: { colour: 0x5a5a6a, height: 1.1, radius: 0.28, model: { name: 'smith', animations: { idle: 'Idle' } } },
 };
+
+/** URLs of the built models, by name, for the model library to load. */
+export const MODEL_URLS: Record<string, string> = Object.fromEntries(
+  Object.entries(import.meta.glob<string>('./models/*.glb', { query: '?url', import: 'default', eager: true })).map(
+    ([path, url]) => [path.slice('./models/'.length, -'.glb'.length), url],
+  ),
+);
 
 export const ashenHollowLook: Look = {
   effects: { blast: 0xffa040, shot: 0xe8e1cc, telegraph: 0xb46bff, items: { gold: 0xe8b84a, healingItem: 0xd2303a } },

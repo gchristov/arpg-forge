@@ -17,10 +17,30 @@ export interface StructureLook {
   roofHeight: number;
 }
 
+/** Names of a model's animations for each thing an actor does. Missing ones fall back to `idle`. */
+export interface ActorAnimations {
+  idle: string;
+  move?: string;
+  attack?: string;
+  cast?: string;
+  hit?: string;
+  death?: string;
+}
+
 export interface ActorLook {
+  /** Colour and size of the simple shape drawn when there's no model, or while it loads. */
   colour: number;
   height: number;
   radius: number;
+  /** A model from the game's model library, scaled to `height`. */
+  model?: {
+    name: string;
+    animations: ActorAnimations;
+    /** Multiplies the model's colours, for example to turn a rogue into a goblin. */
+    tint?: number;
+    /** A separate weapon model held in the right hand. */
+    weapon?: string;
+  };
 }
 
 export interface Mood {

@@ -25,6 +25,7 @@ Local tools run in Docker, not on this machine: don't install Node, npm packages
 - Build: `./tools/node/run.sh npm run build` writes `dist/`; `./tools/node/run.sh npm run preview` serves it on http://localhost:4173. Prototypes are copied byte for byte, not bundled.
 - Browser smoke test: `./tools/browser/run.sh smoke` loads every page of the build in headless Chromium with WebGL at desktop and phone size. It fails on any page error, checks that a tap moves the hero in each engine game, and saves screenshots to `tools/browser/out/`. Add new pages to `PAGES` in `tools/browser/smoke.mjs`.
 - Screenshots: `./tools/browser/run.sh screenshot <page path> [out.png] [width] [height] [script]` saves one page, e.g. `./tools/browser/run.sh screenshot /games/ashen-hollow/ tools/browser/out/phone.png 390 844`. The optional script runs in the page first, for example to dispatch taps. Use it to look at rendering changes.
+- 3D models: `./tools/node/run.sh node tools/assets/build-models.mjs games/<name>/art/models.json` downloads each model from its pack's pinned commit, keeps only the listed parts and animations, compresses it (meshopt) and writes `games/<name>/art/models/*.glb`, which are committed. Add a model by adding it to `models.json`, rebuilding, and crediting its pack in `art/CREDITS.md`.
 - A new tool gets its own `tools/<name>/` folder with a `Dockerfile` and a `run.sh` in the same style.
 
 ## CI/CD
