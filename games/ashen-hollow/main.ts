@@ -53,6 +53,8 @@ const synth = new Synth();
 synth.muted = platform.load('muted') === 'true';
 const sfx = ashenHollowSounds(synth);
 const debugMode = new URLSearchParams(location.search).has('debug');
+/** `?debug&lights=N` scatters N extra flickering lights over the start level, to check lighting cost stays flat. */
+const extraLights = debugMode ? Number(new URLSearchParams(location.search).get('lights') ?? 0) : 0;
 const debug = debugMode ? new DebugOverlay(document.body) : null;
 const project: Project = (x, y, height, out) => renderer.screenPosition(x, y, height, out);
 
@@ -61,6 +63,11 @@ const content = ashenHollowContent();
 const jumpTo = location.hash.slice(1);
 const startLevel = content.levels.some((l) => l.level.id === jumpTo) ? jumpTo : content.startLevel;
 const state = createGameState(content, (Math.random() * 2 ** 32) >>> 0, startLevel);
+for (let i = 0; i < extraLights; i++) {
+  const { map, lights } = currentLevel(state).level;
+  const colour = ['warm', 'purple', 'cold'][i % 3]!;
+  lights.push({ x: Math.random() * map.width, y: Math.random() * map.height, radius: 2.5, intensity: 0.8, colour, flicker: 1, seed: i });
+}
 const pending: Command[] = [];
 const dialog = new DialogBox();
 const hud = new Hud((c) => {
@@ -458,6 +465,13 @@ function drawWorld(alpha: number, frameSeconds: number): void {
     }
   }
   labels.endBars();
+  for (const p of state.projectiles) {
+    if (p.kind === 'blast') renderer.glow(lerp(p.prevX, p.x, alpha), lerp(p.prevY, p.y, alpha), 2.6, 0xff9b3c, 0.9);
+  }
+  for (const t of state.telegraphs) renderer.glow(t.x, t.y, t.radius + 0.6, 0xaa5aff, 0.6);
+  for (const e of ls.enemies) {
+    if (!e.dead && ENEMIES[e.kind]?.boss) renderer.glow(lerp(e.prevX, e.x, alpha), lerp(e.prevY, e.y, alpha), 2.2, 0xaa5aff, 0.6);
+  }
   renderer.effects.showProjectiles(state.projectiles, alpha);
   renderer.effects.showTelegraphs(state.telegraphs);
   renderer.effects.showItems(ls.items, performance.now() / 1000);
