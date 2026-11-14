@@ -14,14 +14,17 @@ Local tools run in Docker, not on this machine: don't install Node, npm packages
 - Unit tests: `./tools/node/run.sh npm test` (`npm run test:watch` to re-run on change). Tests sit next to the code as `*.test.ts`, or in `tests/`.
 - Type check: `./tools/node/run.sh npm run typecheck`
 - Build: `./tools/node/run.sh npm run build` writes `dist/`; `./tools/node/run.sh npm run preview` serves it on http://localhost:4173. Prototypes are copied byte for byte, not bundled.
-- Screenshots: `./tools/browser/run.sh <page path> [out.png] [width] [height] [script]` loads a page from `dist/` in headless Chromium with WebGL and saves a screenshot to `tools/browser/out/`, e.g. `./tools/browser/run.sh /games/ashen-hollow/ tools/browser/out/phone.png 390 844`. The optional script runs in the page first, for example to dispatch taps. It fails if the page logs an error. Use it to look at rendering changes at desktop and phone size.
+- Browser smoke test: `./tools/browser/run.sh smoke` loads every page of the build in headless Chromium with WebGL at desktop and phone size. It fails on any page error, checks that a tap moves the hero in each engine game, and saves screenshots to `tools/browser/out/`. Add new pages to `PAGES` in `tools/browser/smoke.mjs`.
+- Screenshots: `./tools/browser/run.sh screenshot <page path> [out.png] [width] [height] [script]` saves one page, e.g. `./tools/browser/run.sh screenshot /games/ashen-hollow/ tools/browser/out/phone.png 390 844`. The optional script runs in the page first, for example to dispatch taps. Use it to look at rendering changes.
 - A new tool gets its own `tools/<name>/` folder with a `Dockerfile` and a `run.sh` in the same style.
 
 ## CI/CD
 
-`.github/workflows/staging-check.yml` runs on PRs into `main` and on pushes to `main`, built from composite actions in `.github/actions/`: `unit-test` (Vitest, with a `unit-test-results` report) and `build-web` (type check and build) are required checks. On `main`, `deploy-web-staging` publishes the build to GitHub Pages at https://gchristov.github.io/arpg-forge/, so the latest version can be played on a phone. Each game has its own path (`/ashen-hollow/`), which serves the game's prototype until the game has an engine entry under `games/<name>`. Prototypes are also kept at `/prototypes/<name>.html` for comparison.
+`.github/workflows/staging-check.yml` runs on PRs into `main` and on pushes to `main`, built from composite actions in `.github/actions/`. Three jobs are required checks: `unit-test` (Vitest, with a `unit-test-results` report), `build-web` (type check and build) and `test-web` (`./tools/browser/run.sh smoke` on the build, with screenshots uploaded as an artifact). On `main`, `deploy-web-staging` publishes the build to GitHub Pages at https://gchristov.github.io/arpg-forge/, so the latest version can be played on a phone. Each game has its own path (`/ashen-hollow/`), which serves the game's prototype until the game has an engine entry under `games/<name>`. Prototypes are also kept at `/prototypes/<name>.html` for comparison.
 
 ## Rules
+
+- **Stay quiet for now.** No README, repo description, website or topics. The repo's settings script keeps them empty.
 
 - **Engine versus game.** `engine/` owns how the game plays. `games/<name>/` owns what it is: setting, story, levels, enemies, items, art, sound, HUD skin. The engine contains no game-specific names, text, colours or coordinates.
 - **Share by default, extend when needed.** Express a new game's needs as data through engine registries first. A mechanic only one game needs goes in that game's `extensions/` folder, plugged in through extension points (registries, systems, event hooks, named overrides), and is listed in that game's `EXTENSIONS.md`. It moves into `engine/` only when a second game wants it. If an extension needs engine internals, add an extension point rather than moving the mechanic into the engine.
