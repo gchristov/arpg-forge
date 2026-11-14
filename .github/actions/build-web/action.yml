@@ -1,0 +1,16 @@
+name: 'build-web'
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Node
+      uses: ./.github/actions/setup-node
+    - name: Type check
+      shell: bash
+      run: npm run typecheck
+    - name: Build
+      shell: bash
+      run: npm run build
+    - name: Artifacts
+      uses: actions/upload-pages-artifact@v4
+      with:
+        path: dist/

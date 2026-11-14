@@ -4,7 +4,21 @@ One shared engine for small isometric action RPGs (Diablo-style: tap or click to
 
 ## Current state
 
-The refactor hasn't started. The whole game is still `index.html`, the original one-file prototype of Ashen Hollow (dense one-liners, globals `G` and `P`, `Math.random()` throughout). Next is step 0 of `PLAN.md`: move it to `prototypes/ashen-hollow.html` and set up TypeScript, Vite and Vitest. Update this section as the steps land.
+Step 0 of `PLAN.md` is done: TypeScript, Vite, Vitest and CI are set up, and `engine/`, `games/`, `tools/` and `tests/` exist but are empty. The whole game is still `prototypes/ashen-hollow.html`, the original one-file prototype of Ashen Hollow (dense one-liners, globals `G` and `P`, `Math.random()` throughout). It stays frozen as the reference to compare against. Next is step 1: pull the engine out into `engine/` and `games/ashen-hollow/`, keeping the game playing exactly the same. Update this section as the steps land.
+
+## Commands
+
+Local tools run in Docker, not on this machine: don't install Node, npm packages or other tools on the host unless there's no way around it. Node 26 (`.nvmrc`, `tools/node/Dockerfile`) runs through `./tools/node/run.sh <command>`, which keeps `node_modules` in a Docker volume. Run `./tools/node/run.sh npm install` once.
+
+- Dev server: `./tools/node/run.sh npm run dev`, then open http://localhost:5173. Phones on the same network can use this machine's address. The root page links to each game and prototype.
+- Unit tests: `./tools/node/run.sh npm test` (`npm run test:watch` to re-run on change). Tests sit next to the code as `*.test.ts`, or in `tests/`.
+- Type check: `./tools/node/run.sh npm run typecheck`
+- Build: `./tools/node/run.sh npm run build` writes `dist/`; `./tools/node/run.sh npm run preview` serves it on http://localhost:4173. Prototypes are copied byte for byte, not bundled.
+- A new tool gets its own `tools/<name>/` folder with a `Dockerfile` and a `run.sh` in the same style.
+
+## CI/CD
+
+`.github/workflows/staging-check.yml` runs on PRs into `main` and on pushes to `main`, built from composite actions in `.github/actions/`: `unit-test` (Vitest, with a `unit-test-results` report) and `build-web` (type check and build) are required checks. On `main`, `deploy-web-staging` publishes the build to GitHub Pages at https://gchristov.github.io/arpg-forge/, so the latest version can be played on a phone. Each game has its own path (`/ashen-hollow/`), which serves the game's prototype until the game has an engine entry under `games/<name>`. Prototypes are also kept at `/prototypes/<name>.html` for comparison.
 
 ## Rules
 

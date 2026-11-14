@@ -6,7 +6,7 @@ Everything is drawn in code on a canvas, so there are no images or other files t
 
 ## Play
 
-Open `index.html` in a browser, on a phone or a desktop.
+Play it at https://gchristov.github.io/arpg-forge/ashen-hollow/, on a phone or a desktop, or open `prototypes/ashen-hollow.html` from this repo in a browser.
 
 | Action | Touch | Keyboard |
 | --- | --- | --- |
