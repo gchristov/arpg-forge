@@ -111,7 +111,9 @@ What games add to that:
 
 ## Step 1: build the engine and rebuild Ashen Hollow on it
 
-The engine is built to the design in "Architecture" rather than ported line by line, and Ashen Hollow is rebuilt on it in 3D. The prototype is the spec for the rules, numbers, maps and quests. It stays playable at `/prototypes/ashen-hollow.html` to compare against, and the rebuilt game takes over `/ashen-hollow/` once it plays as well. The game doesn't need to stay playable in the repo while this happens.
+The engine is built to the design in "Architecture" rather than ported line by line. Ashen Hollow is rebuilt on it in 3D, replicating the prototype's mechanics, story and levels exactly, so the two can be compared fairly. `games/ashen-hollow/PARITY.md` lists everything that has to match, along with the intended differences (visuals, individual random rolls, fixed-rate timing). The game doesn't need to stay playable in the repo while this happens.
+
+**Done when** every item in `PARITY.md` is ticked. Then `/ashen-hollow/` switches to the engine version, and the prototype and `PARITY.md` are deleted.
 
 - **Modules:** the `engine/` folders, with proper types for the player, enemies and NPCs. In the prototype they are loosely shaped objects whose fields sometimes exist and sometimes don't.
 - **Rules apart from presentation:** the game rules become one update step, `step(state, input, dt)`, which returns events (`Damaged`, `Killed`, `EnteredMap`, `LevelUp`, `QuestAdvanced`). The renderer, audio and HUD listen to those events and never change the game state. Today, for example, `hurtPlayer` flashes a DOM element and plays a sound, `bossSpecial` shows the boss bar, and `drawActor` decides whether to show health bars.
