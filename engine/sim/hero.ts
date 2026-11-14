@@ -6,6 +6,7 @@ import { tileIndex } from '../world/tile-map';
 import { damageEnemy, findEnemy, nearestEnemy } from './combat';
 import { updateInteraction, useService, walkToContainer, walkToNpc } from './interaction';
 import { placeAt } from './setup';
+import type { ProjectileSkill } from './content';
 import { currentLevel, type Command, type GameState, type SimEvent } from './state';
 import { followPath, steerTowards, walkTo } from './walking';
 
@@ -15,8 +16,8 @@ const HOLD_RETARGET_SECONDS = 0.14;
 const CHASE_REPATH_SECONDS = 0.3;
 /** How far into a swing it strikes. */
 const SWING_STRIKE_POINT = 0.5;
-/** A blast leaves from a little in front of the hero. */
-const BLAST_OFFSET = 0.3;
+/** A projectile leaves from a little in front of the hero. */
+const PROJECTILE_OFFSET = 0.3;
 /** The look of a cast, as a short swing that doesn't strike. */
 const CAST_SWING = 0.2;
 
@@ -28,7 +29,7 @@ export function applyCommand(state: GameState, command: Command, events: SimEven
   }
   if (hero.dead) return;
   const { level } = currentLevel(state);
-  if (command.type !== 'blast' && command.type !== 'heal' && command.type !== 'useService') hero.interact = null;
+  if (command.type !== 'useSkill' && command.type !== 'heal' && command.type !== 'useService') hero.interact = null;
   switch (command.type) {
     case 'walk': {
       hero.targetId = null;
@@ -69,8 +70,8 @@ export function applyCommand(state: GameState, command: Command, events: SimEven
       }
       break;
     }
-    case 'blast':
-      castBlast(state, events);
+    case 'useSkill':
+      useSkill(state, command.slot, events);
       break;
     case 'heal':
       heal(state, events);
@@ -121,17 +122,28 @@ function strike(state: GameState, events: SimEvent[]): void {
   damageEnemy(state, e, damage, crit, (e.x - hero.x) / k, (e.y - hero.y) / k, melee.knockback, events);
 }
 
-function castBlast(state: GameState, events: SimEvent[]): void {
+/** Uses the skill in a slot, if it's off cooldown and affordable. */
+function useSkill(state: GameState, slot: number, events: SimEvent[]): void {
   const { hero } = state;
-  const blast = state.rules.hero.blast;
-  if (hero.blastCooldown > 0) return;
-  if (hero.resource < blast.cost) {
+  const skill = state.rules.hero.skills[slot];
+  if (!skill || (hero.skillCooldowns[slot] ?? 0) > 0) return;
+  if (hero.resource < skill.cost) {
     events.push({ type: 'Refused', reason: 'noResource', x: hero.x, y: hero.y });
     return;
   }
-  hero.resource -= blast.cost;
-  hero.blastCooldown = blast.cooldown;
-  const t = findEnemy(state, hero.targetId) ?? nearestEnemy(state, blast.autoAimRange);
+  hero.resource -= skill.cost;
+  hero.skillCooldowns[slot] = skill.cooldown;
+  switch (skill.type) {
+    case 'projectile':
+      castProjectile(state, slot, skill);
+      break;
+  }
+  events.push({ type: 'SkillUsed', slot, skill: skill.id });
+}
+
+function castProjectile(state: GameState, slot: number, skill: ProjectileSkill): void {
+  const { hero } = state;
+  const t = findEnemy(state, hero.targetId) ?? nearestEnemy(state, skill.autoAimRange);
   let dx = t ? t.x - hero.x : hero.facingX;
   let dy = t ? t.y - hero.y : hero.facingY;
   const d = Math.hypot(dx, dy) || 1;
@@ -141,12 +153,11 @@ function castBlast(state: GameState, events: SimEvent[]): void {
   hero.facingY = dy;
   hero.swing = CAST_SWING;
   hero.struck = true;
-  const x = hero.x + dx * BLAST_OFFSET;
-  const y = hero.y + dy * BLAST_OFFSET;
+  const x = hero.x + dx * PROJECTILE_OFFSET;
+  const y = hero.y + dy * PROJECTILE_OFFSET;
   state.projectiles.push({
-    kind: 'blast', x, y, prevX: x, prevY: y, vx: dx * blast.speed, vy: dy * blast.speed, life: blast.lifetime, damage: 0,
+    kind: 'skill', slot, x, y, prevX: x, prevY: y, vx: dx * skill.speed, vy: dy * skill.speed, life: skill.lifetime, damage: 0,
   });
-  events.push({ type: 'BlastCast' });
 }
 
 function heal(state: GameState, events: SimEvent[]): void {
@@ -200,7 +211,9 @@ export function updateHeroTimers(state: GameState, dt: number, events: SimEvent[
   const { hero } = state;
   const rules = state.rules.hero;
   hero.attackCooldown -= dt;
-  hero.blastCooldown = Math.max(0, hero.blastCooldown - dt);
+  for (let slot = 0; slot < hero.skillCooldowns.length; slot++) {
+    hero.skillCooldowns[slot] = Math.max(0, hero.skillCooldowns[slot]! - dt);
+  }
   if (!hero.dead) {
     hero.resource = Math.min(hero.maxResource, hero.resource + dt * rules.resourceRegen);
     if (state.time - hero.lastHurtAt > rules.healthRegenDelay) hero.hp = Math.min(hero.maxHp, hero.hp + dt * rules.healthRegen);

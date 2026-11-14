@@ -1,9 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { gainXp } from './combat';
-import { currentLevel, type SimEvent } from './state';
+import type { ProjectileSkill } from './content';
+import { currentLevel, type GameState, type SimEvent } from './state';
 import { arena, ofType, OPEN_ROOM, run, TEST_HERO } from './testing';
 
 const enemiesOf = (state: ReturnType<typeof arena>) => currentLevel(state).enemies;
+
+/** Gives the hero a second skill like the first, changed by `changes`, without touching the shared test rules. */
+function withExtraSkill(state: GameState, changes: Partial<ProjectileSkill>): void {
+  const { hero } = state.rules;
+  state.rules.hero = { ...hero, skills: [...hero.skills, { ...hero.skills[0]!, ...changes }] };
+  state.hero.skillCooldowns.push(0);
+}
 
 describe('hero melee', () => {
   it('chases and kills a targeted enemy, with damage in range, and gains its XP', () => {
@@ -43,14 +51,14 @@ describe('hero melee', () => {
   });
 });
 
-describe('hero blast', () => {
+describe('projectile skill', () => {
   it('costs resource, flies, explodes and hurts every enemy in the radius', () => {
     const state = arena(OPEN_ROOM, { x: 3.5, y: 5.5 }, [
       { kind: 'dummy', x: 8.5, y: 5.5 },
       { kind: 'dummy', x: 8.5, y: 6.6 },
       { kind: 'dummy', x: 14.5, y: 5.5 },
     ]);
-    const events = run(state, 1.5, [{ type: 'blast' }]);
+    const events = run(state, 1.5, [{ type: 'useSkill', slot: 0 }]);
     expect(state.hero.resource).toBeLessThan(50);
     expect(ofType(events, 'Exploded')).toHaveLength(1);
     const hurt = new Set(ofType(events, 'EnemyDamaged').map((h) => h.enemyId));
@@ -60,10 +68,34 @@ describe('hero blast', () => {
     for (const h of ofType(events, 'EnemyDamaged')) expect(h.amount).toBeGreaterThanOrEqual(25);
   });
 
+  it('explodes with its own numbers when the hero has several', () => {
+    const state = arena(OPEN_ROOM, { x: 3.5, y: 5.5 }, [{ kind: 'dummy', x: 8.5, y: 5.5 }, { kind: 'dummy', x: 8.5, y: 8 }]);
+    withExtraSkill(state, { id: 'wide', radius: 3.2 });
+    const events = run(state, 1.5, [{ type: 'useSkill', slot: 1 }]);
+    expect(ofType(events, 'SkillUsed')).toEqual([{ type: 'SkillUsed', slot: 1, skill: 'wide' }]);
+    expect(ofType(events, 'Exploded')[0]?.radius).toBe(3.2);
+    expect(new Set(ofType(events, 'EnemyDamaged').map((h) => h.enemyId)).size).toBe(2);
+  });
+
+  it('keeps a cooldown per skill', () => {
+    const state = arena(OPEN_ROOM, { x: 3.5, y: 5.5 });
+    withExtraSkill(state, { id: 'other' });
+    const events = run(state, 0.1, [{ type: 'useSkill', slot: 0 }, { type: 'useSkill', slot: 0 }, { type: 'useSkill', slot: 1 }]);
+    expect(ofType(events, 'SkillUsed').map((e) => e.slot)).toEqual([0, 1]);
+    expect(state.hero.skillCooldowns[0]).toBeGreaterThan(0);
+  });
+
+  it('ignores a slot with no skill', () => {
+    const state = arena(OPEN_ROOM, { x: 3.5, y: 5.5 });
+    const events = run(state, 0.1, [{ type: 'useSkill', slot: 4 }]);
+    expect(events).toEqual([]);
+    expect(state.hero.resource).toBe(50);
+  });
+
   it('is refused without enough resource', () => {
     const state = arena(OPEN_ROOM, { x: 3.5, y: 5.5 });
     state.hero.resource = 5;
-    const events = run(state, 0.1, [{ type: 'blast' }]);
+    const events = run(state, 0.1, [{ type: 'useSkill', slot: 0 }]);
     expect(ofType(events, 'Refused')[0]?.reason).toBe('noResource');
     expect(state.projectiles).toHaveLength(0);
   });

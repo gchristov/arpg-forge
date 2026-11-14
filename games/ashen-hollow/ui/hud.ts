@@ -1,6 +1,9 @@
 import { currentLevel, type Command, type GameState } from '../../../engine/sim/state';
 import { QUEST } from '../content/story';
 
+/** The fireball button's skill slot. */
+const FIREBALL = 0;
+
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T => document.getElementById(id) as T;
 
 /** Ashen Hollow's HUD: orbs, skill buttons, gold, level, XP bar, boss bar and banners. */
@@ -17,13 +20,13 @@ export class Hud {
       });
     };
     bind('bAttack', { type: 'attackNearest' });
-    bind('bFire', { type: 'blast' });
+    bind('bFire', { type: 'useSkill', slot: FIREBALL });
     bind('bPotion', { type: 'heal' });
   }
 
   update(state: GameState): void {
     const { hero } = state;
-    const blast = state.rules.hero.blast;
+    const fireball = state.rules.hero.skills[FIREBALL]!;
     this.set('hp', `${Math.ceil(hero.hp)}/${hero.maxHp}`, () => {
       $('hpTxt').textContent = String(Math.ceil(hero.hp));
       $('hpFill').style.height = `${(hero.hp / hero.maxHp) * 100}%`;
@@ -39,10 +42,10 @@ export class Hud {
     });
     this.set('level', hero.level, () => ($('lvl').textContent = `Level ${hero.level}`));
     this.set('xp', Math.round((hero.xp / hero.xpNext) * 100), (v) => ($('xpFill').style.width = `${v}%`));
-    this.set('fireCooldown', Math.round((hero.blastCooldown / blast.cooldown) * 100), (v) =>
+    this.set('fireCooldown', Math.round((hero.skillCooldowns[FIREBALL]! / fireball.cooldown) * 100), (v) =>
       $('fireCd').style.setProperty('--p', `${v}%`),
     );
-    this.set('fireOff', hero.resource < blast.cost, (v) => $('bFire').classList.toggle('off', Boolean(v)));
+    this.set('fireOff', hero.resource < fireball.cost, (v) => $('bFire').classList.toggle('off', Boolean(v)));
     this.set('quest', QUEST[state.quest]?.text ?? '', (v) => ($('quest').textContent = String(v)));
     const ls = currentLevel(state);
     this.set('location', ls.level.name, (v) => ($('locName').textContent = String(v)));

@@ -96,6 +96,29 @@ export interface EnemyType {
   drops: { gold: Range; healingChance: number; extraHealingItems?: number };
 }
 
+/**
+ * A projectile cast at the target, or the nearest visible enemy, that explodes on hitting an enemy or a wall or at
+ * the end of its flight, hurting every enemy within `radius`.
+ */
+export interface ProjectileSkill {
+  type: 'projectile';
+  /** Names the skill for the game's sounds, look and HUD. */
+  id: string;
+  cost: number;
+  cooldown: number;
+  speed: number;
+  lifetime: number;
+  radius: number;
+  damage: Range;
+  damagePerLevel: number;
+  critChance: number;
+  critMultiplier: number;
+  autoAimRange: number;
+}
+
+/** A skill the hero can use, by engine type. Games pick and tune these; new types are added here as games need them. */
+export type Skill = ProjectileSkill;
+
 /** The hero's numbers. Neutral names: "resource" is what skills cost, "healing items" are drunk or used to heal. */
 export interface HeroRules {
   radius: number;
@@ -124,19 +147,8 @@ export interface HeroRules {
     critMultiplier: number;
     knockback: number;
   };
-  /** A projectile that explodes on impact, hurting every enemy in a radius. */
-  blast: {
-    cost: number;
-    cooldown: number;
-    speed: number;
-    lifetime: number;
-    radius: number;
-    damage: Range;
-    damagePerLevel: number;
-    critChance: number;
-    critMultiplier: number;
-    autoAimRange: number;
-  };
+  /** Skills on top of the melee attack, by slot, each costing resource and with its own cooldown. */
+  skills: Skill[];
   heal: { amount: number; maxItems: number };
   /** The attack command picks the nearest visible enemy within this distance. */
   attackAssistRange: number;

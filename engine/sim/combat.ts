@@ -5,6 +5,7 @@ import { hasLineOfSight } from '../world/line-of-sight';
 import { isSolidAt } from '../world/tile-map';
 import { advanceQuest } from './interaction';
 import { dropEnemyLoot } from './loot';
+import type { ProjectileSkill } from './content';
 import { currentLevel, type Enemy, type GameState, type SimEvent } from './state';
 
 /** Projectiles hit a body within this distance of its edge. */
@@ -97,17 +98,16 @@ export function hurtHero(state: GameState, amount: number, events: SimEvent[]): 
   }
 }
 
-/** The hero's blast exploding at a point: every enemy in the radius is hurt and knocked away from the centre. */
-function explode(state: GameState, x: number, y: number, events: SimEvent[]): void {
-  const blast = state.rules.hero.blast;
-  events.push({ type: 'Exploded', x, y, radius: blast.radius });
+/** A hero's projectile exploding at a point: every enemy in the radius is hurt and knocked away from the centre. */
+function explode(state: GameState, skill: ProjectileSkill, x: number, y: number, events: SimEvent[]): void {
+  events.push({ type: 'Exploded', x, y, radius: skill.radius });
   for (const e of currentLevel(state).enemies) {
     if (e.dead) continue;
     const d = dist(x, y, e.x, e.y);
-    if (d >= blast.radius + e.r) continue;
-    const crit = chance(state.rng, blast.critChance);
-    let damage = int(state.rng, blast.damage[0], blast.damage[1]) + state.hero.level * blast.damagePerLevel;
-    if (crit) damage = Math.round(damage * blast.critMultiplier);
+    if (d >= skill.radius + e.r) continue;
+    const crit = chance(state.rng, skill.critChance);
+    let damage = int(state.rng, skill.damage[0], skill.damage[1]) + state.hero.level * skill.damagePerLevel;
+    if (crit) damage = Math.round(damage * skill.critMultiplier);
     const k = d || 1;
     damageEnemy(state, e, damage, crit, (e.x - x) / k, (e.y - y) / k, state.rules.hero.melee.knockback, events);
   }
@@ -124,11 +124,12 @@ export function updateProjectiles(state: GameState, dt: number, events: SimEvent
     p.y += p.vy * dt;
     p.life -= dt;
     let hit = isSolidAt(map, p.x, p.y) || p.life <= 0;
-    if (p.kind === 'blast') {
+    if (p.kind === 'skill') {
       for (const e of currentLevel(state).enemies) {
         if (!e.dead && dist(p.x, p.y, e.x, e.y) < PROJECTILE_HIT_RADIUS + e.r) hit = true;
       }
-      if (hit) explode(state, p.x, p.y, events);
+      const skill = state.rules.hero.skills[p.slot];
+      if (hit && skill?.type === 'projectile') explode(state, skill, p.x, p.y, events);
     } else if (!hero.dead && dist(p.x, p.y, hero.x, hero.y) < PROJECTILE_HIT_RADIUS) {
       hurtHero(state, p.damage, events);
       hit = true;

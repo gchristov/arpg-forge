@@ -147,9 +147,9 @@ export const MODEL_URLS: Record<string, string> = Object.fromEntries(
 
 export const ashenHollowLook: Look = {
   effects: {
-    blast: 0xffa040, shot: 0xe8e1cc, telegraph: 0xb46bff, items: { gold: 0xe8b84a, healingItem: 0xd2303a },
+    skill: 0xffa040, shot: 0xe8e1cc, telegraph: 0xb46bff, items: { gold: 0xe8b84a, healingItem: 0xd2303a },
     walkMarker: 0xe8d6a6, targetMarker: 0xff5a4a,
-    blastLight: 0xff9b3c, telegraphLight: 0xaa5aff, bossLight: 0xaa5aff,
+    skillLight: 0xff9b3c, telegraphLight: 0xaa5aff, bossLight: 0xaa5aff,
     smoke: 0x6b6672,
     explosion: { flash: 0xff9a3a, scorch: 0x120a06 },
     slam: { flash: 0xb98cff, scorch: 0x24123a },

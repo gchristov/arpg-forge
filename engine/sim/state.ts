@@ -30,7 +30,8 @@ export interface Hero extends Actor {
   /** Extra melee damage, for example from upgrades bought from a vendor. */
   bonusDamage: number;
   attackCooldown: number;
-  blastCooldown: number;
+  /** Seconds until each skill, by slot, can be used again. */
+  skillCooldowns: number[];
   swing: Swing;
   /** Whether the current swing has already struck. */
   struck: boolean;
@@ -71,8 +72,9 @@ export interface Enemy extends Actor {
 }
 
 export interface Projectile {
-  /** `blast` is the hero's exploding skill; `shot` is an enemy's ranged attack. */
-  kind: 'blast' | 'shot';
+  /** `skill` is one of the hero's, cast from slot `slot`; `shot` is an enemy's ranged attack. */
+  kind: 'skill' | 'shot';
+  slot: number;
   x: number;
   y: number;
   prevX: number;
@@ -166,7 +168,7 @@ export type Command =
   | { type: 'walkInto'; tx: number; ty: number }
   | { type: 'attack'; enemyId: number }
   | { type: 'attackNearest' }
-  | { type: 'blast' }
+  | { type: 'useSkill'; slot: number }
   | { type: 'heal' }
   | { type: 'respawn' }
   | { type: 'talk'; npcId: number }
@@ -197,7 +199,7 @@ export type SimEvent =
   | { type: 'LevelUp'; level: number }
   | { type: 'Healed'; amount: number; x: number; y: number }
   | { type: 'Refused'; reason: RefusalReason; x: number; y: number }
-  | { type: 'BlastCast' }
+  | { type: 'SkillUsed'; slot: number; skill: string }
   | { type: 'Exploded'; x: number; y: number; radius: number }
   | { type: 'ShotFired'; enemyId: number }
   | { type: 'SlamWarned'; enemyId: number; x: number; y: number }

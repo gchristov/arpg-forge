@@ -68,7 +68,7 @@ export class WorldView {
         case 'Swung':
           if (e.actorId === state.hero.id) renderer.playActor(String(e.actorId), 'attack', state.rules.hero.melee.swingSeconds * 1.6);
           break;
-        case 'BlastCast':
+        case 'SkillUsed':
           renderer.playActor(String(state.hero.id), 'cast', 0.45);
           break;
         case 'EnemyDamaged':
@@ -127,7 +127,7 @@ export class WorldView {
     }
     labels.endBars();
     for (const p of state.projectiles) {
-      if (p.kind === 'blast') renderer.glow(lerp(p.prevX, p.x, alpha), lerp(p.prevY, p.y, alpha), 2.6, look.effects.blastLight, 0.9);
+      if (p.kind === 'skill') renderer.glow(lerp(p.prevX, p.x, alpha), lerp(p.prevY, p.y, alpha), 2.6, look.effects.skillLight, 0.9);
     }
     for (const t of state.telegraphs) renderer.glow(t.x, t.y, t.radius + 0.6, look.effects.telegraphLight, 0.6);
     for (const e of ls.enemies) {
