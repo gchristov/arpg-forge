@@ -13,11 +13,15 @@ export interface LevelLight {
   seed: number;
 }
 
-/** Stepping onto the tile leads to another level. */
+/**
+ * Stepping onto the tile leads to another level. Arriving the other way, through this portal, puts you at the
+ * tile's centre plus `stepOut`, just clear of the doorway.
+ */
 export interface Portal {
   tx: number;
   ty: number;
   to: string;
+  stepOut: Vec2;
 }
 
 /** A building or other large block on the map, with a door the player walks to when it's tapped. */

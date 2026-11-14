@@ -31,4 +31,6 @@ export const Prop = {
   Doorway: 18,
   DeadTree: 19,
   WallTorch: 20,
+  /** Walls along the front edge of a room, kept low so the camera sees in. */
+  WallLow: 21,
 } as const;

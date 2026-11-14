@@ -6,7 +6,7 @@ The roadmap and the engine's design live in Notion: the [Roadmap](https://app.no
 
 ## Current state
 
-Stage 1 of the roadmap is under way: build the engine and rebuild Ashen Hollow on it in 3D with Three.js, matching `prototypes/ashen-hollow.html` item for item as listed in `games/ashen-hollow/PARITY.md`. The engine core and world, the first 3D scene of the village (`/games/ashen-hollow/`) and the browser smoke test are merged. Next is the simulation skeleton: `step(state, input, dt)`, input as commands, events, typed actors, the interiors and doors. The prototype (dense one-liners, globals `G` and `P`, `Math.random()` throughout, drawn with Canvas 2D) stays frozen as the spec. Tick `PARITY.md` items as they land. When all are ticked, `/ashen-hollow/` switches to the engine version, and the prototype and `PARITY.md` are deleted. Update this section as the work lands.
+Stage 1 of the roadmap is under way: build the engine and rebuild Ashen Hollow on it in 3D with Three.js, matching `prototypes/ashen-hollow.html` item for item as listed in `games/ashen-hollow/PARITY.md`. The engine core and world, the 3D village and interiors (`/games/ashen-hollow/`, with `#tavern`, `#crypt` and so on to start in a level), the browser smoke test and the simulation skeleton (`engine/sim/step.ts`: input as commands, events, portals and fades) are merged. Next is combat and enemies: melee, fireball, potions, enemy behaviour and the boss. The prototype (dense one-liners, globals `G` and `P`, `Math.random()` throughout, drawn with Canvas 2D) stays frozen as the spec. Tick `PARITY.md` items as they land. When all are ticked, `/ashen-hollow/` switches to the engine version, and the prototype and `PARITY.md` are deleted. Update this section as the work lands.
 
 ## Layout
 
@@ -20,7 +20,7 @@ Stage 1 of the roadmap is under way: build the engine and rebuild Ashen Hollow o
 Local tools run in Docker, not on this machine: don't install Node, npm packages or other tools on the host unless there's no way around it. Node 26 (`.nvmrc`, `tools/node/Dockerfile`) runs through `./tools/node/run.sh <command>`, which keeps `node_modules` in a Docker volume. Run `./tools/node/run.sh npm install` once.
 
 - Dev server: `./tools/node/run.sh npm run dev`, then open http://localhost:5173. Phones on the same network can use this machine's address. The root page links to each game and prototype. The engine build of Ashen Hollow is at `/games/ashen-hollow/` until it replaces the prototype at `/ashen-hollow/`. Add `?debug` to a game's URL for frame timings.
-- Unit tests: `./tools/node/run.sh npm test` (`npm run test:watch` to re-run on change). Tests sit next to the code as `*.test.ts`, or in `tests/`.
+- Unit tests: `./tools/node/run.sh npm test` (includes headless scenario tests such as `games/ashen-hollow/scenarios.test.ts`, which play the rules with scripted commands) (`npm run test:watch` to re-run on change). Tests sit next to the code as `*.test.ts`, or in `tests/`.
 - Type check: `./tools/node/run.sh npm run typecheck`
 - Build: `./tools/node/run.sh npm run build` writes `dist/`; `./tools/node/run.sh npm run preview` serves it on http://localhost:4173. Prototypes are copied byte for byte, not bundled.
 - Browser smoke test: `./tools/browser/run.sh smoke` loads every page of the build in headless Chromium with WebGL at desktop and phone size. It fails on any page error, checks that a tap moves the hero in each engine game, and saves screenshots to `tools/browser/out/`. Add new pages to `PAGES` in `tools/browser/smoke.mjs`.

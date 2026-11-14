@@ -23,7 +23,7 @@ describe('village parity with the prototype', () => {
   });
 
   it('has the same portals', () => {
-    expect(level.portals).toEqual(proto.portals.map((p) => ({ tx: p.x, ty: p.y, to: p.to })));
+    expect(level.portals.map(({ tx, ty, to }) => ({ tx, ty, to }))).toEqual(proto.portals.map((p) => ({ tx: p.x, ty: p.y, to: p.to })));
   });
 
   it('has the same lights', () => {
