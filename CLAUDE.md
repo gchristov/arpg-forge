@@ -8,12 +8,13 @@ Step 0 of `PLAN.md` is done: TypeScript, Vite, Vitest and CI are set up, and `en
 
 ## Commands
 
-Node 26 (`.nvmrc`). Run `npm install` once.
+Local tools run in Docker, not on this machine: don't install Node, npm packages or other tools on the host unless there's no way around it. Node 26 (`.nvmrc`, `tools/node/Dockerfile`) runs through `./tools/node/run.sh <command>`, which keeps `node_modules` in a Docker volume. Run `./tools/node/run.sh npm install` once.
 
-- Dev server: `npm run dev`, then open the printed URL. The root page links to each game and prototype.
-- Unit tests: `npm test` (`npm run test:watch` to re-run on change). Tests sit next to the code as `*.test.ts`, or in `tests/`.
-- Type check: `npm run typecheck`
-- Build: `npm run build` writes `dist/`; `npm run preview` serves it. Prototypes are copied byte for byte, not bundled.
+- Dev server: `./tools/node/run.sh npm run dev`, then open http://localhost:5173. Phones on the same network can use this machine's address. The root page links to each game and prototype.
+- Unit tests: `./tools/node/run.sh npm test` (`npm run test:watch` to re-run on change). Tests sit next to the code as `*.test.ts`, or in `tests/`.
+- Type check: `./tools/node/run.sh npm run typecheck`
+- Build: `./tools/node/run.sh npm run build` writes `dist/`; `./tools/node/run.sh npm run preview` serves it on http://localhost:4173. Prototypes are copied byte for byte, not bundled.
+- A new tool gets its own `tools/<name>/` folder with a `Dockerfile` and a `run.sh` in the same style.
 
 ## CI/CD
 
