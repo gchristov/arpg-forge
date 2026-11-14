@@ -1,5 +1,6 @@
 // End-to-end smoke test of the built site (dist/) in headless Chromium with WebGL. Every page must load
-// without errors, and on each engine game a tap on the ground must move the hero. Screenshots go to
+// without errors, and on each engine game a tap on the ground must move the hero, after tapping through the
+// title screen. Screenshots go to
 // tools/browser/out/smoke-*.png. Exits non-zero on any failure.
 import { serveDist, launchBrowser } from './browser.mjs';
 
@@ -29,6 +30,10 @@ for (const size of SIZES) {
       const response = await page.goto(`http://localhost:${port}${p.path}`);
       if (!response?.ok()) failures.push(`${label}: HTTP ${response?.status()}`);
       await page.waitForTimeout(1500);
+      if (await page.locator('#title').isVisible().catch(() => false)) {
+        await page.locator('#title').dispatchEvent('pointerdown');
+        await page.waitForTimeout(500);
+      }
       if (p.tapMovesHero) {
         const before = await page.screenshot();
         await page.evaluate(([x, y]) => {

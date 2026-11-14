@@ -37,6 +37,26 @@ export interface EffectColours {
   items: Record<string, number>;
 }
 
+interface Decal {
+  mesh: THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial>;
+  age: number;
+  life: number;
+}
+
+interface Puff {
+  mesh: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>;
+  age: number;
+  life: number;
+  vx: number;
+  vy: number;
+  vz: number;
+}
+
+/** Marks on the ground fade over their last few seconds. */
+const DECAL_FADE_SECONDS = 3;
+const DECAL_POOL = 48;
+const PUFF_POOL = 32;
+
 interface Flash {
   mesh: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>;
   age: number;
@@ -55,6 +75,8 @@ export class Effects {
   private readonly flashes: Flash[] = [];
   private readonly items = new Map<string, THREE.Mesh[]>();
   private readonly itemsUsed = new Map<string, number>();
+  private readonly decals: Decal[] = [];
+  private readonly puffs: Puff[] = [];
 
   constructor(scene: THREE.Scene, colours: EffectColours) {
     const blastGeometry = new THREE.SphereGeometry(0.15, 12, 8);
@@ -64,6 +86,19 @@ export class Effects {
     const circleGeometry = new THREE.CircleGeometry(1, 40).rotateX(-Math.PI / 2);
     const flashGeometry = new THREE.SphereGeometry(1, 16, 10);
     const itemGeometry = new THREE.CylinderGeometry(0.12, 0.12, 0.06, 14);
+    for (let i = 0; i < DECAL_POOL; i++) {
+      this.decals.push({
+        mesh: hidden(scene, new THREE.Mesh(circleGeometry, new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false }))),
+        age: 0, life: 0,
+      });
+    }
+    const puffGeometry = new THREE.SphereGeometry(1, 10, 8);
+    for (let i = 0; i < PUFF_POOL; i++) {
+      this.puffs.push({
+        mesh: hidden(scene, new THREE.Mesh(puffGeometry, new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false }))),
+        age: 0, life: 0, vx: 0, vy: 0, vz: 0,
+      });
+    }
     for (const [kind, colour] of Object.entries(colours.items)) {
       const material = new THREE.MeshLambertMaterial({ color: colour, emissive: colour, emissiveIntensity: 0.35 });
       const pool: THREE.Mesh[] = [];
@@ -144,7 +179,61 @@ export class Effects {
     f.mesh.visible = true;
   }
 
+  /** A mark on the ground, such as blood or a scorch, that lasts `seconds`. */
+  decal(x: number, y: number, radius: number, colour: number, opacity: number, seconds: number): void {
+    const d = this.decals.find((candidate) => candidate.age >= candidate.life) ?? this.decals[0]!;
+    d.age = 0;
+    d.life = seconds;
+    d.mesh.position.set(x, 0.01, y);
+    d.mesh.scale.setScalar(radius);
+    d.mesh.material.color.set(colour);
+    d.mesh.material.userData.opacity = opacity;
+    d.mesh.material.opacity = opacity;
+    d.mesh.visible = true;
+  }
+
+  /** Removes every mark, for example when a different level is shown. */
+  clearDecals(): void {
+    for (const d of this.decals) {
+      d.age = d.life;
+      d.mesh.visible = false;
+    }
+  }
+
+  /** A puff of smoke rising from a point `height` tiles up, drifting with the given velocity in tiles a second. */
+  smoke(x: number, y: number, height: number, vx: number, vy: number, vz: number, colour: number, seconds: number): void {
+    const p = this.puffs.find((candidate) => candidate.age >= candidate.life) ?? this.puffs[0]!;
+    p.age = 0;
+    p.life = seconds;
+    p.vx = vx;
+    p.vy = vy;
+    p.vz = vz;
+    p.mesh.position.set(x, height, y);
+    p.mesh.material.color.set(colour);
+    p.mesh.visible = true;
+  }
+
   update(frameSeconds: number): void {
+    for (const d of this.decals) {
+      if (d.age >= d.life) continue;
+      d.age += frameSeconds;
+      if (d.age >= d.life) d.mesh.visible = false;
+      else d.mesh.material.opacity = (d.mesh.material.userData.opacity as number) * Math.min(1, (d.life - d.age) / DECAL_FADE_SECONDS);
+    }
+    for (const p of this.puffs) {
+      if (p.age >= p.life) continue;
+      p.age += frameSeconds;
+      if (p.age >= p.life) {
+        p.mesh.visible = false;
+        continue;
+      }
+      const k = p.age / p.life;
+      p.mesh.position.x += p.vx * frameSeconds;
+      p.mesh.position.z += p.vy * frameSeconds;
+      p.mesh.position.y += p.vz * frameSeconds;
+      p.mesh.scale.setScalar(0.12 + 0.3 * k);
+      p.mesh.material.opacity = 0.35 * (1 - k);
+    }
     for (const f of this.flashes) {
       if (f.age >= f.life) {
         f.mesh.visible = false;

@@ -1,3 +1,9 @@
+import '@fontsource/alegreya-sans/400.css';
+import '@fontsource/alegreya-sans/500.css';
+import '@fontsource/alegreya-sans/700.css';
+import '@fontsource/cinzel/500.css';
+import '@fontsource/cinzel/700.css';
+import { Synth } from '../../engine/audio/synth';
 import { advance, createFixedLoop } from '../../engine/core/loop';
 import { lerp, type Vec2 } from '../../engine/core/math';
 import { bindKeys } from '../../engine/input/keys';
@@ -12,6 +18,7 @@ import { ScreenFade } from '../../engine/ui/fade';
 import { WorldLabels, type Project } from '../../engine/ui/world-labels';
 import { tileIndex } from '../../engine/world/tile-map';
 import { ashenHollowLook } from './art/look';
+import { ashenHollowSounds } from './audio/sounds';
 import { ENEMIES } from './content/enemies';
 import { BOSS_DEFEATED_STEP, dialogueFor, NPCS } from './content/story';
 import { Prop } from './content/tiles';
@@ -27,6 +34,8 @@ const PX = 1 / 39.2;
 /** Taps within this many pixels (at zoom 1) of an enemy's body pick it. */
 const TAP_REACH_PX = 34;
 const HIT_FLASH_SECONDS = 0.12;
+/** Each chimney puffs this often. */
+const SMOKE_SECONDS = 1.6;
 const HERO_FLASH_SECONDS = 0.15;
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!;
@@ -34,6 +43,8 @@ const renderer = new SceneRenderer(canvas, ashenHollowLook);
 const pointer = new PointerInput(canvas);
 const fade = new ScreenFade(document.body, FADE_SECONDS);
 const labels = new WorldLabels(document.body);
+const synth = new Synth();
+const sfx = ashenHollowSounds(synth);
 const debugMode = new URLSearchParams(location.search).has('debug');
 const debug = debugMode ? new DebugOverlay(document.body) : null;
 const project: Project = (x, y, height, out) => renderer.screenPosition(x, y, height, out);
@@ -51,12 +62,38 @@ const hud = new Hud((c) => {
 });
 /** Holding the pointer keeps walking only when the press started a walk. */
 let holdWalks = false;
+/** The rules wait behind the title screen until the first tap. */
+let started = false;
+let nextSmokeAt = 0;
 /** Seconds left of each actor's hit flash, by id. */
 const flashes = new Map<number, number>();
 const screenPoint: Vec2 = { x: 0, y: 0 };
 
 /** With `?debug`, scripts such as browser tests can read the state and send commands. */
-if (debugMode) Object.assign(window, { game: { state, send: (c: Command) => pending.push(c) } });
+if (debugMode) Object.assign(window, { game: { state, send: (c: Command) => pending.push(c), start } });
+
+const $ = (id: string): HTMLElement => document.getElementById(id)!;
+
+function start(): void {
+  if (started) return;
+  started = true;
+  synth.unlock();
+  $('title').hidden = true;
+  hud.banner('Ashen Hollow', 'Speak to Elder Maren in the square.', 3);
+}
+
+$('title').addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  start();
+});
+$('mute').addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  synth.unlock();
+  synth.muted = !synth.muted;
+  $('waves').style.display = synth.muted ? 'none' : '';
+});
+document.addEventListener('pointerdown', () => synth.unlock(), { capture: true });
 
 bindKeys({
   '1': () => pending.push({ type: 'heal' }),
@@ -73,6 +110,7 @@ showCurrentLevel();
 function showCurrentLevel(): void {
   renderer.showLevel(currentLevel(state).level);
   renderer.clearActors();
+  renderer.effects.clearDecals();
   renderer.follow(state.hero.x, state.hero.y, 0, true);
 }
 
@@ -130,7 +168,76 @@ const REFUSALS = {
   fullHealth: ['Already healthy', '#e0d3b5'],
 } as const;
 
+/** Ashen Hollow's sounds for the rules' events, as in the prototype. */
+function playSounds(events: SimEvent[]): void {
+  const heroHurt = events.some((e) => e.type === 'HeroHurt');
+  for (const e of events) {
+    switch (e.type) {
+      case 'Swung':
+        if (e.actorId === state.hero.id || !heroHurt) sfx.swing();
+        break;
+      case 'EnemyDamaged': {
+        const kind = currentLevel(state).enemies.find((en) => en.id === e.enemyId)?.kind;
+        if (kind === 'goblin') sfx.hit();
+        else sfx.bone();
+        break;
+      }
+      case 'HeroHurt':
+        sfx.hurt();
+        break;
+      case 'BlastCast':
+        sfx.fire();
+        break;
+      case 'Exploded':
+        sfx.boom();
+        break;
+      case 'PickedUp':
+        sfx.coin();
+        break;
+      case 'Healed':
+        sfx.potion();
+        break;
+      case 'LevelUp':
+        sfx.level();
+        break;
+      case 'TransitionStarted':
+        sfx.door();
+        break;
+      case 'HeroDied':
+        sfx.die();
+        break;
+      case 'ShotFired':
+        sfx.arrow();
+        break;
+      case 'EnemyAlerted':
+        sfx.alert();
+        break;
+      case 'SlamLanded':
+        sfx.slam();
+        break;
+      case 'ContainerOpened':
+        sfx.chest();
+        break;
+      case 'Refused':
+        if (e.reason !== 'fullHealth') sfx.deny();
+        break;
+      case 'ServiceUsed': {
+        const npc = currentLevel(state).npcs.find((n) => n.id === e.npcId);
+        const service = npc && NPCS[npc.kind]?.services[e.service];
+        if (service?.type === 'restore') sfx.potion();
+        else if (service?.type === 'sellHealingItem') sfx.coin();
+        else sfx.chest();
+        break;
+      }
+      case 'QuestAdvanced':
+        if (e.step === BOSS_DEFEATED_STEP) sfx.level();
+        break;
+    }
+  }
+}
+
 function react(events: SimEvent[]): void {
+  playSounds(events);
   for (const e of events) {
     switch (e.type) {
       case 'WalkTargetSet':
@@ -170,7 +277,14 @@ function react(events: SimEvent[]): void {
         labels.text(e.x, e.y, 50 * PX, text, colour, 13);
         break;
       }
+      case 'EnemyKilled': {
+        const scale = ENEMIES[e.kind]?.scale ?? 1;
+        if (e.kind === 'goblin') renderer.effects.decal(e.x, e.y, 0.35 * scale, 0x4a0808, 0.75, 40);
+        else renderer.effects.decal(e.x, e.y, 0.3 * scale, 0xd8d0b8, 0.55, 40);
+        break;
+      }
       case 'Exploded':
+        renderer.effects.decal(e.x, e.y, 0.8, 0x120a06, 0.7, 12);
         renderer.effects.flash(e.x, e.y, e.radius, 0xff9a3a, 0.35);
         renderer.shake(0.22);
         break;
@@ -178,6 +292,7 @@ function react(events: SimEvent[]): void {
         labels.text(e.x, e.y, 70 * PX, '!', '#c77dff', 24);
         break;
       case 'SlamLanded':
+        renderer.effects.decal(e.x, e.y, e.radius, 0x24123a, 0.7, 8);
         renderer.effects.flash(e.x, e.y, e.radius, 0xb98cff, 0.5);
         renderer.shake(0.45);
         break;
@@ -264,7 +379,22 @@ function drawActor(actor: Actor, alpha: number, fadeShare = 1): void {
   );
 }
 
+/** Smoke drifts from each chimney, as in the prototype's village. */
+function puffChimneys(): void {
+  if (state.time < nextSmokeAt) return;
+  nextSmokeAt = state.time + SMOKE_SECONDS;
+  for (const s of currentLevel(state).level.structures) {
+    if (!s.chimney) continue;
+    const look = ashenHollowLook.structure(s.kind);
+    const height = look.wallHeight + look.roofHeight + 22 * PX;
+    const vx = (0.05 + Math.random() * 0.2) * 0.7;
+    const vy = -(0.05 + Math.random() * 0.2) * 0.7;
+    renderer.effects.smoke(s.chimney.tx + 0.5, s.chimney.ty + 0.5, height, vx, vy, (10 + Math.random() * 8) * PX, 0x6b6672, 3.5);
+  }
+}
+
 function drawWorld(alpha: number, frameSeconds: number): void {
+  puffChimneys();
   for (const [id, left] of flashes) {
     if (left - frameSeconds <= 0) flashes.delete(id);
     else flashes.set(id, left - frameSeconds);
@@ -298,9 +428,12 @@ function frame(now: number): void {
     holdWalks = command?.type === 'walk';
     if (command) pending.push(command);
   }
+  if (!started) pending.length = 0;
   const held = heldGroundPoint();
   const t0 = performance.now();
-  const alpha = advance(loop, frameSeconds, (dt) => react(step(state, { commands: pending.splice(0), held }, dt)));
+  const alpha = started
+    ? advance(loop, frameSeconds, (dt) => react(step(state, { commands: pending.splice(0), held }, dt)))
+    : 1;
   const t1 = performance.now();
   drawWorld(alpha, frameSeconds);
   renderer.follow(lerp(state.hero.prevX, state.hero.x, alpha), lerp(state.hero.prevY, state.hero.y, alpha), frameSeconds);

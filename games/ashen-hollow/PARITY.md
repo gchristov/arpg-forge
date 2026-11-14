@@ -15,8 +15,8 @@ These differ on purpose and don't count against parity:
 
 ## Story and text
 
-- [ ] Title screen: "Ashen Hollow", "The dead are restless beneath the old crypt.", control hints (Walk: tap or hold the ground; Fight: tap an enemy, or the sword; Enter: tap a building or walk into its door; Talk: tap a villager) and "Tap to begin".
-- [ ] On start, banner "Ashen Hollow" / "Speak to Elder Maren in the square." for 3 s.
+- [x] Title screen: "Ashen Hollow", "The dead are restless beneath the old crypt.", control hints (Walk: tap or hold the ground; Fight: tap an enemy, or the sword; Enter: tap a building or walk into its door; Talk: tap a villager) and "Tap to begin".
+- [x] On start, banner "Ashen Hollow" / "Speak to Elder Maren in the square." for 3 s.
 - [x] Quest line, shown in the HUD:
   - [x] 0 "Speak to Elder Maren in the square."
   - [x] 1 "Clear the Old Crypt, east past the graveyard." Reached by talking to Maren.
@@ -80,7 +80,7 @@ These differ on purpose and don't count against parity:
 - [x] Tap a doorway: walk into it.
 - [x] Attack button, `2` or space: target the nearest visible enemy within 7 tiles, or swing at nothing if there's none.
 - [x] Fireball button or `3`. Potion button or `1`.
-- [ ] Mute button toggles all sound.
+- [x] Mute button toggles all sound.
 - [x] Tapping anywhere closes an open dialogue. Input is ignored during a map transition.
 
 ## Combat
@@ -93,7 +93,7 @@ These differ on purpose and don't count against parity:
   - [x] It explodes on a wall, an enemy (within 0.45 plus its radius) or timing out.
   - [x] The explosion hits every enemy within 1.5 plus its radius for 22–32 plus 3 per level. A 10% crit chance deals ×1.6. Hits are knocked back away from the centre.
 - [x] Potion: heals up to 60, but not above max. Refused when there are none or health is full.
-- [ ] Taking damage: a minimum of 1, rounded. A red screen flash, screen shake and a hurt sound.
+- [x] Taking damage: a minimum of 1, rounded. A red screen flash, screen shake and a hurt sound.
 - [x] Bodies push each other apart. NPCs don't move, and the hero moves less (weight 0.4 against 1).
 
 ## Enemies
@@ -117,16 +117,16 @@ These differ on purpose and don't count against parity:
 - [x] Being hit while idle or returning switches to chase.
 - [x] **Boss slam:** every 5–7 s, when within 6 tiles and not attacking, a "!" and a 1.7-tile circle at the hero's position, which lands after 1.0 s for 16–24 damage if they're still inside. Screen shake and a crack decal.
 - [x] **Boss summon:** once, below half health, three skeletons appear around him and chase at once.
-- [ ] **Death:** XP, a gold drop (the type's range) and a 20% potion chance. The boss always drops two potions, and sets the quest to 3. A decal: blood for goblins, bones for the others. The body fades over 1 s.
+- [x] **Death:** XP, a gold drop (the type's range) and a 20% potion chance. The boss always drops two potions, and sets the quest to 3. A decal: blood for goblins, bones for the others. The body fades over 1 s.
 - [x] **Village respawns:** every 30 s, if fewer than 12 enemies are alive, a random camp more than 12 tiles from the hero gets a new goblin or skeleton group (50/50).
 
 ## Items and the world
 
 - [x] Drops scatter 0.2–0.6 tiles, bounce, and are picked up within 0.75 tiles once landed. Gold has no cap. Potions cap at 9; a potion drop stays on the ground when full.
 - [x] Cottage chest: opens once, dropping 45 gold and 2 potions.
-- [ ] Portals: building doors in the village, and the `D` tile inside. There's a 0.7 s cooldown after arriving. Transitions fade out and in over 0.3 s, with a door sound.
+- [x] Portals: building doors in the village, and the `D` tile inside. There's a 0.7 s cooldown after arriving. Transitions fade out and in over 0.3 s, with a door sound.
 - [x] Entering the crypt before the quest reaches 2 sets it to 2, unless the boss is already dead.
-- [ ] Chimney smoke in the village every 1.6 s.
+- [x] Chimney smoke in the village every 1.6 s.
 
 ## HUD
 
@@ -137,4 +137,4 @@ These differ on purpose and don't count against parity:
 
 ## Sound
 
-- [ ] A sound for each of: swing, hit (flesh), hit (bone), hurt, fireball cast, explosion, coin, potion, level up, door, death, arrow, alert, slam, chest and refused action (recipes in `SFX`).
+- [x] A sound for each of: swing, hit (flesh), hit (bone), hurt, fireball cast, explosion, coin, potion, level up, door, death, arrow, alert, slam, chest and refused action (recipes in `SFX`).
