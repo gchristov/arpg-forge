@@ -1,6 +1,7 @@
 import type { Vec2 } from '../core/math';
 import type { Rng } from '../core/rng';
 import type { Level } from '../world/level';
+import type { Camp, CampRespawns, EnemyType, HeroRules } from './content';
 import type { Walker } from './walking';
 
 export interface Actor extends Walker {
@@ -11,23 +12,90 @@ export interface Actor extends Walker {
   prevY: number;
 }
 
+/** Progress through a swing from 0 to 1, or -1 when not swinging. */
+export type Swing = number;
+
 export interface Hero extends Actor {
   speed: number;
+  hp: number;
+  maxHp: number;
+  resource: number;
+  maxResource: number;
+  level: number;
+  xp: number;
+  xpNext: number;
+  gold: number;
+  healingItems: number;
+  damage: [number, number];
+  /** Extra melee damage, for example from upgrades bought from a vendor. */
+  bonusDamage: number;
+  attackCooldown: number;
+  blastCooldown: number;
+  swing: Swing;
+  /** Whether the current swing has already struck. */
+  struck: boolean;
+  lastHurtAt: number;
+  dead: boolean;
+  targetId: number | null;
+  repathTimer: number;
 }
 
 export interface Npc extends Actor {
   name: string;
 }
 
+export type EnemyMode = 'idle' | 'chase' | 'return';
+
 export interface Enemy extends Actor {
   homeX: number;
   homeY: number;
+  hp: number;
+  maxHp: number;
+  mode: EnemyMode;
+  attackCooldown: number;
+  /** Progress through the wind-up of an attack from 0 to 1, or -1 when not attacking. */
+  windUp: number;
+  swing: Swing;
+  wanderTimer: number;
+  wanderX: number;
+  wanderY: number;
+  repathTimer: number;
+  dead: boolean;
+  deadFor: number;
+  slamTimer: number;
+  summoned: boolean;
+}
+
+export interface Projectile {
+  /** `blast` is the hero's exploding skill; `shot` is an enemy's ranged attack. */
+  kind: 'blast' | 'shot';
+  x: number;
+  y: number;
+  prevX: number;
+  prevY: number;
+  vx: number;
+  vy: number;
+  life: number;
+  damage: number;
+}
+
+/** A marked circle that lands after a delay, hurting the hero if they're still inside. */
+export interface Telegraph {
+  x: number;
+  y: number;
+  radius: number;
+  elapsed: number;
+  delay: number;
+  damage: [number, number];
 }
 
 export interface LevelState {
   level: Level;
   enemies: Enemy[];
   npcs: Npc[];
+  camps: Camp[];
+  campRespawns?: CampRespawns;
+  campTimer: number;
 }
 
 /** Walking through a portal: the screen fades, then the hero arrives on the other side. */
@@ -43,9 +111,13 @@ export interface GameState {
   rng: Rng;
   time: number;
   nextId: number;
+  rules: { hero: HeroRules; enemies: Record<string, EnemyType>; npcRadius: number };
   levels: Record<string, LevelState>;
   levelId: string;
+  startLevelId: string;
   hero: Hero;
+  projectiles: Projectile[];
+  telegraphs: Telegraph[];
   /** Counts down while the ground is held; the hero re-targets when it runs out. */
   holdTimer: number;
   /** Portals don't trigger again right after arriving. */
@@ -59,7 +131,12 @@ export const currentLevel = (state: GameState): LevelState => state.levels[state
 export type Command =
   | { type: 'walk'; x: number; y: number }
   | { type: 'enterStructure'; index: number }
-  | { type: 'walkInto'; tx: number; ty: number };
+  | { type: 'walkInto'; tx: number; ty: number }
+  | { type: 'attack'; enemyId: number }
+  | { type: 'attackNearest' }
+  | { type: 'blast' }
+  | { type: 'heal' }
+  | { type: 'respawn' };
 
 export interface StepInput {
   commands: Command[];
@@ -67,7 +144,27 @@ export interface StepInput {
   held: Vec2 | null;
 }
 
+export type RefusalReason = 'noResource' | 'noHealingItems' | 'fullHealth';
+
 export type SimEvent =
   | { type: 'WalkTargetSet'; x: number; y: number }
+  | { type: 'TargetSet'; enemyId: number; x: number; y: number }
   | { type: 'TransitionStarted'; to: string }
-  | { type: 'EnteredLevel'; levelId: string };
+  | { type: 'EnteredLevel'; levelId: string }
+  | { type: 'Swung'; actorId: number }
+  | { type: 'EnemyDamaged'; enemyId: number; amount: number; crit: boolean; x: number; y: number }
+  | { type: 'EnemyKilled'; enemyId: number; kind: string; x: number; y: number; boss: boolean }
+  | { type: 'EnemyAlerted'; enemyId: number; boss: boolean }
+  | { type: 'EnemyGaveUp'; enemyId: number; boss: boolean }
+  | { type: 'HeroHurt'; amount: number; x: number; y: number }
+  | { type: 'HeroDied' }
+  | { type: 'HeroRespawned'; goldLost: number }
+  | { type: 'LevelUp'; level: number }
+  | { type: 'Healed'; amount: number; x: number; y: number }
+  | { type: 'Refused'; reason: RefusalReason; x: number; y: number }
+  | { type: 'BlastCast' }
+  | { type: 'Exploded'; x: number; y: number; radius: number }
+  | { type: 'ShotFired'; enemyId: number }
+  | { type: 'SlamWarned'; enemyId: number; x: number; y: number }
+  | { type: 'SlamLanded'; x: number; y: number; radius: number }
+  | { type: 'Summoned'; enemyId: number; summonedIds: number[] };
