@@ -45,21 +45,32 @@ jobs:
       - name: Test web
         uses: ./.github/actions/test-web
 
-  # Publishes main's build to GitHub Pages, so the latest version can be played on any device.
+  # Publishes main's build to the root of the gh-pages branch, which GitHub Pages serves. PR previews live in
+  # pr-preview/ on the same branch, so they're kept, and the push rebases rather than force-pushing over them.
   deploy-web-staging:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [unit-test, build-web, test-web]
     runs-on: ubuntu-24.04
     permissions:
-      pages: write
-      id-token: write
+      contents: write
     environment:
       name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+      url: https://gchristov.github.io/arpg-forge/
     concurrency:
-      group: ${{ github.workflow }}-deploy-web-staging
-      cancel-in-progress: true
+      group: gh-pages-branch
+      cancel-in-progress: false
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Download build
+        uses: actions/download-artifact@v8
+        with:
+          name: Web Build
+          path: dist/
       - name: Deploy
-        id: deploy
-        uses: actions/deploy-pages@v4
+        uses: JamesIves/github-pages-deploy-action@v4.9.0
+        with:
+          folder: dist
+          branch: gh-pages
+          clean-exclude: pr-preview
+          force: false

@@ -30,7 +30,9 @@ Local tools run in Docker, not on this machine: don't install Node, npm packages
 
 ## CI/CD
 
-`.github/workflows/staging-check.yml` runs on PRs into `main` and on pushes to `main`, built from composite actions in `.github/actions/`. Three jobs are required checks: `unit-test` (Vitest, with a `unit-test-results` report), `build-web` (type check and build) and `test-web` (`./tools/browser/run.sh smoke` on the build, with screenshots uploaded as an artifact). On `main`, `deploy-web-staging` publishes the build to GitHub Pages at https://gchristov.github.io/arpg-forge/, so the latest version can be played on a phone. Each game has a short address such as https://gchristov.github.io/arpg-forge/ashen-hollow/.
+`.github/workflows/staging-check.yml` runs on PRs into `main` and on pushes to `main`, built from composite actions in `.github/actions/`. Three jobs are required checks: `unit-test` (Vitest, with a `unit-test-results` report), `build-web` (type check and build) and `test-web` (`./tools/browser/run.sh smoke` on the build, with screenshots uploaded as an artifact). On `main`, `deploy-web-staging` publishes the build to the root of the `gh-pages` branch, which GitHub Pages serves at https://gchristov.github.io/arpg-forge/. Each game has a short address such as https://gchristov.github.io/arpg-forge/ashen-hollow/.
+
+`.github/workflows/pr-preview.yml` gives every PR its own copy of the site at `https://gchristov.github.io/arpg-forge/pr-preview/pr-<number>/`, linked from the PR's "View deployment" button (the `preview` environment) and a comment with a QR code for phones. It updates on every push and is removed when the PR closes. Previews and the main site share the `gh-pages` branch, so the main deploy never force-pushes or touches `pr-preview/`. Mention the preview link when handing a PR over for testing.
 
 ## Rules
 
