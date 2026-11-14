@@ -1,3 +1,4 @@
+import type { Container } from '../../../engine/sim/content';
 import type { Level } from '../../../engine/world/level';
 import { createTileMap, setProp, tileIndex } from '../../../engine/world/tile-map';
 import { Ground, Prop } from '../content/tiles';
@@ -82,8 +83,12 @@ const INTERIORS: Record<InteriorId, InteriorSpec> = {
   crypt: { name: 'The Old Crypt', subtitle: 'The air smells of dust and grave-moss', floor: Ground.Crypt },
 };
 
+/** What the cottage chest holds. */
+const CHEST: Pick<Container, 'gold' | 'healingItems'> = { gold: 45, healingItems: 2 };
+
 export interface Interior {
   level: Level;
+  containers: Container[];
   spawns: Spawn[];
   npcs: Array<{ kind: string; name: string; x: number; y: number }>;
 }
@@ -105,7 +110,7 @@ export function buildInterior(id: InteriorId): Interior {
     id, name: spec.name, subtitle: spec.subtitle, outdoor: false, map,
     start: { x: 0, y: 0 }, portals: [], lights: [], structures: [],
   };
-  const interior: Interior = { level, spawns: [], npcs: [] };
+  const interior: Interior = { level, containers: [], spawns: [], npcs: [] };
   const fireColour = id === 'crypt' ? 'purple' : 'warm';
 
   rows.forEach((row, y) => {
@@ -129,7 +134,10 @@ export function buildInterior(id: InteriorId): Interior {
         setProp(map, x, y, Prop.Brazier, true);
         level.lights.push({ x: x + 0.5, y: y + 0.5, radius: 3.6, intensity: 1, colour: fireColour, flicker: 1.2, seed: i });
       } else if (ch === 'g') setProp(map, x, y, Prop.Bones, false);
-      else if (SOLID_PROPS[ch] !== undefined) setProp(map, x, y, SOLID_PROPS[ch]!, true);
+      else if (SOLID_PROPS[ch] !== undefined) {
+        setProp(map, x, y, SOLID_PROPS[ch]!, true);
+        if (ch === 'C') interior.containers.push({ tx: x, ty: y, ...CHEST });
+      }
       else if (ENEMY_SPAWNS[ch]) interior.spawns.push({ kind: ENEMY_SPAWNS[ch]!, x: x + 0.5, y: y + 0.5 });
       else if (ch === 'n' && spec.npc) interior.npcs.push({ ...spec.npc, x: x + 0.5, y: y + 0.5 });
     }

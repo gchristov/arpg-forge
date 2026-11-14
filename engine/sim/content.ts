@@ -23,12 +23,46 @@ export interface CampRespawns {
   kinds: string[];
 }
 
+/** Something on a tile that opens once and spills its contents, such as a chest. */
+export interface Container {
+  tx: number;
+  ty: number;
+  gold: number;
+  healingItems: number;
+}
+
 export interface LevelContent {
   level: Level;
   spawns: SpawnPoint[];
   camps: Camp[];
   campRespawns?: CampRespawns;
   npcs: Array<SpawnPoint & { name: string }>;
+  containers?: Container[];
+}
+
+/** What a vendor offers. */
+export type Service =
+  | { type: 'restore' }
+  | { type: 'sellHealingItem'; price: number }
+  /** Each purchase adds `bonus` melee damage and costs `priceStep` more than the last. */
+  | { type: 'upgradeMelee'; basePrice: number; priceStep: number; bonus: number };
+
+export interface NpcType {
+  services: Service[];
+}
+
+/** What moves the quest to a step. */
+export type QuestTrigger =
+  | { type: 'talk'; npcKind: string }
+  | { type: 'enter'; levelId: string }
+  | { type: 'kill'; enemyKind: string };
+
+/**
+ * A step of the quest line. The quest moves to a step when its trigger fires and the quest is behind it, so a
+ * step can be skipped but never undone.
+ */
+export interface QuestStep {
+  reachedBy?: QuestTrigger;
 }
 
 export type Range = [min: number, max: number];
@@ -58,6 +92,8 @@ export interface EnemyType {
   slam?: { everySeconds: Range; reach: number; radius: number; delay: number; damage: Range };
   /** Once, below a share of its health, calls others to its side. */
   summon?: { belowHealthShare: number; kind: string; count: number; distance: number };
+  /** What it drops on death: gold, a chance of a healing item, and extra healing items for certain. */
+  drops: { gold: Range; healingChance: number; extraHealingItems?: number };
 }
 
 /** The hero's numbers. Neutral names: "resource" is what skills cost, "healing items" are drunk or used to heal. */
@@ -115,4 +151,6 @@ export interface GameContent {
   hero: HeroRules;
   enemies: Record<string, EnemyType>;
   npcRadius: number;
+  npcs: Record<string, NpcType>;
+  quest: QuestStep[];
 }

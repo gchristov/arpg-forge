@@ -1,6 +1,8 @@
 import { updateProjectiles, updateTelegraphs } from './combat';
 import { updateCampRespawns, updateEnemies, updateNpcs } from './enemies';
 import { applyCommand, updateHeroMovement, updateHeroTimers } from './hero';
+import { advanceQuest } from './interaction';
+import { updateItems } from './loot';
 import { separateBodies } from './separation';
 import { placeAt } from './setup';
 import { currentLevel, type GameState, type SimEvent, type StepInput } from './state';
@@ -32,6 +34,7 @@ export function step(state: GameState, input: StepInput, dt: number): SimEvent[]
   separateBodies(state);
   updateProjectiles(state, dt, events);
   updateTelegraphs(state, dt, events);
+  updateItems(state, dt, events);
   updateCampRespawns(state, dt);
   return events;
 }
@@ -77,10 +80,12 @@ function advanceTransition(state: GameState, dt: number, events: SimEvent[]): vo
   placeAt(hero, t.x, t.y);
   hero.path = null;
   hero.targetId = null;
+  hero.interact = null;
   hero.moving = false;
   state.projectiles.length = 0;
   state.telegraphs.length = 0;
   state.portalCooldown = PORTAL_COOLDOWN_SECONDS;
   state.transition = null;
   events.push({ type: 'EnteredLevel', levelId: t.to });
+  advanceQuest(state, { type: 'enter', levelId: t.to }, events);
 }

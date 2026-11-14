@@ -1,4 +1,5 @@
 import { currentLevel, type Command, type GameState } from '../../../engine/sim/state';
+import { QUEST } from '../content/story';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T => document.getElementById(id) as T;
 
@@ -42,6 +43,7 @@ export class Hud {
       $('fireCd').style.setProperty('--p', `${v}%`),
     );
     this.set('fireOff', hero.resource < blast.cost, (v) => $('bFire').classList.toggle('off', Boolean(v)));
+    this.set('quest', QUEST[state.quest]?.text ?? '', (v) => ($('quest').textContent = String(v)));
     const ls = currentLevel(state);
     this.set('location', ls.level.name, (v) => ($('locName').textContent = String(v)));
     const boss = ls.enemies.find((e) => state.rules.enemies[e.kind]?.boss && !e.dead && e.mode === 'chase');

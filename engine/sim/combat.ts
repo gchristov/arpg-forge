@@ -3,6 +3,8 @@ import { chance, int } from '../core/rng';
 import { moveBody } from '../world/collision';
 import { hasLineOfSight } from '../world/line-of-sight';
 import { isSolidAt } from '../world/tile-map';
+import { advanceQuest } from './interaction';
+import { dropEnemyLoot } from './loot';
 import { currentLevel, type Enemy, type GameState, type SimEvent } from './state';
 
 /** Projectiles hit a body within this distance of its edge. */
@@ -57,7 +59,9 @@ function killEnemy(state: GameState, e: Enemy, events: SimEvent[]): void {
   e.windUp = -1;
   const type = state.rules.enemies[e.kind]!;
   gainXp(state, type.xp, events);
+  dropEnemyLoot(state, e.kind, e.x, e.y);
   events.push({ type: 'EnemyKilled', enemyId: e.id, kind: e.kind, x: e.x, y: e.y, boss: Boolean(type.boss) });
+  advanceQuest(state, { type: 'kill', enemyKind: e.kind }, events);
 }
 
 export function gainXp(state: GameState, amount: number, events: SimEvent[]): void {

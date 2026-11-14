@@ -88,6 +88,40 @@ describe('Ashen Hollow scenarios', () => {
     expect(xpEarned).toBeGreaterThanOrEqual(48);
   });
 
+  it('plays the quest: talk to Maren, enter the crypt, kill the Bone Lord, and Maren thanks you', () => {
+    const state = newGame(5);
+    state.hero.hp = state.hero.maxHp = 100000;
+    const maren = currentLevel(state).npcs[0]!;
+    let events = play(state, 4, [{ type: 'talk', npcId: maren.id }]);
+    expect(events.find((e) => e.type === 'Talked')).toMatchObject({ kind: 'elder', questBefore: 0 });
+    expect(state.quest).toBe(1);
+
+    play(state, 25, [{ type: 'enterStructure', index: structureIndex(state, 'crypt') }]);
+    expect(state.levelId).toBe('crypt');
+    expect(state.quest).toBe(2);
+
+    const boss = currentLevel(state).enemies.find((e) => e.kind === 'boss')!;
+    boss.hp = 1;
+    state.hero.x = state.hero.prevX = boss.x;
+    state.hero.y = state.hero.prevY = boss.y + 1;
+    events = play(state, 2, [{ type: 'attack', enemyId: boss.id }]);
+    expect(events.some((e) => e.type === 'EnemyKilled' && e.boss)).toBe(true);
+    expect(state.quest).toBe(3);
+    const loot = currentLevel(state).items;
+    expect(loot.filter((i) => i.kind === 'healingItem').length + state.hero.healingItems - 3).toBe(2);
+  });
+
+  it('keeps the cottage chest for the hero: 45 gold and two potions', () => {
+    const state = newGame();
+    play(state, 12, [{ type: 'enterStructure', index: structureIndex(state, 'cottage') }]);
+    expect(state.levelId).toBe('cottage');
+    play(state, 6, [{ type: 'open', index: 0 }]);
+    play(state, 0.5);
+    for (const item of [...currentLevel(state).items]) play(state, 1.5, [{ type: 'walk', x: item.x, y: item.y }]);
+    expect(state.hero.gold).toBe(45);
+    expect(state.hero.healingItems).toBe(5);
+  });
+
   it('plays out exactly the same from the same seed and input', () => {
     const run = (seed: number) => {
       const state = newGame(seed);

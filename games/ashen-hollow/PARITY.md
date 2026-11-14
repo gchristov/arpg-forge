@@ -17,24 +17,24 @@ These differ on purpose and don't count against parity:
 
 - [ ] Title screen: "Ashen Hollow", "The dead are restless beneath the old crypt.", control hints (Walk: tap or hold the ground; Fight: tap an enemy, or the sword; Enter: tap a building or walk into its door; Talk: tap a villager) and "Tap to begin".
 - [ ] On start, banner "Ashen Hollow" / "Speak to Elder Maren in the square." for 3 s.
-- [ ] Quest line, shown in the HUD:
-  - [ ] 0 "Speak to Elder Maren in the square."
-  - [ ] 1 "Clear the Old Crypt, east past the graveyard." Reached by talking to Maren.
-  - [ ] 2 "Find the Bone Lord in the crypt's north chamber." Reached by entering the crypt.
-  - [ ] 3 "The Bone Lord is dead. Hunt what's left in the wilds." Reached by killing the boss.
-- [ ] Elder Maren's three lines: the first talk, while the quest is in progress, and after the boss (text as in `talkTo`), each with one option, "I'll go".
-- [ ] Brann the Innkeeper: his line, plus "Rest by the fire" (free: full health and mana, "Rested"), "Buy a healing potion" (25 gold, disabled if short) and "Leave".
-- [ ] Hilde the Smith: her line, plus "Hone your blade (+3 damage)" (40 gold, then 30 more each time, disabled if short; shows "Blade honed") and "Leave".
+- [x] Quest line, shown in the HUD:
+  - [x] 0 "Speak to Elder Maren in the square."
+  - [x] 1 "Clear the Old Crypt, east past the graveyard." Reached by talking to Maren.
+  - [x] 2 "Find the Bone Lord in the crypt's north chamber." Reached by entering the crypt.
+  - [x] 3 "The Bone Lord is dead. Hunt what's left in the wilds." Reached by killing the boss.
+- [x] Elder Maren's three lines: the first talk, while the quest is in progress, and after the boss (text as in `talkTo`), each with one option, "I'll go".
+- [x] Brann the Innkeeper: his line, plus "Rest by the fire" (free: full health and mana, "Rested"), "Buy a healing potion" (25 gold, disabled if short) and "Leave".
+- [x] Hilde the Smith: her line, plus "Hone your blade (+3 damage)" (40 gold, then 30 more each time, disabled if short; shows "Blade honed") and "Leave".
 - [x] Entering a map shows a banner with its name and subtitle for 1.8 s:
   - The Sleeping Boar: "Warm ale, cold stew"
   - The Smithy: "Hilde's forge"
   - Maren's Cottage: "Someone left a chest unlocked"
   - The Old Crypt: "The air smells of dust and grave-moss"
 - [x] Boss at half health: banner "The dead answer his call" (2.2 s).
-- [ ] Boss killed: banner "The Bone Lord is destroyed" / "Ashen Hollow is safe. The wilds still stir." (4.5 s, after 0.6 s).
+- [x] Boss killed: banner "The Bone Lord is destroyed" / "Ashen Hollow is safe. The wilds still stir." (4.5 s, after 0.6 s).
 - [x] Level up: banner "Level N" / "Stronger, and fully healed."
 - [x] Death: banner "You have fallen" / "Tap to rise again in the village." until tapped. After respawn, if gold was lost: "Ashen Hollow" / "N gold lost."
-- [ ] Floating text: damage numbers, "Not enough mana", "No potions", "Already healthy", "+N" healing, "+N gold", "+1 potion".
+- [x] Floating text: damage numbers, "Not enough mana", "No potions", "Already healthy", "+N" healing, "+N gold", "+1 potion".
 
 ## Levels
 
@@ -74,14 +74,14 @@ These differ on purpose and don't count against parity:
 
 - [x] Tap or hold the ground: walk there by pathfinding to the nearest free tile, with a marker. Holding re-targets every 0.14 s.
 - [x] Tap an enemy (within 34 px of its body, scaled with zoom and enemy size): target it, chase it and attack, with a red marker.
-- [ ] Tap an NPC: walk up and talk when within 1.45 tiles.
+- [x] Tap an NPC: walk up and talk when within 1.45 tiles.
 - [x] Tap a building: walk to its door, with a marker.
-- [ ] Tap an unopened chest: walk to it and open it when within 1.45 tiles.
+- [x] Tap an unopened chest: walk to it and open it when within 1.45 tiles.
 - [x] Tap a doorway: walk into it.
 - [x] Attack button, `2` or space: target the nearest visible enemy within 7 tiles, or swing at nothing if there's none.
 - [x] Fireball button or `3`. Potion button or `1`.
 - [ ] Mute button toggles all sound.
-- [ ] Tapping anywhere closes an open dialogue. Input is ignored during a map transition.
+- [x] Tapping anywhere closes an open dialogue. Input is ignored during a map transition.
 
 ## Combat
 
@@ -122,15 +122,15 @@ These differ on purpose and don't count against parity:
 
 ## Items and the world
 
-- [ ] Drops scatter 0.2–0.6 tiles, bounce, and are picked up within 0.75 tiles once landed. Gold has no cap. Potions cap at 9; a potion drop stays on the ground when full.
-- [ ] Cottage chest: opens once, dropping 45 gold and 2 potions.
+- [x] Drops scatter 0.2–0.6 tiles, bounce, and are picked up within 0.75 tiles once landed. Gold has no cap. Potions cap at 9; a potion drop stays on the ground when full.
+- [x] Cottage chest: opens once, dropping 45 gold and 2 potions.
 - [ ] Portals: building doors in the village, and the `D` tile inside. There's a 0.7 s cooldown after arriving. Transitions fade out and in over 0.3 s, with a door sound.
-- [ ] Entering the crypt before the quest reaches 2 sets it to 2, unless the boss is already dead.
+- [x] Entering the crypt before the quest reaches 2 sets it to 2, unless the boss is already dead.
 - [ ] Chimney smoke in the village every 1.6 s.
 
 ## HUD
 
-- [ ] Health and mana orbs with numbers. A gold count. The level. An XP bar. The location name. The quest line.
+- [x] Health and mana orbs with numbers. A gold count. The level. An XP bar. The location name. The quest line.
 - [x] Potion button with a count badge, greyed at 0. Fireball button with a cooldown sweep, greyed below 12 mana.
 - [x] Boss bar with "The Bone Lord" while he's chasing, hidden otherwise.
 - [x] Health bars over damaged enemies.

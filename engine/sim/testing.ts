@@ -22,7 +22,7 @@ export const TEST_HERO: HeroRules = {
   deathGoldLoss: 0.5,
 };
 
-const base = { cooldown: 1, windUp: 0.3, groupSize: 3, radius: 0.3 };
+const base = { cooldown: 1, windUp: 0.3, groupSize: 3, radius: 0.3, drops: { gold: [3, 9] as [number, number], healingChance: 0 } };
 export const TEST_ENEMIES: Record<string, EnemyType> = {
   brute: { ...base, hp: 30, damage: [4, 7], speed: 2.4, range: 0.85, aggro: 6, xp: 12 },
   dummy: { ...base, hp: 1000, damage: [1, 1], speed: 0, range: 0, aggro: 0, xp: 0 },
@@ -48,6 +48,8 @@ export function arena(rows: string[], start: { x: number; y: number }, enemies: 
     hero: TEST_HERO,
     enemies: TEST_ENEMIES,
     npcRadius: 0.32,
+    npcs: {},
+    quest: [{}],
   };
   return createGameState(content, seed, 'arena');
 }
