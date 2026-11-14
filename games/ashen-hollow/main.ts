@@ -132,7 +132,9 @@ bindKeys({
   '3': () => pending.push({ type: 'blast' }),
 });
 
-const fit = (): void => renderer.resize(innerWidth, innerHeight, devicePixelRatio);
+/** `?debug&resolution=N` draws N pixels per screen point, to check whether a device is limited by how many it fills. */
+const resolution = debugMode ? Number(new URLSearchParams(location.search).get('resolution')) || 0 : 0;
+const fit = (): void => renderer.resize(innerWidth, innerHeight, resolution || devicePixelRatio);
 addEventListener('resize', fit);
 fit();
 showCurrentLevel();
