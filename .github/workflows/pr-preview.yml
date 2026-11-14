@@ -1,0 +1,58 @@
+name: pr-preview
+
+# Each pull request gets its own copy of the site on GitHub Pages, at pr-preview/pr-<number>/, linked from the PR
+# through the preview environment and a comment. Closing the PR removes it.
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy-preview:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+      deployments: write
+    environment:
+      name: preview
+      url: ${{ steps.preview.outputs.preview-url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Set up Node
+        uses: ./.github/actions/setup-node
+      - name: Build
+        shell: bash
+        run: npm run build
+      - name: Deploy preview
+        id: preview
+        uses: rossjrw/pr-preview-action@v1.8.2
+        with:
+          source-dir: dist
+          preview-branch: gh-pages
+          umbrella-dir: pr-preview
+          action: deploy
+          wait-for-pages-deployment: true
+          qr-code: true
+
+  remove-preview:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Remove preview
+        uses: rossjrw/pr-preview-action@v1.8.2
+        with:
+          preview-branch: gh-pages
+          umbrella-dir: pr-preview
+          action: remove

@@ -53,14 +53,16 @@ gh api -X PUT "repos/$REPO/branches/$BRANCH/protection" --silent --input - <<'JS
 }
 JSON
 
-# GitHub Pages serves what the staging-check workflow deploys.
 gh api -X PUT "repos/$REPO/topics" --silent --input - <<< '{"names": []}'
 
+# GitHub Pages serves the gh-pages branch: main's build at the root (deployed by staging-check) and each pull
+# request's preview in pr-preview/ (deployed by pr-preview). The branch must exist before Pages can serve it.
 echo "GitHub Pages"
+PAGES_SOURCE='{"build_type":"legacy","source":{"branch":"gh-pages","path":"/"}}'
 if gh api "repos/$REPO/pages" --silent 2>/dev/null; then
-  gh api -X PUT "repos/$REPO/pages" --silent -f build_type=workflow
+  gh api -X PUT "repos/$REPO/pages" --silent --input - <<< "$PAGES_SOURCE"
 else
-  gh api -X POST "repos/$REPO/pages" --silent -f build_type=workflow
+  gh api -X POST "repos/$REPO/pages" --silent --input - <<< "$PAGES_SOURCE"
 fi
 
 echo "Done"
