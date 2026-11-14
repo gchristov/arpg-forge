@@ -93,6 +93,13 @@ export class ActorFigure {
     this.root.scale.set(1, this.mixer ? 1 : 0.3 + 0.7 * fade, 1);
   }
 
+  /** Names of the animations currently showing, for tests and debugging. */
+  activeAnimations(): string[] {
+    return [...this.actions]
+      .filter(([, action]) => action.isScheduled() && action.getEffectiveWeight() > 0.01)
+      .map(([name]) => name);
+  }
+
   update(frameSeconds: number): void {
     this.mixer?.update(frameSeconds);
   }
@@ -110,19 +117,29 @@ export class ActorFigure {
     return clip ? this.actions.get(clip) : undefined;
   }
 
+  /**
+   * Switches the ongoing pose. While a moment is showing, the new pose waits for it to end (see the 'finished'
+   * handler) and the old one stops, so no pose is left running underneath. Dying cuts a moment short.
+   */
   private setBase(name: 'idle' | 'move' | 'death'): void {
     const next = this.action(name) ?? this.action('idle');
     if (!next || next === this.base) return;
     const previous = this.base;
     this.base = next;
-    next.reset();
-    if (name === 'death') {
-      next.setLoop(THREE.LoopOnce, 1);
-      next.clampWhenFinished = true;
-      this.moment = null;
-    } else next.setLoop(THREE.LoopRepeat, Infinity);
-    next.play();
-    if (previous && !this.moment) next.crossFadeFrom(previous, BLEND_SECONDS, false);
+    const dying = name === 'death';
+    next.setLoop(dying ? THREE.LoopOnce : THREE.LoopRepeat, dying ? 1 : Infinity);
+    next.clampWhenFinished = dying;
+    const moment = this.moment;
+    if (moment && !dying) {
+      previous?.stop();
+      return;
+    }
+    this.moment = null;
+    next.reset().play();
+    if (moment) {
+      next.crossFadeFrom(moment, BLEND_SECONDS, false);
+      previous?.stop();
+    } else if (previous) next.crossFadeFrom(previous, BLEND_SECONDS, false);
   }
 
   /** Each actor gets its own copy of a material, so flashing or fading one doesn't affect the rest. */
