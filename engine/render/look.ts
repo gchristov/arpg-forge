@@ -34,6 +34,8 @@ export interface Mood {
 }
 
 export interface Look {
+  /** Colours of projectiles and warning circles. */
+  effects: { blast: number; shot: number; telegraph: number };
   mood(levelId: string): Mood;
   groundColour(kind: number, tx: number, ty: number, levelId: string): number;
   /** Null for prop kinds that aren't drawn as a prop, such as building tiles. */

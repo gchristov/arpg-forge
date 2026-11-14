@@ -70,6 +70,7 @@ const ACTORS: Record<string, ActorLook> = {
 };
 
 export const ashenHollowLook: Look = {
+  effects: { blast: 0xffa040, shot: 0xe8e1cc, telegraph: 0xb46bff },
   mood: (levelId) => MOODS[levelId] ?? MOODS.town!,
   groundColour(kind, tx, ty, levelId) {
     const n = valueNoise(tx * 0.18 + (levelId === 'town' ? 0 : 50), ty * 0.18);

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { clamp, type Vec2 } from '../core/math';
 import type { Level, LevelLight } from '../world/level';
+import { Effects } from './effects';
 import type { Look, PropLook } from './look';
 
 /** 30° above the ground gives the classic 2:1 isometric look: a tile is twice as wide as it is tall on screen. */
@@ -14,6 +15,9 @@ const CAMERA_FOLLOW_RATE = 7;
 const MAX_POINT_LIGHTS = 8;
 const LIGHT_STRENGTH = 2.2;
 const MARKER_SECONDS = 0.6;
+/** Screen shake decays this much a second, and moves the view up to this many pixels at full strength. */
+const SHAKE_DECAY = 1.6;
+const SHAKE_PIXELS = 10;
 
 const VIEW_DIRECTION = new THREE.Vector3(
   Math.cos(ELEVATION) / Math.SQRT2,
@@ -38,7 +42,11 @@ export class SceneRenderer {
   private readonly hit = new THREE.Vector3();
   private readonly target = new THREE.Vector3();
   private readonly cameraUp = new THREE.Vector3();
-  private readonly actors = new Map<string, THREE.Object3D>();
+  private readonly actors = new Map<string, ActorModel>();
+  private readonly projected = new THREE.Vector3();
+  private shakeAmount = 0;
+  private frame = 0;
+  readonly effects: Effects;
   private readonly marker: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>;
   private markerAge = Infinity;
   private levelGroup = new THREE.Group();
@@ -76,6 +84,12 @@ export class SceneRenderer {
     );
     this.marker.visible = false;
     this.scene.add(this.marker);
+    this.effects = new Effects(this.scene, look.effects);
+  }
+
+  /** How much the view is zoomed, 1 at the prototype's base size. */
+  get zoom(): number {
+    return (this.pixelsPerUnit * Math.SQRT2) / TILE_PIXELS;
   }
 
   resize(width: number, height: number, pixelRatio: number): void {
@@ -115,25 +129,54 @@ export class SceneRenderer {
     for (const mesh of this.structures) this.levelGroup.add(mesh);
   }
 
-  /** Places an actor; creates its model the first time an id is seen. */
-  setActor(id: string, kind: string, x: number, y: number, facingX: number, facingY: number): void {
+  /**
+   * Places an actor; creates its model the first time an id is seen. `flash` (0 to 1) lights it up when hit, and
+   * `fade` (1 to 0) shrinks and fades it out when it dies. Models not placed in a frame are removed at render.
+   */
+  setActor(
+    id: string,
+    kind: string,
+    x: number,
+    y: number,
+    facingX: number,
+    facingY: number,
+    flash = 0,
+    fade = 1,
+  ): void {
     let model = this.actors.get(id);
     if (!model) {
       model = this.buildActor(kind);
       this.actors.set(id, model);
-      this.scene.add(model);
+      this.scene.add(model.root);
     }
-    model.position.set(x, 0, y);
-    if (facingX || facingY) model.rotation.y = Math.atan2(facingX, facingY);
+    model.seen = this.frame;
+    model.root.position.set(x, 0, y);
+    if (facingX || facingY) model.root.rotation.y = Math.atan2(facingX, facingY);
+    model.material.emissive.setScalar(flash * 0.8);
+    model.material.opacity = fade;
+    model.material.transparent = fade < 1;
+    model.root.scale.set(1, 0.3 + 0.7 * fade, 1);
   }
 
   /** Removes every actor's model, for example when a different level is shown. */
   clearActors(): void {
     for (const model of this.actors.values()) {
-      this.scene.remove(model);
-      disposeTree(model);
+      this.scene.remove(model.root);
+      disposeTree(model.root);
     }
     this.actors.clear();
+  }
+
+  /** Where a world point, `height` tiles above the ground, appears on screen. Writes into `out`. */
+  screenPosition(x: number, y: number, height: number, out: Vec2): Vec2 {
+    this.projected.set(x, height, y).project(this.camera);
+    out.x = ((this.projected.x + 1) / 2) * this.width;
+    out.y = ((1 - this.projected.y) / 2) * this.height;
+    return out;
+  }
+
+  shake(amount: number): void {
+    this.shakeAmount = Math.max(this.shakeAmount, amount);
   }
 
   /** What's under a screen position: a structure (by its index in the level) or a point on the ground. */
@@ -166,9 +209,31 @@ export class SceneRenderer {
 
   render(seconds: number, frameSeconds: number): void {
     this.placeCamera();
+    this.applyShake(frameSeconds);
     this.updateLights(seconds);
     this.updateMarker(frameSeconds);
+    this.effects.update(frameSeconds);
+    this.removeUnseenActors();
     this.renderer.render(this.scene, this.camera);
+    this.frame++;
+  }
+
+  private applyShake(frameSeconds: number): void {
+    if (this.shakeAmount <= 0) return;
+    const reach = (this.shakeAmount * SHAKE_PIXELS) / this.pixelsPerUnit;
+    this.camera.position.x += (Math.random() * 2 - 1) * reach;
+    this.camera.position.y += (Math.random() * 2 - 1) * reach;
+    this.camera.updateMatrixWorld();
+    this.shakeAmount = Math.max(0, this.shakeAmount - frameSeconds * SHAKE_DECAY);
+  }
+
+  private removeUnseenActors(): void {
+    for (const [id, model] of this.actors) {
+      if (model.seen === this.frame) continue;
+      this.scene.remove(model.root);
+      disposeTree(model.root);
+      this.actors.delete(id);
+    }
   }
 
   /** The ground point under a screen position, in tiles. */
@@ -315,18 +380,25 @@ export class SceneRenderer {
     });
   }
 
-  private buildActor(kind: string): THREE.Object3D {
+  private buildActor(kind: string): ActorModel {
     const look = this.look.actor(kind);
     const material = new THREE.MeshLambertMaterial({ color: look.colour });
     const body = new THREE.Mesh(new THREE.CapsuleGeometry(look.radius, look.height - look.radius * 2, 4, 12), material);
     body.position.y = look.height / 2;
     const nose = new THREE.Mesh(new THREE.ConeGeometry(look.radius * 0.35, look.radius * 0.9, 8).rotateX(Math.PI / 2), material);
     nose.position.set(0, look.height * 0.62, look.radius * 0.95);
-    const model = new THREE.Group();
-    model.add(body, nose);
-    model.traverse((o) => (o.castShadow = true));
-    return model;
+    const root = new THREE.Group();
+    root.add(body, nose);
+    root.traverse((o) => (o.castShadow = true));
+    return { root, material, seen: this.frame };
   }
+}
+
+interface ActorModel {
+  root: THREE.Object3D;
+  material: THREE.MeshLambertMaterial;
+  /** The frame it was last placed in. */
+  seen: number;
 }
 
 function propGeometry(look: PropLook): THREE.BufferGeometry {
