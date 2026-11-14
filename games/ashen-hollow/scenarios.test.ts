@@ -62,13 +62,30 @@ describe('Ashen Hollow scenarios', () => {
     play(state, 20, [{ type: 'enterStructure', index: structureIndex(state, 'crypt') }]);
     expect(state.levelId).toBe('crypt');
     const boss = currentLevel(state).enemies.find((e) => e.kind === 'boss')!;
-    expect([boss.x, boss.y]).toEqual([11.5, 2.5]);
+    expect([boss.homeX, boss.homeY]).toEqual([11.5, 2.5]);
   });
 
   it('ignores commands during the fade between levels', () => {
     const state = newGame();
     const events = play(state, 8, [{ type: 'enterStructure', index: structureIndex(state, 'tavern') }]);
     expect(events.filter((e) => e.type === 'TransitionStarted')).toHaveLength(1);
+  });
+
+  it('clears the north-east goblin camp by attacking, earning 12 XP a goblin', () => {
+    const state = newGame(3);
+    state.hero.x = state.hero.prevX = 36.5;
+    state.hero.y = state.hero.prevY = 13.5;
+    const camp = () => currentLevel(state).enemies.filter((e) => e.kind === 'goblin' && Math.hypot(e.homeX - 40.5, e.homeY - 13.5) < 3);
+    expect(camp()).toHaveLength(4);
+    const events: SimEvent[] = [];
+    for (let second = 0; second < 40 && camp().some((g) => !g.dead); second++) {
+      state.hero.hp = state.hero.maxHp;
+      events.push(...play(state, 1, [{ type: 'attackNearest' }]));
+    }
+    expect(camp().filter((g) => !g.dead)).toHaveLength(0);
+    expect(events.filter((e) => e.type === 'EnemyKilled').length).toBeGreaterThanOrEqual(4);
+    const xpEarned = state.hero.xp + (state.hero.level > 1 ? 60 : 0);
+    expect(xpEarned).toBeGreaterThanOrEqual(48);
   });
 
   it('plays out exactly the same from the same seed and input', () => {
