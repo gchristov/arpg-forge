@@ -42,6 +42,7 @@ export class SceneRenderer {
   private readonly marker: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>;
   private markerAge = Infinity;
   private levelGroup = new THREE.Group();
+  private structures: THREE.Object3D[] = [];
   private levelLights: LevelLight[] = [];
   private width = 1;
   private height = 1;
@@ -110,7 +111,8 @@ export class SceneRenderer {
 
     this.levelGroup.add(this.buildGround(level));
     for (const mesh of this.buildProps(level)) this.levelGroup.add(mesh);
-    for (const mesh of this.buildStructures(level)) this.levelGroup.add(mesh);
+    this.structures = this.buildStructures(level);
+    for (const mesh of this.structures) this.levelGroup.add(mesh);
   }
 
   /** Places an actor; creates its model the first time an id is seen. */
@@ -123,6 +125,29 @@ export class SceneRenderer {
     }
     model.position.set(x, 0, y);
     if (facingX || facingY) model.rotation.y = Math.atan2(facingX, facingY);
+  }
+
+  /** Removes every actor's model, for example when a different level is shown. */
+  clearActors(): void {
+    for (const model of this.actors.values()) {
+      this.scene.remove(model);
+      disposeTree(model);
+    }
+    this.actors.clear();
+  }
+
+  /** What's under a screen position: a structure (by its index in the level) or a point on the ground. */
+  pick(screenX: number, screenY: number): { structure: number } | { ground: Vec2 } | null {
+    this.ndc.set((screenX / this.width) * 2 - 1, -(screenY / this.height) * 2 + 1);
+    this.raycaster.setFromCamera(this.ndc, this.camera);
+    const hit = this.raycaster.intersectObjects(this.structures, true)[0];
+    if (hit) {
+      let o: THREE.Object3D | null = hit.object;
+      while (o && o.userData.structureIndex === undefined) o = o.parent;
+      if (o) return { structure: o.userData.structureIndex as number };
+    }
+    const ground = this.groundPointAt(screenX, screenY);
+    return ground ? { ground } : null;
   }
 
   showMarker(x: number, y: number, colour: number): void {
@@ -237,7 +262,7 @@ export class SceneRenderer {
     const tilesByKind = new Map<number, number[]>();
     for (let i = 0; i < map.prop.length; i++) {
       const kind = map.prop[i]!;
-      if (!kind || !this.look.prop(kind)) continue;
+      if (!kind || !this.look.prop(kind, level.id)) continue;
       let list = tilesByKind.get(kind);
       if (!list) tilesByKind.set(kind, (list = []));
       list.push(i);
@@ -245,7 +270,7 @@ export class SceneRenderer {
     const matrix = new THREE.Matrix4();
     const meshes: THREE.InstancedMesh[] = [];
     for (const [kind, tiles] of tilesByKind) {
-      const look = this.look.prop(kind)!;
+      const look = this.look.prop(kind, level.id)!;
       const material = new THREE.MeshLambertMaterial({ color: look.colour, emissive: look.emissive ?? 0 });
       const mesh = new THREE.InstancedMesh(propGeometry(look), material, tiles.length);
       tiles.forEach((i, n) => {
@@ -260,7 +285,7 @@ export class SceneRenderer {
   }
 
   private buildStructures(level: Level): THREE.Object3D[] {
-    return level.structures.map((s) => {
+    return level.structures.map((s, index) => {
       const look = this.look.structure(s.kind);
       const group = new THREE.Group();
       const walls = new THREE.Mesh(
@@ -281,6 +306,7 @@ export class SceneRenderer {
       door.position.set(s.door.tx + 0.5 - (s.x + s.width / 2), door.geometry.parameters.height / 2, s.depth / 2 + 0.01);
       group.add(walls, roof, door);
       group.position.set(s.x + s.width / 2, 0, s.y + s.depth / 2);
+      group.userData.structureIndex = index;
       group.traverse((o) => {
         o.castShadow = true;
         o.receiveShadow = true;

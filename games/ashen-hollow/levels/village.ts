@@ -185,7 +185,7 @@ function addBuilding(level: Level, b: BuildingSpec, id: number): void {
   for (let y = b.y; y < b.y + b.depth; y++) for (let x = b.x; x < b.x + b.width; x++) setProp(map, x, y, Prop.Building, true);
   const { tx, ty } = b.door;
   setSolid(map, tx, ty, false);
-  level.portals.push({ tx, ty, to: b.to });
+  level.portals.push({ tx, ty, to: b.to, stepOut: { x: 0, y: 1 } });
   level.structures.push({
     kind: b.kind, name: b.name, x: b.x, y: b.y, width: b.width, depth: b.depth, door: b.door,
     ...(b.chimney ? { chimney: b.chimney } : {}),

@@ -8,12 +8,15 @@ import { Ground, Prop } from '../content/tiles';
 const colour = new THREE.Color();
 const hsl = (h: number, s: number, l: number): number => colour.setHSL(h / 360, s / 100, l / 100).getHex();
 
-const NIGHT: Mood = {
-  background: 0x050407,
-  ambient: 0x3a4a78,
-  ambientIntensity: 0.9,
-  moon: { colour: 0x8fa6e0, intensity: 0.9 },
-  heroLightRadius: 5.4,
+const MOODS: Record<string, Mood> = {
+  town: {
+    background: 0x050407, ambient: 0x3a4a78, ambientIntensity: 0.9,
+    moon: { colour: 0x8fa6e0, intensity: 0.9 }, heroLightRadius: 5.4,
+  },
+  tavern: { background: 0x050407, ambient: 0x6a4a32, ambientIntensity: 0.55, heroLightRadius: 4.5 },
+  smithy: { background: 0x050407, ambient: 0x5a4636, ambientIntensity: 0.5, heroLightRadius: 4.5 },
+  cottage: { background: 0x050407, ambient: 0x4a3a30, ambientIntensity: 0.38, heroLightRadius: 4.5 },
+  crypt: { background: 0x030206, ambient: 0x2a2040, ambientIntensity: 0.2, heroLightRadius: 4.4 },
 };
 
 const PROPS: Partial<Record<number, PropLook>> = {
@@ -25,15 +28,26 @@ const PROPS: Partial<Record<number, PropLook>> = {
   [Prop.Well]: { shape: 'cylinder', width: 0.95, height: 0.55, colour: 0x6d6a66 },
   [Prop.Brazier]: { shape: 'cylinder', width: 0.5, height: 0.45, colour: 0x3a3030, emissive: 0x552200 },
   [Prop.Grave]: { shape: 'box', width: 0.45, height: 0.6, colour: 0x7a7a80 },
+  [Prop.Table]: { shape: 'box', width: 0.9, height: 0.55, colour: 0x5a3d26 },
+  [Prop.Barrel]: { shape: 'cylinder', width: 0.6, height: 0.75, colour: 0x6b4a2b },
+  [Prop.Crate]: { shape: 'box', width: 0.75, height: 0.7, colour: 0x7a5a36 },
+  [Prop.Anvil]: { shape: 'box', width: 0.6, height: 0.45, colour: 0x3a3a3e },
+  [Prop.Bed]: { shape: 'box', width: 0.9, height: 0.4, colour: 0x6a3030 },
+  [Prop.Chest]: { shape: 'box', width: 0.7, height: 0.5, colour: 0x7a5420, emissive: 0x1a1000 },
+  [Prop.Pillar]: { shape: 'cylinder', width: 0.6, height: 1.6, colour: 0x56545e },
+  [Prop.Bones]: { shape: 'sphere', width: 0.6, height: 0.12, colour: 0xd8d0b8 },
 };
 
-/** Wall and roof heights from the prototype's pixel heights, converted to tiles. */
+/** The prototype's wall colours per room, and its wall heights converted from pixels to tiles. */
 const PIXELS_PER_TILE_OF_HEIGHT = 39.2;
+const WALL_COLOURS: Record<string, number> = { tavern: 0x6e5137, smithy: 0x5d5954, cottage: 0x7a6246, crypt: 0x46444f };
+const wallLook = (levelId: string, heightPx: number, emissive = 0): PropLook => ({
+  shape: 'box', width: 1, height: heightPx / PIXELS_PER_TILE_OF_HEIGHT,
+  colour: WALL_COLOURS[levelId] ?? 0x5d5954, emissive,
+});
+
 const structure = (wall: number, roof: number, wallPx: number, roofPx: number): StructureLook => ({
-  wall,
-  roof,
-  wallHeight: wallPx / PIXELS_PER_TILE_OF_HEIGHT,
-  roofHeight: roofPx / PIXELS_PER_TILE_OF_HEIGHT,
+  wall, roof, wallHeight: wallPx / PIXELS_PER_TILE_OF_HEIGHT, roofHeight: roofPx / PIXELS_PER_TILE_OF_HEIGHT,
 });
 const STRUCTURES: Record<string, StructureLook> = {
   tavern: structure(0xa8916c, 0x7b3527, 46, 34),
@@ -46,10 +60,17 @@ const LIGHTS: Record<string, number> = { warm: 0xff9b3c, purple: 0xaa5aff, cold:
 
 const ACTORS: Record<string, ActorLook> = {
   hero: { colour: 0x9a8a70, height: 0.95, radius: 0.24 },
+  goblin: { colour: 0x5d7a3a, height: 0.78, radius: 0.25 },
+  skeleton: { colour: 0xd8d0b8, height: 0.98, radius: 0.26 },
+  archer: { colour: 0xb8b090, height: 0.98, radius: 0.26 },
+  boss: { colour: 0x8a7ab0, height: 1.5, radius: 0.42 },
+  elder: { colour: 0x7a6a9a, height: 0.92, radius: 0.26 },
+  innkeeper: { colour: 0x8a5a3a, height: 0.95, radius: 0.28 },
+  smith: { colour: 0x5a5a6a, height: 0.98, radius: 0.28 },
 };
 
 export const ashenHollowLook: Look = {
-  mood: () => NIGHT,
+  mood: (levelId) => MOODS[levelId] ?? MOODS.town!,
   groundColour(kind, tx, ty, levelId) {
     const n = valueNoise(tx * 0.18 + (levelId === 'town' ? 0 : 50), ty * 0.18);
     const h = hash2(tx, ty, 5);
@@ -72,7 +93,12 @@ export const ashenHollowLook: Look = {
         return 0x000000;
     }
   },
-  prop: (kind) => PROPS[kind] ?? null,
+  prop(kind, levelId) {
+    if (kind === Prop.Wall) return wallLook(levelId, levelId === 'crypt' ? 58 : 70);
+    if (kind === Prop.WallTorch) return wallLook(levelId, levelId === 'crypt' ? 58 : 70, 0x2a1200);
+    if (kind === Prop.WallLow) return wallLook(levelId, 14);
+    return PROPS[kind] ?? null;
+  },
   structure: (kind) => STRUCTURES[kind] ?? STRUCTURES.cottage!,
   lightColour: (name) => LIGHTS[name] ?? LIGHTS.warm!,
   actor: (kind) => ACTORS[kind] ?? ACTORS.hero!,

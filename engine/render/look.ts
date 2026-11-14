@@ -37,7 +37,7 @@ export interface Look {
   mood(levelId: string): Mood;
   groundColour(kind: number, tx: number, ty: number, levelId: string): number;
   /** Null for prop kinds that aren't drawn as a prop, such as building tiles. */
-  prop(kind: number): PropLook | null;
+  prop(kind: number, levelId: string): PropLook | null;
   structure(kind: string): StructureLook;
   lightColour(name: string): number;
   actor(kind: string): ActorLook;
