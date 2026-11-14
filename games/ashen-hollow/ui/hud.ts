@@ -3,7 +3,7 @@ import { QUEST } from '../content/story';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T => document.getElementById(id) as T;
 
-/** Ashen Hollow's HUD: the prototype's orbs, skill buttons, gold, level, XP bar, boss bar and banners. */
+/** Ashen Hollow's HUD: orbs, skill buttons, gold, level, XP bar, boss bar and banners. */
 export class Hud {
   private readonly shown = new Map<string, string | number | boolean>();
   private bannerTimer = 0;

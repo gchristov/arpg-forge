@@ -6,20 +6,20 @@ The roadmap and the engine's design live in Notion: the [Roadmap](https://app.no
 
 ## Current state
 
-Stage 1 of the roadmap is under way: build the engine and rebuild Ashen Hollow on it in 3D with Three.js, matching `prototypes/ashen-hollow.html` item for item as listed in `games/ashen-hollow/PARITY.md`. The engine core and world, the 3D village and interiors (`/games/ashen-hollow/`, with `#tavern`, `#crypt` and so on to start in a level), the browser smoke test and the simulation skeleton (`engine/sim/step.ts`: input as commands, events, portals and fades), combat and enemies with the prototype's HUD, story and interaction (dialogue, quests, vendors, the chest, drops), and sound, the title screen, bundled fonts, smoke and ground marks are merged: every `PARITY.md` item is ticked. Next is the art pass (licensed 3D models, lighting, effects and the web `Platform`), then the switch of `/ashen-hollow/` to the engine build. `?debug` also exposes `window.game` (`state`, `send(command)`) for scripted browser checks. The prototype (dense one-liners, globals `G` and `P`, `Math.random()` throughout, drawn with Canvas 2D) stays frozen as the spec. Tick `PARITY.md` items as they land. When all are ticked, `/ashen-hollow/` switches to the engine version, and the prototype and `PARITY.md` are deleted. Update this section as the work lands.
+Stage 1 of the roadmap is done: the engine is built, and Ashen Hollow runs on it in 3D (KayKit models, Three.js) at `/ashen-hollow/`, matching the original one-file prototype's mechanics, story and levels. The prototype is deleted; the git tag `prototype-ashen-hollow` keeps it. Next is stage 2, making content data: levels, quests, enemy behaviour and models become data a game provides, with nothing in `engine/` naming Ashen Hollow. Update this section as the work lands.
 
 ## Layout
 
 - `engine/core` maths, seeded random generator, fixed-rate loop. `engine/world` tile maps, levels, collision, pathfinding, line of sight. `engine/sim` the rules. These three are pure: no browser, Three.js or clock (`tests/architecture.test.ts` enforces it).
 - `engine/render` Three.js scene and the `Look` interface a game implements; `engine/input` pointer, keys and gamepad.
 - `games/<name>/` a game: `levels/`, `content/`, `art/`, `main.ts` and `index.html`.
-- `tools/<name>/` Docker-based tools; `tests/` architecture and parity tests; `scripts/` repo settings.
+- `tools/<name>/` Docker-based tools; `tests/` architecture tests; `scripts/` repo settings.
 
 ## Commands
 
 Local tools run in Docker, not on this machine: don't install Node, npm packages or other tools on the host unless there's no way around it. Node 26 (`.nvmrc`, `tools/node/Dockerfile`) runs through `./tools/node/run.sh <command>`, which keeps `node_modules` in a Docker volume. Run `./tools/node/run.sh npm install` once.
 
-- Dev server: `./tools/node/run.sh npm run dev`, then open http://localhost:5173. Phones on the same network can use this machine's address. The root page links to each game and prototype. The engine build of Ashen Hollow is at `/games/ashen-hollow/` until it replaces the prototype at `/ashen-hollow/`. Add `?debug` to a game's URL for frame timings.
+- Dev server: `./tools/node/run.sh npm run dev`, then open http://localhost:5173. Phones on the same network can use this machine's address. The root page links to each game. A game's short address (`/ashen-hollow/`) redirects to its build folder (`/games/ashen-hollow/`), set in `vite.config.ts`. Add `#crypt` and the like to start in a level, and `?debug` for frame timings and `window.game` (`state`, `send(command)`, `start()`) for scripted browser checks.
 - Unit tests: `./tools/node/run.sh npm test` (includes headless scenario tests such as `games/ashen-hollow/scenarios.test.ts`, which play the rules with scripted commands) (`npm run test:watch` to re-run on change). Tests sit next to the code as `*.test.ts`, or in `tests/`.
 - Type check: `./tools/node/run.sh npm run typecheck`
 - Build: `./tools/node/run.sh npm run build` writes `dist/`; `./tools/node/run.sh npm run preview` serves it on http://localhost:4173. Prototypes are copied byte for byte, not bundled.
@@ -30,7 +30,7 @@ Local tools run in Docker, not on this machine: don't install Node, npm packages
 
 ## CI/CD
 
-`.github/workflows/staging-check.yml` runs on PRs into `main` and on pushes to `main`, built from composite actions in `.github/actions/`. Three jobs are required checks: `unit-test` (Vitest, with a `unit-test-results` report), `build-web` (type check and build) and `test-web` (`./tools/browser/run.sh smoke` on the build, with screenshots uploaded as an artifact). On `main`, `deploy-web-staging` publishes the build to GitHub Pages at https://gchristov.github.io/arpg-forge/, so the latest version can be played on a phone. Each game has its own path (`/ashen-hollow/`), which serves the game's prototype until the game has an engine entry under `games/<name>`. Prototypes are also kept at `/prototypes/<name>.html` for comparison.
+`.github/workflows/staging-check.yml` runs on PRs into `main` and on pushes to `main`, built from composite actions in `.github/actions/`. Three jobs are required checks: `unit-test` (Vitest, with a `unit-test-results` report), `build-web` (type check and build) and `test-web` (`./tools/browser/run.sh smoke` on the build, with screenshots uploaded as an artifact). On `main`, `deploy-web-staging` publishes the build to GitHub Pages at https://gchristov.github.io/arpg-forge/, so the latest version can be played on a phone. Each game has a short address such as https://gchristov.github.io/arpg-forge/ashen-hollow/.
 
 ## Rules
 
@@ -42,7 +42,7 @@ Local tools run in Docker, not on this machine: don't install Node, npm packages
 - **Rules separate from presentation.** Game rules run in `step(state, input, dt)` at a fixed rate with a seeded random generator, and emit events. Rendering, audio and HUD only listen; they never change the state. Dependencies point inwards (core, then simulation, then presentation and platform): `engine/core`, `engine/world` and `engine/sim` never import the browser, Three.js or a clock.
 - **Mind the frame budget.** 16.6 ms a frame. Avoid allocating in per-frame code (pool particles and projectiles), cull what's off screen, and load assets before a level starts, never mid-play. Measure with the debug overlay before optimising.
 - **Art from licensed packs.** Use 3D asset packs whose licence allows commercial use inside a game, and record each one's source and licence in the game's `art/CREDITS.md`.
-- **Refactors keep behaviour.** When restructuring, the game must play exactly as before. Say so explicitly if behaviour changes. A game rebuilt from its prototype keeps the prototype's rules and numbers unless a change is called out.
+- **Refactors keep behaviour.** When restructuring, the game must play exactly as before. Say so explicitly if behaviour changes.
 - **Pilots stay small:** about 30–60 minutes of play. Don't build depth into a game until it shows traction.
 
 ## Code quality

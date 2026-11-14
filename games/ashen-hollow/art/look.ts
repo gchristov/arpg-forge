@@ -3,7 +3,7 @@ import { hash2, valueNoise } from '../../../engine/core/math';
 import type { ActorLook, Look, Mood, PropLook, StructureLook } from '../../../engine/render/look';
 import { Ground, Prop } from '../content/tiles';
 
-/** Simple shapes in the prototype's palette. */
+/** Ashen Hollow's look: KayKit models, with simple shapes in its palette where there's no model. */
 
 const colour = new THREE.Color();
 const hsl = (h: number, s: number, l: number): number => colour.setHSL(h / 360, s / 100, l / 100).getHex();
@@ -59,7 +59,7 @@ const PROPS: Partial<Record<number, PropLook>> = {
   [Prop.Bones]: { shape: 'sphere', width: 0.6, height: 0.12, colour: 0xd8d0b8, model: wide(['bones', 'skull'], 0.45, 'random') },
 };
 
-/** The prototype's wall colours per room, and its wall heights converted from pixels to tiles. */
+/** Wall colours per room, and wall heights converted from pixels to tiles. */
 const PIXELS_PER_TILE_OF_HEIGHT = 39.2;
 const WALL_COLOURS: Record<string, number> = { tavern: 0x6e5137, smithy: 0x5d5954, cottage: 0x7a6246, crypt: 0x46444f };
 /** Walls stay plain blocks: the packs' wall pieces are thin slabs, and stretching one into a block squashes its bricks. */

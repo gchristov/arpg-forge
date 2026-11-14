@@ -19,8 +19,8 @@ describe('math', () => {
     }
   });
 
-  it('keeps the values the prototype used, so generated maps come out the same', () => {
-    // Reference values computed with the prototype's hash2 and vnoise.
+  it('keeps known values, so generated maps never change', () => {
+    // The village layout depends on these exact values.
     expect(hash2(0, 0)).toBe(0);
     expect(hash2(16, 22, 11)).toBe(0.9700458801817149);
     expect(valueNoise(4.48, 3.52)).toBe(0.43017037434928374);

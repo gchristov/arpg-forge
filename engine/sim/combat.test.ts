@@ -90,7 +90,7 @@ describe('healing', () => {
 });
 
 describe('levelling and regeneration', () => {
-  it('levels up with the prototype curve, possibly several times at once', () => {
+  it('levels up on the XP curve, possibly several times at once', () => {
     const state = arena(OPEN_ROOM, { x: 3.5, y: 5.5 });
     const events: SimEvent[] = [];
     gainXp(state, 60, events);

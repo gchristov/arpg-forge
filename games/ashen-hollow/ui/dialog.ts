@@ -7,7 +7,7 @@ export interface DialogChoice {
   onChoose: () => void;
 }
 
-/** The prototype's dialogue box: a title, a line of text and a list of choices. */
+/** The dialogue box: a title, a line of text and a list of choices. */
 export class DialogBox {
   /** The NPC whose dialogue is showing, so it can be refreshed after a purchase. */
   npcId: number | null = null;

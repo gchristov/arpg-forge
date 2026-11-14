@@ -6,9 +6,7 @@ import { serveDist, launchBrowser } from './browser.mjs';
 
 const PAGES = [
   { path: '/', name: 'home' },
-  { path: '/ashen-hollow/', name: 'ashen-hollow' },
-  { path: '/prototypes/ashen-hollow.html', name: 'ashen-hollow-prototype' },
-  { path: '/games/ashen-hollow/', name: 'ashen-hollow-engine', tapMovesHero: true },
+  { path: '/ashen-hollow/', name: 'ashen-hollow', tapMovesHero: true },
 ];
 const SIZES = [
   { width: 1280, height: 800, label: 'desktop' },
@@ -31,8 +29,9 @@ for (const size of SIZES) {
       if (!response?.ok()) failures.push(`${label}: HTTP ${response?.status()}`);
       await page.waitForTimeout(1500);
       if (await page.locator('#title').isVisible().catch(() => false)) {
+        await page.waitForFunction(() => document.querySelector('#title .go')?.textContent !== 'Loading…', null, { timeout: 30000 });
         await page.locator('#title').dispatchEvent('pointerdown');
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(800);
       }
       if (p.tapMovesHero) {
         const before = await page.screenshot();

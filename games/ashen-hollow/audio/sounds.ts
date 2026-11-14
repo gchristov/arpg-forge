@@ -1,6 +1,6 @@
 import type { Synth } from '../../../engine/audio/synth';
 
-/** The prototype's sound recipes. */
+/** Ashen Hollow's sound recipes. */
 export function ashenHollowSounds(s: Synth) {
   return {
     swing: () => s.noise(0.14, 0.16, 2400, 0.8),
