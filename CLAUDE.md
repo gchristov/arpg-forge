@@ -4,7 +4,7 @@ One shared engine for small isometric action RPGs (Diablo-style: tap or click to
 
 ## Current state
 
-Step 0 of `PLAN.md` is done: TypeScript, Vite, Vitest and CI are set up, and `engine/`, `games/`, `tools/` and `tests/` exist but are empty. The whole game is still `prototypes/ashen-hollow.html`, the original one-file prototype of Ashen Hollow (dense one-liners, globals `G` and `P`, `Math.random()` throughout). It stays frozen as the reference to compare against. Next is step 1: pull the engine out into `engine/` and `games/ashen-hollow/`, keeping the game playing exactly the same. Update this section as the steps land.
+Step 0 of `PLAN.md` is done: TypeScript, Vite, Vitest and CI are set up, and `engine/`, `games/` and `tests/` exist but are empty. The only playable game is `prototypes/ashen-hollow.html`, the original one-file prototype (dense one-liners, globals `G` and `P`, `Math.random()` throughout, drawn with Canvas 2D). It stays frozen as the spec for the rules, numbers, maps and quests. Step 1 is next: build the engine to the design in `PLAN.md`'s "Architecture" section and rebuild Ashen Hollow on it in 3D with Three.js. Update this section as the steps land.
 
 ## Commands
 
@@ -25,8 +25,10 @@ Local tools run in Docker, not on this machine: don't install Node, npm packages
 - **Engine versus game.** `engine/` owns how the game plays. `games/<name>/` owns what it is: setting, story, levels, enemies, items, art, sound, HUD skin. The engine contains no game-specific names, text, colours or coordinates.
 - **Share by default, extend when needed.** Express a new game's needs as data through engine registries first. A mechanic only one game needs goes in that game's `extensions/` folder, plugged in through extension points (registries, systems, event hooks, named overrides), and is listed in that game's `EXTENSIONS.md`. It moves into `engine/` only when a second game wants it. If an extension needs engine internals, add an extension point rather than moving the mechanic into the engine.
 - **Neutral engine words.** Use "melee skill", "resource", "healing item" and "vendor" in the engine; games give them their names.
-- **Rules separate from presentation.** Game rules run in `step(state, input, dt)` at a fixed rate with a seeded random generator, and emit events. Rendering, audio and HUD only listen; they never change the state.
-- **Refactors keep behaviour.** When restructuring, the game must play exactly as before. Say so explicitly if behaviour changes.
+- **Rules separate from presentation.** Game rules run in `step(state, input, dt)` at a fixed rate with a seeded random generator, and emit events. Rendering, audio and HUD only listen; they never change the state. Dependencies point inwards (core, then simulation, then presentation and platform): `engine/core`, `engine/world` and `engine/sim` never import the browser, Three.js or a clock.
+- **Mind the frame budget.** 16.6 ms a frame. Avoid allocating in per-frame code (pool particles and projectiles), cull what's off screen, and load assets before a level starts, never mid-play. Measure with the debug overlay before optimising.
+- **Art from licensed packs.** Use 3D asset packs whose licence allows commercial use inside a game, and record each one's source and licence in the game's `art/CREDITS.md`.
+- **Refactors keep behaviour.** When restructuring, the game must play exactly as before. Say so explicitly if behaviour changes. A game rebuilt from its prototype keeps the prototype's rules and numbers unless a change is called out.
 - **Pilots stay small:** about 30–60 minutes of play. Don't build depth into a game until it shows traction.
 
 ## Code quality

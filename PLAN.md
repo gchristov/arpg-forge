@@ -7,7 +7,7 @@ Ashen Hollow showed that a small isometric action RPG (Diablo-style: tap to move
 So this repo becomes **one shared engine** plus **a folder per game**. Each game is a pilot: a short, themed game we can put on Steam quickly and cheaply. When one starts to work, we invest in that one. The others stay small.
 
 - **The engine** owns how the game plays: movement, pathfinding, combat, abilities, enemy behaviour, loot, levelling, quests, maps, lighting, the camera, input, saving, and the HUD layout.
-- **A game** owns what it is: the setting, story, dialogue, levels, enemy and weapon lists, art (sprite drawing code and palettes), sounds, fonts, HUD skin and names.
+- **A game** owns what it is: the setting, story, dialogue, levels, enemy and weapon lists, art (models, textures and palettes), sounds, fonts, HUD skin and names.
 
 The guideline: **share as much as possible, and give the engine extension points for the rest.** Most of a new game should be data and art. Some games will need something the engine doesn't do, which is normal. That code goes in the game's own `extensions/` folder and plugs into the engine through extension points, not into the engine itself. It moves into the engine only when a second game wants it (see "Extension points" below).
 
@@ -20,15 +20,15 @@ The repo will be renamed to **`arpg-forge`** (see the end of this file).
 ```
 arpg-forge/
   engine/               shared code, no game-specific names or text
-    core/               maths, the angled-view projection, seeded random generator, pathfinding
-    world/              maps, tiles, collision, line of sight, portals
+    core/               maths, seeded random generator, the fixed-rate loop, events
+    world/              maps, tiles, collision, pathfinding, line of sight, portals
     sim/                actors, combat, abilities, enemy behaviour, items, quests, the update step
-    render/             drawing loop, lighting, particles, the sprite registry
+    render/             Three.js scene, camera, lighting, particles, the model registry
     ui/ input/ audio/   HUD, touch + mouse + keyboard + gamepad input, sound
     shell/              title screen, pause, settings, save slots
   games/
     ashen-hollow/       game.ts (entry), levels/, content/ (enemies, items, quests, dialogue),
-                        art/ (sprite drawing code, palette), audio/, theme.css,
+                        art/ (models, textures, palette), audio/, theme.css,
                         extensions/ (mechanics only this game has)
     <next-pilot>/
   tools/                build (one HTML page per game), content checks, desktop wrapper for Steam
@@ -47,8 +47,8 @@ A game is one `GameDefinition` object that the engine loads:
 | --- | --- |
 | `meta` | title, tagline, Steam app id later |
 | `theme` | palette, fonts, HUD frame style, ambient light colours |
-| `tiles` / `props` | named tile and prop kinds, each with a drawing function and collision flag |
-| `actors` | enemy and NPC types: stats, abilities, behaviour, loot table, sprite |
+| `tiles` / `props` | named tile and prop kinds, each with a model and collision flag |
+| `actors` | enemy and NPC types: stats, abilities, behaviour, loot table, model and animations |
 | `abilities` | the player's kit, chosen from engine ability types (melee arc, projectile, area, dash, summon, heal) |
 | `items` | weapons, consumables, upgrades, using engine item types |
 | `vendors` | NPC services such as heal, sell, upgrade, built from engine service types |
@@ -78,22 +78,48 @@ Keep a short `EXTENSIONS.md` in each game listing what it adds, so it's easy to 
 
 The engine uses **neutral words** throughout: "melee skill" not "sword", "resource" not "mana", "healing item" not "potion", "vendor" not "smith". A game names them: the robot game's sword can be a shock baton and its mana can be battery charge.
 
+## Architecture
+
+Clean architecture's main rule applies: dependencies point inwards, and the inner layers know nothing about the outer ones. From the inside out:
+
+1. **Core:** maths, the seeded random generator and event types. Pure functions, no browser.
+2. **Simulation:** the game state and `step(state, input, dt)`, which runs ordered systems (input, behaviour, movement, combat, pickups, quests) and returns events. It is the equivalent of the domain and use cases. No browser, no Three.js, no clock.
+3. **Presentation:** rendering, audio and HUD read the state and listen to events, and never change the state. Input turns touches, clicks, keys and gamepads into commands for the next `step`.
+4. **Platform:** the web, Steam and mobile adapters behind the `Platform` interface.
+5. **Content:** each game's `GameDefinition` is data plus small extension modules, loaded by the engine.
+
+What games add to that:
+
+- **A fixed-rate loop.** The rules advance in fixed steps of 1/60 s from an accumulator. Rendering runs at the screen's rate and smooths between the last two states. The same code then runs the same on a 30 Hz phone and a 144 Hz monitor.
+- **State as plain data.** The state is plain serialisable objects, not classes calling each other, so saving, loading, replays and tests come almost free. Actors are composed from optional parts rather than built from class hierarchies.
+- **Determinism.** The same seed and the same inputs always give the same game. A bug report can be replayed, and scenario tests can check exact outcomes.
+- **A frame budget.** A frame has 16.6 ms at 60 frames a second. Nothing in the loop allocates per frame where it can be avoided: object pools for particles and projectiles, and no new arrays or strings in hot paths. Things off screen are culled, assets load before a level starts, and nothing is built for the first time mid-play.
+- **Measure, don't guess.** A debug overlay shows the frame time and the update and draw split, so slow frames are found rather than guessed at.
+
+## Art and rendering
+
+- **Three.js** with an orthographic camera at a fixed isometric angle. Models are glTF (`.glb`), lit by real lights with shadows. Effects such as hit flashes, outlines and dissolves are shaders.
+- **Art comes from 3D asset packs** with a licence that allows commercial use and redistribution inside a game: free CC0 packs (KayKit, Quaternius, Kenney) first, then paid packs (Synty) where a theme needs them. Humanoid animations can come from Mixamo. Each asset's source and licence is recorded in the game's `art/CREDITS.md`.
+- **One pack family per game** keeps the style consistent. A pilot's theme is chosen partly by which packs exist for it.
+- **The simulation stays 2D:** a tile grid for collision, pathfinding and line of sight. Height exists only in the presentation.
+
 ## Step 0: set up the repo (small)
 
 1. Rename the repo and move `index.html` to `prototypes/ashen-hollow.html`, unchanged.
 2. Set up TypeScript, Vite, Vitest and the folders above.
 3. Add a `CLAUDE.md` describing the engine/game rule, the layout and the commands.
 
-## Step 1: pull the engine out, keeping Ashen Hollow playing the same
+## Step 1: build the engine and rebuild Ashen Hollow on it
 
-Steps 1 to 3 of the original plan, done as one refactor. When it's done, Ashen Hollow should play exactly as the prototype does.
+The engine is built to the design in "Architecture" rather than ported line by line, and Ashen Hollow is rebuilt on it in 3D. The prototype is the spec for the rules, numbers, maps and quests. It stays playable at `/prototypes/ashen-hollow.html` to compare against, and the rebuilt game takes over `/ashen-hollow/` once it plays as well. The game doesn't need to stay playable in the repo while this happens.
 
-- **Modules:** split the file into the `engine/` folders. Give the player, enemies and NPCs proper types. Today they are loosely shaped objects whose fields sometimes exist and sometimes don't.
+- **Modules:** the `engine/` folders, with proper types for the player, enemies and NPCs. In the prototype they are loosely shaped objects whose fields sometimes exist and sometimes don't.
 - **Rules apart from presentation:** the game rules become one update step, `step(state, input, dt)`, which returns events (`Damaged`, `Killed`, `EnteredMap`, `LevelUp`, `QuestAdvanced`). The renderer, audio and HUD listen to those events and never change the game state. Today, for example, `hurtPlayer` flashes a DOM element and plays a sound, `bossSpecial` shows the boss bar, and `drawActor` decides whether to show health bars.
-- **Deterministic:** use a seeded random generator instead of `Math.random()`, and run the rules at a fixed 60 updates a second. Drawing still follows the real frame rate.
-- **Remove the fantasy from the engine:** everything named after Ashen Hollow moves into `games/ashen-hollow/`. Today that includes the `G_GRASS`…`G_DEAD` and `O_TREE`…`O_DOORWAY` constants, `PAL`, `ETYPES`, `WALLS`, the `switch` in `talkTo` that checks NPC kinds, the quest text in `updateHud`, the banner in `bossDefeated`, the Cinzel font and the colours in `:root`.
+- **Deterministic:** a seeded random generator instead of `Math.random()`, and rules at a fixed 60 updates a second. Drawing follows the real frame rate and smooths between updates.
+- **3D drawing:** Three.js with a fixed angled camera, low-poly models from asset packs, real lights and shadows (see "Art and rendering").
+- **No fantasy in the engine:** everything named after Ashen Hollow lives in `games/ashen-hollow/`. In the prototype that includes the `G_GRASS`…`G_DEAD` and `O_TREE`…`O_DOORWAY` constants, `PAL`, `ETYPES`, `WALLS`, the `switch` in `talkTo` that checks NPC kinds, the quest text in `updateHud`, the banner in `bossDefeated`, the Cinzel font and the colours in `:root`.
 - **Platform layer:** the engine reaches saves, achievements, full screen, quitting and store features only through a small `Platform` interface (see "Shipping"). Step 1 builds the web version. Game and engine code never call browser storage or a store's API directly.
-- **Everything bundled:** fonts and any other assets ship with the build instead of loading from the internet, so the game works offline and inside a desktop wrapper. Today the prototype loads Cinzel and Alegreya Sans from Google Fonts.
+- **Everything bundled:** fonts, models and other assets ship with the build instead of loading from the internet, so the game works offline and inside a desktop wrapper. The prototype loads Cinzel and Alegreya Sans from Google Fonts.
 - **Tests alongside it:** unit tests for pathfinding, line of sight and the screen-to-map conversion, plus the content checks from step 4.
 
 ## Step 2: make content data
@@ -106,7 +132,7 @@ This is what makes each new game cheap.
 - **Quests:** data steps with triggers, instead of the numbers 0 to 3 used today.
 - **One actor model:** one actor with optional parts (stats, a controller that is either player input or an AI behaviour, dialogue, a loot table). A full entity-component system would be overkill at this size.
 - **Enemy behaviour:** small reusable states (`Idle`, `Chase`, `Attack`, `Kite`, `Return`) instead of the if/else chain in `updateEnemy`. The boss's slam and summon become abilities listed on an enemy type (`abilities: ['slam', 'summon']`). A new boss is a new mix of abilities and numbers.
-- **Sprite registry:** each game registers drawing functions by actor or prop kind, instead of the palette and `switch` blocks in `drawActor` and `drawProp`.
+- **Model registry:** each game registers models and animations by actor or prop kind, instead of the palette and `switch` blocks in the prototype's `drawActor` and `drawProp`.
 
 ## Step 3: prove it with a second game
 
@@ -148,8 +174,8 @@ The game stays a web game. The web build is the one artifact, and each store get
 ## Tests at three levels
 
 - **Unit tests (Vitest):** pathfinding, line of sight, collision sliding, the screen-to-map conversion round trip, damage and XP curves, enemy state changes, quest progress.
-- **Content checks, run for every game:** every room layout is rectangular, every portal leads somewhere, every spawn and quest target can be reached from the start, no door is blocked, and every actor kind has a sprite and every event has a sound. The crypt grid was counted by hand and a crate still ended up in front of the tavern exit; a test would have caught that.
-- **Scenario tests:** run the game headless with scripted input, for example "walk to the tavern door, check the map changed" or "stand in the slam circle, check the damage". A few Playwright screenshots per game would catch drawing problems.
+- **Content checks, run for every game:** every room layout is rectangular, every portal leads somewhere, every spawn and quest target can be reached from the start, no door is blocked, and every actor kind has a model and every event has a sound. The crypt grid was counted by hand and a crate still ended up in front of the tavern exit; a test would have caught that.
+- **Scenario tests:** run the rules headless with scripted input and a fixed seed, for example "walk to the tavern door, check the map changed" or "stand in the slam circle, check the damage". A few Playwright screenshots per game would catch drawing problems.
 
 ## Smaller wins
 
@@ -159,7 +185,7 @@ The game stays a web game. The web build is the one artifact, and each store get
 
 ## Order
 
-Step 0, then step 1 (the big one, behaviour unchanged), then step 2, then step 3 with the first pilot. Step 4 comes when a pilot is close to having a Steam page. Ashen Hollow itself only gets polished if it's chosen as a pilot.
+Step 0, then step 1 (the big one: the engine, and Ashen Hollow rebuilt on it), then step 2, then step 3 with the first pilot. Step 4 comes when a pilot is close to having a Steam page. Ashen Hollow itself only gets polished if it's chosen as a pilot.
 
 ## Name
 
