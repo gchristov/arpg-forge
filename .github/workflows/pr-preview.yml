@@ -47,6 +47,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      deployments: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -56,3 +57,13 @@ jobs:
           preview-branch: gh-pages
           umbrella-dir: pr-preview
           action: remove
+      # So the repo's Deployments sidebar never links a preview that's gone.
+      - name: Mark the preview deployment inactive
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          REF: ${{ github.head_ref }}
+        run: |
+          for id in $(gh api "repos/$REPO/deployments?environment=preview&ref=$REF" --jq '.[].id'); do
+            gh api -X POST "repos/$REPO/deployments/$id/statuses" -f state=inactive --silent
+          done
