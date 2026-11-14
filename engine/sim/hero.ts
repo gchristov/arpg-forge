@@ -4,6 +4,7 @@ import { hasLineOfSight } from '../world/line-of-sight';
 import { planRoute } from '../world/pathfinding';
 import { tileIndex } from '../world/tile-map';
 import { damageEnemy, findEnemy, nearestEnemy } from './combat';
+import { updateInteraction, useService, walkToContainer, walkToNpc } from './interaction';
 import { placeAt } from './setup';
 import { currentLevel, type Command, type GameState, type SimEvent } from './state';
 import { followPath, steerTowards, walkTo } from './walking';
@@ -27,6 +28,7 @@ export function applyCommand(state: GameState, command: Command, events: SimEven
   }
   if (hero.dead) return;
   const { level } = currentLevel(state);
+  if (command.type !== 'blast' && command.type !== 'heal' && command.type !== 'useService') hero.interact = null;
   switch (command.type) {
     case 'walk': {
       hero.targetId = null;
@@ -72,6 +74,15 @@ export function applyCommand(state: GameState, command: Command, events: SimEven
       break;
     case 'heal':
       heal(state, events);
+      break;
+    case 'talk':
+      walkToNpc(state, command.npcId);
+      break;
+    case 'open':
+      walkToContainer(state, command.index);
+      break;
+    case 'useService':
+      useService(state, command.npcId, command.service, events);
       break;
   }
 }
@@ -175,6 +186,7 @@ function respawn(state: GameState, events: SimEvent[]): void {
   placeAt(hero, start.x, start.y);
   hero.path = null;
   hero.targetId = null;
+  hero.interact = null;
   hero.moving = false;
   state.projectiles.length = 0;
   state.telegraphs.length = 0;
@@ -217,6 +229,7 @@ export function updateHeroMovement(state: GameState, held: { x: number; y: numbe
   }
   if (hero.targetId === null) {
     followPath(map, hero, hero.speed, dt);
+    updateInteraction(state, events);
     return;
   }
   const e = findEnemy(state, hero.targetId);

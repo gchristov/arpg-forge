@@ -13,7 +13,10 @@ export function createGameState(content: GameContent, seed: number, startLevel =
     rng: createRng(seed),
     time: 0,
     nextId: 1,
-    rules: { hero: content.hero, enemies: content.enemies, npcRadius: content.npcRadius },
+    rules: {
+      hero: content.hero, enemies: content.enemies, npcRadius: content.npcRadius, npcs: content.npcs, quest: content.quest,
+    },
+    quest: 0,
     levels: {},
     levelId: startLevel,
     startLevelId: content.startLevel,
@@ -26,7 +29,8 @@ export function createGameState(content: GameContent, seed: number, startLevel =
   };
   for (const lc of content.levels) {
     const ls: LevelState = {
-      level: lc.level, enemies: [], npcs: [], camps: lc.camps,
+      level: lc.level, enemies: [], npcs: [], camps: lc.camps, items: [],
+      containers: (lc.containers ?? []).map((c) => ({ ...c, opened: false })),
       ...(lc.campRespawns ? { campRespawns: lc.campRespawns } : {}),
       campTimer: lc.campRespawns?.everySeconds ?? 0,
     };
@@ -51,6 +55,7 @@ function newHero(rules: HeroRules): Hero {
     damage: [...rules.damage], bonusDamage: 0,
     attackCooldown: 0, blastCooldown: 0, swing: -1, struck: true,
     lastHurtAt: -Infinity, dead: false, targetId: null, repathTimer: 0,
+    interact: null, meleeUpgrades: 0,
   };
 }
 

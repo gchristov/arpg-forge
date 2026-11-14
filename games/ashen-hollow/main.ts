@@ -5,6 +5,7 @@ import { PointerInput } from '../../engine/input/pointer';
 import { DebugOverlay } from '../../engine/render/debug-overlay';
 import { SceneRenderer } from '../../engine/render/scene-renderer';
 import { createGameState } from '../../engine/sim/setup';
+import { servicePrice } from '../../engine/sim/interaction';
 import { currentLevel, type Actor, type Command, type SimEvent } from '../../engine/sim/state';
 import { step } from '../../engine/sim/step';
 import { ScreenFade } from '../../engine/ui/fade';
@@ -12,8 +13,10 @@ import { WorldLabels, type Project } from '../../engine/ui/world-labels';
 import { tileIndex } from '../../engine/world/tile-map';
 import { ashenHollowLook } from './art/look';
 import { ENEMIES } from './content/enemies';
+import { BOSS_DEFEATED_STEP, dialogueFor, NPCS } from './content/story';
 import { Prop } from './content/tiles';
 import { ashenHollowContent } from './content/world';
+import { DialogBox } from './ui/dialog';
 import { Hud } from './ui/hud';
 
 const WALK_MARKER = 0xe8d6a6;
@@ -31,7 +34,8 @@ const renderer = new SceneRenderer(canvas, ashenHollowLook);
 const pointer = new PointerInput(canvas);
 const fade = new ScreenFade(document.body, FADE_SECONDS);
 const labels = new WorldLabels(document.body);
-const debug = new URLSearchParams(location.search).has('debug') ? new DebugOverlay(document.body) : null;
+const debugMode = new URLSearchParams(location.search).has('debug');
+const debug = debugMode ? new DebugOverlay(document.body) : null;
 const project: Project = (x, y, height, out) => renderer.screenPosition(x, y, height, out);
 
 const content = ashenHollowContent();
@@ -40,12 +44,19 @@ const jumpTo = location.hash.slice(1);
 const startLevel = content.levels.some((l) => l.level.id === jumpTo) ? jumpTo : content.startLevel;
 const state = createGameState(content, (Math.random() * 2 ** 32) >>> 0, startLevel);
 const pending: Command[] = [];
-const hud = new Hud((c) => pending.push(c));
+const dialog = new DialogBox();
+const hud = new Hud((c) => {
+  if (c.type === 'attackNearest') dialog.close();
+  pending.push(c);
+});
 /** Holding the pointer keeps walking only when the press started a walk. */
 let holdWalks = false;
 /** Seconds left of each actor's hit flash, by id. */
 const flashes = new Map<number, number>();
 const screenPoint: Vec2 = { x: 0, y: 0 };
+
+/** With `?debug`, scripts such as browser tests can read the state and send commands. */
+if (debugMode) Object.assign(window, { game: { state, send: (c: Command) => pending.push(c) } });
 
 bindKeys({
   '1': () => pending.push({ type: 'heal' }),
@@ -65,10 +76,14 @@ function showCurrentLevel(): void {
   renderer.follow(state.hero.x, state.hero.y, 0, true);
 }
 
-/** Turns a tap into a command, in the prototype's order: enemies, then buildings, then doorways, then ground. */
+/**
+ * Turns a tap into a command, in the prototype's order: enemies, NPCs, buildings, the chest, doorways, then the
+ * ground. Any tap closes an open dialogue.
+ */
 function commandForTap(x: number, y: number): Command | null {
   if (state.transition) return null;
   if (state.hero.dead) return { type: 'respawn' };
+  dialog.close();
   const ls = currentLevel(state);
   let best: { id: number; d: number } | null = null;
   for (const e of ls.enemies) {
@@ -79,12 +94,18 @@ function commandForTap(x: number, y: number): Command | null {
     if (d < TAP_REACH_PX * renderer.zoom * Math.max(1, scale * 0.9) && (!best || d < best.d)) best = { id: e.id, d };
   }
   if (best) return { type: 'attack', enemyId: best.id };
+  for (const n of ls.npcs) {
+    const p = renderer.screenPosition(n.x, n.y, 18 * PX, screenPoint);
+    if (Math.hypot(p.x - x, p.y - y) < TAP_REACH_PX * renderer.zoom) return { type: 'talk', npcId: n.id };
+  }
   const picked = renderer.pick(x, y);
   if (!picked) return null;
   if ('structure' in picked) return { type: 'enterStructure', index: picked.structure };
   const { map } = ls.level;
   const tx = Math.floor(picked.ground.x);
   const ty = Math.floor(picked.ground.y);
+  const chest = ls.containers.findIndex((c) => c.tx === tx && c.ty === ty && !c.opened);
+  if (chest >= 0) return { type: 'open', index: chest };
   if (tx >= 0 && ty >= 0 && tx < map.width && ty < map.height && map.prop[tileIndex(map, tx, ty)] === Prop.Doorway) {
     return { type: 'walkInto', tx, ty };
   }
@@ -166,7 +187,23 @@ function react(events: SimEvent[]): void {
       case 'LevelUp':
         hud.banner(`Level ${e.level}`, 'Stronger, and fully healed.');
         break;
+      case 'Talked':
+        showDialogue(e.npcId, e.questBefore);
+        break;
+      case 'ServiceUsed':
+        reactToService(e.npcId, e.service, e.x, e.y);
+        break;
+      case 'PickedUp':
+        if (e.kind === 'gold') labels.text(e.x, e.y, 30 * PX, `+${e.amount} gold`, '#ffd25a', 13);
+        else labels.text(e.x, e.y, 30 * PX, '+1 potion', '#ff8a96', 13);
+        break;
+      case 'QuestAdvanced':
+        if (e.step === BOSS_DEFEATED_STEP) {
+          setTimeout(() => hud.banner('The Bone Lord is destroyed', 'Ashen Hollow is safe. The wilds still stir.', 4.5), 600);
+        }
+        break;
       case 'HeroDied':
+        dialog.close();
         hud.banner('You have fallen', 'Tap to rise again in the village.', Infinity);
         break;
       case 'HeroRespawned':
@@ -175,6 +212,46 @@ function react(events: SimEvent[]): void {
         break;
     }
   }
+}
+
+/** Opens an NPC's dialogue, with each service's price and whether the hero can afford it. */
+function showDialogue(npcId: number, questBefore: number): void {
+  const npc = currentLevel(state).npcs.find((n) => n.id === npcId);
+  const d = npc && dialogueFor(npc.kind, questBefore, state.quest);
+  if (!npc || !d) return;
+  const services = NPCS[npc.kind]?.services ?? [];
+  dialog.open(
+    npcId,
+    d.title,
+    d.text,
+    d.options.map((o) => {
+      const service = o.service === undefined ? undefined : services[o.service];
+      const price = service ? servicePrice(state.hero, service) : 0;
+      return {
+        label: o.label,
+        ...(o.tag ? { tag: o.tag(price) } : {}),
+        disabled: state.hero.gold < price,
+        onChoose: () => {
+          if (o.service === undefined) dialog.close();
+          else pending.push({ type: 'useService', npcId, service: o.service });
+        },
+      };
+    }),
+  );
+}
+
+/** After a purchase: resting closes the dialogue, other services refresh it with the new prices. */
+function reactToService(npcId: number, index: number, x: number, y: number): void {
+  const npc = currentLevel(state).npcs.find((n) => n.id === npcId);
+  const service = npc && NPCS[npc.kind]?.services[index];
+  if (!service) return;
+  if (service.type === 'restore') {
+    labels.text(x, y, 46 * PX, 'Rested', '#7dff8a', 15);
+    dialog.close();
+    return;
+  }
+  if (service.type === 'upgradeMelee') labels.text(x, y, 46 * PX, 'Blade honed', '#ffd25a', 15);
+  if (dialog.npcId === npcId) showDialogue(npcId, state.quest);
 }
 
 function drawActor(actor: Actor, alpha: number, fadeShare = 1): void {
@@ -208,6 +285,7 @@ function drawWorld(alpha: number, frameSeconds: number): void {
   labels.endBars();
   renderer.effects.showProjectiles(state.projectiles, alpha);
   renderer.effects.showTelegraphs(state.telegraphs);
+  renderer.effects.showItems(ls.items, performance.now() / 1000);
 }
 
 const loop = createFixedLoop();

@@ -1,7 +1,7 @@
 import type { Vec2 } from '../core/math';
 import type { Rng } from '../core/rng';
 import type { Level } from '../world/level';
-import type { Camp, CampRespawns, EnemyType, HeroRules } from './content';
+import type { Camp, CampRespawns, EnemyType, HeroRules, NpcType, QuestStep } from './content';
 import type { Walker } from './walking';
 
 export interface Actor extends Walker {
@@ -38,6 +38,10 @@ export interface Hero extends Actor {
   dead: boolean;
   targetId: number | null;
   repathTimer: number;
+  /** Who or what the hero is walking up to, to talk or open once close enough. */
+  interact: { type: 'npc'; npcId: number } | { type: 'container'; index: number } | null;
+  /** Melee upgrades bought so far; each one costs more than the last. */
+  meleeUpgrades: number;
 }
 
 export interface Npc extends Actor {
@@ -89,10 +93,30 @@ export interface Telegraph {
   damage: [number, number];
 }
 
+/** Gold or a healing item on the ground. Height and fall speed are in tiles. */
+export interface GroundItem {
+  kind: 'gold' | 'healingItem';
+  amount: number;
+  x: number;
+  y: number;
+  z: number;
+  vz: number;
+}
+
+export interface ContainerState {
+  tx: number;
+  ty: number;
+  gold: number;
+  healingItems: number;
+  opened: boolean;
+}
+
 export interface LevelState {
   level: Level;
   enemies: Enemy[];
   npcs: Npc[];
+  items: GroundItem[];
+  containers: ContainerState[];
   camps: Camp[];
   campRespawns?: CampRespawns;
   campTimer: number;
@@ -111,7 +135,15 @@ export interface GameState {
   rng: Rng;
   time: number;
   nextId: number;
-  rules: { hero: HeroRules; enemies: Record<string, EnemyType>; npcRadius: number };
+  rules: {
+    hero: HeroRules;
+    enemies: Record<string, EnemyType>;
+    npcRadius: number;
+    npcs: Record<string, NpcType>;
+    quest: QuestStep[];
+  };
+  /** Index of the current quest step. */
+  quest: number;
   levels: Record<string, LevelState>;
   levelId: string;
   startLevelId: string;
@@ -136,7 +168,10 @@ export type Command =
   | { type: 'attackNearest' }
   | { type: 'blast' }
   | { type: 'heal' }
-  | { type: 'respawn' };
+  | { type: 'respawn' }
+  | { type: 'talk'; npcId: number }
+  | { type: 'open'; index: number }
+  | { type: 'useService'; npcId: number; service: number };
 
 export interface StepInput {
   commands: Command[];
@@ -167,4 +202,10 @@ export type SimEvent =
   | { type: 'ShotFired'; enemyId: number }
   | { type: 'SlamWarned'; enemyId: number; x: number; y: number }
   | { type: 'SlamLanded'; x: number; y: number; radius: number }
-  | { type: 'Summoned'; enemyId: number; summonedIds: number[] };
+  | { type: 'Summoned'; enemyId: number; summonedIds: number[] }
+  /** `questBefore` is the quest step just before talking, so the game can tell a first meeting from a later one. */
+  | { type: 'Talked'; npcId: number; kind: string; name: string; questBefore: number }
+  | { type: 'ServiceUsed'; npcId: number; service: number; x: number; y: number }
+  | { type: 'ContainerOpened'; index: number; x: number; y: number }
+  | { type: 'PickedUp'; kind: GroundItem['kind']; amount: number; x: number; y: number }
+  | { type: 'QuestAdvanced'; step: number };

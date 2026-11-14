@@ -3,6 +3,7 @@ import { buildInterior, INTERIOR_IDS } from '../levels/interiors';
 import { generateVillage } from '../levels/village';
 import { ENEMIES } from './enemies';
 import { HERO } from './hero';
+import { NPCS, QUEST } from './story';
 
 /** Ashen Hollow as the rules see it: the village and its four interiors. */
 export function ashenHollowContent(): GameContent {
@@ -14,11 +15,13 @@ export function ashenHollowContent(): GameContent {
         level: village.level, spawns: village.spawns, camps: village.camps, npcs: village.npcs,
         campRespawns: { everySeconds: 30, maxAlive: 12, minHeroDistance: 12, kinds: ['goblin', 'skeleton'] },
       },
-      ...interiors.map((i) => ({ level: i.level, spawns: i.spawns, camps: [], npcs: i.npcs })),
+      ...interiors.map((i) => ({ level: i.level, spawns: i.spawns, camps: [], npcs: i.npcs, containers: i.containers })),
     ],
     startLevel: 'town',
     hero: HERO,
     enemies: ENEMIES,
     npcRadius: 0.32,
+    npcs: NPCS,
+    quest: QUEST.map((s) => (s.reachedBy ? { reachedBy: s.reachedBy } : {})),
   };
 }
