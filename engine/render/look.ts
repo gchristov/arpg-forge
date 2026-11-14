@@ -74,15 +74,16 @@ export interface BurstLook {
 
 /** Colours of combat effects and markers. */
 export interface EffectsLook {
-  blast: number;
+  /** The hero's skill projectiles, and enemies' shots. */
+  skill: number;
   shot: number;
   telegraph: number;
   items: Record<string, number>;
   /** Rings where the hero was sent to walk, and under an enemy picked to attack. */
   walkMarker: number;
   targetMarker: number;
-  /** Light cast by a flying blast, by a warning circle and around a boss. */
-  blastLight: number;
+  /** Light cast by a flying skill projectile, by a warning circle and around a boss. */
+  skillLight: number;
   telegraphLight: number;
   bossLight: number;
   /** Chimney smoke. */

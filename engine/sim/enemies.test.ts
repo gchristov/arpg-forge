@@ -41,7 +41,7 @@ describe('enemy behaviour', () => {
 
   it('wakes up and chases when hit', () => {
     const state = arena(OPEN_ROOM, { x: 2.5, y: 5.5 }, [{ kind: 'brute', x: 12.5, y: 5.5 }]);
-    run(state, 1.5, [{ type: 'blast' }]);
+    run(state, 1.5, [{ type: 'useSkill', slot: 0 }]);
     expect(enemiesOf(state)[0]!.mode).toBe('chase');
   });
 

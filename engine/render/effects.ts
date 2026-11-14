@@ -30,7 +30,8 @@ export interface ItemView {
 }
 
 export interface EffectColours {
-  blast: number;
+  /** The hero's skill projectiles. */
+  skill: number;
   shot: number;
   telegraph: number;
   /** Item colours by kind, such as gold or a healing item. */
@@ -69,7 +70,7 @@ interface Flash {
  * created during play.
  */
 export class Effects {
-  private readonly blasts: THREE.Mesh[] = [];
+  private readonly skillShots: THREE.Mesh[] = [];
   private readonly shots: THREE.Mesh[] = [];
   private readonly circles: Array<THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial>> = [];
   private readonly flashes: Flash[] = [];
@@ -79,8 +80,8 @@ export class Effects {
   private readonly puffs: Puff[] = [];
 
   constructor(scene: THREE.Scene, colours: EffectColours) {
-    const blastGeometry = new THREE.SphereGeometry(0.15, 12, 8);
-    const blastMaterial = new THREE.MeshBasicMaterial({ color: colours.blast });
+    const skillGeometry = new THREE.SphereGeometry(0.15, 12, 8);
+    const skillMaterial = new THREE.MeshBasicMaterial({ color: colours.skill });
     const shotGeometry = new THREE.CylinderGeometry(0.025, 0.025, 0.55, 6).rotateX(Math.PI / 2);
     const shotMaterial = new THREE.MeshBasicMaterial({ color: colours.shot });
     const circleGeometry = new THREE.CircleGeometry(1, 40).rotateX(-Math.PI / 2);
@@ -106,7 +107,7 @@ export class Effects {
       this.items.set(kind, pool);
     }
     for (let i = 0; i < POOL_SIZE; i++) {
-      this.blasts.push(hidden(scene, new THREE.Mesh(blastGeometry, blastMaterial)));
+      this.skillShots.push(hidden(scene, new THREE.Mesh(skillGeometry, skillMaterial)));
       this.shots.push(hidden(scene, new THREE.Mesh(shotGeometry, shotMaterial)));
       this.circles.push(
         hidden(scene, new THREE.Mesh(circleGeometry, new THREE.MeshBasicMaterial({
@@ -123,16 +124,16 @@ export class Effects {
   }
 
   showProjectiles(projectiles: readonly ProjectileView[], alpha: number): void {
-    let blast = 0;
+    let skill = 0;
     let shot = 0;
     for (const p of projectiles) {
-      const mesh = p.kind === 'blast' ? this.blasts[blast++] : this.shots[shot++];
+      const mesh = p.kind === 'skill' ? this.skillShots[skill++] : this.shots[shot++];
       if (!mesh) continue;
       mesh.visible = true;
       mesh.position.set(p.prevX + (p.x - p.prevX) * alpha, PROJECTILE_HEIGHT, p.prevY + (p.y - p.prevY) * alpha);
       mesh.rotation.y = Math.atan2(p.vx, p.vy);
     }
-    for (let i = blast; i < POOL_SIZE; i++) this.blasts[i]!.visible = false;
+    for (let i = skill; i < POOL_SIZE; i++) this.skillShots[i]!.visible = false;
     for (let i = shot; i < POOL_SIZE; i++) this.shots[i]!.visible = false;
   }
 
@@ -215,7 +216,7 @@ export class Effects {
 
   /** Shows or hides every pooled mesh at once, so their shaders can be compiled before they're needed. */
   setAllVisible(visible: boolean): void {
-    for (const list of [this.blasts, this.shots, this.circles]) for (const m of list) m.visible = visible;
+    for (const list of [this.skillShots, this.shots, this.circles]) for (const m of list) m.visible = visible;
     for (const f of this.flashes) f.mesh.visible = visible;
     for (const d of this.decals) d.mesh.visible = visible;
     for (const p of this.puffs) p.mesh.visible = visible;

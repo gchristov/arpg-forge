@@ -81,8 +81,8 @@ function playSounds(events: SimEvent[]): void {
       case 'HeroHurt':
         sfx.hurt();
         break;
-      case 'BlastCast':
-        sfx.fire();
+      case 'SkillUsed':
+        if (e.skill === 'fireball') sfx.fire();
         break;
       case 'Exploded':
         sfx.boom();

@@ -147,7 +147,7 @@ function attack(state: GameState, e: Enemy, type: EnemyType, fx: number, fy: num
     const x = e.x + fx * SHOT_OFFSET;
     const y = e.y + fy * SHOT_OFFSET;
     state.projectiles.push({
-      kind: 'shot', x, y, prevX: x, prevY: y, vx: fx * SHOT_SPEED, vy: fy * SHOT_SPEED, life: SHOT_LIFETIME,
+      kind: 'shot', slot: -1, x, y, prevX: x, prevY: y, vx: fx * SHOT_SPEED, vy: fy * SHOT_SPEED, life: SHOT_LIFETIME,
       damage: int(state.rng, type.damage[0], type.damage[1]),
     });
     events.push({ type: 'ShotFired', enemyId: e.id });

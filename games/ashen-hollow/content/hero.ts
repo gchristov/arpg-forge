@@ -1,6 +1,6 @@
 import type { HeroRules } from '../../../engine/sim/content';
 
-/** The hero's numbers. The resource is mana, healing items are potions and the blast is a fireball. */
+/** The hero's numbers. The resource is mana, healing items are potions and the one skill is a fireball. */
 export const HERO: HeroRules = {
   radius: 0.28,
   speed: 3.7,
@@ -19,10 +19,13 @@ export const HERO: HeroRules = {
     cooldown: 0.55, swingSeconds: 0.3, reach: 1.35, engageRange: 1.0,
     critChance: 0.12, critMultiplier: 1.8, knockback: 0.18,
   },
-  blast: {
-    cost: 12, cooldown: 0.6, speed: 9, lifetime: 1.1, radius: 1.5, damage: [22, 32], damagePerLevel: 3,
-    critChance: 0.1, critMultiplier: 1.6, autoAimRange: 9,
-  },
+  skills: [
+    {
+      type: 'projectile', id: 'fireball',
+      cost: 12, cooldown: 0.6, speed: 9, lifetime: 1.1, radius: 1.5, damage: [22, 32], damagePerLevel: 3,
+      critChance: 0.1, critMultiplier: 1.6, autoAimRange: 9,
+    },
+  ],
   heal: { amount: 60, maxItems: 9 },
   attackAssistRange: 7,
   deathGoldLoss: 0.5,
