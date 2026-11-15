@@ -42,4 +42,10 @@ export const Prop = {
   Cargo: 29,
   /** Stairs up or down to another floor of a building, walked onto to take them. */
   Stairs: 30,
+  /** What stands round Rustbelt's buildings and tells them apart: a work scaffold, a truck, a cargo crane, a pump rig, a tank. */
+  Scaffold: 31,
+  Truck: 32,
+  Crane: 33,
+  PumpRig: 34,
+  Tank: 35,
 } as const;

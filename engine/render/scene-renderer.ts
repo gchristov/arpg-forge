@@ -9,6 +9,7 @@ import { blendedGround } from './ground-blend';
 import { kitBuilding } from './kit-building';
 import { ELEVATION } from './camera-angle';
 import { LightMap } from './light-map';
+import { Mist } from './mist';
 import type { Look, Mood, PropLook, WallFixture } from './look';
 import { fitMatrix, instancedModel, panelFit, panelScale } from './model-instancing';
 import { ModelLibrary, type ModelTemplate } from './models';
@@ -68,6 +69,7 @@ export class SceneRenderer {
   /** Whether the level shown is alarmed, which lights its alarm lights. */
   private alarmed = false;
   private mood: Mood | null = null;
+  private mist: Mist | null = null;
   private flames: Flames | null = null;
   private width = 1;
   private height = 1;
@@ -154,6 +156,8 @@ export class SceneRenderer {
     this.structures = this.buildStructures(level);
     for (const mesh of this.structures) this.levelGroup.add(mesh);
     this.levelGroup.traverse((o) => this.lightUp(o));
+    this.mist = mood.mist ? new Mist(level.map.width, level.map.height, mood.mist, this.lightMap.uniforms) : null;
+    if (this.mist) this.levelGroup.add(this.mist.group);
     // Flames give their own light, so they stay out of the light map.
     this.flames = new Flames(this.flameSpots(level));
     this.levelGroup.add(this.flames.group);
@@ -266,6 +270,7 @@ export class SceneRenderer {
     this.updateMarker(frameSeconds);
     this.effects.update(frameSeconds);
     this.flames?.update(seconds, frameSeconds);
+    this.mist?.update(seconds);
     this.removeUnseenActors();
     for (const figure of this.actors.values()) figure.update(frameSeconds);
     this.renderer.render(this.scene, this.camera);
