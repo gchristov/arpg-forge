@@ -62,5 +62,16 @@ export function wallPanels(map: TileMap, isWall: (tx: number, ty: number) => boo
   return panels;
 }
 
+/** The faces of one wall tile that look onto open floor, each one tile long, centred on its edge. */
+export function wallFaces(map: TileMap, isWall: (tx: number, ty: number) => boolean, tx: number, ty: number): WallPanel[] {
+  return SIDES.flatMap((side) => {
+    const floor = { x: tx - side.wall.x, y: ty - side.wall.y };
+    if (!inBounds(map, floor.x, floor.y) || isWall(floor.x, floor.y)) return [];
+    const x = tx + 0.5 - side.wall.x * 0.5;
+    const y = ty + 0.5 - side.wall.y * 0.5;
+    return [{ x, y, length: 1, facing: side.facing, front: side.front }];
+  });
+}
+
 export const isWallTile = (map: TileMap, kinds: ReadonlySet<number>) => (tx: number, ty: number) =>
   map.solid[tileIndex(map, tx, ty)] === 1 && kinds.has(map.prop[tileIndex(map, tx, ty)]!);

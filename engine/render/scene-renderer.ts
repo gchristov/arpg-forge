@@ -1,13 +1,14 @@
 import * as THREE from 'three';
 import { clamp, hash2, type Vec2 } from '../core/math';
 import type { Level, LevelLight } from '../world/level';
+import { tileIndex } from '../world/tile-map';
 import { ActorFigure, type ActorMoment } from './actor-figure';
 import { Effects } from './effects';
 import { LightMap } from './light-map';
-import type { Look, PropLook } from './look';
+import type { Look, PropLook, WallFixture } from './look';
 import { fitMatrix, instancedModel } from './model-instancing';
 import { ModelLibrary, type ModelTemplate } from './models';
-import { isWallTile, wallPanels } from './wall-panels';
+import { isWallTile, wallFaces, wallPanels } from './wall-panels';
 
 /** 30° above the ground gives the classic 2:1 isometric look: a tile is twice as wide as it is tall on screen. */
 const ELEVATION = Math.PI / 6;
@@ -383,8 +384,33 @@ export class SceneRenderer {
     const meshes = [
       ...instancedModel(panel, panelFit(panel, look.span), backs),
       ...(front && look.front && fronts.length ? instancedModel(front, panelFit(front, look.span, look.front.height), fronts) : []),
+      ...(look.fixtures ?? []).flatMap((f) => this.buildFixtures(level, f, isWallTile(level.map, kinds), panelScale(panel, look.span))),
     ];
     return { meshes, kinds };
+  }
+
+  private buildFixtures(level: Level, fixture: WallFixture, isWall: (tx: number, ty: number) => boolean, scale: number): THREE.InstancedMesh[] {
+    const template = this.models.get(fixture.name);
+    if (!template) return [];
+    const { map } = level;
+    const kinds = new Set(fixture.props);
+    const placements: THREE.Matrix4[] = [];
+    for (let ty = 0; ty < map.height; ty++) {
+      for (let tx = 0; tx < map.width; tx++) {
+        if (!kinds.has(map.prop[tileIndex(map, tx, ty)]!)) continue;
+        for (const face of wallFaces(map, isWall, tx, ty)) {
+          if (face.front) continue;
+          placements.push(new THREE.Matrix4()
+            .makeTranslation(face.x, fixture.height, face.y)
+            .multiply(new THREE.Matrix4().makeRotationY(Math.atan2(-face.facing.y, face.facing.x))));
+        }
+      }
+    }
+    const fit = new THREE.Matrix4()
+      .makeScale(scale, scale, scale)
+      .multiply(new THREE.Matrix4().makeRotationZ(fixture.tilt ?? 0))
+      .multiply(new THREE.Matrix4().makeRotationY(fixture.turn ?? 0));
+    return placements.length ? instancedModel(template, fit, placements) : [];
   }
 
   private buildProps(level: Level, skip: ReadonlySet<number> = new Set()): THREE.InstancedMesh[] {
@@ -509,9 +535,15 @@ export class SceneRenderer {
  * Sizes a wall panel lying along z to `span` tiles long, keeping its proportions unless `height` stretches it. Its
  * back sits on the origin, so placed on the wall's edge it stands just inside the wall tile, facing the floor.
  */
+/** How much a wall panel is scaled to span `span` tiles. */
+function panelScale(template: ModelTemplate, span: number): number {
+  const size = new THREE.Box3().setFromObject(template.scene).getSize(new THREE.Vector3());
+  return span / Math.max(size.z, 1e-3);
+}
+
 function panelFit(template: ModelTemplate, span: number, height?: number): THREE.Matrix4 {
   const size = new THREE.Box3().setFromObject(template.scene).getSize(new THREE.Vector3());
-  const k = span / Math.max(size.z, 1e-3);
+  const k = panelScale(template, span);
   const fit = fitMatrix(template, { type: 'box', width: size.x * k, height: height ?? size.y * k, depth: span });
   return new THREE.Matrix4().makeTranslation((-size.x * k) / 2, 0, 0).multiply(fit);
 }

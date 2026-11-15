@@ -89,6 +89,21 @@ export interface WallLook {
   span: number;
   /** The low piece along walls between the floor and the camera, facing the camera, stretched to `height` tiles tall. */
   front?: { name: string; height: number };
+  /**
+   * Models fixed to walls of these prop kinds, such as lamps: one on each face that looks onto the floor, except on
+   * front walls. Each is scaled as the panel is, so parts of one kit fit together, with its origin on the face `height`
+   * tiles up. `turn` rotates it about the vertical, then `tilt` about the line of the wall, to face it into the room
+   * (+x). Both are in radians.
+   */
+  fixtures?: WallFixture[];
+}
+
+export interface WallFixture {
+  props: number[];
+  name: string;
+  height: number;
+  turn?: number;
+  tilt?: number;
 }
 
 /** A burst: the flash it makes and the scorch it leaves on the ground. */

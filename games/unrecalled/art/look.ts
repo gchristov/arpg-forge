@@ -17,7 +17,8 @@ const PROPS: Partial<Record<number, PropLook>> = {
   [Prop.Wall]: { shape: 'box', width: 1, height: 1.2, colour: 0x3a3936 },
   [Prop.WallLow]: { shape: 'box', width: 1, height: 0.35, colour: 0x3a3936 },
   [Prop.WallLight]: { shape: 'box', width: 1, height: 1.2, colour: 0x3a3936, emissive: 0x1a1a14 },
-  [Prop.Furnace]: { shape: 'box', width: 1, height: 0.9, colour: 0x2a2420, emissive: 0x7a2a08 },
+  // Smelting tanks, lit from inside by their molten light.
+  [Prop.Furnace]: { shape: 'box', width: 1, height: 0.9, colour: 0x2a2420, emissive: 0x7a2a08, model: tall('tank', 1.5, 'random') },
   [Prop.Crate]: { shape: 'box', width: 0.8, height: 0.7, colour: 0x6a5a3a, model: tall('crate', 0.75, 'random') },
   [Prop.Barrel]: { shape: 'cylinder', width: 0.6, height: 0.8, colour: 0x8a3a2a, model: tall('barrel', 0.85, 'random') },
   [Prop.Locker]: { shape: 'box', width: 0.6, height: 1.3, colour: 0x4a5a6a, model: tall('locker', 1.3) },
@@ -89,7 +90,11 @@ export const unrecalledLook: Look = {
     return (v << 16) | (Math.round(v * 1.04) << 8) | Math.round(v * 1.12);
   },
   prop: (kind) => PROPS[kind] ?? null,
-  walls: () => ({ props: [Prop.Wall, Prop.WallLow, Prop.WallLight], panel: 'wall', span: 3, front: { name: 'wall-front', height: 0.3 } }),
+  walls: () => ({
+    props: [Prop.Wall, Prop.WallLow, Prop.WallLight], panel: 'wall', span: 3, front: { name: 'wall-front', height: 0.3 },
+    // The kit's ceiling strip light, stood up on the wall with its light facing the room.
+    fixtures: [{ props: [Prop.WallLight], name: 'lamp', height: 0.7, turn: Math.PI, tilt: Math.PI / 2 }],
+  }),
   structure: () => ({ wall: 0x3a3e46, roof: 0x2a2e36, wallHeight: 1.2, roofHeight: 0.6 }),
   lightColour: (name) => LIGHTS[name] ?? LIGHTS.cyan!,
   actor: (kind) => ACTORS[kind] ?? ACTORS.hero!,
