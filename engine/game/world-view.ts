@@ -59,7 +59,7 @@ export class WorldView {
   private readonly scanColour: number;
   /** Reused each frame for the machines scanning the hero. */
   private readonly scans: ScanView[] = Array.from({ length: 6 }, () => ({
-    fromX: 0, fromY: 0, fromHeight: 0, x: 0, y: 0, radius: 0, progress: 0,
+    fromX: 0, fromY: 0, fromHeight: 0, x: 0, y: 0, height: 0, radius: 0, progress: 0,
   }));
 
   constructor(
@@ -283,6 +283,7 @@ export class WorldView {
       s.fromHeight = scanner.eyeHeight;
       s.x = lerp(state.hero.prevX, state.hero.x, alpha);
       s.y = lerp(state.hero.prevY, state.hero.y, alpha);
+      s.height = hero.height;
       s.radius = hero.radius * 1.3;
       s.progress = e.scan;
       this.renderer.glow(s.x, s.y, SCAN_GLOW.radius, this.scanColour, SCAN_GLOW.intensity * scanStrength(e.scan));
