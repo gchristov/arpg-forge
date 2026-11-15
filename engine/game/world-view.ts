@@ -238,7 +238,8 @@ export class WorldView {
     this.goalPoint.x = goalX;
     this.goalPoint.y = goalY;
     const aim = this.guide.aim(ls.level.map, hx, hy, this.goalPoint, this.aim);
-    arrow.show(hx, hy, aim.x - hx, aim.y - hy, this.guideSeconds, frameSeconds);
+    const height = look.actor(state.hero.kind).height * this.scaleOf(state.hero.kind);
+    arrow.show(hx, hy, height, aim.x - hx, aim.y - hy, this.guideSeconds, frameSeconds);
   }
 
   private currentGoal(): QuestGoal | null {

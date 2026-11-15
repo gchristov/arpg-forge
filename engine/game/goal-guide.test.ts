@@ -29,13 +29,14 @@ describe('GoalGuide', () => {
     expect(new GoalGuide().aim(walled, 0.5, 0.5, { x: 4.5, y: 0.5 }, { x: 0, y: 0 })).toEqual({ x: 4.5, y: 0.5 });
   });
 
-  it('slides its aim along the walk as the hero moves, never jumping from one tile to the next', () => {
+  it('aims straight at a goal in sight, though the walk there steps from tile to tile', () => {
+    const open = mapFromRows(['........', '........', '........', '........']);
+    expect(new GoalGuide().aim(open, 0.5, 0.5, { x: 7.5, y: 2.5 }, { x: 0, y: 0 })).toEqual({ x: 7.5, y: 2.5 });
+  });
+
+  it('keeps aiming at the same corner as the hero walks towards it', () => {
     const guide = new GoalGuide();
-    let last = guide.aim(MAP, 1.5, 0.5, { x: 5.5, y: 0.5 }, { x: 0, y: 0 });
-    for (let y = 0.55; y < 3.5; y += 0.05) {
-      const aim = guide.aim(MAP, 1.5, y, { x: 5.5, y: 0.5 }, { x: 0, y: 0 });
-      expect(Math.hypot(aim.x - last.x, aim.y - last.y)).toBeLessThan(0.3);
-      last = aim;
-    }
+    const first = { ...guide.aim(MAP, 1.5, 0.5, { x: 5.5, y: 0.5 }, { x: 0, y: 0 }) };
+    expect(guide.aim(MAP, 1.5, 1.6, { x: 5.5, y: 0.5 }, { x: 0, y: 0 })).toEqual(first);
   });
 });
