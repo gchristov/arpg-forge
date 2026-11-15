@@ -217,6 +217,7 @@ function useAbilities(
       if (isBlocked(ls.level.map, x, y, body.radius)) continue;
       const s = makeEnemy(state, summon.kind, x, y);
       s.mode = 'chase';
+      s.provoked = true;
       s.homeX = e.homeX;
       s.homeY = e.homeY + 2;
       ls.enemies.push(s);

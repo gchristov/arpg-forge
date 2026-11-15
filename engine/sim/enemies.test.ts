@@ -90,7 +90,7 @@ describe('boss abilities', () => {
     expect(ofType(events, 'HeroHurt').filter((h) => h.amount >= 16)).toHaveLength(0);
   });
 
-  it('summons three chasing helpers once, below half health', () => {
+  it('summons three chasing helpers once, below half health, already provoked so they never take the hero for one of their own', () => {
     const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'lord', x: 10.5, y: 5.5 }]);
     const lord = enemiesOf(state)[0]!;
     lord.mode = 'chase';
@@ -100,7 +100,7 @@ describe('boss abilities', () => {
     expect(summoned).toHaveLength(1);
     expect(summoned[0]!.summonedIds).toHaveLength(3);
     const helpers = enemiesOf(state).filter((e) => e.kind === 'brute');
-    expect(helpers.every((h) => h.mode === 'chase')).toBe(true);
+    expect(helpers.every((h) => h.mode === 'chase' && h.provoked)).toBe(true);
     run(state, 0.5);
     expect(enemiesOf(state).filter((e) => e.kind === 'brute')).toHaveLength(3);
   });
