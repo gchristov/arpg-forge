@@ -1,11 +1,13 @@
 import '@fontsource/alegreya-sans/500.css';
 import '@fontsource/alegreya-sans/700.css';
+import { Synth } from '../../engine/audio/synth';
 import { Game } from '../../engine/game/game';
 import { PX } from '../../engine/game/world-view';
 import { servicePrice } from '../../engine/sim/interaction';
 import { currentLevel, type RefusalReason, type SimEvent } from '../../engine/sim/state';
 import { DialogBox } from '../../engine/ui/dialog-box';
 import { MODEL_URLS, unrecalledLook } from './art/look';
+import { unrecalledSounds } from './audio/sounds';
 import {
   dialogueFor, ENDING, ENDING_STEP, ENGINE_CALLS, ENGINE_DOWN_STEP, ENGINE_FALLS, LINE_ALERT, MACHINE_SCANS, NPCS, READINGS,
   stillRunning, UNSEALED,
@@ -20,13 +22,32 @@ const game = new Game({
   look: unrecalledLook,
   models: MODEL_URLS,
 });
-const { state, labels, view } = game;
+const { state, labels, view, platform } = game;
 const $ = (id: string): HTMLElement => document.getElementById(id)!;
 const dialog = new DialogBox({ root: $('dialog'), title: $('dlgT'), text: $('dlgP'), choices: $('dlgO') });
 const hud = new Hud((command) => {
   if (command.type === 'attackNearest') dialog.close();
   game.send(command);
 });
+
+const synth = new Synth();
+synth.muted = platform.load('muted') === 'true';
+const sfx = unrecalledSounds(synth);
+const showMuted = (): void => {
+  $('mute').classList.toggle('off', synth.muted);
+  $('mute').setAttribute('aria-pressed', String(!synth.muted));
+};
+showMuted();
+$('mute').addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  synth.unlock();
+  synth.muted = !synth.muted;
+  platform.save('muted', String(synth.muted));
+  showMuted();
+});
+// Browsers only let sound start from a tap or click.
+document.addEventListener('pointerdown', () => synth.unlock(), { capture: true });
 
 $('title').addEventListener('pointerdown', (e) => {
   e.preventDefault();
@@ -108,8 +129,82 @@ $('endGo').addEventListener('click', (e) => {
   $('end').hidden = true;
 });
 
+/** Unrecalled's sounds for the rules' events. */
+function playSounds(events: SimEvent[]): void {
+  for (const e of events) {
+    switch (e.type) {
+      case 'Swung':
+        if (e.actorId === state.hero.id) sfx.swing();
+        break;
+      case 'EnemyDamaged':
+        sfx.clank();
+        break;
+      case 'HeroHurt':
+        sfx.hurt();
+        break;
+      case 'SkillUsed':
+        if (e.skill === 'emp') sfx.emp();
+        else sfx.zap();
+        break;
+      case 'Exploded':
+        sfx.crackle();
+        break;
+      case 'PickedUp':
+        if (e.kind === 'gold') sfx.scrap();
+        else sfx.patch();
+        break;
+      case 'Healed':
+        sfx.patch();
+        break;
+      case 'LevelUp':
+        sfx.level();
+        break;
+      case 'TransitionStarted':
+        sfx.door();
+        break;
+      case 'HeroDied':
+        sfx.powerDown();
+        break;
+      case 'ShotFired':
+        sfx.pew();
+        break;
+      case 'EnemyRecognised':
+        if (kindOf(e.enemyId) && unrecalledLook.actor(kindOf(e.enemyId)!).scanner) sfx.scan();
+        break;
+      case 'EnemyAlerted':
+        sfx.beep();
+        break;
+      case 'LevelAlarmed':
+        sfx.siren();
+        break;
+      case 'SlamLanded':
+        sfx.slam();
+        break;
+      case 'ContainerOpened':
+        sfx.cache();
+        break;
+      case 'Read':
+        sfx.read();
+        break;
+      case 'PortalSealed':
+        sfx.sealed();
+        break;
+      case 'LevelCleared':
+        if (currentLevel(state).level.portals.some((p) => p.sealed)) sfx.unsealed();
+        break;
+      case 'Refused':
+        if (e.reason !== 'fullHealth') sfx.deny();
+        break;
+      case 'ServiceUsed':
+        sfx.cache();
+        break;
+    }
+  }
+}
+
 /** Unrecalled's words and banners for the rules' events; the engine shows the rest in the world. */
 function react(events: SimEvent[]): void {
+  playSounds(events);
   for (const e of events) {
     switch (e.type) {
       case 'EnteredLevel': {
@@ -187,6 +282,7 @@ game.run({
   react,
   update: (s) => hud.update(s),
   onStart() {
+    synth.unlock();
     $('title').hidden = true;
     const { level } = currentLevel(state);
     hud.banner(level.name, level.subtitle, 3);
