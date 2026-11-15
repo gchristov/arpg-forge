@@ -111,11 +111,21 @@ export interface EnemyType {
   drops: { gold: Range; healingChance: number; extraHealingItems?: number };
 }
 
+/** What a skill's burst does to every enemy within `radius` of where it goes off. */
+export interface BurstDamage {
+  radius: number;
+  damage: Range;
+  /** Extra damage for each of the hero's levels. */
+  damagePerLevel: number;
+  critChance: number;
+  critMultiplier: number;
+}
+
 /**
- * A projectile cast at the target, or the nearest visible enemy, that explodes on hitting an enemy or a wall or at
- * the end of its flight, hurting every enemy within `radius`.
+ * A projectile cast at the target, or the nearest visible enemy, that bursts on hitting an enemy or a wall or at the
+ * end of its flight.
  */
-export interface ProjectileSkill {
+export interface ProjectileSkill extends BurstDamage {
   type: 'projectile';
   /** Names the skill for the game's sounds, look and HUD. */
   id: string;
@@ -123,16 +133,20 @@ export interface ProjectileSkill {
   cooldown: number;
   speed: number;
   lifetime: number;
-  radius: number;
-  damage: Range;
-  damagePerLevel: number;
-  critChance: number;
-  critMultiplier: number;
   autoAimRange: number;
 }
 
+/** A burst around the hero that hits everything near them at once and throws it back `knockback` tiles. */
+export interface AreaSkill extends BurstDamage {
+  type: 'area';
+  id: string;
+  cost: number;
+  cooldown: number;
+  knockback: number;
+}
+
 /** A skill the hero can use, by engine type. Games pick and tune these; new types are added here as games need them. */
-export type Skill = ProjectileSkill;
+export type Skill = ProjectileSkill | AreaSkill;
 
 /** The hero's numbers. Neutral names: "resource" is what skills cost, "healing items" are drunk or used to heal. */
 export interface HeroRules {

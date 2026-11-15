@@ -5,7 +5,7 @@ import { hasLineOfSight } from '../world/line-of-sight';
 import { isSolidAt } from '../world/tile-map';
 import { advanceQuest } from './interaction';
 import { dropEnemyLoot } from './loot';
-import type { ProjectileSkill } from './content';
+import type { BurstDamage } from './content';
 import { currentLevel, type Enemy, type GameState, type SimEvent } from './state';
 
 /** Projectiles hit a body within this distance of its edge. */
@@ -118,8 +118,8 @@ export function hurtHero(state: GameState, amount: number, events: SimEvent[]): 
   }
 }
 
-/** A hero's projectile exploding at a point: every enemy in the radius is hurt and knocked away from the centre. */
-function explode(state: GameState, skill: ProjectileSkill, x: number, y: number, events: SimEvent[]): void {
+/** A hero's skill bursting at a point: every enemy in the radius is hurt and knocked `knockback` away from the centre. */
+export function burst(state: GameState, skill: BurstDamage, x: number, y: number, knockback: number, events: SimEvent[]): void {
   events.push({ type: 'Exploded', x, y, radius: skill.radius });
   for (const e of currentLevel(state).enemies) {
     if (e.dead) continue;
@@ -129,7 +129,7 @@ function explode(state: GameState, skill: ProjectileSkill, x: number, y: number,
     let damage = int(state.rng, skill.damage[0], skill.damage[1]) + state.hero.level * skill.damagePerLevel;
     if (crit) damage = Math.round(damage * skill.critMultiplier);
     const k = d || 1;
-    damageEnemy(state, e, damage, crit, (e.x - x) / k, (e.y - y) / k, state.rules.hero.melee.knockback, events);
+    damageEnemy(state, e, damage, crit, (e.x - x) / k, (e.y - y) / k, knockback, events);
   }
 }
 
@@ -149,7 +149,7 @@ export function updateProjectiles(state: GameState, dt: number, events: SimEvent
         if (!e.dead && dist(p.x, p.y, e.x, e.y) < PROJECTILE_HIT_RADIUS + e.r) hit = true;
       }
       const skill = state.rules.hero.skills[p.slot];
-      if (hit && skill?.type === 'projectile') explode(state, skill, p.x, p.y, events);
+      if (hit && skill?.type === 'projectile') burst(state, skill, p.x, p.y, state.rules.hero.melee.knockback, events);
     } else if (!hero.dead && dist(p.x, p.y, hero.x, hero.y) < PROJECTILE_HIT_RADIUS) {
       hurtHero(state, p.damage, events);
       hit = true;

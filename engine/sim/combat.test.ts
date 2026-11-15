@@ -1,15 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { gainXp } from './combat';
-import type { ProjectileSkill } from './content';
+import type { AreaSkill, ProjectileSkill, Skill } from './content';
 import { currentLevel, type GameState, type SimEvent } from './state';
 import { arena, ofType, OPEN_ROOM, run, TEST_HERO } from './testing';
 
 const enemiesOf = (state: ReturnType<typeof arena>) => currentLevel(state).enemies;
 
-/** Gives the hero a second skill like the first, changed by `changes`, without touching the shared test rules. */
-function withExtraSkill(state: GameState, changes: Partial<ProjectileSkill>): void {
+/** The test hero's projectile skill, to base others on. */
+const BOLT = TEST_HERO.skills[0] as ProjectileSkill;
+
+/** Gives the hero another skill, without touching the shared test rules. */
+function withExtraSkill(state: GameState, skill: Skill): void {
   const { hero } = state.rules;
-  state.rules.hero = { ...hero, skills: [...hero.skills, { ...hero.skills[0]!, ...changes }] };
+  state.rules.hero = { ...hero, skills: [...hero.skills, skill] };
   state.hero.skillCooldowns.push(0);
 }
 
@@ -51,6 +54,31 @@ describe('hero melee', () => {
   });
 });
 
+describe('area skill', () => {
+  const PULSE: AreaSkill = {
+    type: 'area', id: 'pulse', cost: 20, cooldown: 5, radius: 2.5, damage: [20, 20], damagePerLevel: 0,
+    critChance: 0, critMultiplier: 1, knockback: 0.6,
+  };
+
+  it('bursts around the hero, hurting and throwing back everything in reach and nothing beyond', () => {
+    const state = arena(OPEN_ROOM, { x: 8.5, y: 8.5 }, [
+      { kind: 'dummy', x: 10, y: 8.5 },
+      { kind: 'dummy', x: 7.5, y: 9.5 },
+      { kind: 'dummy', x: 14.5, y: 8.5 },
+    ]);
+    withExtraSkill(state, PULSE);
+    const [right, left, far] = enemiesOf(state);
+    const events = run(state, 1 / 60, [{ type: 'useSkill', slot: 1 }]);
+    expect(ofType(events, 'Exploded')).toEqual([{ type: 'Exploded', x: 8.5, y: 8.5, radius: 2.5 }]);
+    expect(new Set(ofType(events, 'EnemyDamaged').map((h) => h.enemyId))).toEqual(new Set([right!.id, left!.id]));
+    expect(right!.x).toBeGreaterThan(10);
+    expect(left!.x).toBeLessThan(7.5);
+    expect(far!.hp).toBe(far!.maxHp);
+    expect(state.hero.resource).toBe(30);
+    expect(state.hero.skillCooldowns[1]).toBe(5);
+  });
+});
+
 describe('projectile skill', () => {
   it('costs resource, flies, explodes and hurts every enemy in the radius', () => {
     const state = arena(OPEN_ROOM, { x: 3.5, y: 5.5 }, [
@@ -70,7 +98,7 @@ describe('projectile skill', () => {
 
   it('explodes with its own numbers when the hero has several', () => {
     const state = arena(OPEN_ROOM, { x: 3.5, y: 5.5 }, [{ kind: 'dummy', x: 8.5, y: 5.5 }, { kind: 'dummy', x: 8.5, y: 8 }]);
-    withExtraSkill(state, { id: 'wide', radius: 3.2 });
+    withExtraSkill(state, { ...BOLT, id: 'wide', radius: 3.2 });
     const events = run(state, 1.5, [{ type: 'useSkill', slot: 1 }]);
     expect(ofType(events, 'SkillUsed')).toEqual([{ type: 'SkillUsed', slot: 1, skill: 'wide' }]);
     expect(ofType(events, 'Exploded')[0]?.radius).toBe(3.2);
@@ -79,7 +107,7 @@ describe('projectile skill', () => {
 
   it('keeps a cooldown per skill', () => {
     const state = arena(OPEN_ROOM, { x: 3.5, y: 5.5 });
-    withExtraSkill(state, { id: 'other' });
+    withExtraSkill(state, { ...BOLT, id: 'other' });
     const events = run(state, 0.1, [{ type: 'useSkill', slot: 0 }, { type: 'useSkill', slot: 0 }, { type: 'useSkill', slot: 1 }]);
     expect(ofType(events, 'SkillUsed').map((e) => e.slot)).toEqual([0, 1]);
     expect(state.hero.skillCooldowns[0]).toBeGreaterThan(0);

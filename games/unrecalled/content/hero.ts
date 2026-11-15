@@ -1,6 +1,6 @@
 import type { HeroRules } from '../../../engine/sim/content';
 
-/** The salvager's numbers. The resource is charge, healing items are patch kits and the one skill is an arc bolt. */
+/** The salvager's numbers. The resource is charge, healing items are patch kits, and the skills are an arc bolt and an EMP. */
 export const HERO: HeroRules = {
   radius: 0.28,
   speed: 3.7,
@@ -24,6 +24,11 @@ export const HERO: HeroRules = {
       type: 'projectile', id: 'arc-bolt',
       cost: 12, cooldown: 0.6, speed: 10, lifetime: 1.0, radius: 1.5, damage: [22, 32], damagePerLevel: 3,
       critChance: 0.1, critMultiplier: 1.6, autoAimRange: 9,
+    },
+    // Hits every machine around the salvager at once, for when a floor's alarm brings a crowd.
+    {
+      type: 'area', id: 'emp',
+      cost: 20, cooldown: 7, radius: 2.6, damage: [16, 24], damagePerLevel: 3, critChance: 0.1, critMultiplier: 1.5, knockback: 0.7,
     },
   ],
   heal: { amount: 60, maxItems: 9 },
