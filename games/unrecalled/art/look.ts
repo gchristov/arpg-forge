@@ -88,6 +88,7 @@ export const unrecalledLook: Look = {
     return (v << 16) | (Math.round(v * 1.04) << 8) | Math.round(v * 1.12);
   },
   prop: (kind) => PROPS[kind] ?? null,
+  walls: () => ({ props: [Prop.Wall, Prop.WallLow, Prop.WallLight], panel: 'wall', span: 3, front: { name: 'wall-front', height: 0.3 } }),
   structure: () => ({ wall: 0x3a3e46, roof: 0x2a2e36, wallHeight: 1.2, roofHeight: 0.6 }),
   lightColour: (name) => LIGHTS[name] ?? LIGHTS.cyan!,
   actor: (kind) => ACTORS[kind] ?? ACTORS.hero!,

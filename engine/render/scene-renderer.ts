@@ -6,7 +6,8 @@ import { Effects } from './effects';
 import { LightMap } from './light-map';
 import type { Look, PropLook } from './look';
 import { fitMatrix, instancedModel } from './model-instancing';
-import { ModelLibrary } from './models';
+import { ModelLibrary, type ModelTemplate } from './models';
+import { isWallTile, wallPanels } from './wall-panels';
 
 /** 30° above the ground gives the classic 2:1 isometric look: a tile is twice as wide as it is tall on screen. */
 const ELEVATION = Math.PI / 6;
@@ -138,7 +139,9 @@ export class SceneRenderer {
     this.warmUpPending = true;
     this.levelGroup.add(this.buildGround(level));
     for (const mesh of this.buildFloors(level)) this.levelGroup.add(mesh);
-    for (const mesh of this.buildProps(level)) this.levelGroup.add(mesh);
+    const walls = this.buildWalls(level);
+    for (const mesh of walls?.meshes ?? []) this.levelGroup.add(mesh);
+    for (const mesh of this.buildProps(level, walls?.kinds)) this.levelGroup.add(mesh);
     this.structures = this.buildStructures(level);
     for (const mesh of this.structures) this.levelGroup.add(mesh);
     this.levelGroup.traverse((o) => this.lightUp(o));
@@ -354,12 +357,39 @@ export class SceneRenderer {
     return mesh;
   }
 
-  private buildProps(level: Level): THREE.InstancedMesh[] {
+  /**
+   * Walls as panels along the edges where wall tiles meet the floor, if the look draws them that way and its models
+   * loaded. Returns the panels and the prop kinds they stand in for.
+   */
+  private buildWalls(level: Level): { meshes: THREE.InstancedMesh[]; kinds: ReadonlySet<number> } | null {
+    const look = this.look.walls?.(level.id);
+    const panel = look && this.models.get(look.panel);
+    if (!look || !panel) return null;
+    const kinds = new Set(look.props);
+    const front = look.front && this.models.get(look.front.name);
+    const backs: THREE.Matrix4[] = [];
+    const fronts: THREE.Matrix4[] = [];
+    for (const p of wallPanels(level.map, isWallTile(level.map, kinds), look.span)) {
+      if (p.front && !front) continue;
+      const placement = new THREE.Matrix4()
+        .makeTranslation(p.x, 0, p.y)
+        .multiply(new THREE.Matrix4().makeRotationY(Math.atan2(-p.facing.y, p.facing.x)))
+        .multiply(new THREE.Matrix4().makeScale(1, 1, p.length / look.span));
+      (p.front ? fronts : backs).push(placement);
+    }
+    const meshes = [
+      ...instancedModel(panel, panelFit(panel, look.span), backs),
+      ...(front && look.front && fronts.length ? instancedModel(front, panelFit(front, look.span, look.front.height), fronts) : []),
+    ];
+    return { meshes, kinds };
+  }
+
+  private buildProps(level: Level, skip: ReadonlySet<number> = new Set()): THREE.InstancedMesh[] {
     const { map } = level;
     const tilesByKind = new Map<number, number[]>();
     for (let i = 0; i < map.prop.length; i++) {
       const kind = map.prop[i]!;
-      if (!kind || !this.look.prop(kind, level.id)) continue;
+      if (!kind || skip.has(kind) || !this.look.prop(kind, level.id)) continue;
       let list = tilesByKind.get(kind);
       if (!list) tilesByKind.set(kind, (list = []));
       list.push(i);
@@ -470,6 +500,17 @@ export class SceneRenderer {
     });
   }
 
+}
+
+/**
+ * Sizes a wall panel lying along z to `span` tiles long, keeping its proportions unless `height` stretches it. Its
+ * back sits on the origin, so placed on the wall's edge it stands just inside the wall tile, facing the floor.
+ */
+function panelFit(template: ModelTemplate, span: number, height?: number): THREE.Matrix4 {
+  const size = new THREE.Box3().setFromObject(template.scene).getSize(new THREE.Vector3());
+  const k = span / Math.max(size.z, 1e-3);
+  const fit = fitMatrix(template, { type: 'box', width: size.x * k, height: height ?? size.y * k, depth: span });
+  return new THREE.Matrix4().makeTranslation((-size.x * k) / 2, 0, 0).multiply(fit);
 }
 
 function propGeometry(look: PropLook): THREE.BufferGeometry {

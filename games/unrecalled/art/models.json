@@ -153,6 +153,24 @@
         "HitRecieve_1",
         "Death"
       ]
+    },
+    {
+      "name": "wall",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallBand_Straight.gltf",
+      "textures": {
+        "maxSize": 512,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "wall-front",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/ShortWall_MetalPlates_Straight.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
     }
   ]
 }

@@ -70,6 +70,22 @@ export interface Mood {
   fill?: { sky: number; ground: number; intensity: number };
 }
 
+/**
+ * Walls drawn the way isometric action games draw them: thin panels standing on the edges where wall tiles meet the
+ * floor, rather than blocks filling the wall tiles. The walls between the floor and the camera would hide the room,
+ * so they get a low piece instead, or nothing. The rules still treat wall tiles as solid.
+ */
+export interface WallLook {
+  /** Prop kinds that are walls. Their tiles draw no prop of their own. */
+  props: number[];
+  /** A straight wall panel model, lying along z with its face towards +x. */
+  panel: string;
+  /** Tiles one panel spans; it's scaled evenly to that length, and runs of wall are split into pieces this long. */
+  span: number;
+  /** The low piece along walls facing the camera, stretched to `height` tiles tall. */
+  front?: { name: string; height: number };
+}
+
 /** A burst: the flash it makes and the scorch it leaves on the ground. */
 export interface BurstLook {
   flash: number;
@@ -105,6 +121,8 @@ export interface Look {
   /** Null for prop kinds that aren't drawn as a prop, such as building tiles. */
   prop(kind: number, levelId: string): PropLook | null;
   structure(kind: string): StructureLook;
+  /** How walls are drawn on a level; without it, or if the models don't load, wall props are drawn as props. */
+  walls?(levelId: string): WallLook | null;
   lightColour(name: string): number;
   actor(kind: string): ActorLook;
 }
