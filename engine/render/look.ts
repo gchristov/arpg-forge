@@ -41,6 +41,10 @@ export interface ActorLook {
   radius: number;
   /** Body size relative to an ordinary actor, 1 if not given: taps reach further and labels sit higher on bigger ones. */
   scale?: number;
+  /** Tiles above the ground the model floats, for flying machines and spirits. */
+  hover?: number;
+  /** A light the actor carries, such as a lantern or a glowing eye, which fades as it dies. */
+  light?: { colour: number; radius: number; intensity: number };
   /** The mark a killed enemy leaves on the ground, such as blood or bone dust. */
   remains?: { radius: number; colour: number; opacity: number };
   /** A model from the game's model library, scaled to `height`. */
@@ -51,6 +55,11 @@ export interface ActorLook {
     tint?: number;
     /** A separate weapon model held in the right hand. */
     weapon?: string;
+    /**
+     * Plays the move animation faster or slower to match how fast the actor moves, so its feet stay planted. Leave
+     * it off for animations meant to play at their own pace whatever the speed.
+     */
+    matchPace?: boolean;
   };
 }
 
@@ -64,6 +73,37 @@ export interface Mood {
   heroLightRadius: number;
   /** Soft light from above and below that keeps figures readable in the dark without lighting the ground much. */
   fill?: { sky: number; ground: number; intensity: number };
+}
+
+/**
+ * Walls drawn the way isometric action games draw them: thin panels standing on the edges where wall tiles meet the
+ * floor, rather than blocks filling the wall tiles. The walls between the floor and the camera would hide the room,
+ * so they get a low piece instead, or nothing. The rules still treat wall tiles as solid.
+ */
+export interface WallLook {
+  /** Prop kinds that are walls. Their tiles draw no prop of their own. */
+  props: number[];
+  /** A straight wall panel model, lying along z with its face towards +x. */
+  panel: string;
+  /** Tiles one panel spans; it's scaled evenly to that length, and runs of wall are split into pieces this long. */
+  span: number;
+  /** The low piece along walls between the floor and the camera, facing the camera, stretched to `height` tiles tall. */
+  front?: { name: string; height: number };
+  /**
+   * Models fixed to walls of these prop kinds, such as lamps: one on each face that looks onto the floor, except on
+   * front walls. Each is scaled as the panel is, so parts of one kit fit together, with its origin on the face `height`
+   * tiles up. `turn` rotates it about the vertical, then `tilt` about the line of the wall, to face it into the room
+   * (+x). Both are in radians.
+   */
+  fixtures?: WallFixture[];
+}
+
+export interface WallFixture {
+  props: number[];
+  name: string;
+  height: number;
+  turn?: number;
+  tilt?: number;
 }
 
 /** A burst: the flash it makes and the scorch it leaves on the ground. */
@@ -101,6 +141,8 @@ export interface Look {
   /** Null for prop kinds that aren't drawn as a prop, such as building tiles. */
   prop(kind: number, levelId: string): PropLook | null;
   structure(kind: string): StructureLook;
+  /** How walls are drawn on a level; without it, or if the models don't load, wall props are drawn as props. */
+  walls?(levelId: string): WallLook | null;
   lightColour(name: string): number;
   actor(kind: string): ActorLook;
 }

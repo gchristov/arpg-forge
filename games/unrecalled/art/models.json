@@ -1,0 +1,233 @@
+{
+  "packs": {
+    "essentials": {
+      "zip": "https://opengameart.org/sites/default/files/sci-fi_essentials_kit_models.zip",
+      "sha256": "f5cb9382a029730f9fa8f93e7fdb103c1aaaec094a22b1397833ce0e48bd1016"
+    },
+    "megakit": {
+      "zip": "https://opengameart.org/sites/default/files/modular_scifi_megakitstandard.zip",
+      "sha256": "4ca9acbc7a13e7baa48e24c4853b779889b7ab21587004c36668826e705c8a10",
+      "textures": "Modular SciFi MegaKit[Standard]/Textures"
+    },
+    "characters": {
+      "zip": "https://opengameart.org/sites/default/files/ultimate_animated_character_pack_by_quaternius.zip",
+      "sha256": "0295062cbc72da52ee804f39ac38694901a40458011f9b2638fc7ef13ed509da"
+    },
+    "mechs": {
+      "zip": "https://opengameart.org/sites/default/files/animated_mech_pack_-_march_2021.zip",
+      "sha256": "14102eade586a04191fc96a4bf52bc511b91d3e90d76a87e8e621095b8d0ea26",
+      "textures": "Animated Mech Pack - March 2021/Textures"
+    },
+    "animations": {
+      "zip": "https://opengameart.org/sites/default/files/universal_animation_librarystandard.zip",
+      "sha256": "18ff1a7215f4852b320203e8aaf02a1578b5c8eef9027fbaedfcedc7b85a3ac2"
+    }
+  },
+  "models": [
+    {
+      "name": "hero",
+      "pack": "characters",
+      "path": "Ultimate Animated Character Pack - Nov 2019/FBX/Worker_Male.fbx",
+      "animations": [
+        "Idle",
+        "Run",
+        "Punch",
+        "Shoot_OneHanded",
+        "RecieveHit",
+        "Death"
+      ],
+      "borrow": {
+        "pack": "animations",
+        "path": "Animation Library[Standard]/Godot/AnimationLibrary_Godot_Standard.glb",
+        "pose": "A_TPose",
+        "animations": {
+          "Run": "Sprint_Loop",
+          "Death": "Death01"
+        },
+        "bones": {
+          "Body": "DEF-hips",
+          "Hips": "DEF-spine.001",
+          "Abdomen": "DEF-spine.002",
+          "Torso": "DEF-spine.003",
+          "Neck": "DEF-neck",
+          "Head": "DEF-head",
+          "Shoulder.L": "DEF-shoulder.L",
+          "UpperArm.L": "DEF-upper_arm.L",
+          "LowerArm.L": "DEF-forearm.L",
+          "Fist.L": "DEF-hand.L",
+          "Shoulder.R": "DEF-shoulder.R",
+          "UpperArm.R": "DEF-upper_arm.R",
+          "LowerArm.R": "DEF-forearm.R",
+          "Fist.R": "DEF-hand.R",
+          "UpperLeg.L": "DEF-thigh.L",
+          "LowerLeg.L": "DEF-shin.L",
+          "Foot.L": "DEF-foot.L",
+          "UpperLeg.R": "DEF-thigh.R",
+          "LowerLeg.R": "DEF-shin.R",
+          "Foot.R": "DEF-foot.R"
+        }
+      }
+    },
+    {
+      "name": "crawler",
+      "pack": "essentials",
+      "path": "glTF/Enemy_Trilobite.gltf",
+      "animations": [
+        "Idle",
+        "Run",
+        "Attack",
+        "Hit",
+        "TurnOff"
+      ],
+      "textures": {
+        "maxSize": 512,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "loader",
+      "pack": "essentials",
+      "path": "glTF/Enemy_QuadShell.gltf",
+      "animations": [
+        "Idle",
+        "Walk",
+        "Attack",
+        "Hit",
+        "TurnOff"
+      ],
+      "textures": {
+        "maxSize": 512,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "sentry",
+      "pack": "essentials",
+      "path": "glTF/Enemy_EyeDrone.gltf",
+      "animations": [
+        "Idle",
+        "Attack",
+        "Hit"
+      ],
+      "textures": {
+        "maxSize": 512,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "crate",
+      "pack": "essentials",
+      "path": "glTF/Prop_Crate.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "barrel",
+      "pack": "essentials",
+      "path": "glTF/Prop_Barrel1.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "locker",
+      "pack": "essentials",
+      "path": "glTF/Prop_Locker.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "shelves",
+      "pack": "essentials",
+      "path": "glTF/Prop_Shelves_WideTall.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "desk",
+      "pack": "essentials",
+      "path": "glTF/Prop_Desk_Medium.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "column",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Columns/Column_Pipes.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "computer",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Props/Prop_Computer.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "order-engine",
+      "pack": "mechs",
+      "path": "Animated Mech Pack - March 2021/FBX/Mike.fbx",
+      "animations": [
+        "Idle",
+        "Walk",
+        "Punch",
+        "Jump",
+        "HitRecieve_1",
+        "Death"
+      ],
+      "textures": {
+        "maxSize": 512
+      }
+    },
+    {
+      "name": "wall",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallBand_Straight.gltf",
+      "textures": {
+        "maxSize": 512,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "wall-front",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/ShortWall_MetalPlates_Straight.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "lamp",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Props/Prop_Light_Wide.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "tank",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Props/Prop_Barrel_Large.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    }
+  ]
+}

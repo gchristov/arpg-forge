@@ -5,7 +5,7 @@ import type { ActorLook } from './look';
 import type { ModelLibrary, ModelTemplate } from './models';
 
 /** A model with one bone and short clips, so the real animation mixer can run headless. */
-function figure(): ActorFigure {
+function figure(changes: Partial<ActorLook> = {}): ActorFigure {
   const clip = (name: string, seconds: number) =>
     new THREE.AnimationClip(name, seconds, [new THREE.NumberKeyframeTrack('bone.position[x]', [0, seconds], [0, 1])]);
   const scene = new THREE.Group();
@@ -14,13 +14,14 @@ function figure(): ActorFigure {
   scene.add(bone);
   const template: ModelTemplate = {
     scene,
-    animations: [clip('Idle', 1), clip('Run', 0.8), clip('Attack', 0.5), clip('Death', 1)],
+    animations: [clip('Idle', 1), clip('Run', 0.8), clip('Attack', 0.5), clip('Hit', 0.6), clip('Death', 1)],
     height: 1,
   };
   const library = { get: () => template, instantiate: () => scene.clone() } as unknown as ModelLibrary;
   const look: ActorLook = {
     colour: 0, height: 1, radius: 0.3,
-    model: { name: 'm', animations: { idle: 'Idle', move: 'Run', attack: 'Attack', death: 'Death' } },
+    model: { name: 'm', animations: { idle: 'Idle', move: 'Run', attack: 'Attack', hit: 'Hit', death: 'Death' } },
+    ...changes,
   };
   return new ActorFigure(look, library);
 }
@@ -84,6 +85,24 @@ describe('ActorFigure animation', () => {
     expect(f.activeAnimations()).toEqual(['Idle']);
   });
 
+  it('keeps running when hit on the move, so it never slides along in a flinch', () => {
+    const f = figure();
+    f.pose(true, false);
+    run(f, 0.3);
+    f.play('hit');
+    run(f, 0.1);
+    expect(f.activeAnimations()).toEqual(['Run']);
+  });
+
+  it('cuts a flinch short to run when the actor starts moving', () => {
+    const f = figure();
+    f.play('hit');
+    run(f, 0.1);
+    f.pose(true, false);
+    run(f, 0.3);
+    expect(f.activeAnimations()).toEqual(['Run']);
+  });
+
   it('dies cleanly in the middle of an attack', () => {
     const f = figure();
     f.pose(true, false);
@@ -93,5 +112,67 @@ describe('ActorFigure animation', () => {
     f.pose(true, true);
     run(f, 1.5);
     expect(f.activeAnimations()).toEqual(['Death']);
+  });
+});
+
+describe('ActorFigure hovering', () => {
+  const parts = (f: ActorFigure) => {
+    const isShadow = (o: THREE.Object3D) => o instanceof THREE.Mesh && o.geometry instanceof THREE.CircleGeometry;
+    const shadow = f.root.children.find(isShadow) as THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
+    const model = f.root.children.find((o) => !isShadow(o))!;
+    return { model, shadow };
+  };
+
+  it('floats its model, bobbing around its height, over a shadow on the ground', () => {
+    const f = figure({ hover: 0.8 });
+    const { model, shadow } = parts(f);
+    const heights: number[] = [];
+    for (let t = 0; t < 3; t += 1 / 60) {
+      f.update(1 / 60);
+      heights.push(model.position.y);
+    }
+    expect(Math.min(...heights)).toBeGreaterThan(0.7);
+    expect(Math.max(...heights)).toBeLessThan(0.9);
+    expect(Math.max(...heights) - Math.min(...heights)).toBeGreaterThan(0.1);
+    expect(shadow.position.y).toBeLessThan(0.05);
+  });
+
+  it('fades its shadow as it fades out', () => {
+    const f = figure({ hover: 0.8 });
+    f.setLookOf(0, 0.5);
+    expect(parts(f).shadow.material.opacity).toBeCloseTo(0.225);
+  });
+
+  it('keeps grounded actors on the ground, without a shadow of their own', () => {
+    const f = figure();
+    f.update(0.5);
+    expect(f.root.children).toHaveLength(1);
+    expect(f.root.children[0]!.position.y).toBe(0);
+  });
+});
+
+describe('ActorFigure walking pace', () => {
+  it('plays its move animation faster or slower to match how fast it moves', () => {
+    const scene = new THREE.Group();
+    const foot = new THREE.Bone();
+    foot.name = 'foot';
+    scene.add(foot);
+    const walk = new THREE.AnimationClip('Walk', 1, [new THREE.VectorKeyframeTrack('foot.position', [0, 1], [0, 0, 0.5, 0, 0, -0.5])]);
+    const template: ModelTemplate = { scene, animations: [new THREE.AnimationClip('Idle', 1, []), walk], height: 1 };
+    const library = { get: () => template, instantiate: () => scene.clone() } as unknown as ModelLibrary;
+    const f = new ActorFigure({ colour: 0, height: 1, radius: 0.3, model: { name: 'm', animations: { idle: 'Idle', move: 'Walk' }, matchPace: true } }, library);
+    const moveRate = () => (f as unknown as { actions: Map<string, THREE.AnimationAction> }).actions.get('Walk')!.timeScale;
+    f.pose(true, false, 2);
+    expect(moveRate()).toBeCloseTo(2);
+    f.pose(true, false, 0.5);
+    expect(moveRate()).toBeCloseTo(0.5);
+    f.pose(true, false, 50);
+    expect(moveRate()).toBe(5);
+  });
+
+  it('leaves the move animation at its own pace unless the look asks to match it', () => {
+    const f = figure();
+    f.pose(true, false, 4);
+    expect((f as unknown as { actions: Map<string, THREE.AnimationAction> }).actions.get('Run')!.timeScale).toBe(1);
   });
 });

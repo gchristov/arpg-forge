@@ -7,6 +7,7 @@ import { launchBrowser, serveDist } from './browser.mjs';
 const PAGES = [
   { path: '/', name: 'home' },
   { path: '/ashen-hollow/?debug', name: 'ashen-hollow', game: true },
+  { path: '/unrecalled/?debug', name: 'unrecalled', game: true },
 ];
 const SIZES = [
   { width: 1280, height: 800, label: 'desktop' },
