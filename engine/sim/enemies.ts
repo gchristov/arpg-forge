@@ -10,6 +10,8 @@ import { currentLevel, type Enemy, type GameState, type LevelState, type SimEven
 import { followPath, steerTowards } from './walking';
 
 const WANDER_RADIUS = 2.5;
+/** A calm enemy that recognises the hero stops and looks them over for this long. */
+const SCAN_SECONDS = 1.2;
 const WANDER_SPEED_SHARE = 0.35;
 /** Chasers give up beyond this multiple of their aggro range. */
 const GIVE_UP_AGGRO_MULTIPLE = 2.4;
@@ -60,9 +62,23 @@ function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, eve
   e.moving = false;
 
   if (e.mode === 'idle') {
-    if (sees) {
+    if (sees && type.calm && !ls.alarmed) {
+      if (!e.recognised) {
+        events.push({ type: 'EnemyRecognised', enemyId: e.id, x: e.x, y: e.y });
+        e.scan = 0;
+      }
+      e.recognised = true;
+    } else if (sees) {
+      e.scan = -1;
       e.mode = 'chase';
       events.push({ type: 'EnemyAlerted', enemyId: e.id, boss: Boolean(type.boss) });
+      return;
+    }
+    if (e.scan >= 0) {
+      e.scan += dt / SCAN_SECONDS;
+      if (e.scan >= 1) e.scan = -1;
+      e.facingX = lerp(e.facingX, (hero.x - e.x) / (d || 1), 0.2);
+      e.facingY = lerp(e.facingY, (hero.y - e.y) / (d || 1), 0.2);
       return;
     }
     e.wanderTimer -= dt;

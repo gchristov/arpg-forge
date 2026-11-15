@@ -3,7 +3,7 @@ import { Banner } from '../../../engine/ui/banner';
 import { bindCommand } from '../../../engine/ui/command-button';
 import { ShownValues } from '../../../engine/ui/shown-values';
 import { ENEMIES } from '../content/enemies';
-import { QUEST_TEXT } from '../content/story';
+import { QUEST_TEXT, stillRunning } from '../content/story';
 
 /** The arc bolt's skill slot. */
 const ARC_BOLT = 0;
@@ -44,6 +44,11 @@ export class Hud {
     shown.set('quest', QUEST_TEXT[state.quest] ?? '', (v) => ($('quest').textContent = v));
     const ls = currentLevel(state);
     shown.set('location', ls.level.name, (v) => ($('loc').textContent = v));
+    const running = ls.level.portals.some((p) => p.sealed) ? ls.enemies.filter((e) => !e.dead).length : 0;
+    shown.set('stillRunning', running, (v) => {
+      $('sealedNote').hidden = v === 0;
+      $('sealedNote').textContent = stillRunning(v);
+    });
     const boss = ls.enemies.find((e) => ENEMIES[e.kind]?.boss && !e.dead && e.mode === 'chase');
     // The boss bar takes the top of the screen while the fight lasts; the objective is the boss anyway.
     shown.set('bossShown', Boolean(boss), (v) => {

@@ -11,6 +11,8 @@ export interface LevelLight {
   /** How strongly it flickers, 0 for steady. */
   flicker: number;
   seed: number;
+  /** Dark until the level is alarmed, then pulsing like a rotating beacon. */
+  alarm?: boolean;
 }
 
 /**
@@ -22,6 +24,8 @@ export interface Portal {
   ty: number;
   to: string;
   stepOut: Vec2;
+  /** Shut while any enemy on its level is still standing, so the way on has to be fought for. */
+  sealed?: boolean;
 }
 
 /** A building or other large block on the map, with a door the player walks to when it's tapped. */

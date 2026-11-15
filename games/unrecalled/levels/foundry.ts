@@ -10,13 +10,23 @@ import { Ground, Prop } from '../content/tiles';
  * like railings, and a block of them reads as a shaft in the floor. Each floor also hides a salvage cache (S) off the
  * main path.
  */
+interface FloorSpec {
+  name: string;
+  subtitle: string;
+  /** The way deeper stays shut until every machine on the floor is destroyed. */
+  sealed?: boolean;
+  /** Colour names for the main wall lamps (L) and the accents (A). */
+  lamps: { L: string; A: string };
+  rows: string[];
+}
+
 const FLOORS = {
   intake: {
     name: 'Intake', subtitle: 'Receiving for the Valley Order', lamps: { L: 'cyan', A: 'amber' },
     rows: [
-      '#####L######U######L####',
+      '###B#L####B#U#B####L#B##',
       '#hh....................#',
-      '#.....ooo.........cc...#',
+      'B.....ooo.........cc...#',
       '#S.cc.............cc...#',
       '#..cc.......T......ooo.#',
       'A......................A',
@@ -33,7 +43,7 @@ const FLOORS = {
   sorting: {
     name: 'The Sorting Line', subtitle: 'Everything here is stock', lamps: { L: 'hazard', A: 'amber' },
     rows: [
-      '###A#####A#####U####A#####A###',
+      '###A##B##A##B##U##B#A##B##A###',
       '#S...........................#',
       '#=R==q===w==q==u===q==w==u===#',
       '#....x.......................L',
@@ -47,13 +57,13 @@ const FLOORS = {
     ],
   },
   gallery: {
-    name: 'Control Gallery', subtitle: 'Something is watching the line', lamps: { L: 'alarm', A: 'alarm' },
+    name: 'Control Gallery', subtitle: 'Something is watching the line', sealed: true, lamps: { L: 'alarm', A: 'alarm' },
     rows: [
-      '####L######U#######L####',
+      '##B#L###B##U##B####L#B##',
       '#hh.....s........s...hh#',
       '#.....................S#',
       '#..k..k..........k..k..#',
-      '#..s..##########..s....#',
+      'B..s..##########..s....#',
       'L.....##########.......L',
       '#.....##########...x...#',
       '#..o..##########.......#',
@@ -68,10 +78,10 @@ const FLOORS = {
   assembly: {
     name: 'Assembly Hall', subtitle: 'Where the order is kept', lamps: { L: 'amber', A: 'molten' },
     rows: [
-      '####A#####A#####Z#####A#####A#',
+      '#B##A##B##A#####Z#####A##B##A#',
       '#S...FFF.....................#',
       '#............................#',
-      '#...C.....C.........C.....C..#',
+      'B...C.....C.........C.....C..#',
       '#............................#',
       'L............................L',
       '#...C.....C....E....C.....C..#',
@@ -86,7 +96,7 @@ const FLOORS = {
       '##############V###############',
     ],
   },
-};
+} satisfies Record<string, FloorSpec>;
 
 export type FloorId = keyof typeof FLOORS;
 
@@ -99,6 +109,7 @@ const onBelt = (prop: number): RoomKey => ({ ...solid(prop), ground: Ground.Belt
 const KEY: Record<string, RoomKey> = {
   '.': {},
   '#': { prop: Prop.Wall, frontProp: Prop.WallLow, solid: true },
+  B: { prop: Prop.WallAlarm, solid: true, light: { radius: 6, intensity: 2, colour: 'alarm', flicker: 0, lean: 0.7, alarm: true } },
   F: { prop: Prop.Furnace, solid: true, light: { radius: 3.8, intensity: 1.2, colour: 'molten', flicker: 1.4 } },
   C: solid(Prop.Column),
   c: solid(Prop.Crate),
@@ -133,7 +144,10 @@ function lamps(id: FloorId): Record<string, RoomKey> {
   };
 }
 
-/** The doors on one floor: deeper through the back wall, and back the way the hero came through the front. */
+/**
+ * The doors on one floor: deeper through the back wall, and back the way the hero came through the front. A sealed
+ * floor's way deeper stays shut until every machine on it is destroyed.
+ */
 function doors(id: FloorId): Record<string, RoomKey> {
   const at = FLOOR_ORDER.indexOf(id);
   const deeper = FLOOR_ORDER[at + 1];
@@ -141,7 +155,7 @@ function doors(id: FloorId): Record<string, RoomKey> {
   return {
     U: deeper
       ? {
-        prop: Prop.Door, portal: { to: deeper, stepOut: { x: 0, y: 0.9 }, start: { x: 0, y: 0.9 } },
+        prop: Prop.Door, portal: { to: deeper, stepOut: { x: 0, y: 0.9 }, start: { x: 0, y: 0.9 }, sealed: (FLOORS[id] as FloorSpec).sealed ?? false },
         light: { radius: 2.2, intensity: 0.8, colour: 'amber', flicker: 0.2, offset: { x: 0, y: 0.7 } },
       }
       : { prop: Prop.Wall, solid: true },

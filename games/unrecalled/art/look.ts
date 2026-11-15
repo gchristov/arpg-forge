@@ -5,7 +5,7 @@ import { Ground, Prop } from '../content/tiles';
 /** Unrecalled's look: Quaternius people and machines, cold workshop light against furnace glow. */
 
 const foundry = (ambient: number, sky: number): Mood => ({
-  background: 0x050505, ambient, ambientIntensity: 0.5, heroLightRadius: 4.6,
+  background: 0x050505, ambient, ambientIntensity: 0.5, alarmAmbient: 0x5a1c18, heroLightRadius: 4.6,
   fill: { sky, ground: 0x201810, intensity: 0.55 },
 });
 
@@ -69,13 +69,17 @@ const ACTORS: Record<string, ActorLook> = {
     ...robot('crawler', 0.6, { idle: 'Idle', move: 'Run', attack: 'Attack', hit: 'Hit', death: 'TurnOff' }, 0.8),
     light: { colour: 0xffa040, radius: 0.9, intensity: 0.4 },
   },
-  loader: robot('loader', 1.0, { idle: 'Idle', move: 'Walk', attack: 'Attack', hit: 'Hit', death: 'TurnOff' }, 1.3),
+  loader: { ...robot('loader', 1.0, { idle: 'Idle', move: 'Walk', attack: 'Attack', hit: 'Hit', death: 'TurnOff' }, 1.3), scanner: { eyeHeight: 0.75 } },
   sentry: {
     ...robot('sentry', 0.75, { idle: 'Idle', attack: 'Attack', hit: 'Hit' }),
     hover: 0.8,
+    scanner: { eyeHeight: 1.15 },
     light: { colour: 0xff8a40, radius: 0.9, intensity: 0.2 },
   },
-  orderEngine: robot('order-engine', 2.1, { idle: 'Idle', move: 'Walk', attack: 'Punch', cast: 'Jump', hit: 'HitRecieve_1', death: 'Death' }, 2.0),
+  orderEngine: {
+    ...robot('order-engine', 2.1, { idle: 'Idle', move: 'Walk', attack: 'Punch', cast: 'Jump', hit: 'HitRecieve_1', death: 'Death' }, 2.0),
+    scanner: { eyeHeight: 1.8 },
+  },
 };
 
 /** URLs of the built models, by name, for the model library to load. */
@@ -89,7 +93,7 @@ export const unrecalledLook: Look = {
   effects: {
     skill: 0x8ae8ff, shot: 0xffd070, telegraph: 0xff7a3a, items: { gold: 0xd8c070, healingItem: 0x50d070 },
     walkMarker: 0x9ad8e8, targetMarker: 0xff7a3a,
-    skillLight: 0x6ad8ff, telegraphLight: 0xff7a3a, bossLight: 0xff9a50,
+    skillLight: 0x6ad8ff, telegraphLight: 0xff7a3a, bossLight: 0xff9a50, sealedLight: 0xff2a1a, scan: 0xff3a2a,
     smoke: 0x5a5e66,
     explosion: { flash: 0x8ae8ff, scorch: 0x10141a },
     slam: { flash: 0xffa050, scorch: 0x201008 },
@@ -111,9 +115,13 @@ export const unrecalledLook: Look = {
   floorModel: (kind, levelId) => (kind === Ground.Plate ? styleOf(levelId).plate : null),
   prop: (kind) => PROPS[kind] ?? null,
   walls: (levelId) => ({
-    props: [Prop.Wall, Prop.WallLow, Prop.WallLight], panel: styleOf(levelId).panel, span: 3, front: { name: 'wall-front', height: 0.3 },
+    props: [Prop.Wall, Prop.WallLow, Prop.WallLight, Prop.WallAlarm], panel: styleOf(levelId).panel, span: 3, front: { name: 'wall-front', height: 0.3 },
     // The kit's ceiling strip light, stood up on the wall with its light facing the room.
-    fixtures: [{ props: [Prop.WallLight], name: 'lamp', height: 0.7, turn: Math.PI, tilt: Math.PI / 2 }],
+    fixtures: [
+      { props: [Prop.WallLight], name: 'lamp', height: 0.7, turn: Math.PI, tilt: Math.PI / 2 },
+      // Alarm beacons sit high on the wall, dark until the floor turns.
+      { props: [Prop.WallAlarm], name: 'beacon', height: 1.6, turn: Math.PI, tilt: Math.PI / 2 },
+    ],
   }),
   structure: () => ({ wall: 0x3a3e46, roof: 0x2a2e36, wallHeight: 1.2, roofHeight: 0.6 }),
   lightColour: (name) => LIGHTS[name] ?? LIGHTS.cyan!,

@@ -5,7 +5,7 @@ import { tileIndex } from '../world/tile-map';
 import { ActorFigure, type ActorMoment } from './actor-figure';
 import { Effects } from './effects';
 import { LightMap } from './light-map';
-import type { Look, PropLook, WallFixture } from './look';
+import type { Look, Mood, PropLook, WallFixture } from './look';
 import { fitMatrix, instancedModel } from './model-instancing';
 import { ModelLibrary, type ModelTemplate } from './models';
 import { isWallTile, wallFaces, wallPanels } from './wall-panels';
@@ -63,6 +63,9 @@ export class SceneRenderer {
   private levelGroup = new THREE.Group();
   private structures: THREE.Object3D[] = [];
   private levelLights: LevelLight[] = [];
+  /** Whether the level shown is alarmed, which lights its alarm lights. */
+  private alarmed = false;
+  private mood: Mood | null = null;
   private width = 1;
   private height = 1;
   private pixelsPerUnit = TILE_PIXELS / Math.SQRT2;
@@ -121,6 +124,8 @@ export class SceneRenderer {
     this.lightMap.setArea(level.map.width, level.map.height);
 
     const mood = this.look.mood(level.id);
+    this.mood = mood;
+    this.alarmed = false;
     this.scene.background = new THREE.Color(mood.background);
     this.ambient.color.set(mood.ambient);
     this.ambient.intensity = mood.ambientIntensity;
@@ -310,15 +315,25 @@ export class SceneRenderer {
     this.moon.target.position.copy(this.target);
   }
 
+  /** Lights the level's alarm lights and turns its air to the mood's alarm colour, or puts them out. */
+  setAlarmed(alarmed: boolean): void {
+    if (alarmed === this.alarmed || !this.mood) return;
+    this.alarmed = alarmed;
+    this.ambient.color.set(alarmed && this.mood.alarmAmbient !== undefined ? this.mood.alarmAmbient : this.mood.ambient);
+  }
+
   /** Draws every level light, with its flicker, and this frame's extra glows into the light map. */
   private updateLightMap(seconds: number): void {
     this.lightMap.begin();
     for (const l of this.levelLights) {
+      if (l.alarm && !this.alarmed) continue;
       const flicker = l.flicker
         ? 1 + Math.sin(seconds * 9 + l.seed) * 0.06 * l.flicker + Math.sin(seconds * 23 + l.seed * 3) * 0.04 * l.flicker
         : 1;
+      // A beacon sweeps past about twice a second, bright when it faces the room and dim between.
+      const pulse = l.alarm ? 0.3 + 0.7 * Math.max(0, Math.sin(seconds * 12 + l.seed)) ** 2 : 1;
       this.glowColour.set(this.look.lightColour(l.colour));
-      this.lightMap.add(l.x, l.y, l.radius * GLOW_REACH * flicker, this.glowColour, l.intensity * GLOW_STRENGTH);
+      this.lightMap.add(l.x, l.y, l.radius * GLOW_REACH * flicker, this.glowColour, l.intensity * GLOW_STRENGTH * pulse);
     }
     for (const g of this.extraGlows) this.lightMap.add(g.x, g.y, g.radius, g.colour, g.intensity);
     this.extraGlows.length = 0;

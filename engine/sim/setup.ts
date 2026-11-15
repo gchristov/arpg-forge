@@ -32,6 +32,7 @@ export function createGameState(content: GameContent, seed: number, startLevel =
       level: lc.level, enemies: [], npcs: [], camps: lc.camps, items: [],
       containers: (lc.containers ?? []).map((c) => ({ ...c, opened: false })),
       readables: lc.readables ?? [],
+      alarmed: false,
       ...(lc.campRespawns ? { campRespawns: lc.campRespawns } : {}),
       campTimer: lc.campRespawns?.everySeconds ?? 0,
     };
@@ -69,7 +70,7 @@ export function makeEnemy(state: GameState, kind: string, x: number, y: number):
     homeX: x, homeY: y, hp: type.hp, maxHp: type.hp, mode: 'idle',
     attackCooldown: range(state.rng, 0.4, 1), windUp: -1, swing: -1,
     wanderTimer: range(state.rng, 1, 4), wanderX: x, wanderY: y, repathTimer: 0,
-    dead: false, deadFor: 0, slamTimer: 4, summoned: false,
+    dead: false, deadFor: 0, slamTimer: 4, summoned: false, recognised: false, scan: -1,
   };
 }
 

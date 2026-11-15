@@ -125,3 +125,47 @@ describe('bodies', () => {
     expect(dist(state.hero.x, state.hero.y, dummy.x, dummy.y)).toBeGreaterThan(0.5);
   });
 });
+
+describe('calm enemies', () => {
+  it('go about their work beside the hero, recognising them once', () => {
+    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'worker', x: 7.5, y: 5.5 }]);
+    const events = run(state, 5);
+    expect(ofType(events, 'EnemyRecognised')).toHaveLength(1);
+    expect(ofType(events, 'HeroHurt')).toHaveLength(0);
+    expect(enemiesOf(state)[0]!.mode).toBe('idle');
+  });
+
+  it('stop, turn to the hero and look them over when they first see them, then go back to work', () => {
+    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'worker', x: 8.5, y: 5.5 }]);
+    const worker = enemiesOf(state)[0]!;
+    worker.facingX = 1;
+    worker.facingY = 0;
+    run(state, 0.6);
+    expect(worker.scan).toBeGreaterThan(0);
+    expect([worker.x, worker.y]).toEqual([8.5, 5.5]);
+    expect(worker.facingX).toBeLessThan(-0.9);
+    run(state, 1);
+    expect(worker.scan).toBe(-1);
+  });
+
+  it('turn on the hero together once one of them is hit, near ones at once', () => {
+    const state = arena(Array.from({ length: 6 }, () => '.'.repeat(40)), { x: 3.5, y: 2.5 }, [
+      { kind: 'worker', x: 4.5, y: 2.5 }, { kind: 'worker', x: 9.5, y: 2.5 }, { kind: 'worker', x: 36.5, y: 2.5 },
+    ]);
+    const [struck, near, far] = enemiesOf(state);
+    const events = run(state, 0.5, [{ type: 'attack', enemyId: struck!.id }]);
+    expect(ofType(events, 'LevelAlarmed')).toHaveLength(1);
+    expect(currentLevel(state).alarmed).toBe(true);
+    expect([struck!.mode, near!.mode, far!.mode]).toEqual(['chase', 'chase', 'idle']);
+    state.hero.x = state.hero.prevX = 33.5;
+    run(state, 0.5);
+    expect(far!.mode).toBe('chase');
+  });
+
+  it('leave other enemies as they were, without alarming the level', () => {
+    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'dummy', x: 6.5, y: 5.5 }]);
+    const events = run(state, 0.5, [{ type: 'attack', enemyId: enemiesOf(state)[0]!.id }]);
+    expect(ofType(events, 'EnemyDamaged').length).toBeGreaterThan(0);
+    expect(ofType(events, 'LevelAlarmed')).toHaveLength(0);
+  });
+});

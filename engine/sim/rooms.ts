@@ -17,7 +17,8 @@ export interface RoomKey {
    */
   light?: Omit<LevelLight, 'x' | 'y' | 'seed'> & { offset?: Vec2; lean?: number };
   /** A way out to another level. The hero starts the room at the tile's centre plus `start`. */
-  portal?: { to: string; stepOut: Vec2; start: Vec2 };
+  /** `sealed` keeps it shut while any enemy in the room still stands. */
+  portal?: { to: string; stepOut: Vec2; start: Vec2; sealed?: boolean };
   /** The hero starts here, for a room that's the first level rather than one entered through a portal. */
   heroStart?: boolean;
   /** An enemy of this kind spawns here. */
@@ -71,7 +72,8 @@ export function roomFromRows(spec: RoomSpec): LevelContent {
         level.lights.push({ ...light, x: x + 0.5 + (offset?.x ?? 0) + leanX, y: y + 0.5 + (offset?.y ?? 0) + leanY, seed: i });
       }
       if (key.portal) {
-        level.portals.push({ tx: x, ty: y, to: key.portal.to, stepOut: key.portal.stepOut });
+        const { to, stepOut, sealed } = key.portal;
+        level.portals.push({ tx: x, ty: y, to, stepOut, ...(sealed ? { sealed } : {}) });
         level.start = { x: x + 0.5 + key.portal.start.x, y: y + 0.5 + key.portal.start.y };
       }
       if (key.heroStart) level.start = { x: x + 0.5, y: y + 0.5 };
