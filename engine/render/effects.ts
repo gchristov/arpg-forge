@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { EnergyDomes } from './energy-domes';
+import { Lightning } from './lightning';
 
 /** Heights above the ground, in tiles. */
 const PROJECTILE_HEIGHT = 0.52;
@@ -91,6 +93,8 @@ export class Effects {
   private readonly shots: THREE.Mesh[] = [];
   private readonly circles: Array<THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial>> = [];
   private readonly flashes: Flash[] = [];
+  private readonly lightning: Lightning;
+  private readonly domes: EnergyDomes;
   private readonly items = new Map<string, THREE.Mesh[]>();
   private readonly itemsUsed = new Map<string, number>();
   private readonly decals: Decal[] = [];
@@ -136,6 +140,8 @@ export class Effects {
       this.scanBeams.push(hidden(scene, new THREE.Mesh(beamGeometry, scanMaterial)));
       this.scanRings.push(hidden(scene, new THREE.Mesh(ringGeometry, scanMaterial)));
     }
+    this.lightning = new Lightning(scene);
+    this.domes = new EnergyDomes(scene);
     for (let i = 0; i < POOL_SIZE; i++) {
       this.skillShots.push(hidden(scene, new THREE.Mesh(skillGeometry, skillMaterial)));
       this.shots.push(hidden(scene, new THREE.Mesh(shotGeometry, shotMaterial)));
@@ -218,6 +224,17 @@ export class Effects {
     }
   }
 
+  /**
+   * A lightning stroke from one point to another, `fromHeight` and `toHeight` tiles above the ground, crackling for
+   * `seconds` after waiting `delay` seconds; `width` scales it, for thinner branches.
+   */
+  arc(
+    fromX: number, fromY: number, fromHeight: number, toX: number, toY: number, toHeight: number,
+    colour: number, seconds: number, delay = 0, width = 1,
+  ): void {
+    this.lightning.strike(fromX, fromY, fromHeight, toX, toY, toHeight, colour, seconds, delay, width);
+  }
+
   flash(x: number, y: number, radius: number, colour: number, seconds: number): void {
     const f = this.flashes.find((candidate) => candidate.age >= candidate.life) ?? this.flashes[0]!;
     f.age = 0;
@@ -226,6 +243,11 @@ export class Effects {
     f.mesh.material.color.set(colour);
     f.mesh.position.set(x, 0.4, y);
     f.mesh.visible = true;
+  }
+
+  /** A dome of energy `radius` tiles across, standing in glowing mist, for a burst of lightning. */
+  dome(x: number, y: number, radius: number, colour: number, seconds: number): void {
+    this.domes.show(x, y, 0.4, radius, colour, seconds);
   }
 
   /** A mark on the ground, such as blood or a scorch, that lasts `seconds`. */
@@ -266,12 +288,15 @@ export class Effects {
   setAllVisible(visible: boolean): void {
     for (const list of [this.skillShots, this.shots, this.circles]) for (const m of list) m.visible = visible;
     for (const f of this.flashes) f.mesh.visible = visible;
+    this.domes.setAllVisible(visible);
     for (const d of this.decals) d.mesh.visible = visible;
     for (const p of this.puffs) p.mesh.visible = visible;
     for (const pool of this.items.values()) for (const m of pool) m.visible = visible;
   }
 
   update(frameSeconds: number): void {
+    this.lightning.update(frameSeconds);
+    this.domes.update(frameSeconds);
     for (const d of this.decals) {
       if (d.age >= d.life) continue;
       d.age += frameSeconds;

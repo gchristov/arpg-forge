@@ -10,6 +10,19 @@ import type { Project, WorldLabels } from '../ui/world-labels';
 export const PX = 1 / 39.2;
 const HIT_FLASH_SECONDS = 0.12;
 const HERO_FLASH_SECONDS = 0.15;
+/** Lightning: where a burst's arcs start and where they reach an enemy, in tiles above the ground. */
+const BURST_HEIGHT = 0.6;
+const BODY_HEIGHT = 0.5;
+/** How many main bolts a burst grows, at least and at most, and how many levels of branches they sprout. */
+const BURST_BOLTS = [3, 5] as const;
+const BRANCH_DEPTH = 2;
+/** How long a burst's dome of energy lasts. */
+const DOME_SECONDS = 0.6;
+/** Sparks spitting out along the ground from a burst's dome. */
+const DOME_SPARKS = [2, 4] as const;
+/** Skill projectiles fly at this height, and throw off an arc on about this share of frames. */
+const PROJECTILE_HEIGHT = 0.52;
+const CRACKLE_CHANCE = 0.75;
 /** Each chimney puffs this often. */
 const SMOKE_SECONDS = 1.6;
 
@@ -94,8 +107,12 @@ export class WorldView {
         }
         case 'Exploded':
           renderer.effects.decal(e.x, e.y, 0.8, effects.explosion.scorch, 0.7, 12);
-          renderer.effects.flash(e.x, e.y, e.radius, effects.explosion.flash, 0.35);
           renderer.shake(0.22);
+          if (effects.lightning === undefined) renderer.effects.flash(e.x, e.y, e.radius, effects.explosion.flash, 0.35);
+          else {
+            renderer.effects.dome(e.x, e.y, e.radius, effects.lightning, DOME_SECONDS);
+            this.lightningBurst(e.x, e.y, e.radius, events, effects.lightning);
+          }
           break;
         case 'SlamWarned':
           renderer.playActor(String(e.enemyId), 'cast', 1.0);
@@ -151,6 +168,7 @@ export class WorldView {
     }
     renderer.setAlarmed(ls.alarmed);
     this.showScans(alpha);
+    if (look.effects.lightning !== undefined) this.crackleProjectiles(alpha, look.effects.lightning);
     renderer.effects.showProjectiles(state.projectiles, alpha);
     renderer.effects.showTelegraphs(state.telegraphs);
     renderer.effects.showItems(ls.items, performance.now() / 1000);
@@ -188,6 +206,106 @@ export class WorldView {
       s.progress = e.scan;
     }
     this.renderer.effects.showScans(this.scans, count);
+  }
+
+  /**
+   * Lightning from a burst: strikes on every enemy it hurt, sometimes flickering back; arcs jumping between enemies
+   * hit together; a few branching bolts reaching through its dome; and sparks spitting out along the ground. Timings
+   * and shapes are random, so no two bursts look alike.
+   */
+  private lightningBurst(x: number, y: number, radius: number, events: SimEvent[], colour: number): void {
+    const { effects } = this.renderer;
+    const hits: Array<{ x: number; y: number; h: number }> = [];
+    for (const hit of events) {
+      if (hit.type !== 'EnemyDamaged' || Math.hypot(hit.x - x, hit.y - y) > radius + 1.5) continue;
+      const kind = currentLevel(this.state).enemies.find((en) => en.id === hit.enemyId)?.kind ?? '';
+      hits.push({ x: hit.x, y: hit.y, h: BODY_HEIGHT * this.scaleOf(kind) });
+    }
+    for (const hit of hits) {
+      const strikes = 1 + Math.floor(Math.random() * 2);
+      for (let k = 0; k < strikes; k++) {
+        effects.arc(x, y, BURST_HEIGHT, hit.x, hit.y, hit.h, colour, 0.12 + Math.random() * 0.12, k * (0.06 + Math.random() * 0.08));
+      }
+    }
+    for (let k = 1; k < hits.length; k++) {
+      const a = hits[k - 1]!;
+      const b = hits[k]!;
+      if (Math.random() < 0.4) effects.arc(a.x, a.y, a.h, b.x, b.y, b.h, colour, 0.15 + Math.random() * 0.1, 0.05 + Math.random() * 0.15);
+    }
+    const bolts = BURST_BOLTS[0] + Math.floor(Math.random() * (BURST_BOLTS[1] - BURST_BOLTS[0] + 1));
+    for (let k = 0; k < bolts; k++) {
+      // Up and out from the middle of the burst, at any angle around it.
+      const around = Math.random() * Math.PI * 2;
+      const up = 0.15 + Math.random() * 0.9;
+      const dome = { x, y, h: BURST_HEIGHT, radius };
+      this.branch(dome, x, y, BURST_HEIGHT, Math.cos(around) * Math.cos(up), Math.sin(around) * Math.cos(up), Math.sin(up),
+        radius * (0.55 + Math.random() * 0.35), 1, 0, Math.random() * 0.12, colour);
+    }
+    const sparks = DOME_SPARKS[0] + Math.floor(Math.random() * (DOME_SPARKS[1] - DOME_SPARKS[0] + 1));
+    for (let k = 0; k < sparks; k++) {
+      const around = Math.random() * Math.PI * 2;
+      const from = radius * 0.9;
+      const to = radius * (1.2 + Math.random() * 0.4);
+      const h = 0.05 + Math.random() * 0.25;
+      effects.arc(x + Math.cos(around) * from, y + Math.sin(around) * from, h, x + Math.cos(around) * to, y + Math.sin(around) * to, h * 0.5,
+        colour, 0.08 + Math.random() * 0.08, Math.random() * DOME_SECONDS * 0.6, 0.5);
+    }
+  }
+
+  /**
+   * One stroke of branching lightning, heading along (dx, dy, dh) from a point, kept inside the burst's dome and above
+   * the ground. Strokes sprout thinner, shorter branches partway along, like real lightning.
+   */
+  private branch(
+    dome: { x: number; y: number; h: number; radius: number },
+    x: number, y: number, h: number, dx: number, dy: number, dh: number,
+    length: number, width: number, depth: number, delay: number, colour: number,
+  ): void {
+    let ex = x + dx * length;
+    let ey = y + dy * length;
+    let eh = Math.max(0.05, h + dh * length);
+    const reach = Math.hypot(ex - dome.x, ey - dome.y, eh - dome.h);
+    if (reach > dome.radius * 0.95) {
+      const pull = (dome.radius * 0.95) / reach;
+      ex = dome.x + (ex - dome.x) * pull;
+      ey = dome.y + (ey - dome.y) * pull;
+      eh = Math.max(0.05, dome.h + (eh - dome.h) * pull);
+    }
+    const life = 0.18 + Math.random() * 0.16;
+    this.renderer.effects.arc(x, y, h, ex, ey, eh, colour, life, delay, width);
+    if (depth >= BRANCH_DEPTH) return;
+    const children = depth === 0 ? 1 + Math.floor(Math.random() * 2) : Math.random() < 0.5 ? 1 : 0;
+    for (let k = 0; k < children; k++) {
+      const t = 0.3 + Math.random() * 0.55;
+      // Off at an angle from the parent, then renormalised.
+      let cx = dx + (Math.random() - 0.5) * 1.6;
+      let cy = dy + (Math.random() - 0.5) * 1.6;
+      let ch = dh + (Math.random() - 0.3) * 0.8;
+      const n = Math.hypot(cx, cy, ch) || 1;
+      cx /= n;
+      cy /= n;
+      ch /= n;
+      this.branch(dome, x + (ex - x) * t, y + (ey - y) * t, h + (eh - h) * t, cx, cy, ch,
+        length * (0.4 + Math.random() * 0.25), width * 0.6, depth + 1, delay + t * 0.04, colour);
+    }
+  }
+
+  /** Skill projectiles crackle with short arcs of every length as they fly. */
+  private crackleProjectiles(alpha: number, colour: number): void {
+    for (const p of this.state.projectiles) {
+      if (p.kind !== 'skill') continue;
+      const x = lerp(p.prevX, p.x, alpha);
+      const y = lerp(p.prevY, p.y, alpha);
+      for (let k = 0; k < 2; k++) {
+        if (Math.random() > CRACKLE_CHANCE) continue;
+        const angle = Math.random() * Math.PI * 2;
+        const reach = 0.25 + Math.random() * 0.6;
+        this.renderer.effects.arc(
+          x, y, PROJECTILE_HEIGHT, x + Math.cos(angle) * reach, y + Math.sin(angle) * reach,
+          PROJECTILE_HEIGHT + (Math.random() - 0.5) * 0.6, colour, 0.05 + Math.random() * 0.07,
+        );
+      }
+    }
   }
 
   /** Starts an enemy's attack animation as its wind-up begins, timed so the blow lands as the attack does. */

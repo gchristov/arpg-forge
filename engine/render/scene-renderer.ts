@@ -4,6 +4,7 @@ import type { Level, LevelLight } from '../world/level';
 import { tileIndex } from '../world/tile-map';
 import { ActorFigure, type ActorMoment } from './actor-figure';
 import { Effects } from './effects';
+import { Flames, type FlameSpot } from './flames';
 import { blendedGround } from './ground-blend';
 import { LightMap } from './light-map';
 import type { Look, Mood, PropLook, WallFixture } from './look';
@@ -67,6 +68,7 @@ export class SceneRenderer {
   /** Whether the level shown is alarmed, which lights its alarm lights. */
   private alarmed = false;
   private mood: Mood | null = null;
+  private flames: Flames | null = null;
   private width = 1;
   private height = 1;
   private pixelsPerUnit = TILE_PIXELS / Math.SQRT2;
@@ -152,6 +154,9 @@ export class SceneRenderer {
     this.structures = this.buildStructures(level);
     for (const mesh of this.structures) this.levelGroup.add(mesh);
     this.levelGroup.traverse((o) => this.lightUp(o));
+    // Flames give their own light, so they stay out of the light map.
+    this.flames = new Flames(this.flameSpots(level));
+    this.levelGroup.add(this.flames.group);
   }
 
   /** Adds a light for the coming frame only, such as one carried by a fireball or an explosion's flash. */
@@ -260,6 +265,7 @@ export class SceneRenderer {
     this.updateLightMap(seconds);
     this.updateMarker(frameSeconds);
     this.effects.update(frameSeconds);
+    this.flames?.update(seconds, frameSeconds);
     this.removeUnseenActors();
     for (const figure of this.actors.values()) figure.update(frameSeconds);
     this.renderer.render(this.scene, this.camera);
@@ -437,6 +443,17 @@ export class SceneRenderer {
       .multiply(new THREE.Matrix4().makeRotationZ(fixture.tilt ?? 0))
       .multiply(new THREE.Matrix4().makeRotationY(fixture.turn ?? 0));
     return placements.length ? instancedModel(template, fit, placements) : [];
+  }
+
+  /** Where the level's props burn, for those whose look has flames. */
+  private flameSpots(level: Level): FlameSpot[] {
+    const { map } = level;
+    const spots: FlameSpot[] = [];
+    for (let i = 0; i < map.prop.length; i++) {
+      const flame = map.prop[i] ? this.look.prop(map.prop[i]!, level.id)?.flame : undefined;
+      if (flame) spots.push({ x: (i % map.width) + 0.5, y: Math.floor(i / map.width) + 0.5, ...flame });
+    }
+    return spots;
   }
 
   private buildProps(level: Level, skip: ReadonlySet<number> = new Set()): THREE.InstancedMesh[] {

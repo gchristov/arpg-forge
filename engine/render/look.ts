@@ -13,6 +13,8 @@ export interface PropLook {
   emissive?: number;
   /** Models from the game's library; each tile picks one of `names`, and turns by `turn` radians or at random. */
   model?: { names: string[]; fit: Fit; turn?: number | 'random' };
+  /** Flames burning on top, such as a fire in a barrel: `height` tiles up, about `size` tiles tall. */
+  flame?: { height: number; size: number; colour: number };
 }
 
 export interface StructureLook {
@@ -140,6 +142,12 @@ export interface EffectsLook {
   sealedLight?: number;
   /** The beam of a machine scanning the hero. Needed by looks with scanners. */
   scan?: number;
+  /**
+   * Lightning of this colour for the hero's skills: bursts arc to every enemy they hit and fork outwards, and skill
+   * projectiles crackle as they fly, and bursts swell into a dome of energy in place of their flash. Without it, skills
+   * show only their flash.
+   */
+  lightning?: number;
   /** Chimney smoke. */
   smoke: number;
   explosion: BurstLook;
