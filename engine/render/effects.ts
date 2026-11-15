@@ -3,6 +3,10 @@ import * as THREE from 'three';
 /** Heights above the ground, in tiles. */
 const PROJECTILE_HEIGHT = 0.52;
 const POOL_SIZE = 24;
+const ARC_POOL = 32;
+/** Kinks along each lightning arc, and how wide its ribbons are, in tiles. */
+const ARC_SEGMENTS = 8;
+const ARC_WIDTH = 0.04;
 /** At most this many machines scan the hero at once. */
 const SCAN_POOL = 6;
 const scanTarget = new THREE.Vector3();
@@ -75,6 +79,15 @@ const DECAL_FADE_SECONDS = 3;
 const DECAL_POOL = 48;
 const PUFF_POOL = 32;
 
+/** A lightning arc between two points, re-jittered every frame so it crackles until it fades. */
+interface Arc {
+  mesh: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
+  from: THREE.Vector3;
+  to: THREE.Vector3;
+  age: number;
+  life: number;
+}
+
 interface Flash {
   mesh: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>;
   age: number;
@@ -91,6 +104,7 @@ export class Effects {
   private readonly shots: THREE.Mesh[] = [];
   private readonly circles: Array<THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial>> = [];
   private readonly flashes: Flash[] = [];
+  private readonly arcs: Arc[] = [];
   private readonly items = new Map<string, THREE.Mesh[]>();
   private readonly itemsUsed = new Map<string, number>();
   private readonly decals: Decal[] = [];
@@ -135,6 +149,17 @@ export class Effects {
     for (let i = 0; i < SCAN_POOL; i++) {
       this.scanBeams.push(hidden(scene, new THREE.Mesh(beamGeometry, scanMaterial)));
       this.scanRings.push(hidden(scene, new THREE.Mesh(ringGeometry, scanMaterial)));
+    }
+    for (let i = 0; i < ARC_POOL; i++) {
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array((ARC_SEGMENTS + 1) * 4 * 3), 3));
+      geometry.setIndex(arcIndices());
+      const material = new THREE.MeshBasicMaterial({
+        transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+      });
+      const mesh = hidden(scene, new THREE.Mesh(geometry, material));
+      mesh.frustumCulled = false;
+      this.arcs.push({ mesh, from: new THREE.Vector3(), to: new THREE.Vector3(), age: 0, life: 0 });
     }
     for (let i = 0; i < POOL_SIZE; i++) {
       this.skillShots.push(hidden(scene, new THREE.Mesh(skillGeometry, skillMaterial)));
@@ -218,6 +243,28 @@ export class Effects {
     }
   }
 
+  /**
+   * A lightning arc from one point to another, `fromHeight` and `toHeight` tiles above the ground, crackling for
+   * `seconds`. When every arc is busy, the oldest is reused.
+   */
+  arc(fromX: number, fromY: number, fromHeight: number, toX: number, toY: number, toHeight: number, colour: number, seconds: number): void {
+    let a = this.arcs[0]!;
+    for (const candidate of this.arcs) {
+      if (candidate.age >= candidate.life) {
+        a = candidate;
+        break;
+      }
+      if (candidate.age / candidate.life > a.age / a.life) a = candidate;
+    }
+    a.from.set(fromX, fromHeight, fromY);
+    a.to.set(toX, toHeight, toY);
+    a.age = 0;
+    a.life = seconds;
+    a.mesh.material.color.set(colour);
+    a.mesh.visible = true;
+    jitterArc(a);
+  }
+
   flash(x: number, y: number, radius: number, colour: number, seconds: number): void {
     const f = this.flashes.find((candidate) => candidate.age >= candidate.life) ?? this.flashes[0]!;
     f.age = 0;
@@ -272,6 +319,16 @@ export class Effects {
   }
 
   update(frameSeconds: number): void {
+    for (const a of this.arcs) {
+      if (a.age >= a.life) continue;
+      a.age += frameSeconds;
+      if (a.age >= a.life) {
+        a.mesh.visible = false;
+        continue;
+      }
+      jitterArc(a);
+      a.mesh.material.opacity = 1 - a.age / a.life;
+    }
     for (const d of this.decals) {
       if (d.age >= d.life) continue;
       d.age += frameSeconds;
@@ -309,4 +366,48 @@ function hidden<T extends THREE.Object3D>(scene: THREE.Scene, object: T): T {
   object.visible = false;
   scene.add(object);
   return object;
+}
+
+/**
+ * Each arc is two crossed ribbons, one flat and one upright, so it reads from any angle; the quads of each ribbon run
+ * along the arc's kinks.
+ */
+function arcIndices(): number[] {
+  const indices: number[] = [];
+  for (let ribbon = 0; ribbon < 2; ribbon++) {
+    const base = ribbon * (ARC_SEGMENTS + 1) * 2;
+    for (let k = 0; k < ARC_SEGMENTS; k++) {
+      const a = base + k * 2;
+      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+    }
+  }
+  return indices;
+}
+
+const along = new THREE.Vector3();
+const across = new THREE.Vector3();
+const point = new THREE.Vector3();
+const UP = new THREE.Vector3(0, 1, 0);
+
+/** Lays the arc out afresh along a new zig-zag between its ends, so it flickers from frame to frame. */
+function jitterArc(a: Arc): void {
+  const positions = a.mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
+  along.subVectors(a.to, a.from);
+  const length = along.length();
+  across.crossVectors(along, UP).normalize();
+  if (across.lengthSq() === 0) across.set(1, 0, 0);
+  for (let k = 0; k <= ARC_SEGMENTS; k++) {
+    const t = k / ARC_SEGMENTS;
+    // The ends stay put; the middle wanders most.
+    const wander = k === 0 || k === ARC_SEGMENTS ? 0 : (Math.random() - 0.5) * length * 0.35 * Math.sin(Math.PI * t);
+    point.copy(a.from).addScaledVector(along, t).addScaledVector(across, wander);
+    point.y += k === 0 || k === ARC_SEGMENTS ? 0 : (Math.random() - 0.5) * 0.25;
+    const flat = k * 2;
+    positions.setXYZ(flat, point.x + across.x * ARC_WIDTH, point.y, point.z + across.z * ARC_WIDTH);
+    positions.setXYZ(flat + 1, point.x - across.x * ARC_WIDTH, point.y, point.z - across.z * ARC_WIDTH);
+    const upright = (ARC_SEGMENTS + 1) * 2 + k * 2;
+    positions.setXYZ(upright, point.x, point.y + ARC_WIDTH, point.z);
+    positions.setXYZ(upright + 1, point.x, point.y - ARC_WIDTH, point.z);
+  }
+  positions.needsUpdate = true;
 }

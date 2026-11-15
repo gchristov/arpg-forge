@@ -10,6 +10,13 @@ import type { Project, WorldLabels } from '../ui/world-labels';
 export const PX = 1 / 39.2;
 const HIT_FLASH_SECONDS = 0.12;
 const HERO_FLASH_SECONDS = 0.15;
+/** Lightning: where a burst's arcs start and where they reach an enemy, in tiles above the ground. */
+const BURST_HEIGHT = 0.6;
+const BODY_HEIGHT = 0.5;
+const BURST_FORKS = 6;
+/** Skill projectiles fly at this height, and throw off an arc on about this share of frames. */
+const PROJECTILE_HEIGHT = 0.52;
+const CRACKLE_CHANCE = 0.5;
 /** Each chimney puffs this often. */
 const SMOKE_SECONDS = 1.6;
 
@@ -96,6 +103,7 @@ export class WorldView {
           renderer.effects.decal(e.x, e.y, 0.8, effects.explosion.scorch, 0.7, 12);
           renderer.effects.flash(e.x, e.y, e.radius, effects.explosion.flash, 0.35);
           renderer.shake(0.22);
+          if (effects.lightning !== undefined) this.lightningBurst(e.x, e.y, e.radius, events, effects.lightning);
           break;
         case 'SlamWarned':
           renderer.playActor(String(e.enemyId), 'cast', 1.0);
@@ -151,6 +159,7 @@ export class WorldView {
     }
     renderer.setAlarmed(ls.alarmed);
     this.showScans(alpha);
+    if (look.effects.lightning !== undefined) this.crackleProjectiles(alpha, look.effects.lightning);
     renderer.effects.showProjectiles(state.projectiles, alpha);
     renderer.effects.showTelegraphs(state.telegraphs);
     renderer.effects.showItems(ls.items, performance.now() / 1000);
@@ -188,6 +197,32 @@ export class WorldView {
       s.progress = e.scan;
     }
     this.renderer.effects.showScans(this.scans, count);
+  }
+
+  /** Lightning from a burst to every enemy it hurt, and a few forks crackling out across its radius. */
+  private lightningBurst(x: number, y: number, radius: number, events: SimEvent[], colour: number): void {
+    const { effects } = this.renderer;
+    for (const hit of events) {
+      if (hit.type === 'EnemyDamaged' && Math.hypot(hit.x - x, hit.y - y) < radius + 1.5) {
+        effects.arc(x, y, BURST_HEIGHT, hit.x, hit.y, BODY_HEIGHT * this.scaleOf(currentLevel(this.state).enemies.find((en) => en.id === hit.enemyId)?.kind ?? ''), colour, 0.3);
+      }
+    }
+    for (let k = 0; k < BURST_FORKS; k++) {
+      const angle = Math.random() * Math.PI * 2;
+      const reach = radius * (0.6 + Math.random() * 0.4);
+      effects.arc(x, y, BURST_HEIGHT, x + Math.cos(angle) * reach, y + Math.sin(angle) * reach, 0.05, colour, 0.2 + Math.random() * 0.1);
+    }
+  }
+
+  /** Skill projectiles crackle with short arcs as they fly. */
+  private crackleProjectiles(alpha: number, colour: number): void {
+    for (const p of this.state.projectiles) {
+      if (p.kind !== 'skill' || Math.random() > CRACKLE_CHANCE) continue;
+      const x = lerp(p.prevX, p.x, alpha);
+      const y = lerp(p.prevY, p.y, alpha);
+      const angle = Math.random() * Math.PI * 2;
+      this.renderer.effects.arc(x, y, PROJECTILE_HEIGHT, x + Math.cos(angle) * 0.45, y + Math.sin(angle) * 0.45, PROJECTILE_HEIGHT + (Math.random() - 0.5) * 0.4, colour, 0.08);
+    }
   }
 
   /** Starts an enemy's attack animation as its wind-up begins, timed so the blow lands as the attack does. */

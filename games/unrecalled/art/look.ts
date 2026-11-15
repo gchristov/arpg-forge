@@ -133,7 +133,7 @@ export const unrecalledLook: Look = {
   effects: {
     skill: 0x8ae8ff, shot: 0xffd070, telegraph: 0xff7a3a, items: { gold: 0xd8c070, healingItem: 0x50d070 },
     walkMarker: 0x9ad8e8, targetMarker: 0xff7a3a,
-    skillLight: 0x6ad8ff, telegraphLight: 0xff7a3a, bossLight: 0xff9a50, sealedLight: 0xff2a1a, scan: 0xff3a2a,
+    skillLight: 0x6ad8ff, telegraphLight: 0xff7a3a, bossLight: 0xff9a50, sealedLight: 0xff2a1a, scan: 0xff3a2a, lightning: 0x5ac8ff,
     smoke: 0x5a5e66,
     explosion: { flash: 0x8ae8ff, scorch: 0x10141a },
     slam: { flash: 0xffa050, scorch: 0x201008 },

@@ -140,6 +140,11 @@ export interface EffectsLook {
   sealedLight?: number;
   /** The beam of a machine scanning the hero. Needed by looks with scanners. */
   scan?: number;
+  /**
+   * Lightning of this colour for the hero's skills: bursts arc to every enemy they hit and fork outwards, and skill
+   * projectiles crackle as they fly. Without it, skills show only their flash.
+   */
+  lightning?: number;
   /** Chimney smoke. */
   smoke: number;
   explosion: BurstLook;
