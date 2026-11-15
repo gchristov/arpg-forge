@@ -6,7 +6,7 @@ The roadmap and the engine's design live in Notion: the [Roadmap](https://app.no
 
 ## Current state
 
-Stage 1 of the roadmap is done: the engine is built, and Ashen Hollow runs on it in 3D (KayKit models, Three.js) at `/ashen-hollow/`, matching the original one-file prototype's mechanics, story and levels. The prototype is deleted; the git tag `prototype-ashen-hollow` keeps it. Stage 2, making content data, is under way. Done: the engine's `Game` runs the loop, input and drawing; the hero's skills are data (`HeroRules.skills`); rooms are text rows plus a key (`engine/sim/rooms.ts`); `checkContent` checks any game's content. Left: enemy behaviour from reusable states, and generated outdoor maps. Update this section as the work lands.
+Stage 1 of the roadmap is done: the engine is built, and Ashen Hollow runs on it in 3D (KayKit models, Three.js) at `/ashen-hollow/`, matching the original one-file prototype's mechanics, story and levels. The prototype is deleted; the git tag `prototype-ashen-hollow` keeps it. Stage 2, making content data, is under way. Done: the engine's `Game` runs the loop, input and drawing; the hero's skills are data (`HeroRules.skills`); rooms are text rows plus a key (`engine/sim/rooms.ts`); `checkContent` checks any game's content. Left: enemy behaviour from reusable states, and generated outdoor maps (put off until a game needs varied maps). The first new pilot, Unrecalled (`games/unrecalled/`, at `/unrecalled/`), is being built: the Foundry's four floors down to its boss so far. Update this section as the work lands.
 
 ## Layout
 
@@ -91,5 +91,7 @@ Like Everlog: many fast unit tests that check things in isolation, a few scenari
 ## Working with the user
 
 Claude runs the project and owns the business side: which pilots to make, platforms, store pages, pricing, marketing, timelines and spending. Make those calls and say why, rather than asking. The user is an experienced software engineer who is new to games. They guide the engineering, so bring engineering trade-offs to them. They also carry out what needs a human (accounts, payments, identity checks, uploads, posts) when they have time, often in the evening and sometimes not for days. Give a recommendation, not a menu. Batch what needs the user into small, clearly scoped steps, and build lead time into anything with external waiting (Steam account checks, store page timing).
+
+Every time something goes to the user to try, include a short testing brief: what to try and how to get there (links, `#level` shortcuts), what feedback is wanted this round (mechanics, story, look, feel or performance, and the specific questions), what is deliberately not done yet so they don't report it, and what's coming next.
 
 Tasks and status live in the Notion project "ARPG Forge" (Work → Projects). Keep Notion lean: the user reads it.

@@ -140,7 +140,7 @@ export class SceneRenderer {
     this.warmUpPending = true;
     const walls = this.buildWalls(level);
     this.levelGroup.add(this.buildGround(level, walls?.kinds));
-    for (const mesh of this.buildFloors(level)) this.levelGroup.add(mesh);
+    for (const mesh of this.buildFloors(level, walls?.kinds)) this.levelGroup.add(mesh);
     for (const mesh of walls?.meshes ?? []) this.levelGroup.add(mesh);
     for (const mesh of this.buildProps(level, walls?.kinds)) this.levelGroup.add(mesh);
     this.structures = this.buildStructures(level);
@@ -472,11 +472,13 @@ export class SceneRenderer {
   }
 
   /** Floor models laid over the ground tiles of the kinds that have one. */
-  private buildFloors(level: Level): THREE.InstancedMesh[] {
+  /** Floor models over the ground, except under walls drawn as panels, like the ground itself. */
+  private buildFloors(level: Level, walls: ReadonlySet<number> = new Set()): THREE.InstancedMesh[] {
     const { map } = level;
     const byName = new Map<string, THREE.Matrix4[]>();
     for (let ty = 0; ty < map.height; ty++) {
       for (let tx = 0; tx < map.width; tx++) {
+        if (walls.has(map.prop[ty * map.width + tx]!)) continue;
         const name = this.look.floorModel?.(map.ground[ty * map.width + tx]!, level.id);
         if (!name || !this.models.get(name)) continue;
         let list = byName.get(name);

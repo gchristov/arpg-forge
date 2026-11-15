@@ -37,12 +37,10 @@ function checkLevel(lc: LevelContent, content: GameContent, levels: Map<string, 
     else if (map.solid[tileIndex(map, tx, ty)]) problems.push(`${what} at ${where(tx, ty)} is inside something solid`);
     else if (!reached[tileIndex(map, tx, ty)]) problems.push(`${what} at ${where(tx, ty)} can't be reached from the start`);
   };
-  /** Something solid, such as a chest, that the hero must be able to walk up to. */
-  const mustReachBeside = (what: string, tx: number, ty: number): void => {
-    const beside = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(
-      ([dx, dy]) => inBounds(map, tx + dx!, ty + dy!) && reached[tileIndex(map, tx + dx!, ty + dy!)],
-    );
-    if (!beside) problems.push(`${what} at ${where(tx, ty)} can't be walked up to from the start`);
+  /** A container is opened from the tile in front of it (below it on the map), so that tile must be reachable. */
+  const mustOpen = (tx: number, ty: number): void => {
+    const front = inBounds(map, tx, ty + 1) && reached[tileIndex(map, tx, ty + 1)];
+    if (!front) problems.push(`a container at ${where(tx, ty)} can't be opened: the tile in front of it can't be reached from the start`);
   };
 
   mustReach('the start', ...tileOf(level.start));
@@ -74,7 +72,7 @@ function checkLevel(lc: LevelContent, content: GameContent, levels: Map<string, 
     if (!content.npcs[n.kind]) problems.push(`NPC "${n.name}" has unknown kind "${n.kind}"`);
     mustReach(`NPC "${n.name}"`, ...tileOf(n));
   }
-  for (const c of lc.containers ?? []) mustReachBeside('a container', c.tx, c.ty);
+  for (const c of lc.containers ?? []) mustOpen(c.tx, c.ty);
   for (const s of level.structures) mustReach(`the door of "${s.name}"`, s.door.tx, s.door.ty);
   return problems;
 }

@@ -4,10 +4,19 @@ import { Ground, Prop } from '../content/tiles';
 
 /** Unrecalled's look: Quaternius people and machines, cold workshop light against furnace glow. */
 
-const FOUNDRY: Mood = {
-  background: 0x050505, ambient: 0x343538, ambientIntensity: 0.5, heroLightRadius: 4.6,
-  fill: { sky: 0xd8e0e8, ground: 0x201810, intensity: 0.55 },
+const foundry = (ambient: number, sky: number): Mood => ({
+  background: 0x050505, ambient, ambientIntensity: 0.5, heroLightRadius: 4.6,
+  fill: { sky, ground: 0x201810, intensity: 0.55 },
+});
+
+/** Each floor's own walls, floor plates and air, so the player always knows where they are. */
+const FLOOR_STYLES: Record<string, { panel: string; plate: string; mood: Mood }> = {
+  intake: { panel: 'wall', plate: 'floor-plates', mood: foundry(0x343a40, 0xd8e4f0) },
+  sorting: { panel: 'wall-astra', plate: 'floor-metal', mood: foundry(0x3a3428, 0xf0e0c0) },
+  gallery: { panel: 'wall-window', plate: 'floor-dark', mood: foundry(0x3a2a2c, 0xf0c8c8) },
+  assembly: { panel: 'wall-divided', plate: 'floor-squares', mood: foundry(0x3a2c22, 0xf0d0b0) },
 };
+const styleOf = (levelId: string) => FLOOR_STYLES[levelId] ?? FLOOR_STYLES.intake!;
 
 const tall = (name: string, height: number, turn: number | 'random' = 0): PropLook['model'] => ({
   names: [name], fit: { type: 'height', height }, turn,
@@ -25,10 +34,15 @@ const PROPS: Partial<Record<number, PropLook>> = {
   [Prop.Shelves]: { shape: 'box', width: 0.9, height: 1.3, colour: 0x4a4a4a, model: tall('shelves', 1.3, Math.PI / 2) },
   [Prop.Desk]: { shape: 'box', width: 0.9, height: 0.6, colour: 0x4a4a52, model: tall('desk', 0.65) },
   [Prop.Column]: { shape: 'cylinder', width: 0.6, height: 1.8, colour: 0x3a3e46, model: tall('column', 1.9) },
+  [Prop.Door]: { shape: 'box', width: 1, height: 2.2, colour: 0x3a3e46, model: { names: ['door'], fit: { type: 'box', width: 1.5, height: 2.3, depth: 0.4 } } },
+  [Prop.Chair]: { shape: 'box', width: 0.5, height: 0.8, colour: 0x4a4a52, model: tall('chair', 0.8, 'random') },
+  // A rack a delivery unit stands in while it charges; this one's empty.
+  [Prop.Cradle]: { shape: 'box', width: 0.9, height: 2.2, colour: 0x3a3e46, model: tall('cradle', 2.3) },
+  [Prop.Cache]: { shape: 'box', width: 0.7, height: 0.5, colour: 0x5a5030, emissive: 0x1a1400, model: tall('cache', 0.6) },
   [Prop.Computer]: { shape: 'box', width: 0.6, height: 0.9, colour: 0x2a3a4a, emissive: 0x0a4050, model: tall('computer', 0.95) },
 };
 
-const LIGHTS: Record<string, number> = { cyan: 0x6ad8ff, amber: 0xffa040, molten: 0xff6a20 };
+const LIGHTS: Record<string, number> = { cyan: 0x6ad8ff, amber: 0xffa040, molten: 0xff6a20, alarm: 0xff3a2a, hazard: 0xffc840 };
 
 const robot = (
   name: string,
@@ -80,18 +94,24 @@ export const unrecalledLook: Look = {
     explosion: { flash: 0x8ae8ff, scorch: 0x10141a },
     slam: { flash: 0xffa050, scorch: 0x201008 },
   },
-  mood: () => FOUNDRY,
+  mood: (levelId) => styleOf(levelId).mood,
   groundColour(kind, tx, ty) {
     const n = valueNoise(tx * 0.25, ty * 0.25);
     const h = hash2(tx, ty, 9);
     const checker = (tx + ty) % 2 === 0 ? 0.03 : 0;
+    if (kind === Ground.Belt) {
+      // Slats across the belt, with a worn amber edge every few tiles.
+      const v = Math.round(255 * (tx % 2 === 0 ? 0.09 : 0.12));
+      return tx % 6 === 0 ? 0x4a3a1c : (v << 16) | (v << 8) | Math.round(v * 1.1);
+    }
     const l = kind === Ground.Grime ? 0.14 : 0.2;
     const v = Math.round(255 * (l + n * 0.05 + h * 0.02 + checker));
     return (v << 16) | (Math.round(v * 1.04) << 8) | Math.round(v * 1.12);
   },
+  floorModel: (kind, levelId) => (kind === Ground.Plate ? styleOf(levelId).plate : null),
   prop: (kind) => PROPS[kind] ?? null,
-  walls: () => ({
-    props: [Prop.Wall, Prop.WallLow, Prop.WallLight], panel: 'wall', span: 3, front: { name: 'wall-front', height: 0.3 },
+  walls: (levelId) => ({
+    props: [Prop.Wall, Prop.WallLow, Prop.WallLight], panel: styleOf(levelId).panel, span: 3, front: { name: 'wall-front', height: 0.3 },
     // The kit's ceiling strip light, stood up on the wall with its light facing the room.
     fixtures: [{ props: [Prop.WallLight], name: 'lamp', height: 0.7, turn: Math.PI, tilt: Math.PI / 2 }],
   }),

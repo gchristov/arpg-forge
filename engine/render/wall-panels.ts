@@ -3,7 +3,8 @@ import { inBounds, tileIndex, type TileMap } from '../world/tile-map';
 
 /**
  * One wall panel: centred at `x`, `y` on the edge between wall and floor, `length` tiles long, facing the floor along
- * `facing`. `front` panels stand between the floor and the camera, so drawn full height they would hide the room.
+ * `facing`. `front` panels are drawn low: drawn full height, walls between the floor and the camera, and walls
+ * inside a room, would hide the floor behind them.
  */
 export interface WallPanel {
   x: number;
@@ -14,11 +15,11 @@ export interface WallPanel {
 }
 
 /** From a floor tile, the four sides a wall can be on, as the direction from the wall towards the floor. */
-const SIDES: ReadonlyArray<{ wall: Vec2; facing: Vec2; front: boolean }> = [
-  { wall: { x: -1, y: 0 }, facing: { x: 1, y: 0 }, front: false },
-  { wall: { x: 0, y: -1 }, facing: { x: 0, y: 1 }, front: false },
-  { wall: { x: 1, y: 0 }, facing: { x: -1, y: 0 }, front: true },
-  { wall: { x: 0, y: 1 }, facing: { x: 0, y: -1 }, front: true },
+const SIDES: ReadonlyArray<{ wall: Vec2; facing: Vec2 }> = [
+  { wall: { x: -1, y: 0 }, facing: { x: 1, y: 0 } },
+  { wall: { x: 0, y: -1 }, facing: { x: 0, y: 1 } },
+  { wall: { x: 1, y: 0 }, facing: { x: -1, y: 0 } },
+  { wall: { x: 0, y: 1 }, facing: { x: 0, y: -1 } },
 ];
 
 /**
@@ -36,30 +37,41 @@ export function wallPanels(map: TileMap, isWall: (tx: number, ty: number) => boo
     const lines = alongX ? map.height : map.width;
     const length = alongX ? map.width : map.height;
     for (let line = 0; line < lines; line++) {
+      const across = line + 0.5 + (alongX ? side.wall.y : side.wall.x) * 0.5;
+      const lay = (from: number, to: number, front: boolean) => {
+        for (let at = from; at < to; at += span) {
+          const piece = Math.min(span, to - at);
+          const middle = at + piece / 2;
+          panels.push({ x: alongX ? middle : across, y: alongX ? across : middle, length: piece, facing: side.facing, front });
+        }
+      };
       let start = -1;
+      let runFront = false;
       for (let along = 0; along <= length; along++) {
         const [tx, ty] = alongX ? [along, line] : [line, along];
         const edge = along < length && hasEdge(tx, ty);
-        if (edge && start < 0) start = along;
-        if (edge || start < 0) continue;
-        for (let from = start; from < along; from += span) {
-          const piece = Math.min(span, along - from);
-          const middle = from + piece / 2;
-          // The edge sits on the floor tile's border with the wall.
-          const across = line + 0.5 + (alongX ? side.wall.y : side.wall.x) * 0.5;
-          panels.push({
-            x: alongX ? middle : across,
-            y: alongX ? across : middle,
-            length: piece,
-            facing: side.facing,
-            front: side.front,
-          });
+        const front = edge && isFront(tx + side.wall.x, ty + side.wall.y);
+        if (start >= 0 && (!edge || front !== runFront)) {
+          lay(start, along, runFront);
+          start = -1;
         }
-        start = -1;
+        if (edge && start < 0) {
+          start = along;
+          runFront = front;
+        }
       }
     }
   }
   return panels;
+}
+
+/**
+ * Whether a wall tile's face is drawn low, as a front wall the camera sees over. A room's outer walls go by the edge
+ * they're on, so the sides of a doorway match the wall around it. Walls inside the room are low on every side, like
+ * railings: drawn full height, the side facing the camera would hide the floor behind them.
+ */
+function isFront(tx: number, ty: number): boolean {
+  return tx !== 0 && ty !== 0;
 }
 
 /** The faces of one wall tile that look onto open floor, each one tile long, centred on its edge. */
@@ -69,7 +81,7 @@ export function wallFaces(map: TileMap, isWall: (tx: number, ty: number) => bool
     if (!inBounds(map, floor.x, floor.y) || isWall(floor.x, floor.y)) return [];
     const x = tx + 0.5 - side.wall.x * 0.5;
     const y = ty + 0.5 - side.wall.y * 0.5;
-    return [{ x, y, length: 1, facing: side.facing, front: side.front }];
+    return [{ x, y, length: 1, facing: side.facing, front: isFront(tx, ty) }];
   });
 }
 

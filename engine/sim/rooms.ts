@@ -5,6 +5,8 @@ import type { Container, LevelContent } from './content';
 
 /** What one character in a room's rows puts on its tile. Characters missing from the key are an error. */
 export interface RoomKey {
+  /** Ground kind for the tile, instead of the room's floor. */
+  ground?: number;
   prop?: number;
   solid?: boolean;
   /** The prop used instead on the room's front edges (bottom and right), such as a low wall the camera sees over. */
@@ -56,6 +58,7 @@ export function roomFromRows(spec: RoomSpec): LevelContent {
       const key = spec.key[ch];
       if (!key) throw new Error(`${spec.id}: nothing in the key for "${ch}" at (${x}, ${y})`);
       const i = tileIndex(map, x, y);
+      if (key.ground !== undefined) map.ground[i] = key.ground;
       const atFront = x === width - 1 || y === height - 1;
       const prop = atFront && key.frontProp !== undefined ? key.frontProp : key.prop;
       if (prop !== undefined || key.solid) setProp(map, x, y, prop ?? 0, Boolean(key.solid));
