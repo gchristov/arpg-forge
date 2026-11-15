@@ -117,7 +117,7 @@ describe('Unrecalled scenarios', () => {
     }
   });
 
-  it('lets the salvager walk among the working machines until one is hit, then turns the floor', () => {
+  it('lets the salvager walk among the working machines until one is hit, then turns its pack but not the next room', () => {
     const state = createGameState(content, 1);
     intoFoundry(state);
     const hp = state.hero.hp;
@@ -128,9 +128,10 @@ describe('Unrecalled scenarios', () => {
     const events = play(state, 2, [{ type: 'attack', enemyId: crawler.id }]);
     expect(events.map((e) => e.type)).toContain('LevelAlarmed');
     expect(currentLevel(state).enemies.filter((e) => e.mode === 'chase').length).toBeGreaterThan(1);
+    expect(currentLevel(state).enemies.filter((e) => e.mode === 'idle').length).toBeGreaterThan(10);
   });
 
-  it('sets off an EMP among a pack of crawlers, hitting them all and alarming the floor', () => {
+  it('sets off an EMP among a pack of crawlers, hitting them all and sounding the alarm', () => {
     const state = inIntake();
     const pack = currentLevel(state).enemies.filter((e) => e.kind === 'crawler').slice(0, 3);
     const middle = { x: pack.reduce((s, e) => s + e.x, 0) / 3, y: pack.reduce((s, e) => s + e.y, 0) / 3 };

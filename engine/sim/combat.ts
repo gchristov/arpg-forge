@@ -10,7 +10,7 @@ import { currentLevel, type Enemy, type GameState, type SimEvent } from './state
 
 /** Projectiles hit a body within this distance of its edge. */
 const PROJECTILE_HIT_RADIUS = 0.45;
-/** When a level is alarmed, calm enemies this close to the one hit come for the hero at once. */
+/** Calm enemies this close to one hit, and in sight of it, come for the hero at once. */
 const ALARM_CALL_RADIUS = 8;
 
 export function findEnemy(state: GameState, id: number | null): Enemy | null {
@@ -51,25 +51,25 @@ export function damageEnemy(
   events.push({ type: 'EnemyDamaged', enemyId: e.id, amount, crit, x: e.x, y: e.y });
   if (e.mode === 'idle' || e.mode === 'return') e.mode = 'chase';
   e.scan = -1;
-  if (!currentLevel(state).alarmed) alarm(state, e, events);
+  if (state.rules.enemies[e.kind]!.calm) provoke(state, e, events);
   const type = state.rules.enemies[e.kind]!;
   if (!type.boss) moveBody(currentLevel(state).level.map, e, kx * knockback, ky * knockback);
   if (e.hp <= 0) killEnemy(state, e, events);
 }
 
-/** Turns a level's calm enemies hostile, and sends the ones near `struck` after the hero straight away. */
-function alarm(state: GameState, struck: Enemy, events: SimEvent[]): void {
+/** Turns a calm enemy that was hit hostile, and sends the calm enemies around it after the hero straight away. */
+function provoke(state: GameState, struck: Enemy, events: SimEvent[]): void {
+  struck.provoked = true;
   const ls = currentLevel(state);
-  ls.alarmed = true;
-  const calm = ls.enemies.filter((e) => !e.dead && state.rules.enemies[e.kind]?.calm);
-  if (!calm.length) return;
-  for (const e of calm) {
-    if (e.mode !== 'idle' || dist(e.x, e.y, struck.x, struck.y) > ALARM_CALL_RADIUS) continue;
+  for (const e of ls.enemies) {
+    if (e.dead || e.provoked || !state.rules.enemies[e.kind]?.calm) continue;
+    if (dist(e.x, e.y, struck.x, struck.y) > ALARM_CALL_RADIUS) continue;
+    if (!hasLineOfSight(ls.level.map, struck.x, struck.y, e.x, e.y)) continue;
+    e.provoked = true;
     e.mode = 'chase';
     e.scan = -1;
     events.push({ type: 'EnemyAlerted', enemyId: e.id, boss: Boolean(state.rules.enemies[e.kind]!.boss) });
   }
-  events.push({ type: 'LevelAlarmed', levelId: state.levelId });
 }
 
 function killEnemy(state: GameState, e: Enemy, events: SimEvent[]): void {

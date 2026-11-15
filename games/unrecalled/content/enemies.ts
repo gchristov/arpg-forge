@@ -10,7 +10,7 @@ export interface UnrecalledEnemy extends EnemyType {
  */
 export const ENEMIES: Record<string, UnrecalledEnemy> = {
   crawler: {
-    name: 'Crawler', hp: 42, damage: [4, 8], speed: 2.8, range: 0.8, cooldown: 0.9, windUp: 0.28, aggro: 6,
+    name: 'Crawler', hp: 36, damage: [3, 7], speed: 2.8, range: 0.8, cooldown: 0.9, windUp: 0.28, aggro: 6,
     xp: 10, drops: { gold: [2, 7], healingChance: 0.15 }, radius: 0.24, groupSize: 4, calm: true,
   },
   loader: {

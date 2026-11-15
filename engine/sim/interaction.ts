@@ -140,6 +140,7 @@ function calmEverything(state: GameState): void {
     for (const e of ls.enemies) {
       if (e.dead || !state.rules.enemies[e.kind]?.calm) continue;
       e.mode = 'idle';
+      e.provoked = false;
       e.path = null;
       e.windUp = -1;
       e.scan = -1;
