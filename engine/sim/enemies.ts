@@ -38,10 +38,18 @@ const CORPSE_SECONDS = 1;
 export function updateEnemies(state: GameState, dt: number, events: SimEvent[]): void {
   const ls = currentLevel(state);
   for (const e of ls.enemies) updateEnemy(state, ls, e, dt, events);
+  soundAlarm(state, ls, events);
   for (let k = ls.enemies.length - 1; k >= 0; k--) {
     const e = ls.enemies[k]!;
     if (e.dead && e.deadFor > CORPSE_SECONDS) ls.enemies.splice(k, 1);
   }
+}
+
+/** The alarm sounds while any provoked enemy hunts the hero, and falls silent once they're destroyed or give up. */
+function soundAlarm(state: GameState, ls: LevelState, events: SimEvent[]): void {
+  const alarmed = ls.enemies.some((e) => !e.dead && e.provoked && e.mode === 'chase');
+  if (alarmed && !ls.alarmed) events.push({ type: 'LevelAlarmed', levelId: state.levelId });
+  ls.alarmed = alarmed;
 }
 
 function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, events: SimEvent[]): void {
@@ -62,7 +70,7 @@ function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, eve
   e.moving = false;
 
   if (e.mode === 'idle') {
-    if (sees && type.calm && !ls.alarmed) {
+    if (sees && type.calm && !e.provoked) {
       if (!e.recognised) {
         events.push({ type: 'EnemyRecognised', enemyId: e.id, x: e.x, y: e.y });
         e.scan = 0;
@@ -209,6 +217,7 @@ function useAbilities(
       if (isBlocked(ls.level.map, x, y, body.radius)) continue;
       const s = makeEnemy(state, summon.kind, x, y);
       s.mode = 'chase';
+      s.provoked = true;
       s.homeX = e.homeX;
       s.homeY = e.homeY + 2;
       ls.enemies.push(s);

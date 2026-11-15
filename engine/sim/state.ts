@@ -71,6 +71,8 @@ export interface Enemy extends Actor {
   summoned: boolean;
   /** Whether a calm enemy has seen the hero yet, so it recognises them only once. */
   recognised: boolean;
+  /** Whether a calm enemy has been hit, or called by one hit nearby: it no longer takes the hero for one of its own. */
+  provoked: boolean;
   /** Progress through looking the hero over on recognising them, from 0 to 1, or -1 when not scanning. */
   scan: number;
 }
@@ -124,7 +126,7 @@ export interface LevelState {
   items: GroundItem[];
   containers: ContainerState[];
   readables: Readable[];
-  /** Whether something here has been hit, which turns calm enemies hostile. */
+  /** Whether provoked enemies are hunting the hero here, which sounds the level's alarm. */
   alarmed: boolean;
   camps: Camp[];
   campRespawns?: CampRespawns;

@@ -117,7 +117,7 @@ describe('Unrecalled scenarios', () => {
     }
   });
 
-  it('lets the salvager walk among the working machines until one is hit, then turns the floor', () => {
+  it('lets the salvager walk among the working machines until one is hit, then turns its pack but not the next room', () => {
     const state = createGameState(content, 1);
     intoFoundry(state);
     const hp = state.hero.hp;
@@ -128,9 +128,10 @@ describe('Unrecalled scenarios', () => {
     const events = play(state, 2, [{ type: 'attack', enemyId: crawler.id }]);
     expect(events.map((e) => e.type)).toContain('LevelAlarmed');
     expect(currentLevel(state).enemies.filter((e) => e.mode === 'chase').length).toBeGreaterThan(1);
+    expect(currentLevel(state).enemies.filter((e) => e.mode === 'idle').length).toBeGreaterThan(10);
   });
 
-  it('sets off an EMP among a pack of crawlers, hitting them all and alarming the floor', () => {
+  it('sets off an EMP among a pack of crawlers, hitting them all and sounding the alarm', () => {
     const state = inIntake();
     const pack = currentLevel(state).enemies.filter((e) => e.kind === 'crawler').slice(0, 3);
     const middle = { x: pack.reduce((s, e) => s + e.x, 0) / 3, y: pack.reduce((s, e) => s + e.y, 0) / 3 };
@@ -215,12 +216,21 @@ describe('Unrecalled scenarios', () => {
     talkTo(state, 'foreman');
 
     const route: string[] = [];
-    for (let goal = questGoal(state); goal && goal.actorId === undefined && route.length < 10; goal = questGoal(state)) {
+    const keepersOn: string[] = [];
+    for (let goal = questGoal(state); goal && route.length < 10; goal = questGoal(state)) {
+      if (goal.actorId !== undefined) {
+        if (state.levelId === 'assembly') break;
+        // A machine still standing keeps the way on sealed, so the guide points at it first.
+        keepersOn.push(state.levelId);
+        silenceFloor(state);
+        continue;
+      }
       const door = currentLevel(state).level.portals.find((p) => p.tx + 0.5 === goal!.x && p.ty + 0.5 === goal!.y)!;
       takeDoor(state, door.to);
       route.push(state.levelId);
     }
     expect(route).toEqual(['tradingPost', ...FLOOR_ORDER]);
+    expect(keepersOn).toEqual(['gallery']);
     const engine = currentLevel(state).enemies.find((e) => e.kind === 'orderEngine')!;
     expect(questGoal(state)?.actorId).toBe(engine.id);
   });

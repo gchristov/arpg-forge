@@ -1,5 +1,5 @@
 import { lerp } from '../core/math';
-import type { ScanView } from '../render/effects';
+import { scanStrength, type ScanView } from '../render/scan-beams';
 import type { Look } from '../render/look';
 import type { SceneRenderer } from '../render/scene-renderer';
 import { questGoal, type QuestGoal } from '../sim/quest-goal';
@@ -29,6 +29,8 @@ const CRACKLE_CHANCE = 0.75;
 const SMOKE_SECONDS = 1.6;
 /** Townspeople's names show within this many tiles of the hero. */
 const NAME_RANGE = 5;
+/** A scan lights the ground round the body it looks over this far, this brightly at its height. */
+const SCAN_GLOW = { radius: 1.4, intensity: 0.9 };
 /**
  * The arrow to the next goal hides this close to it, in tiles: nearer for a doorway, which is the end of the way on,
  * than for someone to talk to or fight, who is plain to see by then.
@@ -54,6 +56,7 @@ export class WorldView {
   /** The goal as last worked out, kept until the quest or level changes; an actor goal follows the actor. */
   private goal: { quest: number; levelId: string; at: QuestGoal | null } | null = null;
   private readonly guideColours: { arrow: string; name: string } | null;
+  private readonly scanColour: number;
   /** Reused each frame for the machines scanning the hero. */
   private readonly scans: ScanView[] = Array.from({ length: 6 }, () => ({
     fromX: 0, fromY: 0, fromHeight: 0, x: 0, y: 0, height: 0, radius: 0, progress: 0,
@@ -68,6 +71,7 @@ export class WorldView {
     private readonly project: Project,
   ) {
     const { guide } = look.effects;
+    this.scanColour = look.effects.scan ?? look.effects.skill;
     this.guideColours = guide ? { arrow: cssColour(guide.arrow), name: cssColour(guide.name) } : null;
   }
 
@@ -282,6 +286,7 @@ export class WorldView {
       s.height = hero.height;
       s.radius = hero.radius * 1.3;
       s.progress = e.scan;
+      this.renderer.glow(s.x, s.y, SCAN_GLOW.radius, this.scanColour, SCAN_GLOW.intensity * scanStrength(e.scan));
     }
     this.renderer.effects.showScans(this.scans, count);
   }

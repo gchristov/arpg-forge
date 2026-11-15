@@ -1,9 +1,11 @@
+import { dist } from '../core/math';
 import type { QuestTrigger } from './content';
-import type { GameState } from './state';
+import type { Enemy, GameState } from './state';
 
 /**
  * Where the hero should head next on the current level: the townsperson to talk to or the enemy to defeat when
- * they're here (`actorId`), otherwise the doorway that leads towards them, or towards the place to reach.
+ * they're here (`actorId`), otherwise the doorway that leads towards them, or towards the place to reach. While that
+ * doorway is sealed, the nearest enemy still standing, since they keep it shut.
  */
 export interface QuestGoal {
   x: number;
@@ -30,7 +32,19 @@ export function questGoal(state: GameState): QuestGoal | null {
   const first = firstPortalTowards(state, targets);
   if (first === null) return null;
   const portal = here.level.portals[first]!;
+  const keeper = portal.sealed ? nearestStanding(state) : null;
+  if (keeper) return { x: keeper.x, y: keeper.y, actorId: keeper.id };
   return { x: portal.tx + 0.5, y: portal.ty + 0.5 };
+}
+
+function nearestStanding(state: GameState): Enemy | null {
+  const { hero } = state;
+  let nearest: Enemy | null = null;
+  for (const e of state.levels[state.levelId]!.enemies) {
+    if (e.dead) continue;
+    if (!nearest || dist(e.x, e.y, hero.x, hero.y) < dist(nearest.x, nearest.y, hero.x, hero.y)) nearest = e;
+  }
+  return nearest;
 }
 
 function actorFor(trigger: QuestTrigger, levelId: string, state: GameState): { id: number; x: number; y: number } | null {

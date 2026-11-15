@@ -2,13 +2,11 @@ import * as THREE from 'three';
 import { EnergyDomes } from './energy-domes';
 import { GoalArrow } from './goal-arrow';
 import { Lightning } from './lightning';
+import { ScanBeams, type ScanView } from './scan-beams';
 
 /** Heights above the ground, in tiles. */
 const PROJECTILE_HEIGHT = 0.52;
 const POOL_SIZE = 24;
-/** At most this many machines scan the hero at once. */
-const SCAN_POOL = 6;
-const scanTarget = new THREE.Vector3();
 
 export interface ProjectileView {
   kind: string;
@@ -35,18 +33,6 @@ export interface ItemView {
   z: number;
 }
 
-/** A beam from an eye to a ring around a body, sweeping down it as `progress` goes from 0 to 1. */
-export interface ScanView {
-  fromX: number;
-  fromY: number;
-  fromHeight: number;
-  x: number;
-  y: number;
-  /** The height of the body being scanned, and the ring's radius around it. */
-  height: number;
-  radius: number;
-  progress: number;
-}
 
 export interface EffectColours {
   /** The hero's skill projectiles. */
@@ -103,8 +89,7 @@ export class Effects {
   private readonly itemsUsed = new Map<string, number>();
   private readonly decals: Decal[] = [];
   private readonly puffs: Puff[] = [];
-  private readonly scanBeams: THREE.Mesh[] = [];
-  private readonly scanRings: THREE.Mesh[] = [];
+  private readonly scanBeams: ScanBeams;
 
   constructor(scene: THREE.Scene, colours: EffectColours) {
     const skillGeometry = new THREE.SphereGeometry(0.15, 12, 8);
@@ -133,17 +118,7 @@ export class Effects {
       for (let i = 0; i < POOL_SIZE; i++) pool.push(hidden(scene, new THREE.Mesh(itemGeometry, material)));
       this.items.set(kind, pool);
     }
-    // A beam one tile long along z, from its start, stretched to reach; a thin ring laid flat around the body.
-    const beamGeometry = new THREE.CylinderGeometry(0.022, 0.022, 1, 5).rotateX(Math.PI / 2).translate(0, 0, 0.5);
-    const ringGeometry = new THREE.RingGeometry(0.85, 1, 32).rotateX(-Math.PI / 2);
-    const scanMaterial = new THREE.MeshBasicMaterial({
-      color: colours.scan ?? colours.skill, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide,
-    });
-    for (let i = 0; i < SCAN_POOL; i++) {
-      this.scanBeams.push(hidden(scene, new THREE.Mesh(beamGeometry, scanMaterial)));
-      this.scanRings.push(hidden(scene, new THREE.Mesh(ringGeometry, scanMaterial)));
-    }
+    this.scanBeams = new ScanBeams(scene, colours.scan ?? colours.skill);
     this.lightning = new Lightning(scene);
     this.domes = new EnergyDomes(scene);
     this.goalArrow = colours.guide ? new GoalArrow(scene, colours.guide.arrow) : null;
@@ -199,22 +174,8 @@ export class Effects {
   }
 
   /** Warning circles darken as the moment they land gets closer. */
-  /** Machines scanning a body: each beam reaches a ring that sweeps from the head down to the feet. */
   showScans(scans: readonly ScanView[], count: number): void {
-    for (let i = 0; i < SCAN_POOL; i++) {
-      const beam = this.scanBeams[i]!;
-      const ring = this.scanRings[i]!;
-      const s = i < count ? scans[i] : undefined;
-      beam.visible = ring.visible = Boolean(s);
-      if (!s) continue;
-      const h = s.height * (1 - s.progress);
-      ring.position.set(s.x, h, s.y);
-      ring.scale.setScalar(s.radius);
-      beam.position.set(s.fromX, s.fromHeight, s.fromY);
-      scanTarget.set(s.x, h, s.y);
-      beam.lookAt(scanTarget);
-      beam.scale.set(1, 1, beam.position.distanceTo(scanTarget));
-    }
+    this.scanBeams.show(scans, count);
   }
 
   showTelegraphs(telegraphs: readonly TelegraphView[]): void {
