@@ -3,28 +3,42 @@ import * as THREE from 'three';
 /** A tile's colour as red, green and blue from 0 to 1, or null where no ground is drawn. */
 export type TileColour = (tx: number, ty: number) => readonly [number, number, number] | null;
 
+/** How many tiles around a corner its colour is blended from. Wide enough that patches lose the grid's stair steps. */
+const BLEND_REACH = 2;
+
 /**
- * The colour at each corner of the tile grid: the average of the drawn tiles that touch it. Corners are numbered row
- * by row, (width + 1) to a row, three numbers each. Drawn with these, neighbouring tiles fade into each other instead
- * of meeting in a hard, stepped edge.
+ * The colour at each corner of the tile grid: a weighted average of the drawn tiles within `BLEND_REACH` of it,
+ * nearest weighing most. Corners are numbered row by row, (width + 1) to a row, three numbers each. Drawn with these,
+ * patches of ground fade into each other in broad, soft gradients instead of meeting in edges that follow the tiles.
  */
 export function cornerColours(width: number, height: number, colourOf: TileColour): Float32Array {
   const corners = new Float32Array((width + 1) * (height + 1) * 3);
-  const counts = new Uint8Array((width + 1) * (height + 1));
-  for (let ty = 0; ty < height; ty++) {
-    for (let tx = 0; tx < width; tx++) {
-      const c = colourOf(tx, ty);
-      if (!c) continue;
-      for (const [cx, cy] of [[tx, ty], [tx + 1, ty], [tx, ty + 1], [tx + 1, ty + 1]] as const) {
-        const i = cy * (width + 1) + cx;
-        for (let k = 0; k < 3; k++) corners[i * 3 + k] = corners[i * 3 + k]! + c[k]!;
-        counts[i] = counts[i]! + 1;
+  for (let cy = 0; cy <= height; cy++) {
+    for (let cx = 0; cx <= width; cx++) {
+      let r = 0;
+      let g = 0;
+      let b = 0;
+      let total = 0;
+      for (let ty = cy - BLEND_REACH; ty < cy + BLEND_REACH; ty++) {
+        for (let tx = cx - BLEND_REACH; tx < cx + BLEND_REACH; tx++) {
+          if (tx < 0 || ty < 0 || tx >= width || ty >= height) continue;
+          const c = colourOf(tx, ty);
+          if (!c) continue;
+          // The tile's middle is (tx + 0.5, ty + 0.5); weight falls off with its distance from the corner.
+          const d2 = (tx + 0.5 - cx) ** 2 + (ty + 0.5 - cy) ** 2;
+          const w = Math.exp(-d2 / 1.6);
+          r += c[0] * w;
+          g += c[1] * w;
+          b += c[2] * w;
+          total += w;
+        }
       }
+      if (total === 0) continue;
+      const i = (cy * (width + 1) + cx) * 3;
+      corners[i] = r / total;
+      corners[i + 1] = g / total;
+      corners[i + 2] = b / total;
     }
-  }
-  for (let i = 0; i < counts.length; i++) {
-    const n = counts[i]!;
-    if (n > 1) for (let k = 0; k < 3; k++) corners[i * 3 + k] = corners[i * 3 + k]! / n;
   }
   return corners;
 }
