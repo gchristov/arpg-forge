@@ -50,6 +50,17 @@ describe('wallPanels', () => {
     expect(block).toHaveLength(4);
     expect(block.every((p) => p.startsWith('front'))).toBe(true);
   });
+
+  it('stands the back walls of a corridor cut through rock full height, and its front walls low', () => {
+    const corridor = panels(['#######', '#######', '#######', '#######', '##...##', '##...##', '#######'], 3);
+    expect(corridor.filter((p) => p.includes('facing 0,1'))).toEqual(['back 3.5,4 ×3 facing 0,1']);
+    expect(corridor.filter((p) => p.includes('facing 0,-1'))).toEqual(['front 3.5,6 ×3 facing 0,-1']);
+  });
+
+  it('keeps a thin wall between two rooms low, so it never hides the room behind it', () => {
+    const rooms = panels(['#####', '#...#', '#####', '#...#', '#####'], 3);
+    expect(rooms.filter((p) => p.includes(',3 ') && p.includes('facing 0,1'))).toEqual(['front 2.5,3 ×3 facing 0,1']);
+  });
 });
 
 describe('wallFaces', () => {
