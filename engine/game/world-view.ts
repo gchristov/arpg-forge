@@ -16,6 +16,10 @@ const BODY_HEIGHT = 0.5;
 /** How many main bolts a burst grows, at least and at most, and how many levels of branches they sprout. */
 const BURST_BOLTS = [3, 5] as const;
 const BRANCH_DEPTH = 2;
+/** How long a burst's dome of energy lasts. */
+const DOME_SECONDS = 0.6;
+/** Sparks spitting out along the ground from a burst's dome. */
+const DOME_SPARKS = [2, 4] as const;
 /** Skill projectiles fly at this height, and throw off an arc on about this share of frames. */
 const PROJECTILE_HEIGHT = 0.52;
 const CRACKLE_CHANCE = 0.75;
@@ -103,9 +107,12 @@ export class WorldView {
         }
         case 'Exploded':
           renderer.effects.decal(e.x, e.y, 0.8, effects.explosion.scorch, 0.7, 12);
-          renderer.effects.flash(e.x, e.y, e.radius, effects.explosion.flash, 0.35);
           renderer.shake(0.22);
-          if (effects.lightning !== undefined) this.lightningBurst(e.x, e.y, e.radius, events, effects.lightning);
+          if (effects.lightning === undefined) renderer.effects.flash(e.x, e.y, e.radius, effects.explosion.flash, 0.35);
+          else {
+            renderer.effects.dome(e.x, e.y, e.radius, effects.lightning, DOME_SECONDS);
+            this.lightningBurst(e.x, e.y, e.radius, events, effects.lightning);
+          }
           break;
         case 'SlamWarned':
           renderer.playActor(String(e.enemyId), 'cast', 1.0);
@@ -203,7 +210,7 @@ export class WorldView {
 
   /**
    * Lightning from a burst: strikes on every enemy it hurt, sometimes flickering back; arcs jumping between enemies
-   * hit together; and a few branching bolts reaching through the dome of its flash. Timings and shapes are random, so no two bursts
+   * hit together; a few branching bolts reaching through its dome; and sparks spitting out along the ground. Timings and shapes are random, so no two bursts
    * look alike.
    */
   private lightningBurst(x: number, y: number, radius: number, events: SimEvent[], colour: number): void {
@@ -233,6 +240,15 @@ export class WorldView {
       const dome = { x, y, h: BURST_HEIGHT, radius };
       this.branch(dome, x, y, BURST_HEIGHT, Math.cos(around) * Math.cos(up), Math.sin(around) * Math.cos(up), Math.sin(up),
         radius * (0.55 + Math.random() * 0.35), 1, 0, Math.random() * 0.12, colour);
+    }
+    const sparks = DOME_SPARKS[0] + Math.floor(Math.random() * (DOME_SPARKS[1] - DOME_SPARKS[0] + 1));
+    for (let k = 0; k < sparks; k++) {
+      const around = Math.random() * Math.PI * 2;
+      const from = radius * 0.9;
+      const to = radius * (1.2 + Math.random() * 0.4);
+      const h = 0.05 + Math.random() * 0.25;
+      effects.arc(x + Math.cos(around) * from, y + Math.sin(around) * from, h, x + Math.cos(around) * to, y + Math.sin(around) * to, h * 0.5,
+        colour, 0.08 + Math.random() * 0.08, Math.random() * DOME_SECONDS * 0.6, 0.5);
     }
   }
 

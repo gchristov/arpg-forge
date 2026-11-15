@@ -144,7 +144,8 @@ export interface EffectsLook {
   scan?: number;
   /**
    * Lightning of this colour for the hero's skills: bursts arc to every enemy they hit and fork outwards, and skill
-   * projectiles crackle as they fly. Without it, skills show only their flash.
+   * projectiles crackle as they fly, and bursts swell into a dome of energy in place of their flash. Without it, skills
+   * show only their flash.
    */
   lightning?: number;
   /** Chimney smoke. */
