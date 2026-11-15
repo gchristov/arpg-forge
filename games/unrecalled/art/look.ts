@@ -38,7 +38,7 @@ const robot = (
 ): ActorLook => ({
   colour: 0x8a8a8a, height, radius: 0.3 * scale, scale,
   remains: { radius: 0.32 * scale, colour: 0x1a1c20, opacity: 0.8 },
-  model: { name, animations, ...(tint === undefined ? {} : { tint }) },
+  model: { name, animations, matchPace: true, ...(tint === undefined ? {} : { tint }) },
 });
 
 const ACTORS: Record<string, ActorLook> = {

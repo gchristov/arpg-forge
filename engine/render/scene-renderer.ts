@@ -169,7 +169,7 @@ export class SceneRenderer {
     y: number,
     facingX: number,
     facingY: number,
-    pose: { moving: boolean; dead: boolean; flash: number; fade: number },
+    pose: { moving: boolean; dead: boolean; flash: number; fade: number; speed?: number },
   ): void {
     let figure = this.actors.get(id);
     if (!figure) {
@@ -181,7 +181,7 @@ export class SceneRenderer {
     figure.seen = this.frame;
     figure.root.position.set(x, 0, y);
     if (facingX || facingY) figure.root.rotation.y = Math.atan2(facingX, facingY);
-    figure.pose(pose.moving, pose.dead);
+    figure.pose(pose.moving, pose.dead, pose.speed);
     figure.setLookOf(pose.flash, pose.fade);
   }
 

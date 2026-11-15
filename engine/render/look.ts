@@ -55,6 +55,11 @@ export interface ActorLook {
     tint?: number;
     /** A separate weapon model held in the right hand. */
     weapon?: string;
+    /**
+     * Plays the move animation faster or slower to match how fast the actor moves, so its feet stay planted. Leave
+     * it off for animations meant to play at their own pace whatever the speed.
+     */
+    matchPace?: boolean;
   };
 }
 

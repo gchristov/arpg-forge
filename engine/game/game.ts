@@ -145,7 +145,7 @@ export class Game {
       ? advance(loop, frameSeconds, (dt) => this.react(step(state, { commands: this.pending.splice(0), held }, dt)))
       : 1;
     const t1 = performance.now();
-    this.view.draw(alpha, frameSeconds);
+    this.view.draw(alpha, frameSeconds, loop.stepSeconds);
     renderer.follow(lerp(state.hero.prevX, state.hero.x, alpha), lerp(state.hero.prevY, state.hero.y, alpha), frameSeconds);
     renderer.render(now / 1000, frameSeconds);
     this.labels.update(this.project, frameSeconds);

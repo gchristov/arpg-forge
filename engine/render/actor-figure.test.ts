@@ -132,3 +132,29 @@ describe('ActorFigure hovering', () => {
     expect(f.root.children[0]!.position.y).toBe(0);
   });
 });
+
+describe('ActorFigure walking pace', () => {
+  it('plays its move animation faster or slower to match how fast it moves', () => {
+    const scene = new THREE.Group();
+    const foot = new THREE.Bone();
+    foot.name = 'foot';
+    scene.add(foot);
+    const walk = new THREE.AnimationClip('Walk', 1, [new THREE.VectorKeyframeTrack('foot.position', [0, 1], [0, 0, 0.5, 0, 0, -0.5])]);
+    const template: ModelTemplate = { scene, animations: [new THREE.AnimationClip('Idle', 1, []), walk], height: 1 };
+    const library = { get: () => template, instantiate: () => scene.clone() } as unknown as ModelLibrary;
+    const f = new ActorFigure({ colour: 0, height: 1, radius: 0.3, model: { name: 'm', animations: { idle: 'Idle', move: 'Walk' }, matchPace: true } }, library);
+    const moveRate = () => (f as unknown as { actions: Map<string, THREE.AnimationAction> }).actions.get('Walk')!.timeScale;
+    f.pose(true, false, 2);
+    expect(moveRate()).toBeCloseTo(2);
+    f.pose(true, false, 0.5);
+    expect(moveRate()).toBeCloseTo(0.5);
+    f.pose(true, false, 50);
+    expect(moveRate()).toBe(5);
+  });
+
+  it('leaves the move animation at its own pace unless the look asks to match it', () => {
+    const f = figure();
+    f.pose(true, false, 4);
+    expect((f as unknown as { actions: Map<string, THREE.AnimationAction> }).actions.get('Run')!.timeScale).toBe(1);
+  });
+});

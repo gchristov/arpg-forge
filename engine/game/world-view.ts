@@ -23,6 +23,7 @@ export class WorldView {
   /** Enemies seen winding up an attack, so each wind-up starts its attack animation once. */
   private readonly windingUp = new Set<number>();
   private nextSmokeAt = 0;
+  private stepSeconds = 1 / 60;
 
   constructor(
     private readonly state: GameState,
@@ -103,8 +104,11 @@ export class WorldView {
     }
   }
 
-  /** Places everything for a frame, `alpha` of the way from the previous step's state to the latest. */
-  draw(alpha: number, frameSeconds: number): void {
+  /**
+   * Places everything for a frame, `alpha` of the way from the previous step's state to the latest. `stepSeconds` is
+   * the length of a rules step, to tell how fast each actor moved in the last one.
+   */
+  draw(alpha: number, frameSeconds: number, stepSeconds: number): void {
     const { renderer, state, labels, look } = this;
     this.puffChimneys();
     this.animateWindUps();
@@ -113,6 +117,7 @@ export class WorldView {
       else this.flashes.set(id, left - frameSeconds);
     }
     const ls = currentLevel(state);
+    this.stepSeconds = stepSeconds;
     this.drawActor(state.hero, alpha);
     for (const n of ls.npcs) this.drawActor(n, alpha);
     labels.beginBars();
@@ -143,9 +148,11 @@ export class WorldView {
   private drawActor(actor: Actor & { dead?: boolean }, alpha: number, fade = 1): void {
     const x = lerp(actor.prevX, actor.x, alpha);
     const y = lerp(actor.prevY, actor.y, alpha);
+    // How fast it actually moved in the last step: wandering, backing away and chasing all differ.
+    const speed = Math.hypot(actor.x - actor.prevX, actor.y - actor.prevY) / this.stepSeconds;
     this.renderer.setActor(
       String(actor.id), actor.kind, x, y, actor.facingX, actor.facingY,
-      { moving: actor.moving, dead: Boolean(actor.dead), flash: (this.flashes.get(actor.id) ?? 0) > 0 ? 1 : 0, fade },
+      { moving: actor.moving, dead: Boolean(actor.dead), flash: (this.flashes.get(actor.id) ?? 0) > 0 ? 1 : 0, fade, speed },
     );
     const light = this.look.actor(actor.kind).light;
     if (light && fade > 0) this.renderer.glow(x, y, light.radius, light.colour, light.intensity * fade);

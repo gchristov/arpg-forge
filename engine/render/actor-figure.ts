@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { ActorLook } from './look';
 import type { ModelLibrary } from './models';
+import { walkPace } from './walk-pace';
 
 /** One-off animations that play over the actor's idle, moving or dying pose. */
 export type ActorMoment = 'attack' | 'cast' | 'hit';
@@ -9,6 +10,8 @@ const BLEND_SECONDS = 0.15;
 /** Hovering actors bob this many tiles up and down, this many times a second. */
 const BOB_HEIGHT = 0.07;
 const BOB_RATE = 0.35;
+/** A walk never plays slower or faster than this, so a badly measured clip still looks like walking. */
+const PACE_RANGE: [number, number] = [0.4, 5];
 
 type FlashableMaterial = THREE.Material & { emissive?: THREE.Color };
 
@@ -27,6 +30,8 @@ export class ActorFigure {
   private readonly actions = new Map<string, THREE.AnimationAction>();
   private base: THREE.AnimationAction | null = null;
   private moment: THREE.AnimationAction | null = null;
+  /** Tiles a second the move animation carries the actor at its normal speed, or null if it couldn't be measured. */
+  private readonly movePace: number | null = null;
 
   constructor(
     private readonly look: ActorLook,
@@ -74,6 +79,8 @@ export class ActorFigure {
       // quaternions dozens of times a frame per character, and nothing reads a bone's angles, so skip that work.
       if (o instanceof THREE.Bone) o.quaternion._onChange(() => {});
     });
+    const moveClip = template.animations.find((c) => c.name === look.model!.animations.move);
+    this.movePace = moveClip && look.model.matchPace ? walkPace(model, moveClip) : null;
     this.mixer = new THREE.AnimationMixer(model);
     for (const clip of template.animations) this.actions.set(clip.name, this.mixer.clipAction(clip));
     this.mixer.addEventListener('finished', (e) => {
@@ -84,9 +91,14 @@ export class ActorFigure {
     this.setBase('idle');
   }
 
-  /** Sets the ongoing pose: dying wins over moving, which wins over idling. */
-  pose(moving: boolean, dead: boolean): void {
+  /**
+   * Sets the ongoing pose: dying wins over moving, which wins over idling. For looks that match their pace, the move
+   * animation plays faster or slower to match `speed`, in tiles a second, so its feet don't slide over the ground.
+   */
+  pose(moving: boolean, dead: boolean, speed?: number): void {
     this.setBase(dead ? 'death' : moving ? 'move' : 'idle');
+    const move = this.action('move');
+    if (move && speed && this.movePace) move.timeScale = THREE.MathUtils.clamp(speed / this.movePace, ...PACE_RANGE);
   }
 
   /** Plays a one-off moment, stretched to last `seconds` if given, such as an attack timed to its wind-up. */
