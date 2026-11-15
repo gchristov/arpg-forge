@@ -3,7 +3,7 @@ import * as THREE from 'three';
 /** Heights above the ground, in tiles. */
 const PROJECTILE_HEIGHT = 0.52;
 const POOL_SIZE = 24;
-const ARC_POOL = 32;
+const ARC_POOL = 64;
 /** Kinks along each lightning arc, and how wide its ribbons are, in tiles. */
 const ARC_SEGMENTS = 8;
 const ARC_WIDTH = 0.04;
@@ -84,8 +84,11 @@ interface Arc {
   mesh: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
   from: THREE.Vector3;
   to: THREE.Vector3;
+  /** Below 0 while the arc waits to strike. */
   age: number;
   life: number;
+  /** How far the arc's middle wanders from a straight line, as a share of its length. */
+  wander: number;
 }
 
 interface Flash {
@@ -159,7 +162,7 @@ export class Effects {
       });
       const mesh = hidden(scene, new THREE.Mesh(geometry, material));
       mesh.frustumCulled = false;
-      this.arcs.push({ mesh, from: new THREE.Vector3(), to: new THREE.Vector3(), age: 0, life: 0 });
+      this.arcs.push({ mesh, from: new THREE.Vector3(), to: new THREE.Vector3(), age: 0, life: 0, wander: 0 });
     }
     for (let i = 0; i < POOL_SIZE; i++) {
       this.skillShots.push(hidden(scene, new THREE.Mesh(skillGeometry, skillMaterial)));
@@ -245,9 +248,12 @@ export class Effects {
 
   /**
    * A lightning arc from one point to another, `fromHeight` and `toHeight` tiles above the ground, crackling for
-   * `seconds`. When every arc is busy, the oldest is reused.
+   * `seconds` after waiting `delay` seconds. When every arc is busy, the one furthest through its life is reused.
    */
-  arc(fromX: number, fromY: number, fromHeight: number, toX: number, toY: number, toHeight: number, colour: number, seconds: number): void {
+  arc(
+    fromX: number, fromY: number, fromHeight: number, toX: number, toY: number, toHeight: number,
+    colour: number, seconds: number, delay = 0,
+  ): void {
     let a = this.arcs[0]!;
     for (const candidate of this.arcs) {
       if (candidate.age >= candidate.life) {
@@ -258,11 +264,12 @@ export class Effects {
     }
     a.from.set(fromX, fromHeight, fromY);
     a.to.set(toX, toHeight, toY);
-    a.age = 0;
+    a.age = -delay;
     a.life = seconds;
+    a.wander = 0.2 + Math.random() * 0.35;
     a.mesh.material.color.set(colour);
-    a.mesh.visible = true;
-    jitterArc(a);
+    a.mesh.visible = delay <= 0;
+    if (a.mesh.visible) jitterArc(a);
   }
 
   flash(x: number, y: number, radius: number, colour: number, seconds: number): void {
@@ -326,8 +333,11 @@ export class Effects {
         a.mesh.visible = false;
         continue;
       }
+      if (a.age < 0) continue;
+      a.mesh.visible = true;
       jitterArc(a);
-      a.mesh.material.opacity = 1 - a.age / a.life;
+      // Lightning flickers rather than fading smoothly.
+      a.mesh.material.opacity = (1 - a.age / a.life) * (0.55 + Math.random() * 0.45);
     }
     for (const d of this.decals) {
       if (d.age >= d.life) continue;
@@ -399,7 +409,7 @@ function jitterArc(a: Arc): void {
   for (let k = 0; k <= ARC_SEGMENTS; k++) {
     const t = k / ARC_SEGMENTS;
     // The ends stay put; the middle wanders most.
-    const wander = k === 0 || k === ARC_SEGMENTS ? 0 : (Math.random() - 0.5) * length * 0.35 * Math.sin(Math.PI * t);
+    const wander = k === 0 || k === ARC_SEGMENTS ? 0 : (Math.random() - 0.5) * length * a.wander * Math.sin(Math.PI * t);
     point.copy(a.from).addScaledVector(along, t).addScaledVector(across, wander);
     point.y += k === 0 || k === ARC_SEGMENTS ? 0 : (Math.random() - 0.5) * 0.25;
     const flat = k * 2;

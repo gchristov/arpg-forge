@@ -13,10 +13,11 @@ const HERO_FLASH_SECONDS = 0.15;
 /** Lightning: where a burst's arcs start and where they reach an enemy, in tiles above the ground. */
 const BURST_HEIGHT = 0.6;
 const BODY_HEIGHT = 0.5;
-const BURST_FORKS = 6;
+/** How many forks a burst throws out, at least and at most. */
+const BURST_FORKS = [8, 12] as const;
 /** Skill projectiles fly at this height, and throw off an arc on about this share of frames. */
 const PROJECTILE_HEIGHT = 0.52;
-const CRACKLE_CHANCE = 0.5;
+const CRACKLE_CHANCE = 0.75;
 /** Each chimney puffs this often. */
 const SMOKE_SECONDS = 1.6;
 
@@ -199,29 +200,66 @@ export class WorldView {
     this.renderer.effects.showScans(this.scans, count);
   }
 
-  /** Lightning from a burst to every enemy it hurt, and a few forks crackling out across its radius. */
+  /**
+   * Lightning from a burst: strikes on every enemy it hurt, flickering back a few times; arcs jumping between enemies
+   * hit together; and forks crackling out across its radius, some splitting partway. Timings and shapes are random,
+   * so no two bursts look alike.
+   */
   private lightningBurst(x: number, y: number, radius: number, events: SimEvent[], colour: number): void {
     const { effects } = this.renderer;
+    const hits: Array<{ x: number; y: number; h: number }> = [];
     for (const hit of events) {
-      if (hit.type === 'EnemyDamaged' && Math.hypot(hit.x - x, hit.y - y) < radius + 1.5) {
-        effects.arc(x, y, BURST_HEIGHT, hit.x, hit.y, BODY_HEIGHT * this.scaleOf(currentLevel(this.state).enemies.find((en) => en.id === hit.enemyId)?.kind ?? ''), colour, 0.3);
+      if (hit.type !== 'EnemyDamaged' || Math.hypot(hit.x - x, hit.y - y) > radius + 1.5) continue;
+      const kind = currentLevel(this.state).enemies.find((en) => en.id === hit.enemyId)?.kind ?? '';
+      hits.push({ x: hit.x, y: hit.y, h: BODY_HEIGHT * this.scaleOf(kind) });
+    }
+    for (const hit of hits) {
+      const strikes = 2 + Math.floor(Math.random() * 2);
+      for (let k = 0; k < strikes; k++) {
+        effects.arc(x, y, BURST_HEIGHT, hit.x, hit.y, hit.h, colour, 0.12 + Math.random() * 0.12, k * (0.06 + Math.random() * 0.08));
       }
     }
-    for (let k = 0; k < BURST_FORKS; k++) {
+    for (let k = 1; k < hits.length; k++) {
+      const a = hits[k - 1]!;
+      const b = hits[k]!;
+      if (Math.random() < 0.7) effects.arc(a.x, a.y, a.h, b.x, b.y, b.h, colour, 0.15 + Math.random() * 0.1, 0.05 + Math.random() * 0.15);
+    }
+    const forks = BURST_FORKS[0] + Math.floor(Math.random() * (BURST_FORKS[1] - BURST_FORKS[0] + 1));
+    for (let k = 0; k < forks; k++) {
       const angle = Math.random() * Math.PI * 2;
-      const reach = radius * (0.6 + Math.random() * 0.4);
-      effects.arc(x, y, BURST_HEIGHT, x + Math.cos(angle) * reach, y + Math.sin(angle) * reach, 0.05, colour, 0.2 + Math.random() * 0.1);
+      const reach = radius * (0.45 + Math.random() * 0.6);
+      const height = BURST_HEIGHT * (0.5 + Math.random());
+      const endX = x + Math.cos(angle) * reach;
+      const endY = y + Math.sin(angle) * reach;
+      const delay = Math.random() * 0.15;
+      const life = 0.12 + Math.random() * 0.18;
+      effects.arc(x, y, height, endX, endY, Math.random() * 0.2, colour, life, delay);
+      if (Math.random() < 0.5) {
+        // A branch splitting off partway along, heading off at an angle.
+        const t = 0.35 + Math.random() * 0.35;
+        const branch = angle + (Math.random() < 0.5 ? -1 : 1) * (0.4 + Math.random() * 0.6);
+        const bx = x + (endX - x) * t;
+        const by = y + (endY - y) * t;
+        effects.arc(bx, by, height * (1 - t), bx + Math.cos(branch) * reach * 0.45, by + Math.sin(branch) * reach * 0.45, 0, colour, life * 0.8, delay + 0.03);
+      }
     }
   }
 
-  /** Skill projectiles crackle with short arcs as they fly. */
+  /** Skill projectiles crackle with short arcs of every length as they fly. */
   private crackleProjectiles(alpha: number, colour: number): void {
     for (const p of this.state.projectiles) {
-      if (p.kind !== 'skill' || Math.random() > CRACKLE_CHANCE) continue;
+      if (p.kind !== 'skill') continue;
       const x = lerp(p.prevX, p.x, alpha);
       const y = lerp(p.prevY, p.y, alpha);
-      const angle = Math.random() * Math.PI * 2;
-      this.renderer.effects.arc(x, y, PROJECTILE_HEIGHT, x + Math.cos(angle) * 0.45, y + Math.sin(angle) * 0.45, PROJECTILE_HEIGHT + (Math.random() - 0.5) * 0.4, colour, 0.08);
+      for (let k = 0; k < 2; k++) {
+        if (Math.random() > CRACKLE_CHANCE) continue;
+        const angle = Math.random() * Math.PI * 2;
+        const reach = 0.25 + Math.random() * 0.6;
+        this.renderer.effects.arc(
+          x, y, PROJECTILE_HEIGHT, x + Math.cos(angle) * reach, y + Math.sin(angle) * reach,
+          PROJECTILE_HEIGHT + (Math.random() - 0.5) * 0.6, colour, 0.05 + Math.random() * 0.07,
+        );
+      }
     }
   }
 
