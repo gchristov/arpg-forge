@@ -3,6 +3,7 @@ import { createGameState } from '../../engine/sim/setup';
 import { currentLevel, type Command, type GameState, type SimEvent } from '../../engine/sim/state';
 import { step } from '../../engine/sim/step';
 import { unrecalledContent } from './content/world';
+import { ENDING_STEP, ENGINE_DOWN_STEP } from './content/story';
 import { FLOOR_ORDER } from './levels/foundry';
 
 const DT = 1 / 60;
@@ -36,20 +37,52 @@ function takeDoor(state: GameState, to: string): void {
   play(state, 1);
 }
 
+/** Talks to someone in the current level by kind, walking up to them first. */
+function talkTo(state: GameState, kind: string): SimEvent[] {
+  const npc = currentLevel(state).npcs.find((n) => n.kind === kind)!;
+  return play(state, 15, [{ type: 'talk', npcId: npc.id }]);
+}
+
+/** A new game, already through Rustbelt's gate into Intake. */
+function inIntake(): GameState {
+  const state = untouchable(createGameState(content, 1));
+  takeDoor(state, 'intake');
+  return state;
+}
+
 describe('Unrecalled scenarios', () => {
-  it('starts at the bottom of Intake', () => {
+  it('starts in Rustbelt, where the foreman sends the salvager into the Foundry', () => {
     const state = createGameState(content, 1);
+    expect(state.levelId).toBe('rustbelt');
+    expect(currentLevel(state).npcs.map((n) => n.kind)).toEqual(['foreman']);
+    const events = talkTo(state, 'foreman');
+    expect(events.map((e) => e.type)).toContain('Talked');
+    expect(state.quest).toBe(1);
+    takeDoor(state, 'intake');
     expect(state.levelId).toBe('intake');
-    expect([state.hero.x, state.hero.y]).toEqual([12.5, 12.5]);
   });
 
-  it('goes down through every floor to the Assembly Hall, and back up to Intake', () => {
+  it('walks into each of Rustbelt\'s buildings, finds who works there, and back out of the same door', () => {
     const state = untouchable(createGameState(content, 1));
+    for (const [index, building] of currentLevel(state).level.structures.entries()) {
+      play(state, 25, [{ type: 'enterStructure', index }]);
+      play(state, 1);
+      expect(state.levelId).not.toBe('rustbelt');
+      const inside = state.levelId;
+      expect({ workshop: ['tinker'], tradingPost: ['trader'], pumphouse: [] }[inside]).toEqual(currentLevel(state).npcs.map((n) => n.kind));
+      takeDoor(state, 'rustbelt');
+      expect(state.levelId).toBe('rustbelt');
+      expect(Math.floor(state.hero.y)).toBe(building.door.ty + 1);
+    }
+  });
+
+  it('goes down through every floor to the Assembly Hall, and back up to Rustbelt', () => {
+    const state = inIntake();
     for (const next of FLOOR_ORDER.slice(1)) {
       takeDoor(state, next);
       expect(state.levelId).toBe(next);
     }
-    for (const previous of [...FLOOR_ORDER].reverse().slice(1)) {
+    for (const previous of [...[...FLOOR_ORDER].reverse().slice(1), 'rustbelt']) {
       takeDoor(state, previous);
       expect(state.levelId).toBe(previous);
     }
@@ -57,6 +90,7 @@ describe('Unrecalled scenarios', () => {
 
   it('lets the salvager walk among the working machines until one is hit, then turns the floor', () => {
     const state = createGameState(content, 1);
+    takeDoor(state, 'intake');
     const hp = state.hero.hp;
     const crawler = currentLevel(state).enemies.find((e) => e.kind === 'crawler')!;
     play(state, 12, [{ type: 'walk', x: crawler.x, y: crawler.y + 1 }]);
@@ -68,7 +102,7 @@ describe('Unrecalled scenarios', () => {
   });
 
   it('keeps the door to the Assembly Hall sealed until the Control Gallery is silenced', () => {
-    const state = untouchable(createGameState(content, 1));
+    const state = inIntake();
     takeDoor(state, 'sorting');
     takeDoor(state, 'gallery');
     const door = currentLevel(state).level.portals.find((p) => p.to === 'assembly')!;
@@ -80,7 +114,7 @@ describe('Unrecalled scenarios', () => {
   });
 
   it('hides a salvage cache on every floor that pays out scrap and a patch kit', () => {
-    const state = untouchable(createGameState(content, 1));
+    const state = inIntake();
     for (const [i, floor] of FLOOR_ORDER.entries()) {
       if (i > 0) takeDoor(state, floor);
       // Whatever the hero hasn't picked up yet is still on the floor.
@@ -95,14 +129,41 @@ describe('Unrecalled scenarios', () => {
     }
   });
 
-  it('finishes the quest when the Order Engine falls', () => {
+  it('plays the whole story: the job, the Order Engine, every machine standing down, and the foreman', () => {
     const state = untouchable(createGameState(content, 1));
     state.hero.damage = [1000, 1000];
+    talkTo(state, 'foreman');
+    takeDoor(state, 'intake');
     for (const next of FLOOR_ORDER.slice(1)) takeDoor(state, next);
-    expect(state.quest).toBe(3);
+    expect(state.quest).toBe(4);
     const engine = currentLevel(state).enemies.find((e) => e.kind === 'orderEngine')!;
     for (let i = 0; i < 20 && !engine.dead; i++) play(state, 1, [{ type: 'attack', enemyId: engine.id }]);
     expect(engine.dead).toBe(true);
-    expect(state.quest).toBe(4);
+    expect(state.quest).toBe(ENGINE_DOWN_STEP);
+    const machines = Object.values(state.levels).flatMap((ls) => ls.enemies.filter((e) => !e.dead));
+    expect(machines.every((e) => e.mode === 'idle')).toBe(true);
+    expect(Object.values(state.levels).some((ls) => ls.alarmed)).toBe(false);
+
+    for (const previous of [...[...FLOOR_ORDER].reverse().slice(1), 'rustbelt']) takeDoor(state, previous);
+    talkTo(state, 'foreman');
+    expect(state.quest).toBe(ENDING_STEP);
+  });
+
+  it('never skips to the end for chatting with the foreman again on the way', () => {
+    const state = createGameState(content, 1);
+    talkTo(state, 'foreman');
+    play(state, 1);
+    talkTo(state, 'foreman');
+    expect(state.quest).toBe(1);
+  });
+
+  it('gets the salvager back up at the entrance of the floor they fell on', () => {
+    const state = inIntake();
+    takeDoor(state, 'sorting');
+    state.hero.hp = 0;
+    state.hero.dead = true;
+    play(state, 0.1, [{ type: 'respawn' }]);
+    expect(state.levelId).toBe('sorting');
+    expect(state.hero.dead).toBe(false);
   });
 });

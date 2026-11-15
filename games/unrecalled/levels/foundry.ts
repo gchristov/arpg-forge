@@ -36,8 +36,8 @@ const FLOORS = {
       '#.............cc....b..#',
       '#..c..b................#',
       '#.........c.....o...c..#',
-      '#...........@..........#',
-      '########################',
+      '#......................#',
+      '############V###########',
     ],
   },
   sorting: {
@@ -128,7 +128,6 @@ const KEY: Record<string, RoomKey> = {
   R: { ...onBelt(Prop.Crate), readable: 'stock-tag' },
   // A salvage cache, tucked off the main path to reward looking around.
   S: { ...solid(Prop.Cache), container: { gold: 30, healingItems: 1 } },
-  '@': { heroStart: true },
   o: { spawn: 'crawler' },
   x: { spawn: 'loader' },
   s: { spawn: 'sentry' },
@@ -151,7 +150,8 @@ function lamps(id: FloorId): Record<string, RoomKey> {
 function doors(id: FloorId): Record<string, RoomKey> {
   const at = FLOOR_ORDER.indexOf(id);
   const deeper = FLOOR_ORDER[at + 1];
-  const back = FLOOR_ORDER[at - 1];
+  // Intake's front door leads out to the town.
+  const back = FLOOR_ORDER[at - 1] ?? 'rustbelt';
   return {
     U: deeper
       ? {

@@ -1,23 +1,20 @@
 import type { GameContent } from '../../../engine/sim/content';
 import { buildFloor, FLOOR_ORDER } from '../levels/foundry';
+import { buildInterior, INTERIOR_IDS } from '../levels/interiors';
+import { buildRustbelt } from '../levels/rustbelt';
 import { ENEMIES } from './enemies';
 import { HERO } from './hero';
+import { NPCS, QUEST } from './story';
 
-/** Unrecalled as the rules see it. For now, the Foundry's four floors down to the Order Engine. */
+/** Unrecalled as the rules see it: Rustbelt and its buildings, and the Foundry's four floors down to the Order Engine. */
 export function unrecalledContent(): GameContent {
   return {
-    levels: FLOOR_ORDER.map(buildFloor),
-    startLevel: 'intake',
+    levels: [buildRustbelt(), ...INTERIOR_IDS.map(buildInterior), ...FLOOR_ORDER.map(buildFloor)],
+    startLevel: 'rustbelt',
     hero: HERO,
     enemies: ENEMIES,
     npcRadius: 0.32,
-    npcs: {},
-    quest: [
-      {},
-      { reachedBy: { type: 'enter', levelId: 'sorting' } },
-      { reachedBy: { type: 'enter', levelId: 'gallery' } },
-      { reachedBy: { type: 'enter', levelId: 'assembly' } },
-      { reachedBy: { type: 'kill', enemyKind: 'orderEngine' } },
-    ],
+    npcs: NPCS,
+    quest: QUEST.map(({ text: _text, ...step }) => step),
   };
 }

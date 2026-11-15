@@ -165,4 +165,15 @@ describe('death and respawn', () => {
     expect(brute.mode).toBe('return');
     expect(brute.hp).toBe(brute.maxHp);
   });
+
+  it('gets back up at the start of the level it fell in, for games that ask', () => {
+    const state = arena(OPEN_ROOM, { x: 3.5, y: 5.5 }, [{ kind: 'brute', x: 7.5, y: 5.5 }]);
+    state.rules = { ...state.rules, hero: { ...state.rules.hero, respawnAt: 'sameLevel' } };
+    state.hero.hp = 1;
+    run(state, 6);
+    expect(state.hero.dead).toBe(true);
+    run(state, 1 / 60, [{ type: 'respawn' }]);
+    expect(state.levelId).toBe('arena');
+    expect(state.hero).toMatchObject({ dead: false, x: 3.5, y: 5.5 });
+  });
 });

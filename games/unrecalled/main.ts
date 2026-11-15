@@ -2,10 +2,14 @@ import '@fontsource/alegreya-sans/500.css';
 import '@fontsource/alegreya-sans/700.css';
 import { Game } from '../../engine/game/game';
 import { PX } from '../../engine/game/world-view';
+import { servicePrice } from '../../engine/sim/interaction';
 import { currentLevel, type RefusalReason, type SimEvent } from '../../engine/sim/state';
 import { DialogBox } from '../../engine/ui/dialog-box';
 import { MODEL_URLS, unrecalledLook } from './art/look';
-import { ENGINE_CALLS, ENGINE_DOWN_STEP, ENGINE_FALLS, LINE_ALERT, READINGS, MACHINE_SCANS, stillRunning, UNSEALED } from './content/story';
+import {
+  dialogueFor, ENDING, ENDING_STEP, ENGINE_CALLS, ENGINE_DOWN_STEP, ENGINE_FALLS, LINE_ALERT, MACHINE_SCANS, NPCS, READINGS,
+  stillRunning, UNSEALED,
+} from './content/story';
 import { unrecalledContent } from './content/world';
 import { Hud } from './ui/hud';
 
@@ -40,6 +44,69 @@ const REFUSALS: Record<RefusalReason, string> = {
 };
 
 const kindOf = (enemyId: number): string | undefined => currentLevel(state).enemies.find((e) => e.id === enemyId)?.kind;
+
+/** Times the salvager has gone down, for the trader to remark on. */
+let deaths = 0;
+
+/** Opens a townsperson's dialogue, with each service's price and whether the salvager can afford it. */
+function showDialogue(npcId: number, questBefore: number): void {
+  const npc = currentLevel(state).npcs.find((n) => n.id === npcId);
+  const d = npc && dialogueFor(npc.kind, questBefore, state.quest, deaths);
+  if (!npc || !d) return;
+  const services = NPCS[npc.kind]?.services ?? [];
+  const ending = npc.kind === 'foreman' && questBefore < ENDING_STEP && state.quest >= ENDING_STEP;
+  dialog.open(
+    d.title,
+    d.text,
+    d.options.map((o) => {
+      const service = o.service === undefined ? undefined : services[o.service];
+      const price = service ? servicePrice(state.hero, service) : 0;
+      return {
+        label: o.label,
+        ...(o.tag ? { tag: o.tag(price) } : {}),
+        disabled: state.hero.gold < price,
+        onChoose: () => {
+          if (o.service !== undefined) game.send({ type: 'useService', npcId, service: o.service });
+          else {
+            dialog.close();
+            if (ending) playEnding();
+          }
+        },
+      };
+    }),
+    npcId,
+  );
+}
+
+/** After a purchase: getting patched up closes the dialogue, other services refresh it with the new prices. */
+function reactToService(npcId: number, index: number, x: number, y: number): void {
+  const npc = currentLevel(state).npcs.find((n) => n.id === npcId);
+  const service = npc && NPCS[npc.kind]?.services[index];
+  if (!service) return;
+  if (service.type === 'restore') {
+    labels.text(x, y, 46 * PX, 'Patched up', '#7ae08a', 15);
+    deaths = 0;
+    dialog.close();
+    return;
+  }
+  if (service.type === 'upgradeMelee') labels.text(x, y, 46 * PX, 'Wrench upgraded', '#e8c870', 15);
+  if (dialog.npcId === npcId) showDialogue(npcId, state.quest);
+}
+
+/** The light upriver, then the card that closes the demo on its question. */
+function playEnding(): void {
+  hud.banner(ENDING.upriver.title, ENDING.upriver.subtitle, 4);
+  setTimeout(() => {
+    $('endT').textContent = ENDING.card.title;
+    $('endS').textContent = ENDING.card.subtitle;
+    $('end').hidden = false;
+  }, 4200);
+}
+
+$('endGo').addEventListener('click', (e) => {
+  e.stopPropagation();
+  $('end').hidden = true;
+});
 
 /** Unrecalled's words and banners for the rules' events; the engine shows the rest in the world. */
 function react(events: SimEvent[]): void {
@@ -99,8 +166,15 @@ function react(events: SimEvent[]): void {
         if (e.step === ENGINE_DOWN_STEP) setTimeout(() => hud.banner(ENGINE_FALLS.title, ENGINE_FALLS.subtitle, 5), 600);
         break;
       case 'HeroDied':
+        deaths++;
         dialog.close();
         hud.hideBanner();
+        break;
+      case 'Talked':
+        showDialogue(e.npcId, e.questBefore);
+        break;
+      case 'ServiceUsed':
+        reactToService(e.npcId, e.service, e.x, e.y);
         break;
       case 'HeroRespawned':
         if (e.goldLost) setTimeout(() => hud.banner('Back on your feet', `You dropped ${e.goldLost} scrap in the scramble.`), 400);

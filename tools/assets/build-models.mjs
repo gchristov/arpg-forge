@@ -2,12 +2,15 @@
 // parts and animations the game uses, compresses it, and writes a .glb next to the manifest.
 //
 // Usage: ./tools/assets/build-models.sh <manifest.json>, which runs this in the Node image after converting any FBX
-// models with the Blender image. `--list-fbx` only fetches the packs and prints each FBX model's local path, textures folder and borrow spec, separated by |.
+// models with the Blender image. `--list-fbx` only fetches the packs and prints each FBX model's local path, textures folder, borrow spec and decimate ratio, separated by |.
 //
 // A pack is either a folder URL at a pinned commit, or `{ "zip": url, "sha256": hash }` for packs only published as
 // zip files; a zip whose checksum doesn't match is refused. A zip pack's `textures` names the folder inside it that
 // holds images its .gltf files expect beside them. A model's `textures` option shrinks its textures to
 // `maxSize` pixels and can drop its normal and occlusion-roughness-metal maps, for packs made for close-up games.
+// An FBX model's `decimate` keeps about that share of its triangles (the converter does it in Blender).
+// `textures.recolour` multiplies their `brightness` and `saturation` and turns their `hue` (degrees), to weather a clean
+// pack into a game's palette.
 // An FBX model's `borrow` adds animations its pack lacks, retargeted from another pack's rig by the converter: `path`
 // in `pack` is the source glTF, `animations` maps new names to the source's, `pose` is the source animation that
 // matches the model's rest pose, and `bones` maps the model's bones to the source's (see tools/blender/retarget.py).
@@ -126,6 +129,16 @@ async function borrowSpec(model, fetched) {
   return specPath;
 }
 
+/** Weathers every texture of a model, such as darkening and dulling a bright pack to sit in a grimier game. */
+async function recolour(doc, { brightness = 1, saturation = 1, hue = 0 }) {
+  for (const texture of doc.getRoot().listTextures()) {
+    const image = texture.getImage();
+    if (!image) continue;
+    const png = await sharp(Buffer.from(image)).modulate({ brightness, saturation, hue }).png().toBuffer();
+    texture.setImage(new Uint8Array(png)).setMimeType('image/png');
+  }
+}
+
 await MeshoptEncoder.ready;
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.encoder': MeshoptEncoder });
 
@@ -137,7 +150,7 @@ for (const model of manifest.models) {
   const isFbx = model.path.toLowerCase().endsWith('.fbx');
   if (listFbx) {
     // The pack's textures folder, if it names one, for the converter to find the FBX's textures in.
-    if (isFbx) console.log(`FBX ${fetched}|${typeof pack === 'object' && pack.textures ? join(cacheDir, model.pack, pack.textures) : ''}|${await borrowSpec(model, fetched)}`);
+    if (isFbx) console.log(`FBX ${fetched}|${typeof pack === 'object' && pack.textures ? join(cacheDir, model.pack, pack.textures) : ''}|${await borrowSpec(model, fetched)}|${model.decimate ?? ''}`);
     continue;
   }
   const local = isFbx ? `${fetched}.glb` : fetched;
@@ -169,6 +182,7 @@ for (const model of manifest.models) {
       material.setMetallicRoughnessTexture(null);
     }
   }
+  if (model.textures?.recolour) await recolour(doc, model.textures.recolour);
   const textures = model.textures?.maxSize
     ? [textureCompress({ encoder: sharp, targetFormat: 'png', resize: [model.textures.maxSize, model.textures.maxSize] })]
     : [];

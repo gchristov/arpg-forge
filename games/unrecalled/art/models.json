@@ -21,7 +21,13 @@
     "animations": {
       "zip": "https://opengameart.org/sites/default/files/universal_animation_librarystandard.zip",
       "sha256": "18ff1a7215f4852b320203e8aaf02a1578b5c8eef9027fbaedfcedc7b85a3ac2"
-    }
+    },
+    "nature": {
+      "zip": "https://opengameart.org/sites/default/files/stylized_nature_megakitstandard.zip",
+      "sha256": "298f6732b872e4cf7b30e6e7abf9641c7f6dc6b326df37ac089533ed7e3d58c9",
+      "textures": "glTF"
+    },
+    "spacebase": "https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Space-Base-Bits-1.0/6dfbcac9927d06283752c4defd4882cfe0d29666/addons/kaykit_space_base_bits"
   },
   "models": [
     {
@@ -335,6 +341,236 @@
       "textures": {
         "maxSize": 256,
         "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "foreman",
+      "pack": "characters",
+      "path": "Ultimate Animated Character Pack - Nov 2019/FBX/OldClassy_Male.fbx",
+      "animations": [
+        "Idle"
+      ]
+    },
+    {
+      "name": "trader",
+      "pack": "characters",
+      "path": "Ultimate Animated Character Pack - Nov 2019/FBX/Casual2_Female.fbx",
+      "animations": [
+        "Idle"
+      ]
+    },
+    {
+      "name": "tinker",
+      "pack": "characters",
+      "path": "Ultimate Animated Character Pack - Nov 2019/FBX/Casual3_Female.fbx",
+      "animations": [
+        "Idle"
+      ]
+    },
+    {
+      "name": "post",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Columns/Column_Astra.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "fire-barrel",
+      "pack": "essentials",
+      "path": "glTF/Prop_Barrel2_Open.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "dead-tree-1",
+      "pack": "nature",
+      "path": "FBX/DeadTree_1.fbx",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      },
+      "decimate": 0.2
+    },
+    {
+      "name": "dead-tree-2",
+      "pack": "nature",
+      "path": "FBX/DeadTree_2.fbx",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      },
+      "decimate": 0.2
+    },
+    {
+      "name": "dead-tree-3",
+      "pack": "nature",
+      "path": "FBX/DeadTree_4.fbx",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      },
+      "decimate": 0.2
+    },
+    {
+      "name": "rock-1",
+      "pack": "nature",
+      "path": "glTF/Rock_Medium_1.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "rock-2",
+      "pack": "nature",
+      "path": "glTF/Rock_Medium_2.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "rock-3",
+      "pack": "nature",
+      "path": "glTF/Rock_Medium_3.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "grass-tall",
+      "pack": "nature",
+      "path": "glTF/Grass_Wispy_Tall.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "grass-short",
+      "pack": "nature",
+      "path": "glTF/Grass_Wispy_Short.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "pebbles",
+      "pack": "nature",
+      "path": "glTF/Pebble_Round_2.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "workshop",
+      "pack": "spacebase",
+      "path": "Assets/gltf/basemodule_garage.gltf",
+      "textures": {
+        "maxSize": 256,
+        "recolour": {
+          "brightness": 0.62,
+          "saturation": 0.45,
+          "hue": -8
+        }
+      }
+    },
+    {
+      "name": "trading-post",
+      "pack": "spacebase",
+      "path": "Assets/gltf/cargodepot_A.gltf",
+      "textures": {
+        "maxSize": 256,
+        "recolour": {
+          "brightness": 0.62,
+          "saturation": 0.45,
+          "hue": -8
+        }
+      }
+    },
+    {
+      "name": "pumphouse",
+      "pack": "spacebase",
+      "path": "Assets/gltf/structure_low.gltf",
+      "textures": {
+        "maxSize": 256,
+        "recolour": {
+          "brightness": 0.62,
+          "saturation": 0.45,
+          "hue": -8
+        }
+      }
+    },
+    {
+      "name": "turbine",
+      "pack": "spacebase",
+      "path": "Assets/gltf/windturbine_tall.gltf",
+      "textures": {
+        "maxSize": 256,
+        "recolour": {
+          "brightness": 0.62,
+          "saturation": 0.45,
+          "hue": -8
+        }
+      }
+    },
+    {
+      "name": "containers-1",
+      "pack": "spacebase",
+      "path": "Assets/gltf/containers_A.gltf",
+      "textures": {
+        "maxSize": 256,
+        "recolour": {
+          "brightness": 0.62,
+          "saturation": 0.45,
+          "hue": -8
+        }
+      }
+    },
+    {
+      "name": "containers-2",
+      "pack": "spacebase",
+      "path": "Assets/gltf/containers_B.gltf",
+      "textures": {
+        "maxSize": 256,
+        "recolour": {
+          "brightness": 0.62,
+          "saturation": 0.45,
+          "hue": -8
+        }
+      }
+    },
+    {
+      "name": "containers-3",
+      "pack": "spacebase",
+      "path": "Assets/gltf/containers_C.gltf",
+      "textures": {
+        "maxSize": 256,
+        "recolour": {
+          "brightness": 0.62,
+          "saturation": 0.45,
+          "hue": -8
+        }
+      }
+    },
+    {
+      "name": "cargo",
+      "pack": "spacebase",
+      "path": "Assets/gltf/cargo_A_stacked.gltf",
+      "textures": {
+        "maxSize": 256,
+        "recolour": {
+          "brightness": 0.62,
+          "saturation": 0.45,
+          "hue": -8
+        }
       }
     }
   ]

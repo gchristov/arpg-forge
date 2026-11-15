@@ -77,6 +77,11 @@ export interface Mood {
   heroLightRadius: number;
   /** Soft light from above and below that keeps figures readable in the dark without lighting the ground much. */
   fill?: { sky: number; ground: number; intensity: number };
+  /**
+   * Blends the ground's tiles into each other and lays a grain of grit and cracks this strong (0 to 1) over it, for
+   * natural ground such as earth outdoors. Without it, each tile is one flat colour, which suits floors.
+   */
+  groundGrain?: number;
 }
 
 /**

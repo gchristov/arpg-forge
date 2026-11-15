@@ -29,4 +29,6 @@ export const HERO: HeroRules = {
   heal: { amount: 60, maxItems: 9 },
   attackAssistRange: 7,
   deathGoldLoss: 0.5,
+  // The Foundry is four floors deep; getting back up at the floor's entrance keeps a death from costing the walk down.
+  respawnAt: 'sameLevel',
 };

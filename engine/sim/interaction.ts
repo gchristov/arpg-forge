@@ -122,10 +122,27 @@ export function advanceQuest(state: GameState, trigger: QuestTrigger, events: Si
   const steps = state.rules.quest;
   for (let step = state.quest + 1; step < steps.length; step++) {
     const t = steps[step]!.reachedBy;
+    // Entering a place or killing something can skip ahead, but talking only moves on by one step, so someone met
+    // twice never skips what lies between.
+    if (t?.type === 'talk' && step > state.quest + 1) continue;
     if (t && sameTrigger(t, trigger)) {
       state.quest = step;
+      if (steps[step]!.calmsEverything) calmEverything(state);
       events.push({ type: 'QuestAdvanced', step });
       return;
+    }
+  }
+}
+
+function calmEverything(state: GameState): void {
+  for (const ls of Object.values(state.levels)) {
+    ls.alarmed = false;
+    for (const e of ls.enemies) {
+      if (e.dead || !state.rules.enemies[e.kind]?.calm) continue;
+      e.mode = 'idle';
+      e.path = null;
+      e.windUp = -1;
+      e.scan = -1;
     }
   }
 }

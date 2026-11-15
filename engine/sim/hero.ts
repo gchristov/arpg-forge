@@ -195,7 +195,7 @@ function respawn(state: GameState, events: SimEvent[]): void {
   hero.resource = hero.maxResource;
   const goldLost = Math.floor(hero.gold * state.rules.hero.deathGoldLoss);
   hero.gold -= goldLost;
-  state.levelId = state.startLevelId;
+  if (state.rules.hero.respawnAt !== 'sameLevel') state.levelId = state.startLevelId;
   const start = currentLevel(state).level.start;
   placeAt(hero, start.x, start.y);
   hero.path = null;
