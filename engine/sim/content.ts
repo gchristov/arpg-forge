@@ -111,10 +111,6 @@ export interface EnemyType {
   drops: { gold: Range; healingChance: number; extraHealingItems?: number };
 }
 
-/**
- * A projectile cast at the target, or the nearest visible enemy, that explodes on hitting an enemy or a wall or at
- * the end of its flight, hurting every enemy within `radius`.
- */
 /** What a skill's burst does to every enemy within `radius` of where it goes off. */
 export interface BurstDamage {
   radius: number;
@@ -125,7 +121,10 @@ export interface BurstDamage {
   critMultiplier: number;
 }
 
-/** A projectile that flies at the target, or ahead, and bursts where it hits. */
+/**
+ * A projectile cast at the target, or the nearest visible enemy, that bursts on hitting an enemy or a wall or at the
+ * end of its flight.
+ */
 export interface ProjectileSkill extends BurstDamage {
   type: 'projectile';
   /** Names the skill for the game's sounds, look and HUD. */
