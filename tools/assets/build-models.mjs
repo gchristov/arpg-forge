@@ -1,8 +1,8 @@
 // Builds a game's 3D models from asset packs: downloads each source model from a pinned commit, keeps only the
 // parts and animations the game uses, compresses it, and writes a .glb next to the manifest.
 //
-// Usage: ./tools/node/run.sh node tools/assets/build-models.mjs <manifest.json>
-// e.g.   ./tools/node/run.sh node tools/assets/build-models.mjs games/ashen-hollow/art/models.json
+// Usage: ./tools/assets/build-models.sh <manifest.json>, which runs this in the Node image after converting any FBX
+// models with the Blender image. `--list-fbx` only fetches the packs and prints each FBX model's local path.
 //
 // A pack is either a folder URL at a pinned commit, or `{ "zip": url, "sha256": hash }` for packs only published as
 // zip files; a zip whose checksum doesn't match is refused. A zip pack's `textures` names the folder inside it that
@@ -21,6 +21,7 @@ import { MeshoptEncoder } from 'meshoptimizer';
 import sharp from 'sharp';
 
 const manifestPath = process.argv[2];
+const listFbx = process.argv.includes('--list-fbx');
 if (!manifestPath) {
   console.error('❌ Usage: node tools/assets/build-models.mjs <manifest.json>');
   process.exit(1);
@@ -113,7 +114,15 @@ const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies(
 for (const model of manifest.models) {
   const pack = manifest.packs[model.pack];
   if (!pack) throw new Error(`unknown pack ${model.pack} for ${model.name}`);
-  const local = await fetchModel(pack, model.pack, model.path);
+  const fetched = await fetchModel(pack, model.pack, model.path);
+  // FBX models are read from the glTF that tools/blender converts them to, beside the original.
+  const isFbx = model.path.toLowerCase().endsWith('.fbx');
+  if (listFbx) {
+    if (isFbx) console.log(`FBX ${fetched}`);
+    continue;
+  }
+  const local = isFbx ? `${fetched}.glb` : fetched;
+  if (!(await exists(local))) throw new Error(`${model.name}: ${local} is missing; build with tools/assets/build-models.sh`);
   const doc = await io.read(local);
   const root = doc.getRoot();
 

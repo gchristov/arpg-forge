@@ -4,6 +4,7 @@ import { Game } from '../../engine/game/game';
 import { PX } from '../../engine/game/world-view';
 import type { Command, GameState, SimEvent } from '../../engine/sim/state';
 import { MODEL_URLS, unrecalledLook } from './art/look';
+import { ENEMIES } from './content/enemies';
 import { unrecalledContent } from './content/world';
 
 const game = new Game({
@@ -49,6 +50,12 @@ function react(events: SimEvent[]): void {
 
 function update(state: GameState): void {
   const { hero } = state;
+  const boss = state.levels[state.levelId]!.enemies.find((e) => ENEMIES[e.kind]?.boss && !e.dead && e.mode === 'chase');
+  $('bossbar').hidden = !boss;
+  if (boss) {
+    $('bossName').textContent = ENEMIES[boss.kind]!.name;
+    $('bossFill').style.transform = `scaleX(${boss.hp / boss.maxHp})`;
+  }
   $('hpFill').style.transform = `scaleX(${hero.hp / hero.maxHp})`;
   $('hpTxt').textContent = `${Math.ceil(hero.hp)} / ${hero.maxHp}`;
   $('chargeFill').style.transform = `scaleX(${hero.resource / hero.maxResource})`;

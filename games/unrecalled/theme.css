@@ -21,6 +21,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .buttons{display:flex;gap:8px;pointer-events:auto}
 .buttons button{font:600 14px/1 var(--body);color:var(--ink);background:var(--panel);border:1px solid #3a4a58;border-radius:6px;padding:14px 16px;min-width:76px}
 #bBolt{border-color:var(--signal)}
+#bossbar{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 20px);width:min(320px,calc(100% - 32px));text-align:center;pointer-events:none}
+#bossbar .n{font:700 13px/1 var(--body);color:var(--warn);letter-spacing:.16em;text-transform:uppercase;text-shadow:0 1px 4px #000;margin-bottom:6px}
+#bossbar .bar{height:8px;border:1px solid #5a3018;background:#140c08;border-radius:4px;overflow:hidden}
+#bossbar .bar i{display:block;height:100%;width:100%;transform-origin:left;background:linear-gradient(#ffb070,#a04a1a);transition:transform .2s}
 #title{position:fixed;inset:0;display:grid;place-items:center;text-align:center;padding:24px 16px;background:radial-gradient(ellipse at 50% 40%,rgba(20,40,52,.55),rgba(4,6,8,.95) 70%)}
 #title h1{margin:0;font:800 clamp(36px,11vw,60px)/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--signal);text-shadow:0 0 28px rgba(106,216,255,.35)}
 #title .sub{font:500 16px/1.4 var(--body);color:var(--muted);margin:12px 0 28px}

@@ -2,7 +2,7 @@ import { hash2, valueNoise } from '../../../engine/core/math';
 import type { ActorLook, Look, Mood, PropLook } from '../../../engine/render/look';
 import { Ground, Prop } from '../content/tiles';
 
-/** Unrecalled's look: KayKit people and Quaternius machines, cold workshop light against furnace glow. */
+/** Unrecalled's look: Quaternius people and machines, cold workshop light against furnace glow. */
 
 const FOUNDRY: Mood = {
   background: 0x050505, ambient: 0x343538, ambientIntensity: 0.5, heroLightRadius: 4.6,
@@ -43,10 +43,10 @@ const robot = (
 
 const ACTORS: Record<string, ActorLook> = {
   hero: {
-    colour: 0x9a8a70, height: 1.15, radius: 0.24,
+    colour: 0x9a8a70, height: 1.2, radius: 0.24,
     model: {
-      name: 'hero', tint: 0x9a9488,
-      animations: { idle: 'Idle', move: 'Running_A', attack: '1H_Melee_Attack_Chop', cast: 'Spellcast_Shoot', hit: 'Hit_A', death: 'Death_A' },
+      name: 'hero',
+      animations: { idle: 'Idle', move: 'Walk', attack: 'Punch', cast: 'Shoot_OneHanded', hit: 'RecieveHit', death: 'Defeat' },
     },
   },
   crawler: {
