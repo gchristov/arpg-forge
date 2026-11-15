@@ -3,7 +3,7 @@ import { Banner } from '../../../engine/ui/banner';
 import { bindCommand } from '../../../engine/ui/command-button';
 import { ShownValues } from '../../../engine/ui/shown-values';
 import { ENEMIES } from '../content/enemies';
-import { QUEST_TEXT, stillRunning } from '../content/story';
+import { QUEST, stillRunning } from '../content/story';
 
 /** The arc bolt's skill slot. */
 const ARC_BOLT = 0;
@@ -41,7 +41,7 @@ export class Hud {
       $('bPatch').classList.toggle('off', v <= 0);
     });
     shown.set('boltOff', hero.resource < bolt.cost, (v) => $('bBolt').classList.toggle('off', v));
-    shown.set('quest', QUEST_TEXT[state.quest] ?? '', (v) => ($('quest').textContent = v));
+    shown.set('quest', QUEST[state.quest]?.text ?? '', (v) => ($('quest').textContent = v));
     const ls = currentLevel(state);
     shown.set('location', ls.level.name, (v) => ($('loc').textContent = v));
     const running = ls.level.portals.some((p) => p.sealed) ? ls.enemies.filter((e) => !e.dead).length : 0;

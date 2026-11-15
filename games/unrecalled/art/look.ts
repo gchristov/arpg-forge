@@ -9,8 +9,16 @@ const foundry = (ambient: number, sky: number): Mood => ({
   fill: { sky, ground: 0x201810, intensity: 0.55 },
 });
 
-/** Each floor's own walls, floor plates and air, so the player always knows where they are. */
-const FLOOR_STYLES: Record<string, { panel: string; plate: string; mood: Mood }> = {
+/** Night over the camp: a cold moon behind the pylon, so the town has shadows the Foundry doesn't. */
+const NIGHT: Mood = {
+  background: 0x06080c, ambient: 0x2a3038, ambientIntensity: 0.55, heroLightRadius: 4.6,
+  moon: { colour: 0x9ab0d0, intensity: 0.55 },
+  fill: { sky: 0xb8c8e0, ground: 0x181410, intensity: 0.45 },
+};
+
+/** Each level's own walls, floor plates and air, so the player always knows where they are. */
+const FLOOR_STYLES: Record<string, { panel: string; plate: string | null; mood: Mood }> = {
+  rustbelt: { panel: 'wall', plate: null, mood: NIGHT },
   intake: { panel: 'wall', plate: 'floor-plates', mood: foundry(0x343a40, 0xd8e4f0) },
   sorting: { panel: 'wall-astra', plate: 'floor-metal', mood: foundry(0x3a3428, 0xf0e0c0) },
   gallery: { panel: 'wall-window', plate: 'floor-dark', mood: foundry(0x3a2a2c, 0xf0c8c8) },
@@ -39,6 +47,14 @@ const PROPS: Partial<Record<number, PropLook>> = {
   // A rack a delivery unit stands in while it charges; this one's empty.
   [Prop.Cradle]: { shape: 'box', width: 0.9, height: 2.2, colour: 0x3a3e46, model: tall('cradle', 2.3) },
   [Prop.Cache]: { shape: 'box', width: 0.7, height: 0.5, colour: 0x5a5030, emissive: 0x1a1400, model: tall('cache', 0.6) },
+  // A railing section fitted to one tile, along the map's columns.
+  [Prop.Rail]: { shape: 'box', width: 0.15, height: 0.7, colour: 0x4a4e56, model: { names: ['rail'], fit: { type: 'box', width: 0.15, height: 0.7, depth: 1 } } },
+  // The dead power pylon the camp grew up under.
+  [Prop.Pylon]: { shape: 'cylinder', width: 1, height: 5, colour: 0x3a3e46, model: tall('pylon', 5) },
+  [Prop.FireBarrel]: { shape: 'cylinder', width: 0.6, height: 0.8, colour: 0x5a3020, emissive: 0x5a2008, model: tall('fire-barrel', 0.8) },
+  // Big crates of salvage the camp is sorting.
+  [Prop.BigCrate]: { shape: 'box', width: 0.9, height: 0.8, colour: 0x4a5a3a, model: tall('big-crate', 0.9, 'random') },
+  [Prop.Post]: { shape: 'cylinder', width: 0.3, height: 1.2, colour: 0x5a5048, model: tall('post', 1.2) },
   [Prop.Computer]: { shape: 'box', width: 0.6, height: 0.9, colour: 0x2a3a4a, emissive: 0x0a4050, model: tall('computer', 0.95) },
 };
 
@@ -76,6 +92,9 @@ const ACTORS: Record<string, ActorLook> = {
     scanner: { eyeHeight: 1.15 },
     light: { colour: 0xff8a40, radius: 0.9, intensity: 0.2 },
   },
+  foreman: { colour: 0x8a7a60, height: 1.25, radius: 0.26, model: { name: 'foreman', animations: { idle: 'Idle' } } },
+  trader: { colour: 0x7a6a8a, height: 1.15, radius: 0.24, model: { name: 'trader', animations: { idle: 'Idle' } } },
+  tinker: { colour: 0x6a7a8a, height: 1.15, radius: 0.24, model: { name: 'tinker', animations: { idle: 'Idle' } } },
   orderEngine: {
     ...robot('order-engine', 2.1, { idle: 'Idle', move: 'Walk', attack: 'Punch', cast: 'Jump', hit: 'HitRecieve_1', death: 'Death' }, 2.0),
     scanner: { eyeHeight: 1.8 },
@@ -103,6 +122,15 @@ export const unrecalledLook: Look = {
     const n = valueNoise(tx * 0.25, ty * 0.25);
     const h = hash2(tx, ty, 9);
     const checker = (tx + ty) % 2 === 0 ? 0.03 : 0;
+    if (kind === Ground.Water) {
+      const ripple = valueNoise(tx * 0.5 + 3, ty * 0.5) * 0.04;
+      return ((Math.round(255 * (0.05 + ripple))) << 16) | (Math.round(255 * (0.1 + ripple)) << 8) | Math.round(255 * (0.16 + ripple));
+    }
+    if (kind === Ground.Dirt || kind === Ground.Mud) {
+      // Packed earth and cinders, darker and wetter towards the river.
+      const l = (kind === Ground.Mud ? 0.11 : 0.16) + n * 0.06 + h * 0.025;
+      return (Math.round(255 * l * 1.1) << 16) | (Math.round(255 * l) << 8) | Math.round(255 * l * 0.85);
+    }
     if (kind === Ground.Belt) {
       // Slats across the belt, with a worn amber edge every few tiles.
       const v = Math.round(255 * (tx % 2 === 0 ? 0.09 : 0.12));

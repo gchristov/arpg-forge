@@ -3,6 +3,9 @@ export const Ground = {
   Plate: 1,
   Grime: 2,
   Belt: 3,
+  Dirt: 4,
+  Mud: 5,
+  Water: 6,
 } as const;
 
 export const Prop = {
@@ -22,4 +25,9 @@ export const Prop = {
   Cradle: 14,
   Cache: 15,
   WallAlarm: 16,
+  Rail: 17,
+  Pylon: 18,
+  FireBarrel: 19,
+  BigCrate: 20,
+  Post: 21,
 } as const;

@@ -336,6 +336,75 @@
         "maxSize": 256,
         "dropDetailMaps": true
       }
+    },
+    {
+      "name": "foreman",
+      "pack": "characters",
+      "path": "Ultimate Animated Character Pack - Nov 2019/FBX/OldClassy_Male.fbx",
+      "animations": [
+        "Idle"
+      ]
+    },
+    {
+      "name": "trader",
+      "pack": "characters",
+      "path": "Ultimate Animated Character Pack - Nov 2019/FBX/Casual2_Female.fbx",
+      "animations": [
+        "Idle"
+      ]
+    },
+    {
+      "name": "tinker",
+      "pack": "characters",
+      "path": "Ultimate Animated Character Pack - Nov 2019/FBX/Casual3_Female.fbx",
+      "animations": [
+        "Idle"
+      ]
+    },
+    {
+      "name": "pylon",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Columns/Column_Large_Straight.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "post",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Columns/Column_Astra.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "rail",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Props/Prop_Rail_2.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "big-crate",
+      "pack": "essentials",
+      "path": "glTF/Prop_Crate_Large.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "fire-barrel",
+      "pack": "essentials",
+      "path": "glTF/Prop_Barrel2_Open.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
     }
   ]
 }

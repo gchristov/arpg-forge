@@ -131,4 +131,36 @@ describe('quest', () => {
     expect(state.quest).toBe(3);
     expect(ofType(events, 'QuestAdvanced').map((e) => e.step)).toEqual([2, 3]);
   });
+
+  it('moves on by only one step for talking, so someone met twice never skips what lies between', () => {
+    const state = arena(OPEN_ROOM, { x: 2.5, y: 2.5 });
+    state.rules.quest = [
+      {},
+      { reachedBy: { type: 'talk', npcKind: 'elder' } },
+      { reachedBy: { type: 'kill', enemyKind: 'lord' } },
+      { reachedBy: { type: 'talk', npcKind: 'elder' } },
+    ];
+    const events: SimEvent[] = [];
+    advanceQuest(state, { type: 'talk', npcKind: 'elder' }, events);
+    advanceQuest(state, { type: 'talk', npcKind: 'elder' }, events);
+    expect(state.quest).toBe(1);
+    advanceQuest(state, { type: 'kill', enemyKind: 'lord' }, events);
+    advanceQuest(state, { type: 'talk', npcKind: 'elder' }, events);
+    expect(state.quest).toBe(3);
+  });
+});
+
+describe('quest steps that calm everything', () => {
+  it('end every alarm and send calm enemies back to work', () => {
+    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'worker', x: 6.5, y: 5.5 }, { kind: 'worker', x: 9.5, y: 5.5 }]);
+    state.rules.quest = [{}, { reachedBy: { type: 'kill', enemyKind: 'worker' }, calmsEverything: true }];
+    const [first, second] = currentLevel(state).enemies;
+    first!.hp = 1;
+    run(state, 1, [{ type: 'attack', enemyId: first!.id }]);
+    expect(state.quest).toBe(1);
+    expect(currentLevel(state).alarmed).toBe(false);
+    expect(second!.mode).toBe('idle');
+    const events = run(state, 3);
+    expect(ofType(events, 'HeroHurt')).toHaveLength(0);
+  });
 });

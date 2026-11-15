@@ -71,6 +71,8 @@ export type QuestTrigger =
  */
 export interface QuestStep {
   reachedBy?: QuestTrigger;
+  /** Reaching this step ends every level's alarm, and calm enemies everywhere go back to their work. */
+  calmsEverything?: boolean;
 }
 
 export type Range = [min: number, max: number];
@@ -167,6 +169,11 @@ export interface HeroRules {
   attackAssistRange: number;
   /** Share of gold lost on death. */
   deathGoldLoss: number;
+  /**
+   * Where the hero gets back up: at the start level (the default), or at the start of the level they fell in, for
+   * games whose levels are a long way from the start.
+   */
+  respawnAt?: 'startLevel' | 'sameLevel';
 }
 
 /** What a game hands the rules: its levels, where play starts, and the numbers the rules need. */
