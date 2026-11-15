@@ -15,6 +15,9 @@ const PACE_RANGE: [number, number] = [0.4, 5];
 
 type FlashableMaterial = THREE.Material & { emissive?: THREE.Color };
 
+/** Each look's measured walking pace. Measuring plays the clip through, too slow to repeat for every spawn. */
+const PACES = new WeakMap<ActorLook, number | null>();
+
 /**
  * How one actor is drawn: an animated model from the library, or a simple capsule when there's none. It blends
  * between idle, moving and dying, plays one-off moments such as an attack, and lights up when hit.
@@ -80,7 +83,10 @@ export class ActorFigure {
       if (o instanceof THREE.Bone) o.quaternion._onChange(() => {});
     });
     const moveClip = template.animations.find((c) => c.name === look.model!.animations.move);
-    this.movePace = moveClip && look.model.matchPace ? walkPace(model, moveClip) : null;
+    if (moveClip && look.model.matchPace) {
+      if (!PACES.has(look)) PACES.set(look, walkPace(model, moveClip));
+      this.movePace = PACES.get(look)!;
+    }
     this.mixer = new THREE.AnimationMixer(model);
     for (const clip of template.animations) this.actions.set(clip.name, this.mixer.clipAction(clip));
     this.mixer.addEventListener('finished', (e) => {

@@ -531,16 +531,16 @@ export class SceneRenderer {
 
 }
 
-/**
- * Sizes a wall panel lying along z to `span` tiles long, keeping its proportions unless `height` stretches it. Its
- * back sits on the origin, so placed on the wall's edge it stands just inside the wall tile, facing the floor.
- */
-/** How much a wall panel is scaled to span `span` tiles. */
+/** How much a wall panel lying along z is scaled to span `span` tiles. */
 function panelScale(template: ModelTemplate, span: number): number {
   const size = new THREE.Box3().setFromObject(template.scene).getSize(new THREE.Vector3());
   return span / Math.max(size.z, 1e-3);
 }
 
+/**
+ * Sizes a wall panel lying along z to `span` tiles long, keeping its proportions unless `height` stretches it. Its
+ * back sits on the origin, so placed on the wall's edge it stands just inside the wall tile, facing the floor.
+ */
 function panelFit(template: ModelTemplate, span: number, height?: number): THREE.Matrix4 {
   const size = new THREE.Box3().setFromObject(template.scene).getSize(new THREE.Vector3());
   const k = panelScale(template, span);
