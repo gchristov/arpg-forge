@@ -82,7 +82,7 @@ export interface WallLook {
   panel: string;
   /** Tiles one panel spans; it's scaled evenly to that length, and runs of wall are split into pieces this long. */
   span: number;
-  /** The low piece along walls facing the camera, stretched to `height` tiles tall. */
+  /** The low piece along walls between the floor and the camera, facing the camera, stretched to `height` tiles tall. */
   front?: { name: string; height: number };
 }
 

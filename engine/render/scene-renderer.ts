@@ -137,9 +137,9 @@ export class SceneRenderer {
     }
 
     this.warmUpPending = true;
-    this.levelGroup.add(this.buildGround(level));
-    for (const mesh of this.buildFloors(level)) this.levelGroup.add(mesh);
     const walls = this.buildWalls(level);
+    this.levelGroup.add(this.buildGround(level, walls?.kinds));
+    for (const mesh of this.buildFloors(level)) this.levelGroup.add(mesh);
     for (const mesh of walls?.meshes ?? []) this.levelGroup.add(mesh);
     for (const mesh of this.buildProps(level, walls?.kinds)) this.levelGroup.add(mesh);
     this.structures = this.buildStructures(level);
@@ -335,7 +335,8 @@ export class SceneRenderer {
     }
   }
 
-  private buildGround(level: Level): THREE.InstancedMesh {
+  /** Ground tiles, except under walls drawn as panels, where the room ends at the panel. */
+  private buildGround(level: Level, walls: ReadonlySet<number> = new Set()): THREE.InstancedMesh {
     const { map } = level;
     const tile = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
     const mesh = new THREE.InstancedMesh(tile, new THREE.MeshLambertMaterial(), map.width * map.height);
@@ -345,7 +346,7 @@ export class SceneRenderer {
     for (let ty = 0; ty < map.height; ty++) {
       for (let tx = 0; tx < map.width; tx++) {
         const kind = map.ground[ty * map.width + tx]!;
-        if (!kind) continue;
+        if (!kind || walls.has(map.prop[ty * map.width + tx]!)) continue;
         matrix.makeTranslation(tx + 0.5, 0, ty + 0.5);
         mesh.setMatrixAt(n, matrix);
         mesh.setColorAt(n, colour.set(this.look.groundColour(kind, tx, ty, level.id)));
@@ -371,9 +372,11 @@ export class SceneRenderer {
     const fronts: THREE.Matrix4[] = [];
     for (const p of wallPanels(level.map, isWallTile(level.map, kinds), look.span)) {
       if (p.front && !front) continue;
+      // Front pieces are seen from outside the room, so they face the camera rather than the floor.
+      const facing = p.front ? { x: -p.facing.x, y: -p.facing.y } : p.facing;
       const placement = new THREE.Matrix4()
         .makeTranslation(p.x, 0, p.y)
-        .multiply(new THREE.Matrix4().makeRotationY(Math.atan2(-p.facing.y, p.facing.x)))
+        .multiply(new THREE.Matrix4().makeRotationY(Math.atan2(-facing.y, facing.x)))
         .multiply(new THREE.Matrix4().makeScale(1, 1, p.length / look.span));
       (p.front ? fronts : backs).push(placement);
     }
