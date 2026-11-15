@@ -3,6 +3,11 @@ import * as THREE from 'three';
 /** How far out from the hero's feet the arrow lies, and how long it is, in tiles. */
 const REACH = 1.1;
 const LENGTH = 0.6;
+/**
+ * How much further out it lies when pointing straight up the screen (away from the camera, towards -x and -y). From
+ * the camera's height, ground behind the hero is covered by their body, so the arrow moves out past their head.
+ */
+const REACH_BEHIND = 1.1;
 /** Drawn after the level, so floor models laid over the ground don't hide it. */
 const DRAW_ORDER = 5;
 /** The arrow breathes between these opacities, this many times a second. */
@@ -48,7 +53,9 @@ export class GoalArrow {
     }
     const dx = Math.cos(this.heading);
     const dy = Math.sin(this.heading);
-    this.mesh.position.set(x + dx * REACH, 0.04, y + dy * REACH);
+    const behind = Math.max(0, -(dx + dy) / Math.SQRT2);
+    const reach = REACH + behind * REACH_BEHIND;
+    this.mesh.position.set(x + dx * reach, 0.04, y + dy * reach);
     this.mesh.rotation.y = -this.heading;
     const pulse = 0.5 + 0.5 * Math.sin(seconds * PULSES_PER_SECOND * Math.PI * 2);
     this.mesh.material.opacity = OPACITY[0] + (OPACITY[1] - OPACITY[0]) * pulse;
