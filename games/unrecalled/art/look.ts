@@ -59,7 +59,7 @@ const ACTORS: Record<string, ActorLook> = {
     hover: 0.8,
     light: { colour: 0xff8a40, radius: 0.9, intensity: 0.2 },
   },
-  orderEngine: robot('loader', 2.0, { idle: 'Idle', move: 'Walk', attack: 'Attack', cast: 'Attack', hit: 'Hit', death: 'TurnOff' }, 2.0, 0xffb070),
+  orderEngine: robot('order-engine', 2.1, { idle: 'Idle', move: 'Walk', attack: 'Punch', cast: 'Jump', hit: 'HitRecieve_1', death: 'Death' }, 2.0, 0xff9a50),
 };
 
 /** URLs of the built models, by name, for the model library to load. */

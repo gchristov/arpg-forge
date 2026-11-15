@@ -142,53 +142,14 @@
       }
     },
     {
-      "name": "mech-george",
-      "pack": "mechs",
-      "path": "Animated Mech Pack - March 2021/FBX/George.fbx",
-      "animations": [
-        "Idle",
-        "Walk",
-        "Punch",
-        "Shoot",
-        "HitRecieve_1",
-        "Death"
-      ]
-    },
-    {
-      "name": "mech-leela",
-      "pack": "mechs",
-      "path": "Animated Mech Pack - March 2021/FBX/Leela.fbx",
-      "animations": [
-        "Idle",
-        "Walk",
-        "Punch",
-        "Shoot",
-        "HitRecieve_1",
-        "Death"
-      ]
-    },
-    {
-      "name": "mech-mike",
+      "name": "order-engine",
       "pack": "mechs",
       "path": "Animated Mech Pack - March 2021/FBX/Mike.fbx",
       "animations": [
         "Idle",
         "Walk",
         "Punch",
-        "Shoot",
-        "HitRecieve_1",
-        "Death"
-      ]
-    },
-    {
-      "name": "mech-stan",
-      "pack": "mechs",
-      "path": "Animated Mech Pack - March 2021/FBX/Stan.fbx",
-      "animations": [
-        "Idle",
-        "Walk",
-        "Punch",
-        "Shoot",
+        "Jump",
         "HitRecieve_1",
         "Death"
       ]
