@@ -68,6 +68,8 @@ export interface ActorAnimations {
 }
 
 export interface ActorLook {
+  /** Drawn as a faint outline of this colour wherever something nearer hides it, so the player never loses it. */
+  seenThrough?: number;
   /** Colour and size of the simple shape drawn when there's no model, or while it loads. */
   colour: number;
   height: number;

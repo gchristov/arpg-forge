@@ -176,3 +176,46 @@ describe('ActorFigure walking pace', () => {
     expect((f as unknown as { actions: Map<string, THREE.AnimationAction> }).actions.get('Run')!.timeScale).toBe(1);
   });
 });
+
+describe('ActorFigure seen through', () => {
+  /** A figure of one box, so there's a mesh to outline. */
+  function boxFigure(seenThrough?: number): ActorFigure {
+    const scene = new THREE.Group();
+    scene.add(new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshLambertMaterial()));
+    const template: ModelTemplate = { scene, animations: [new THREE.AnimationClip('Idle', 1, [])], height: 1 };
+    const library = { get: () => template, instantiate: () => scene.clone() } as unknown as ModelLibrary;
+    const look: ActorLook = {
+      colour: 0, height: 1, radius: 0.3, model: { name: 'm', animations: { idle: 'Idle' } },
+      ...(seenThrough === undefined ? {} : { seenThrough }),
+    };
+    return new ActorFigure(look, library);
+  }
+  const meshesOf = (f: ActorFigure) => {
+    const meshes: THREE.Mesh[] = [];
+    f.root.traverse((o) => o instanceof THREE.Mesh && meshes.push(o));
+    return meshes;
+  };
+
+  it('gives an outlined actor a twin drawn only behind what hides it, where the actor itself marked nothing', () => {
+    const f = boxFigure(0x88ccff);
+    const [body, twin] = meshesOf(f);
+    expect(body!.geometry).toBe(twin!.geometry);
+    const outline = twin!.material as THREE.MeshBasicMaterial;
+    expect(outline.depthFunc).toBe(THREE.GreaterDepth);
+    expect(outline.stencilFunc).toBe(THREE.NotEqualStencilFunc);
+    expect((body!.material as THREE.Material).stencilZPass).toBe(THREE.ReplaceStencilOp);
+    expect(twin!.renderOrder).toBeGreaterThan(body!.renderOrder);
+  });
+
+  it('fades the outline out with the actor', () => {
+    const f = boxFigure(0x88ccff);
+    const outline = meshesOf(f)[1]!.material as THREE.MeshBasicMaterial;
+    const shown = outline.opacity;
+    f.setLookOf(0, 0.5);
+    expect(outline.opacity).toBeCloseTo(shown / 2);
+  });
+
+  it('leaves actors without an outline as they are', () => {
+    expect(meshesOf(boxFigure())).toHaveLength(1);
+  });
+});

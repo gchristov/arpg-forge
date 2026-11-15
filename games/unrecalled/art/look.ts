@@ -125,7 +125,7 @@ const robot = (
 
 const ACTORS: Record<string, ActorLook> = {
   hero: {
-    colour: 0x9a8a70, height: 1.2, radius: 0.24,
+    colour: 0x9a8a70, height: 1.2, radius: 0.24, seenThrough: 0x8ae8ff,
     model: {
       name: 'hero',
       animations: { idle: 'Idle', move: 'Run', attack: 'Punch', cast: 'Shoot_OneHanded', hit: 'RecieveHit', death: 'Death' },
