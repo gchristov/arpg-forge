@@ -66,6 +66,22 @@ describe('tapCommand', () => {
     expect(tapTile(state, 17.2, 9.8)).toEqual({ type: 'walkInto', tx: 17, ty: 9 });
   });
 
+  it('enters a building tapped on the ground just in front of it, as by its door', () => {
+    const state = room();
+    currentLevel(state).level.structures.push({ kind: 'shed', name: 'Shed', x: 20, y: 2, width: 3, depth: 2, door: { tx: 21, ty: 3 } });
+    expect(tapTile(state, 21.5, 4.6)).toEqual({ type: 'enterStructure', index: 0 });
+    expect(tapTile(state, 21.5, 5.2)).toEqual({ type: 'walk', x: 21.5, y: 5.2 });
+  });
+
+  it('opens a chest or walks into a portal tapped beside its tile, not only on it', () => {
+    const state = room();
+    currentLevel(state).containers.push({ tx: 15, ty: 3, gold: 10, healingItems: 0, opened: false });
+    currentLevel(state).level.portals.push({ tx: 17, ty: 9, to: 'home', stepOut: { x: 0, y: -1 } });
+    expect(tapTile(state, 15.5, 4.2)).toEqual({ type: 'open', index: 0 });
+    expect(tapTile(state, 17.3, 10.2)).toEqual({ type: 'walkInto', tx: 17, ty: 9 });
+    expect(tapTile(state, 15.5, 5)).toEqual({ type: 'walk', x: 15.5, y: 5 });
+  });
+
   it('walks to any other ground tapped', () => {
     expect(tapTile(room(), 3.25, 14.5)).toEqual({ type: 'walk', x: 3.25, y: 14.5 });
   });

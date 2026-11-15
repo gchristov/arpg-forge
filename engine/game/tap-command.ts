@@ -3,8 +3,14 @@ import type { SceneRenderer } from '../render/scene-renderer';
 import { currentLevel, type Command, type GameState } from '../sim/state';
 import { PX } from './world-view';
 
-/** Taps within this many pixels (at zoom 1) of an actor's body pick it. */
-const TAP_REACH_PX = 34;
+/** Taps within this many pixels (at zoom 1) of an actor's body pick it: about a fingertip on a phone. */
+const TAP_REACH_PX = 44;
+/**
+ * Taps on the ground this close to a building, in tiles, enter it, so a tap by its door or just past its roof counts.
+ * Doors and chests count from this far from their tile's middle, so a tap needn't land on the tile itself.
+ */
+const BUILDING_REACH = 0.8;
+const THING_REACH = 0.9;
 /** Where on an actor's body a tap aims, in screen pixels above its feet at zoom 1. */
 const BODY_PX = 18;
 
@@ -46,10 +52,36 @@ export function tapCommand(
   const picked = renderer.pick(x, y);
   if (!picked) return null;
   if ('structure' in picked) return { type: 'enterStructure', index: picked.structure };
-  const tx = Math.floor(picked.ground.x);
-  const ty = Math.floor(picked.ground.y);
-  const chest = ls.containers.findIndex((c) => c.tx === tx && c.ty === ty && !c.opened);
+  const { ground } = picked;
+  const building = nearest(ls.level.structures, (s) => distanceToArea(ground, s.x, s.y, s.width, s.depth), BUILDING_REACH);
+  if (building >= 0) return { type: 'enterStructure', index: building };
+  const chest = nearest(ls.containers, (c) => (c.opened ? Infinity : distanceToTile(ground, c.tx, c.ty)), THING_REACH);
   if (chest >= 0) return { type: 'open', index: chest };
-  if (ls.level.portals.some((p) => p.tx === tx && p.ty === ty)) return { type: 'walkInto', tx, ty };
-  return { type: 'walk', x: picked.ground.x, y: picked.ground.y };
+  const door = nearest(ls.level.portals, (p) => distanceToTile(ground, p.tx, p.ty), THING_REACH);
+  if (door >= 0) return { type: 'walkInto', tx: ls.level.portals[door]!.tx, ty: ls.level.portals[door]!.ty };
+  return { type: 'walk', x: ground.x, y: ground.y };
+}
+
+/** The index of the item nearest by `distance`, if it's within `reach`, or -1. */
+function nearest<T>(items: readonly T[], distance: (item: T) => number, reach: number): number {
+  let best = -1;
+  let bestDistance = reach;
+  for (const [index, item] of items.entries()) {
+    const d = distance(item);
+    if (d < bestDistance) {
+      best = index;
+      bestDistance = d;
+    }
+  }
+  return best;
+}
+
+function distanceToTile(p: Vec2, tx: number, ty: number): number {
+  return Math.hypot(p.x - (tx + 0.5), p.y - (ty + 0.5));
+}
+
+function distanceToArea(p: Vec2, x: number, y: number, width: number, depth: number): number {
+  const dx = Math.max(x - p.x, 0, p.x - (x + width));
+  const dy = Math.max(y - p.y, 0, p.y - (y + depth));
+  return Math.hypot(dx, dy);
 }
