@@ -4410,7 +4410,7 @@ ${Rp}
 void main() {
   vec2 p = world * scale + drift * time;
   float gather = fbm(p + fbm(p * 0.7 - drift * time * 0.5) * 1.6);
-  float amount = smoothstep(0.35, 0.8, gather) * density;
+  float amount = smoothstep(0.28, 0.62, gather) * density;
   vec2 uv = vec2((world.x - lightMapBounds.x) * lightMapBounds.z, 1.0 - (world.y - lightMapBounds.y) * lightMapBounds.w);
   vec3 lit = colour + texture2D(lightMap, clamp(uv, 0.0, 1.0)).rgb * 0.9;
   gl_FragColor = vec4(lit, amount);
