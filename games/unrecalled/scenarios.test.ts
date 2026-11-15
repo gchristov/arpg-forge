@@ -101,6 +101,18 @@ describe('Unrecalled scenarios', () => {
     expect(currentLevel(state).enemies.filter((e) => e.mode === 'chase').length).toBeGreaterThan(1);
   });
 
+  it('sets off an EMP among a pack of crawlers, hitting them all and alarming the floor', () => {
+    const state = inIntake();
+    const pack = currentLevel(state).enemies.filter((e) => e.kind === 'crawler').slice(0, 3);
+    const middle = { x: pack.reduce((s, e) => s + e.x, 0) / 3, y: pack.reduce((s, e) => s + e.y, 0) / 3 };
+    state.hero.x = state.hero.prevX = middle.x;
+    state.hero.y = state.hero.prevY = middle.y + 0.6;
+    const events = play(state, 1 / 60, [{ type: 'useSkill', slot: 1 }]);
+    const hit = new Set(events.flatMap((e) => (e.type === 'EnemyDamaged' ? [e.enemyId] : [])));
+    expect(pack.filter((e) => hit.has(e.id)).length).toBeGreaterThanOrEqual(2);
+    expect(events.map((e) => e.type)).toContain('LevelAlarmed');
+  });
+
   it('keeps the door to the Assembly Hall sealed until the Control Gallery is silenced', () => {
     const state = inIntake();
     takeDoor(state, 'sorting');

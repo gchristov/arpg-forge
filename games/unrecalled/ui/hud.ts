@@ -5,8 +5,9 @@ import { ShownValues } from '../../../engine/ui/shown-values';
 import { ENEMIES } from '../content/enemies';
 import { QUEST, stillRunning } from '../content/story';
 
-/** The arc bolt's skill slot. */
+/** Skill slots: the arc bolt and the EMP. */
 const ARC_BOLT = 0;
+const EMP = 1;
 
 const $ = (id: string): HTMLElement => document.getElementById(id)!;
 
@@ -18,6 +19,7 @@ export class Hud {
   constructor(send: (command: Command) => void) {
     bindCommand($('bAttack'), { type: 'attackNearest' }, send);
     bindCommand($('bBolt'), { type: 'useSkill', slot: ARC_BOLT }, send);
+    bindCommand($('bEmp'), { type: 'useSkill', slot: EMP }, send);
     bindCommand($('bPatch'), { type: 'heal' }, send);
   }
 
@@ -41,6 +43,11 @@ export class Hud {
       $('bPatch').classList.toggle('off', v <= 0);
     });
     shown.set('boltOff', hero.resource < bolt.cost, (v) => $('bBolt').classList.toggle('off', v));
+    const emp = state.rules.hero.skills[EMP]!;
+    const recharging = hero.skillCooldowns[EMP]! / emp.cooldown;
+    shown.set('empOff', recharging > 0 || hero.resource < emp.cost, (v) => $('bEmp').classList.toggle('off', v));
+    // The bar along the button's foot fills back up as the EMP recharges.
+    shown.set('empCharge', Math.round((1 - recharging) * 20), (v) => ($('empCd').style.transform = `scaleX(${v / 20})`));
     shown.set('quest', QUEST[state.quest]?.text ?? '', (v) => ($('quest').textContent = v));
     const ls = currentLevel(state);
     shown.set('location', ls.level.name, (v) => ($('loc').textContent = v));

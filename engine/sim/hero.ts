@@ -3,7 +3,7 @@ import { chance, int } from '../core/rng';
 import { hasLineOfSight } from '../world/line-of-sight';
 import { planRoute } from '../world/pathfinding';
 import { tileIndex } from '../world/tile-map';
-import { damageEnemy, findEnemy, nearestEnemy } from './combat';
+import { burst, damageEnemy, findEnemy, nearestEnemy } from './combat';
 import { updateInteraction, useService, walkToContainer, walkToNpc, walkToReadable } from './interaction';
 import { placeAt } from './setup';
 import type { ProjectileSkill } from './content';
@@ -139,6 +139,11 @@ function useSkill(state: GameState, slot: number, events: SimEvent[]): void {
   switch (skill.type) {
     case 'projectile':
       castProjectile(state, slot, skill);
+      break;
+    case 'area':
+      hero.swing = CAST_SWING;
+      hero.struck = true;
+      burst(state, skill, hero.x, hero.y, skill.knockback, events);
       break;
   }
   events.push({ type: 'SkillUsed', slot, skill: skill.id });
