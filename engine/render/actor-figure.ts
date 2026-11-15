@@ -214,7 +214,6 @@ export class ActorFigure {
     } else if (previous) next.crossFadeFrom(previous, BLEND_SECONDS, false);
   }
 
-  /** Each actor gets its own copy of a material, so flashing or fading one doesn't affect the rest. */
   /**
    * Gives each of the actor's meshes a twin in the outline material, drawn after everything solid. The actor marks
    * the stencil wherever it shows, and the twin draws only where it doesn't and something nearer hides it.
@@ -243,6 +242,7 @@ export class ActorFigure {
     }
   }
 
+  /** Each actor gets its own copy of a material, so flashing or fading one doesn't affect the rest. */
   private ownMaterial(material: THREE.Material, tint: THREE.Color | null): THREE.Material {
     const own = material.clone() as FlashableMaterial & { color?: THREE.Color };
     if (tint && own.color) own.color.multiply(tint);
