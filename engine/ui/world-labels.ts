@@ -2,6 +2,7 @@ import type { Vec2 } from '../core/math';
 
 const TEXT_POOL = 32;
 const BAR_POOL = 24;
+const TAG_POOL = 8;
 /** Floating text rises and fades over this long. */
 const TEXT_SECONDS = 1.1;
 /** Tiles a second. */
@@ -31,7 +32,9 @@ export class WorldLabels {
   private readonly texts: FloatingText[] = [];
   private readonly bars: Array<{ element: HTMLElement; fill: HTMLElement }> = [];
   private readonly point: Vec2 = { x: 0, y: 0 };
+  private readonly tags: Array<{ element: HTMLElement; text: string; colour: string; size: number }> = [];
   private barsUsed = 0;
+  private tagsUsed = 0;
 
   constructor(parent: HTMLElement) {
     const layer = document.createElement('div');
@@ -55,6 +58,15 @@ export class WorldLabels {
       element.appendChild(fill);
       layer.appendChild(element);
       this.bars.push({ element, fill });
+    }
+    for (let i = 0; i < TAG_POOL; i++) {
+      const element = document.createElement('div');
+      element.className = 'world-tag';
+      element.style.cssText =
+        'position:absolute;left:0;top:0;white-space:nowrap;font-weight:700;will-change:transform;' +
+        'text-shadow:0 0 3px #000,0 1px 3px #000;display:none';
+      layer.appendChild(element);
+      this.tags.push({ element, text: '', colour: '', size: 0 });
     }
   }
 
@@ -88,6 +100,27 @@ export class WorldLabels {
 
   endBars(): void {
     for (let i = this.barsUsed; i < BAR_POOL; i++) this.bars[i]!.element.style.display = 'none';
+  }
+
+  /** Starts a frame's tags, text held over a point such as a name. Call `tag` for each, then `endTags`. */
+  beginTags(): void {
+    this.tagsUsed = 0;
+  }
+
+  tag(project: Project, x: number, y: number, height: number, text: string, colour: string, sizePx: number): void {
+    const tag = this.tags[this.tagsUsed++];
+    if (!tag) return;
+    const { element } = tag;
+    // Restyled only on change, so a tag held still doesn't make the browser lay it out again each frame.
+    if (tag.text !== text) element.textContent = tag.text = text;
+    if (tag.colour !== colour) element.style.color = tag.colour = colour;
+    if (tag.size !== sizePx) element.style.fontSize = `${(tag.size = sizePx)}px`;
+    element.style.display = '';
+    element.style.transform = place(project(x, y, height, this.point));
+  }
+
+  endTags(): void {
+    for (let i = this.tagsUsed; i < TAG_POOL; i++) this.tags[i]!.element.style.display = 'none';
   }
 
   update(project: Project, frameSeconds: number): void {

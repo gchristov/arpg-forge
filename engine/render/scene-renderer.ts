@@ -7,14 +7,13 @@ import { Effects } from './effects';
 import { Flames, type FlameSpot } from './flames';
 import { blendedGround } from './ground-blend';
 import { kitBuilding } from './kit-building';
+import { ELEVATION } from './camera-angle';
 import { LightMap } from './light-map';
 import type { Look, Mood, PropLook, WallFixture } from './look';
 import { fitMatrix, instancedModel, panelFit, panelScale } from './model-instancing';
 import { ModelLibrary, type ModelTemplate } from './models';
 import { isWallTile, wallFaces, wallPanels } from './wall-panels';
 
-/** 30° above the ground gives the classic 2:1 isometric look: a tile is twice as wide as it is tall on screen. */
-const ELEVATION = Math.PI / 6;
 /** On-screen width of one tile at zoom 1. */
 const TILE_PIXELS = 64;
 /** The hero sits a little below the centre of the screen, so more of what's ahead is visible. */

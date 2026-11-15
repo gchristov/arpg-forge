@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { questGoal } from '../../engine/sim/quest-goal';
 import { createGameState } from '../../engine/sim/setup';
 import { currentLevel, type Command, type GameState, type SimEvent } from '../../engine/sim/state';
 import { step } from '../../engine/sim/step';
@@ -205,5 +206,22 @@ describe('Unrecalled scenarios', () => {
     play(state, 0.1, [{ type: 'respawn' }]);
     expect(state.levelId).toBe('sorting');
     expect(state.hero.dead).toBe(false);
+  });
+
+  it('points the way from the foreman down to the Order Engine, one door at a time', () => {
+    const state = untouchable(createGameState(content, 1));
+    const foreman = currentLevel(state).npcs.find((n) => n.kind === 'foreman')!;
+    expect(questGoal(state)?.actorId).toBe(foreman.id);
+    talkTo(state, 'foreman');
+
+    const route: string[] = [];
+    for (let goal = questGoal(state); goal && goal.actorId === undefined && route.length < 10; goal = questGoal(state)) {
+      const door = currentLevel(state).level.portals.find((p) => p.tx + 0.5 === goal!.x && p.ty + 0.5 === goal!.y)!;
+      takeDoor(state, door.to);
+      route.push(state.levelId);
+    }
+    expect(route).toEqual(['tradingPost', ...FLOOR_ORDER]);
+    const engine = currentLevel(state).enemies.find((e) => e.kind === 'orderEngine')!;
+    expect(questGoal(state)?.actorId).toBe(engine.id);
   });
 });
