@@ -36,30 +36,42 @@ export function wallPanels(map: TileMap, isWall: (tx: number, ty: number) => boo
     const lines = alongX ? map.height : map.width;
     const length = alongX ? map.width : map.height;
     for (let line = 0; line < lines; line++) {
+      const across = line + 0.5 + (alongX ? side.wall.y : side.wall.x) * 0.5;
+      const lay = (from: number, to: number, front: boolean) => {
+        for (let at = from; at < to; at += span) {
+          const piece = Math.min(span, to - at);
+          const middle = at + piece / 2;
+          panels.push({ x: alongX ? middle : across, y: alongX ? across : middle, length: piece, facing: side.facing, front });
+        }
+      };
       let start = -1;
+      let runFront = false;
       for (let along = 0; along <= length; along++) {
         const [tx, ty] = alongX ? [along, line] : [line, along];
         const edge = along < length && hasEdge(tx, ty);
-        if (edge && start < 0) start = along;
-        if (edge || start < 0) continue;
-        for (let from = start; from < along; from += span) {
-          const piece = Math.min(span, along - from);
-          const middle = from + piece / 2;
-          // The edge sits on the floor tile's border with the wall.
-          const across = line + 0.5 + (alongX ? side.wall.y : side.wall.x) * 0.5;
-          panels.push({
-            x: alongX ? middle : across,
-            y: alongX ? across : middle,
-            length: piece,
-            facing: side.facing,
-            front: side.front,
-          });
+        const front = edge && isFront(map, tx + side.wall.x, ty + side.wall.y, side.front);
+        if (start >= 0 && (!edge || front !== runFront)) {
+          lay(start, along, runFront);
+          start = -1;
         }
-        start = -1;
+        if (edge && start < 0) {
+          start = along;
+          runFront = front;
+        }
       }
     }
   }
   return panels;
+}
+
+/**
+ * Whether a wall tile's face is a front one, between the floor and the camera. A room's outer walls go by the edge
+ * they're on, so the sides of a doorway match the wall around it; walls inside the room go by the way they face.
+ */
+function isFront(map: TileMap, tx: number, ty: number, facesCamera: boolean): boolean {
+  if (tx === 0 || ty === 0) return false;
+  if (tx === map.width - 1 || ty === map.height - 1) return true;
+  return facesCamera;
 }
 
 /** The faces of one wall tile that look onto open floor, each one tile long, centred on its edge. */
@@ -69,7 +81,7 @@ export function wallFaces(map: TileMap, isWall: (tx: number, ty: number) => bool
     if (!inBounds(map, floor.x, floor.y) || isWall(floor.x, floor.y)) return [];
     const x = tx + 0.5 - side.wall.x * 0.5;
     const y = ty + 0.5 - side.wall.y * 0.5;
-    return [{ x, y, length: 1, facing: side.facing, front: side.front }];
+    return [{ x, y, length: 1, facing: side.facing, front: isFront(map, tx, ty, side.front) }];
   });
 }
 

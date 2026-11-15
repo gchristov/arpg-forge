@@ -25,6 +25,10 @@ const PROPS: Partial<Record<number, PropLook>> = {
   [Prop.Shelves]: { shape: 'box', width: 0.9, height: 1.3, colour: 0x4a4a4a, model: tall('shelves', 1.3, Math.PI / 2) },
   [Prop.Desk]: { shape: 'box', width: 0.9, height: 0.6, colour: 0x4a4a52, model: tall('desk', 0.65) },
   [Prop.Column]: { shape: 'cylinder', width: 0.6, height: 1.8, colour: 0x3a3e46, model: tall('column', 1.9) },
+  [Prop.Door]: { shape: 'box', width: 1, height: 2.2, colour: 0x3a3e46, model: { names: ['door'], fit: { type: 'box', width: 1.5, height: 2.3, depth: 0.4 } } },
+  [Prop.Chair]: { shape: 'box', width: 0.5, height: 0.8, colour: 0x4a4a52, model: tall('chair', 0.8, 'random') },
+  // A rack a delivery unit stands in while it charges; this one's empty.
+  [Prop.Cradle]: { shape: 'box', width: 0.9, height: 2.2, colour: 0x3a3e46, model: tall('cradle', 2.3) },
   [Prop.Computer]: { shape: 'box', width: 0.6, height: 0.9, colour: 0x2a3a4a, emissive: 0x0a4050, model: tall('computer', 0.95) },
 };
 
@@ -85,6 +89,11 @@ export const unrecalledLook: Look = {
     const n = valueNoise(tx * 0.25, ty * 0.25);
     const h = hash2(tx, ty, 9);
     const checker = (tx + ty) % 2 === 0 ? 0.03 : 0;
+    if (kind === Ground.Belt) {
+      // Slats across the belt, with a worn amber edge every few tiles.
+      const v = Math.round(255 * (tx % 2 === 0 ? 0.09 : 0.12));
+      return tx % 6 === 0 ? 0x4a3a1c : (v << 16) | (v << 8) | Math.round(v * 1.1);
+    }
     const l = kind === Ground.Grime ? 0.14 : 0.2;
     const v = Math.round(255 * (l + n * 0.05 + h * 0.02 + checker));
     return (v << 16) | (Math.round(v * 1.04) << 8) | Math.round(v * 1.12);

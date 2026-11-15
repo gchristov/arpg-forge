@@ -45,6 +45,13 @@ describe('roomFromRows', () => {
     expect(room.containers).toEqual([{ tx: 2, ty: 2, gold: 5, healingItems: 1 }]);
   });
 
+  it('gives a tile its own ground where the key says', () => {
+    const rows = ['###', '#=#', '###'];
+    const room = roomFromRows({ ...spec(rows), key: { ...spec(rows).key, '=': { ground: 9 } } });
+    expect(room.level.map.ground[tileIndex(room.level.map, 1, 1)]).toBe(9);
+    expect(room.level.map.ground[tileIndex(room.level.map, 0, 0)]).toBe(7);
+  });
+
   it('starts the hero on a marked tile', () => {
     expect(roomFromRows(spec(['###', '#@#', '###'])).level.start).toEqual({ x: 1.5, y: 1.5 });
   });

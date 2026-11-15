@@ -33,6 +33,18 @@ describe('wallPanels', () => {
     ]);
   });
 
+  it('draws the sides of a doorway like the outer wall it is in', () => {
+    const sides = (rows: string[]) => panels(rows, 3).filter((p) => p.includes('facing 1,0') || p.includes('facing -1,0'));
+    expect(sides(['###.###', '#.....#', '#.....#', '#######']).filter((p) => p.includes(',0.5 '))).toEqual([
+      'back 3,0.5 ×1 facing 1,0',
+      'back 4,0.5 ×1 facing -1,0',
+    ]);
+    expect(sides(['#######', '#.....#', '#.....#', '###.###']).filter((p) => p.includes(',3.5 '))).toEqual([
+      'front 3,3.5 ×1 facing 1,0',
+      'front 4,3.5 ×1 facing -1,0',
+    ]);
+  });
+
   it('puts panels on every face of a free-standing block of wall', () => {
     expect(panels(['.....', '..#..', '.....'], 3)).toHaveLength(4);
   });
