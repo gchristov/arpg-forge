@@ -34,14 +34,15 @@
         "Punch",
         "Shoot_OneHanded",
         "RecieveHit",
-        "Defeat"
+        "Death"
       ],
       "borrow": {
         "pack": "animations",
         "path": "Animation Library[Standard]/Godot/AnimationLibrary_Godot_Standard.glb",
         "pose": "A_TPose",
         "animations": {
-          "Run": "Sprint_Loop"
+          "Run": "Sprint_Loop",
+          "Death": "Death01"
         },
         "bones": {
           "Body": "DEF-hips",

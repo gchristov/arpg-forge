@@ -56,6 +56,8 @@ function update(state: GameState): void {
     $('bossName').textContent = ENEMIES[boss.kind]!.name;
     $('bossFill').style.transform = `scaleX(${boss.hp / boss.maxHp})`;
   }
+  // Taps go through to the game, which gets the hero back up.
+  $('fallen').hidden = !hero.dead;
   $('hpFill').style.transform = `scaleX(${hero.hp / hero.maxHp})`;
   $('hpTxt').textContent = `${Math.ceil(hero.hp)} / ${hero.maxHp}`;
   $('chargeFill').style.transform = `scaleX(${hero.resource / hero.maxResource})`;
