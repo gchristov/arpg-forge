@@ -4,6 +4,7 @@ import type { Level, LevelLight } from '../world/level';
 import { tileIndex } from '../world/tile-map';
 import { ActorFigure, type ActorMoment } from './actor-figure';
 import { Effects } from './effects';
+import { blendedGround } from './ground-blend';
 import { LightMap } from './light-map';
 import type { Look, Mood, PropLook, WallFixture } from './look';
 import { fitMatrix, instancedModel } from './model-instancing';
@@ -352,8 +353,18 @@ export class SceneRenderer {
   }
 
   /** Ground tiles, except under walls drawn as panels, where the room ends at the panel. */
-  private buildGround(level: Level, walls: ReadonlySet<number> = new Set()): THREE.InstancedMesh {
+  private buildGround(level: Level, walls: ReadonlySet<number> = new Set()): THREE.Mesh {
     const { map } = level;
+    const grain = this.look.mood(level.id).groundGrain;
+    if (grain !== undefined) {
+      const colour = new THREE.Color();
+      return blendedGround(map.width, map.height, (tx, ty) => {
+        const kind = map.ground[ty * map.width + tx]!;
+        if (!kind || walls.has(map.prop[ty * map.width + tx]!)) return null;
+        colour.set(this.look.groundColour(kind, tx, ty, level.id));
+        return [colour.r, colour.g, colour.b];
+      }, grain);
+    }
     const tile = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
     const mesh = new THREE.InstancedMesh(tile, new THREE.MeshLambertMaterial(), map.width * map.height);
     const matrix = new THREE.Matrix4();

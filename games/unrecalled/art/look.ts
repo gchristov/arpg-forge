@@ -17,6 +17,7 @@ const foundry = (ambient: number, sky: number): Mood => ({
 const NIGHT: Mood = {
   background: 0x06080c, ambient: 0x3a4250, ambientIntensity: 0.7, heroLightRadius: 4.6,
   moon: { colour: 0xa8bcd8, intensity: 0.95 },
+  groundGrain: 0.7,
   fill: { sky: 0xb8c8e0, ground: 0x201a14, intensity: 0.55 },
 };
 
@@ -145,7 +146,7 @@ export const unrecalledLook: Look = {
     const soft = valueNoise(tx * 0.16 + 11, ty * 0.16);
     switch (kind) {
       case Ground.Water:
-        return hsl(205 + soft * 10, 40, 14 + soft * 6);
+        return hsl(206 + soft * 8, 55, 13 + soft * 5);
       case Ground.Mud:
         return hsl(28 + soft * 6, 22, 15 + soft * 5 + h * 1.5);
       case Ground.Dirt:
@@ -153,10 +154,10 @@ export const unrecalledLook: Look = {
       case Ground.DeadGrass:
         return hsl(48 + soft * 18, 18 + soft * 8, 21 + soft * 6 + h * 1.5);
       case Ground.Path:
-        return hsl(32 + soft * 5, 16, 27 + soft * 5 + h * 2);
+        return hsl(34 + soft * 5, 24, 34 + soft * 5 + h * 2);
       case Ground.Pad:
         // An old concrete pad, stained and cracked.
-        return hsl(210, 4, 29 + soft * 6 + h * 2 - (h > 0.93 ? 6 : 0));
+        return hsl(212, 8, 36 + soft * 5 + h * 2 - (h > 0.93 ? 6 : 0));
       case Ground.Belt: {
         // Slats across the belt, with a worn amber edge every few tiles.
         const v = Math.round(255 * (tx % 2 === 0 ? 0.09 : 0.12));
