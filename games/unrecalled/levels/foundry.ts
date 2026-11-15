@@ -24,9 +24,9 @@ const FLOORS = {
   intake: {
     name: 'Intake', subtitle: 'Receiving for the Valley Order', lamps: { L: 'cyan', A: 'amber' },
     rows: [
-      '#####L######U######L####',
+      '###B#L####B#U#B####L#B##',
       '#hh....................#',
-      '#.....ooo.........cc...#',
+      'B.....ooo.........cc...#',
       '#S.cc.............cc...#',
       '#..cc.......T......ooo.#',
       'A......................A',
@@ -43,7 +43,7 @@ const FLOORS = {
   sorting: {
     name: 'The Sorting Line', subtitle: 'Everything here is stock', lamps: { L: 'hazard', A: 'amber' },
     rows: [
-      '###A#####A#####U####A#####A###',
+      '###A##B##A##B##U##B#A##B##A###',
       '#S...........................#',
       '#=R==q===w==q==u===q==w==u===#',
       '#....x.......................L',
@@ -59,11 +59,11 @@ const FLOORS = {
   gallery: {
     name: 'Control Gallery', subtitle: 'Something is watching the line', sealed: true, lamps: { L: 'alarm', A: 'alarm' },
     rows: [
-      '####L######U#######L####',
+      '##B#L###B##U##B####L#B##',
       '#hh.....s........s...hh#',
       '#.....................S#',
       '#..k..k..........k..k..#',
-      '#..s..##########..s....#',
+      'B..s..##########..s....#',
       'L.....##########.......L',
       '#.....##########...x...#',
       '#..o..##########.......#',
@@ -78,10 +78,10 @@ const FLOORS = {
   assembly: {
     name: 'Assembly Hall', subtitle: 'Where the order is kept', lamps: { L: 'amber', A: 'molten' },
     rows: [
-      '####A#####A#####Z#####A#####A#',
+      '#B##A##B##A#####Z#####A##B##A#',
       '#S...FFF.....................#',
       '#............................#',
-      '#...C.....C.........C.....C..#',
+      'B...C.....C.........C.....C..#',
       '#............................#',
       'L............................L',
       '#...C.....C....E....C.....C..#',
@@ -109,6 +109,7 @@ const onBelt = (prop: number): RoomKey => ({ ...solid(prop), ground: Ground.Belt
 const KEY: Record<string, RoomKey> = {
   '.': {},
   '#': { prop: Prop.Wall, frontProp: Prop.WallLow, solid: true },
+  B: { prop: Prop.WallAlarm, solid: true, light: { radius: 6, intensity: 2, colour: 'alarm', flicker: 0, lean: 0.7, alarm: true } },
   F: { prop: Prop.Furnace, solid: true, light: { radius: 3.8, intensity: 1.2, colour: 'molten', flicker: 1.4 } },
   C: solid(Prop.Column),
   c: solid(Prop.Crate),

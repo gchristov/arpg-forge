@@ -21,4 +21,5 @@ export const Prop = {
   Chair: 13,
   Cradle: 14,
   Cache: 15,
+  WallAlarm: 16,
 } as const;

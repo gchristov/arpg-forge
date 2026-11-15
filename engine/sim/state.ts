@@ -71,6 +71,8 @@ export interface Enemy extends Actor {
   summoned: boolean;
   /** Whether a calm enemy has seen the hero yet, so it recognises them only once. */
   recognised: boolean;
+  /** Progress through looking the hero over on recognising them, from 0 to 1, or -1 when not scanning. */
+  scan: number;
 }
 
 export interface Projectile {

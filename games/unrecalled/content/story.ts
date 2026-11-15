@@ -36,7 +36,8 @@ export const READINGS: Record<string, { title: string; text: string }> = {
 };
 
 /** Lines the machines speak. */
-export const SENTRY_SPOTS = 'SCANNING… UNIT RECOGNISED';
+/** What a machine with a scanner says on looking the salvager over: it knows what they are. */
+export const MACHINE_SCANS = 'SCANNING… UNIT RECOGNISED';
 export const LINE_ALERT = { title: 'Line alert', subtitle: 'Every machine on the floor turns toward you.' };
 export const UNSEALED = { title: 'The door unseals', subtitle: 'The way to the Assembly Hall is open.' };
 /** On a sealed floor, how many machines still keep the door shut. */

@@ -135,6 +135,19 @@ describe('calm enemies', () => {
     expect(enemiesOf(state)[0]!.mode).toBe('idle');
   });
 
+  it('stop, turn to the hero and look them over when they first see them, then go back to work', () => {
+    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'worker', x: 8.5, y: 5.5 }]);
+    const worker = enemiesOf(state)[0]!;
+    worker.facingX = 1;
+    worker.facingY = 0;
+    run(state, 0.6);
+    expect(worker.scan).toBeGreaterThan(0);
+    expect([worker.x, worker.y]).toEqual([8.5, 5.5]);
+    expect(worker.facingX).toBeLessThan(-0.9);
+    run(state, 1);
+    expect(worker.scan).toBe(-1);
+  });
+
   it('turn on the hero together once one of them is hit, near ones at once', () => {
     const state = arena(Array.from({ length: 6 }, () => '.'.repeat(40)), { x: 3.5, y: 2.5 }, [
       { kind: 'worker', x: 4.5, y: 2.5 }, { kind: 'worker', x: 9.5, y: 2.5 }, { kind: 'worker', x: 36.5, y: 2.5 },

@@ -50,6 +50,7 @@ export function damageEnemy(
   e.hp -= amount;
   events.push({ type: 'EnemyDamaged', enemyId: e.id, amount, crit, x: e.x, y: e.y });
   if (e.mode === 'idle' || e.mode === 'return') e.mode = 'chase';
+  e.scan = -1;
   if (!currentLevel(state).alarmed) alarm(state, e, events);
   const type = state.rules.enemies[e.kind]!;
   if (!type.boss) moveBody(currentLevel(state).level.map, e, kx * knockback, ky * knockback);
@@ -65,6 +66,7 @@ function alarm(state: GameState, struck: Enemy, events: SimEvent[]): void {
   for (const e of calm) {
     if (e.mode !== 'idle' || dist(e.x, e.y, struck.x, struck.y) > ALARM_CALL_RADIUS) continue;
     e.mode = 'chase';
+    e.scan = -1;
     events.push({ type: 'EnemyAlerted', enemyId: e.id, boss: Boolean(state.rules.enemies[e.kind]!.boss) });
   }
   events.push({ type: 'LevelAlarmed', levelId: state.levelId });

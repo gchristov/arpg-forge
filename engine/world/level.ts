@@ -11,6 +11,8 @@ export interface LevelLight {
   /** How strongly it flickers, 0 for steady. */
   flicker: number;
   seed: number;
+  /** Dark until the level is alarmed, then pulsing like a rotating beacon. */
+  alarm?: boolean;
 }
 
 /**

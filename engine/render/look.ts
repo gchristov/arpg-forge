@@ -43,6 +43,8 @@ export interface ActorLook {
   scale?: number;
   /** Tiles above the ground the model floats, for flying machines and spirits. */
   hover?: number;
+  /** For calm machines that look the hero over: the height of the eye the scanning beam comes from, in tiles. */
+  scanner?: { eyeHeight: number };
   /** A light the actor carries, such as a lantern or a glowing eye, which fades as it dies. */
   light?: { colour: number; radius: number; intensity: number };
   /** The mark a killed enemy leaves on the ground, such as blood or bone dust. */
@@ -67,6 +69,8 @@ export interface Mood {
   background: number;
   ambient: number;
   ambientIntensity: number;
+  /** The ambient colour while the level is alarmed, so the whole room shows it. */
+  alarmAmbient?: number;
   /** A directional light that casts shadows, for outdoor levels. */
   moon?: { colour: number; intensity: number };
   /** The light the hero carries, so the area around them is always visible. */
@@ -129,6 +133,8 @@ export interface EffectsLook {
   bossLight: number;
   /** Light over a door sealed until its level is cleared. Without it, sealed doors look like any other. */
   sealedLight?: number;
+  /** The beam of a machine scanning the hero. Needed by looks with scanners. */
+  scan?: number;
   /** Chimney smoke. */
   smoke: number;
   explosion: BurstLook;

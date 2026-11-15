@@ -5,7 +5,7 @@ import { PX } from '../../engine/game/world-view';
 import { currentLevel, type RefusalReason, type SimEvent } from '../../engine/sim/state';
 import { DialogBox } from '../../engine/ui/dialog-box';
 import { MODEL_URLS, unrecalledLook } from './art/look';
-import { ENGINE_CALLS, ENGINE_DOWN_STEP, ENGINE_FALLS, LINE_ALERT, READINGS, SENTRY_SPOTS, stillRunning, UNSEALED } from './content/story';
+import { ENGINE_CALLS, ENGINE_DOWN_STEP, ENGINE_FALLS, LINE_ALERT, READINGS, MACHINE_SCANS, stillRunning, UNSEALED } from './content/story';
 import { unrecalledContent } from './content/world';
 import { Hud } from './ui/hud';
 
@@ -55,9 +55,11 @@ function react(events: SimEvent[]): void {
         labels.text(e.x, e.y, 40 * PX * (kind ? view.scaleOf(kind) : 1), String(e.amount), e.crit ? '#ffd070' : '#dfe7ee', e.crit ? 20 : 15);
         break;
       }
-      case 'EnemyRecognised':
-        if (kindOf(e.enemyId) === 'sentry') labels.text(e.x, e.y, 70 * PX, SENTRY_SPOTS, '#8ae8ff', 15);
+      case 'EnemyRecognised': {
+        const kind = kindOf(e.enemyId);
+        if (kind && unrecalledLook.actor(kind).scanner) labels.text(e.x, e.y, 70 * PX * view.scaleOf(kind), MACHINE_SCANS, '#ff8a6a', 15);
         break;
+      }
       case 'LevelAlarmed':
         hud.banner(LINE_ALERT.title, LINE_ALERT.subtitle, 2.2);
         break;

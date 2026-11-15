@@ -1,4 +1,5 @@
 import { lerp } from '../core/math';
+import type { ScanView } from '../render/effects';
 import type { Look } from '../render/look';
 import type { SceneRenderer } from '../render/scene-renderer';
 import { currentLevel, type Actor, type GameState, type SimEvent } from '../sim/state';
@@ -24,6 +25,10 @@ export class WorldView {
   private readonly windingUp = new Set<number>();
   private nextSmokeAt = 0;
   private stepSeconds = 1 / 60;
+  /** Reused each frame for the machines scanning the hero. */
+  private readonly scans: ScanView[] = Array.from({ length: 6 }, () => ({
+    fromX: 0, fromY: 0, fromHeight: 0, x: 0, y: 0, height: 0, radius: 0, progress: 0,
+  }));
 
   constructor(
     private readonly state: GameState,
@@ -144,6 +149,8 @@ export class WorldView {
         renderer.glow(lerp(e.prevX, e.x, alpha), lerp(e.prevY, e.y, alpha), 2.2, look.effects.bossLight, 0.6);
       }
     }
+    renderer.setAlarmed(ls.alarmed);
+    this.showScans(alpha);
     renderer.effects.showProjectiles(state.projectiles, alpha);
     renderer.effects.showTelegraphs(state.telegraphs);
     renderer.effects.showItems(ls.items, performance.now() / 1000);
@@ -160,6 +167,27 @@ export class WorldView {
     );
     const light = this.look.actor(actor.kind).light;
     if (light && fade > 0) this.renderer.glow(x, y, light.radius, light.colour, light.intensity * fade);
+  }
+
+  /** Beams from machines looking the hero over, for enemies whose look has a scanner. */
+  private showScans(alpha: number): void {
+    const { state, look } = this;
+    const hero = look.actor(state.hero.kind);
+    let count = 0;
+    for (const e of currentLevel(state).enemies) {
+      const scanner = look.actor(e.kind).scanner;
+      if (e.scan < 0 || e.dead || !scanner || count >= this.scans.length) continue;
+      const s = this.scans[count++]!;
+      s.fromX = lerp(e.prevX, e.x, alpha);
+      s.fromY = lerp(e.prevY, e.y, alpha);
+      s.fromHeight = scanner.eyeHeight;
+      s.x = lerp(state.hero.prevX, state.hero.x, alpha);
+      s.y = lerp(state.hero.prevY, state.hero.y, alpha);
+      s.height = hero.height;
+      s.radius = hero.radius * 1.3;
+      s.progress = e.scan;
+    }
+    this.renderer.effects.showScans(this.scans, count);
   }
 
   /** Starts an enemy's attack animation as its wind-up begins, timed so the blow lands as the attack does. */
