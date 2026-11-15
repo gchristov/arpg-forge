@@ -10,6 +10,16 @@ import { Ground, Prop } from '../content/tiles';
  * like railings, and a block of them reads as a shaft in the floor. Each floor also hides a salvage cache (S) off the
  * main path.
  */
+interface FloorSpec {
+  name: string;
+  subtitle: string;
+  /** The way deeper stays shut until every machine on the floor is destroyed. */
+  sealed?: boolean;
+  /** Colour names for the main wall lamps (L) and the accents (A). */
+  lamps: { L: string; A: string };
+  rows: string[];
+}
+
 const FLOORS = {
   intake: {
     name: 'Intake', subtitle: 'Receiving for the Valley Order', lamps: { L: 'cyan', A: 'amber' },
@@ -47,7 +57,7 @@ const FLOORS = {
     ],
   },
   gallery: {
-    name: 'Control Gallery', subtitle: 'Something is watching the line', lamps: { L: 'alarm', A: 'alarm' },
+    name: 'Control Gallery', subtitle: 'Something is watching the line', sealed: true, lamps: { L: 'alarm', A: 'alarm' },
     rows: [
       '####L######U#######L####',
       '#hh.....s........s...hh#',
@@ -86,7 +96,7 @@ const FLOORS = {
       '##############V###############',
     ],
   },
-};
+} satisfies Record<string, FloorSpec>;
 
 export type FloorId = keyof typeof FLOORS;
 
@@ -133,7 +143,10 @@ function lamps(id: FloorId): Record<string, RoomKey> {
   };
 }
 
-/** The doors on one floor: deeper through the back wall, and back the way the hero came through the front. */
+/**
+ * The doors on one floor: deeper through the back wall, and back the way the hero came through the front. A sealed
+ * floor's way deeper stays shut until every machine on it is destroyed.
+ */
 function doors(id: FloorId): Record<string, RoomKey> {
   const at = FLOOR_ORDER.indexOf(id);
   const deeper = FLOOR_ORDER[at + 1];
@@ -141,7 +154,7 @@ function doors(id: FloorId): Record<string, RoomKey> {
   return {
     U: deeper
       ? {
-        prop: Prop.Door, portal: { to: deeper, stepOut: { x: 0, y: 0.9 }, start: { x: 0, y: 0.9 } },
+        prop: Prop.Door, portal: { to: deeper, stepOut: { x: 0, y: 0.9 }, start: { x: 0, y: 0.9 }, sealed: (FLOORS[id] as FloorSpec).sealed ?? false },
         light: { radius: 2.2, intensity: 0.8, colour: 'amber', flicker: 0.2, offset: { x: 0, y: 0.7 } },
       }
       : { prop: Prop.Wall, solid: true },

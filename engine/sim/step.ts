@@ -10,6 +10,8 @@ import { currentLevel, type GameState, type SimEvent, type StepInput } from './s
 /** The fade between levels. */
 const TRANSITION_SECONDS = 0.3;
 const PORTAL_COOLDOWN_SECONDS = 0.7;
+/** A sealed portal says so again only after this long, rather than every step the hero stands on it. */
+const SEALED_REMINDER_SECONDS = 1.5;
 
 /**
  * Advances the game by one fixed step and returns what happened. The only function that changes the game state;
@@ -63,6 +65,11 @@ function enterPortalUnderHero(state: GameState, events: SimEvent[]): void {
   if (!portal) return;
   const destination = state.levels[portal.to];
   if (!destination) return;
+  if (portal.sealed && currentLevel(state).enemies.some((e) => !e.dead)) {
+    state.portalCooldown = SEALED_REMINDER_SECONDS;
+    events.push({ type: 'PortalSealed', x: portal.tx + 0.5, y: portal.ty + 0.5 });
+    return;
+  }
   const back = destination.level.portals.find((p) => p.to === level.id);
   const arrival = back
     ? { x: back.tx + 0.5 + back.stepOut.x, y: back.ty + 0.5 + back.stepOut.y }

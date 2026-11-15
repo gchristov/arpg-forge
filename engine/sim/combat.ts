@@ -10,6 +10,8 @@ import { currentLevel, type Enemy, type GameState, type SimEvent } from './state
 
 /** Projectiles hit a body within this distance of its edge. */
 const PROJECTILE_HIT_RADIUS = 0.45;
+/** When a level is alarmed, calm enemies this close to the one hit come for the hero at once. */
+const ALARM_CALL_RADIUS = 8;
 
 export function findEnemy(state: GameState, id: number | null): Enemy | null {
   if (id === null) return null;
@@ -48,9 +50,24 @@ export function damageEnemy(
   e.hp -= amount;
   events.push({ type: 'EnemyDamaged', enemyId: e.id, amount, crit, x: e.x, y: e.y });
   if (e.mode === 'idle' || e.mode === 'return') e.mode = 'chase';
+  if (!currentLevel(state).alarmed) alarm(state, e, events);
   const type = state.rules.enemies[e.kind]!;
   if (!type.boss) moveBody(currentLevel(state).level.map, e, kx * knockback, ky * knockback);
   if (e.hp <= 0) killEnemy(state, e, events);
+}
+
+/** Turns a level's calm enemies hostile, and sends the ones near `struck` after the hero straight away. */
+function alarm(state: GameState, struck: Enemy, events: SimEvent[]): void {
+  const ls = currentLevel(state);
+  ls.alarmed = true;
+  const calm = ls.enemies.filter((e) => !e.dead && state.rules.enemies[e.kind]?.calm);
+  if (!calm.length) return;
+  for (const e of calm) {
+    if (e.mode !== 'idle' || dist(e.x, e.y, struck.x, struck.y) > ALARM_CALL_RADIUS) continue;
+    e.mode = 'chase';
+    events.push({ type: 'EnemyAlerted', enemyId: e.id, boss: Boolean(state.rules.enemies[e.kind]!.boss) });
+  }
+  events.push({ type: 'LevelAlarmed', levelId: state.levelId });
 }
 
 function killEnemy(state: GameState, e: Enemy, events: SimEvent[]): void {
@@ -63,6 +80,7 @@ function killEnemy(state: GameState, e: Enemy, events: SimEvent[]): void {
   dropEnemyLoot(state, e.kind, e.x, e.y);
   events.push({ type: 'EnemyKilled', enemyId: e.id, kind: e.kind, x: e.x, y: e.y, boss: Boolean(type.boss) });
   advanceQuest(state, { type: 'kill', enemyKind: e.kind }, events);
+  if (currentLevel(state).enemies.every((other) => other.dead)) events.push({ type: 'LevelCleared', levelId: state.levelId });
 }
 
 export function gainXp(state: GameState, amount: number, events: SimEvent[]): void {

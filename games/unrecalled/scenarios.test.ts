@@ -23,9 +23,15 @@ function untouchable(state: GameState): GameState {
   return state;
 }
 
-/** Walks onto the current floor's portal to `to`. */
+/** Destroys every machine on the current floor, for tests about what comes after. */
+function silenceFloor(state: GameState): void {
+  for (const e of currentLevel(state).enemies) e.dead = true;
+}
+
+/** Walks onto the current floor's portal to `to`, first silencing the floor if that door is sealed. */
 function takeDoor(state: GameState, to: string): void {
   const door = currentLevel(state).level.portals.find((p) => p.to === to)!;
+  if (door.sealed) silenceFloor(state);
   play(state, 25, [{ type: 'walkInto', tx: door.tx, ty: door.ty }]);
   play(state, 1);
 }
@@ -47,6 +53,30 @@ describe('Unrecalled scenarios', () => {
       takeDoor(state, previous);
       expect(state.levelId).toBe(previous);
     }
+  });
+
+  it('lets the salvager walk among the working machines until one is hit, then turns the floor', () => {
+    const state = createGameState(content, 1);
+    const hp = state.hero.hp;
+    const crawler = currentLevel(state).enemies.find((e) => e.kind === 'crawler')!;
+    play(state, 12, [{ type: 'walk', x: crawler.x, y: crawler.y + 1 }]);
+    expect(state.hero.hp).toBe(hp);
+    expect(currentLevel(state).enemies.every((e) => e.mode === 'idle')).toBe(true);
+    const events = play(state, 2, [{ type: 'attack', enemyId: crawler.id }]);
+    expect(events.map((e) => e.type)).toContain('LevelAlarmed');
+    expect(currentLevel(state).enemies.filter((e) => e.mode === 'chase').length).toBeGreaterThan(1);
+  });
+
+  it('keeps the door to the Assembly Hall sealed until the Control Gallery is silenced', () => {
+    const state = untouchable(createGameState(content, 1));
+    takeDoor(state, 'sorting');
+    takeDoor(state, 'gallery');
+    const door = currentLevel(state).level.portals.find((p) => p.to === 'assembly')!;
+    const events = play(state, 25, [{ type: 'walkInto', tx: door.tx, ty: door.ty }]);
+    expect(state.levelId).toBe('gallery');
+    expect(events.map((e) => e.type)).toContain('PortalSealed');
+    takeDoor(state, 'assembly');
+    expect(state.levelId).toBe('assembly');
   });
 
   it('hides a salvage cache on every floor that pays out scrap and a patch kit', () => {

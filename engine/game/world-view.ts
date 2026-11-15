@@ -135,6 +135,10 @@ export class WorldView {
       if (p.kind === 'skill') renderer.glow(lerp(p.prevX, p.x, alpha), lerp(p.prevY, p.y, alpha), 2.6, look.effects.skillLight, 0.9);
     }
     for (const t of state.telegraphs) renderer.glow(t.x, t.y, t.radius + 0.6, look.effects.telegraphLight, 0.6);
+    const { sealedLight } = look.effects;
+    if (sealedLight !== undefined && ls.enemies.some((e) => !e.dead)) {
+      for (const p of ls.level.portals) if (p.sealed) renderer.glow(p.tx + 0.5, p.ty + 0.5, 2.4, sealedLight, 1);
+    }
     for (const e of ls.enemies) {
       if (!e.dead && state.rules.enemies[e.kind]?.boss) {
         renderer.glow(lerp(e.prevX, e.x, alpha), lerp(e.prevY, e.y, alpha), 2.2, look.effects.bossLight, 0.6);

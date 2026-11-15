@@ -94,6 +94,11 @@ export interface EnemyType {
   radius: number;
   /** Bosses aren't knocked back and never give up a chase for being far from home. */
   boss?: boolean;
+  /**
+   * Starts calm, going about its work: it ignores the hero, however close, until something on its level is hit. That
+   * alarms the whole level.
+   */
+  calm?: boolean;
   /** How many spawn together at a camp. */
   groupSize: number;
   /** Marks a circle under the hero that lands after a delay. */

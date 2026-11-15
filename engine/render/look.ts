@@ -127,6 +127,8 @@ export interface EffectsLook {
   skillLight: number;
   telegraphLight: number;
   bossLight: number;
+  /** Light over a door sealed until its level is cleared. Without it, sealed doors look like any other. */
+  sealedLight?: number;
   /** Chimney smoke. */
   smoke: number;
   explosion: BurstLook;

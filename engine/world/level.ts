@@ -22,6 +22,8 @@ export interface Portal {
   ty: number;
   to: string;
   stepOut: Vec2;
+  /** Shut while any enemy on its level is still standing, so the way on has to be fought for. */
+  sealed?: boolean;
 }
 
 /** A building or other large block on the map, with a door the player walks to when it's tapped. */

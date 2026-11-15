@@ -60,7 +60,10 @@ function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, eve
   e.moving = false;
 
   if (e.mode === 'idle') {
-    if (sees) {
+    if (sees && type.calm && !ls.alarmed) {
+      if (!e.recognised) events.push({ type: 'EnemyRecognised', enemyId: e.id, x: e.x, y: e.y });
+      e.recognised = true;
+    } else if (sees) {
       e.mode = 'chase';
       events.push({ type: 'EnemyAlerted', enemyId: e.id, boss: Boolean(type.boss) });
       return;

@@ -14,6 +14,7 @@ const spec = (rows: string[]): RoomSpec => ({
     '#': { prop: WALL, frontProp: LOW_WALL, solid: true },
     L: { prop: TORCH, solid: true, light: { radius: 3, intensity: 1, colour: 'warm', flicker: 1, lean: 0.7 } },
     D: { portal: { to: 'outside', stepOut: { x: 0, y: -1 }, start: { x: 0, y: -0.9 } } },
+    S: { portal: { to: 'vault', stepOut: { x: 0, y: 1 }, start: { x: 0, y: 0.9 }, sealed: true } },
     x: { prop: CRATE, solid: true, container: { gold: 5, healingItems: 1 } },
     s: { spawn: 'ghoul' },
     n: { npc: { kind: 'keeper', name: 'Keeper' } },
@@ -51,6 +52,10 @@ describe('roomFromRows', () => {
     const room = roomFromRows({ ...spec(rows), key: { ...spec(rows).key, '=': { ground: 9 } } });
     expect(room.level.map.ground[tileIndex(room.level.map, 1, 1)]).toBe(9);
     expect(room.level.map.ground[tileIndex(room.level.map, 0, 0)]).toBe(7);
+  });
+
+  it('marks portals sealed until the room is cleared', () => {
+    expect(roomFromRows(spec(['#S#', '#.#', '###'])).level.portals).toEqual([{ tx: 1, ty: 0, to: 'vault', stepOut: { x: 0, y: 1 }, sealed: true }]);
   });
 
   it('places things to read', () => {

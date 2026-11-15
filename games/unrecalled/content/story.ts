@@ -36,6 +36,10 @@ export const READINGS: Record<string, { title: string; text: string }> = {
 };
 
 /** Lines the machines speak. */
-export const SENTRY_SPOTS = 'SCANNING…';
+export const SENTRY_SPOTS = 'SCANNING… UNIT RECOGNISED';
+export const LINE_ALERT = { title: 'Line alert', subtitle: 'Every machine on the floor turns toward you.' };
+export const UNSEALED = { title: 'The door unseals', subtitle: 'The way to the Assembly Hall is open.' };
+/** On a sealed floor, how many machines still keep the door shut. */
+export const stillRunning = (count: number) => `The door is sealed. ${count} ${count === 1 ? 'machine' : 'machines'} still running.`;
 export const ENGINE_CALLS = { title: 'U-7. You are late.', subtitle: 'The Order Engine calls the line to it.' };
 export const ENGINE_FALLS = { title: 'The Order Engine falls silent', subtitle: 'Somewhere in the walls, a relay clicks: ORDER REASSIGNED.' };

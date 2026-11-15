@@ -69,6 +69,8 @@ export interface Enemy extends Actor {
   deadFor: number;
   slamTimer: number;
   summoned: boolean;
+  /** Whether a calm enemy has seen the hero yet, so it recognises them only once. */
+  recognised: boolean;
 }
 
 export interface Projectile {
@@ -120,6 +122,8 @@ export interface LevelState {
   items: GroundItem[];
   containers: ContainerState[];
   readables: Readable[];
+  /** Whether something here has been hit, which turns calm enemies hostile. */
+  alarmed: boolean;
   camps: Camp[];
   campRespawns?: CampRespawns;
   campTimer: number;
@@ -194,6 +198,12 @@ export type SimEvent =
   | { type: 'EnemyDamaged'; enemyId: number; amount: number; crit: boolean; x: number; y: number }
   | { type: 'EnemyKilled'; enemyId: number; kind: string; x: number; y: number; boss: boolean }
   | { type: 'EnemyAlerted'; enemyId: number; boss: boolean }
+  /** A calm enemy saw the hero and let them be. */
+  | { type: 'EnemyRecognised'; enemyId: number; x: number; y: number }
+  | { type: 'LevelAlarmed'; levelId: string }
+  /** The last enemy on the level fell. */
+  | { type: 'LevelCleared'; levelId: string }
+  | { type: 'PortalSealed'; x: number; y: number }
   | { type: 'EnemyGaveUp'; enemyId: number; boss: boolean }
   | { type: 'HeroHurt'; amount: number; x: number; y: number }
   | { type: 'HeroDied' }

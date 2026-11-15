@@ -5,7 +5,7 @@ import { PX } from '../../engine/game/world-view';
 import { currentLevel, type RefusalReason, type SimEvent } from '../../engine/sim/state';
 import { DialogBox } from '../../engine/ui/dialog-box';
 import { MODEL_URLS, unrecalledLook } from './art/look';
-import { ENGINE_CALLS, ENGINE_DOWN_STEP, ENGINE_FALLS, READINGS, SENTRY_SPOTS } from './content/story';
+import { ENGINE_CALLS, ENGINE_DOWN_STEP, ENGINE_FALLS, LINE_ALERT, READINGS, SENTRY_SPOTS, stillRunning, UNSEALED } from './content/story';
 import { unrecalledContent } from './content/world';
 import { Hud } from './ui/hud';
 
@@ -55,11 +55,20 @@ function react(events: SimEvent[]): void {
         labels.text(e.x, e.y, 40 * PX * (kind ? view.scaleOf(kind) : 1), String(e.amount), e.crit ? '#ffd070' : '#dfe7ee', e.crit ? 20 : 15);
         break;
       }
-      case 'EnemyAlerted': {
-        const enemy = currentLevel(state).enemies.find((en) => en.id === e.enemyId);
-        if (enemy?.kind === 'sentry') labels.text(enemy.x, enemy.y, 70 * PX, SENTRY_SPOTS, '#ff8a6a', 17);
+      case 'EnemyRecognised':
+        if (kindOf(e.enemyId) === 'sentry') labels.text(e.x, e.y, 70 * PX, SENTRY_SPOTS, '#8ae8ff', 15);
+        break;
+      case 'LevelAlarmed':
+        hud.banner(LINE_ALERT.title, LINE_ALERT.subtitle, 2.2);
+        break;
+      case 'PortalSealed': {
+        const running = currentLevel(state).enemies.filter((en) => !en.dead).length;
+        labels.text(e.x, e.y, 60 * PX, stillRunning(running), '#ff7a62', 14);
         break;
       }
+      case 'LevelCleared':
+        if (currentLevel(state).level.portals.some((p) => p.sealed)) hud.banner(UNSEALED.title, UNSEALED.subtitle, 2.6);
+        break;
       case 'HeroHurt':
         labels.text(e.x, e.y, 46 * PX, `-${e.amount}`, '#ff7a5a', 15);
         break;
