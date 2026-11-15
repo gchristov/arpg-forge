@@ -14,13 +14,13 @@ function figure(changes: Partial<ActorLook> = {}): ActorFigure {
   scene.add(bone);
   const template: ModelTemplate = {
     scene,
-    animations: [clip('Idle', 1), clip('Run', 0.8), clip('Attack', 0.5), clip('Death', 1)],
+    animations: [clip('Idle', 1), clip('Run', 0.8), clip('Attack', 0.5), clip('Hit', 0.6), clip('Death', 1)],
     height: 1,
   };
   const library = { get: () => template, instantiate: () => scene.clone() } as unknown as ModelLibrary;
   const look: ActorLook = {
     colour: 0, height: 1, radius: 0.3,
-    model: { name: 'm', animations: { idle: 'Idle', move: 'Run', attack: 'Attack', death: 'Death' } },
+    model: { name: 'm', animations: { idle: 'Idle', move: 'Run', attack: 'Attack', hit: 'Hit', death: 'Death' } },
     ...changes,
   };
   return new ActorFigure(look, library);
@@ -83,6 +83,24 @@ describe('ActorFigure animation', () => {
     }
     expect(lowest).toBeGreaterThan(0.95);
     expect(f.activeAnimations()).toEqual(['Idle']);
+  });
+
+  it('keeps running when hit on the move, so it never slides along in a flinch', () => {
+    const f = figure();
+    f.pose(true, false);
+    run(f, 0.3);
+    f.play('hit');
+    run(f, 0.1);
+    expect(f.activeAnimations()).toEqual(['Run']);
+  });
+
+  it('cuts a flinch short to run when the actor starts moving', () => {
+    const f = figure();
+    f.play('hit');
+    run(f, 0.1);
+    f.pose(true, false);
+    run(f, 0.3);
+    expect(f.activeAnimations()).toEqual(['Run']);
   });
 
   it('dies cleanly in the middle of an attack', () => {

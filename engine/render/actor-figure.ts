@@ -101,9 +101,12 @@ export class ActorFigure {
     if (move && speed && this.movePace) move.timeScale = THREE.MathUtils.clamp(speed / this.movePace, ...PACE_RANGE);
   }
 
-  /** Plays a one-off moment, stretched to last `seconds` if given, such as an attack timed to its wind-up. */
+  /**
+   * Plays a one-off moment, stretched to last `seconds` if given, such as an attack timed to its wind-up. A flinch
+   * stops the legs, so it's skipped while moving rather than sliding along; the hit flash still shows.
+   */
   play(moment: ActorMoment, seconds?: number): void {
-    if (moment === 'hit' && this.moment) return;
+    if (moment === 'hit' && (this.moment || this.base === this.action('move'))) return;
     const action = this.action(moment);
     if (!action || this.base === this.action('death')) return;
     const from = this.moment ?? this.base;
@@ -173,7 +176,8 @@ export class ActorFigure {
 
   /**
    * Switches the ongoing pose. While a moment is showing, the new pose waits for it to end (see the 'finished'
-   * handler) and the old one stops, so no pose is left running underneath. Dying cuts a moment short.
+   * handler) and the old one stops, so no pose is left running underneath. Dying cuts a moment short, and so does
+   * moving off during a flinch.
    */
   private setBase(name: 'idle' | 'move' | 'death'): void {
     const next = this.action(name) ?? this.action('idle');
@@ -184,7 +188,8 @@ export class ActorFigure {
     next.setLoop(dying ? THREE.LoopOnce : THREE.LoopRepeat, dying ? 1 : Infinity);
     next.clampWhenFinished = dying;
     const moment = this.moment;
-    if (moment && !dying) {
+    const cutShort = dying || (name === 'move' && moment !== null && moment === this.action('hit'));
+    if (moment && !cutShort) {
       previous?.stop();
       return;
     }
