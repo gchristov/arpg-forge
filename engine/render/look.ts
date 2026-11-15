@@ -77,8 +77,9 @@ export interface Mood {
 
 /**
  * Walls drawn the way isometric action games draw them: thin panels standing on the edges where wall tiles meet the
- * floor, rather than blocks filling the wall tiles. The walls between the floor and the camera would hide the room,
- * so they get a low piece instead, or nothing. The rules still treat wall tiles as solid.
+ * floor, rather than blocks filling the wall tiles. Only a room's back walls, along its top and left edges, stand
+ * full height. The walls between the floor and the camera, and walls inside the room, would hide the floor behind
+ * them, so they get a low piece instead, or nothing. The rules still treat wall tiles as solid.
  */
 export interface WallLook {
   /** Prop kinds that are walls. Their tiles draw no prop of their own. */
@@ -87,7 +88,7 @@ export interface WallLook {
   panel: string;
   /** Tiles one panel spans; it's scaled evenly to that length, and runs of wall are split into pieces this long. */
   span: number;
-  /** The low piece along walls between the floor and the camera, facing the camera, stretched to `height` tiles tall. */
+  /** The low piece for every wall that isn't a back wall, facing the camera, stretched to `height` tiles tall. */
   front?: { name: string; height: number };
   /**
    * Models fixed to walls of these prop kinds, such as lamps: one on each face that looks onto the floor, except on

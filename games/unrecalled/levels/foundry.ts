@@ -4,85 +4,85 @@ import { Ground, Prop } from '../content/tiles';
 
 /**
  * The Foundry, floor by floor, going deeper through the door in each back wall (U) and back through the gap in the
- * front wall (V). Each floor changes the threat and holds one discovery: the recall notice in Intake (T), the town's
- * belongings on the Sorting Line's belts, a locker in the Control Gallery (Y) and an empty cradle in the Assembly
- * Hall (Z).
+ * front wall (V). Each floor has its own shape, threat and discovery: a wide receiving bay with the recall notice (T),
+ * a long line of belts carrying the town's belongings, a gallery around a shaft with a locker (Y), and a pillared hall
+ * with an empty cradle in its back wall (Z). Walls inside a room are drawn low, like railings, and a block of them
+ * reads as a shaft in the floor.
  */
 const FLOORS = {
   intake: {
-    name: 'Intake', subtitle: 'Receiving for the Valley Order',
+    name: 'Intake', subtitle: 'Receiving for the Valley Order', lamps: { L: 'cyan', A: 'amber' },
     rows: [
-      '####L#####U######L####',
-      '#hh..................#',
-      '#.....ooo.....ooo....#',
-      '#..cc..............cc#',
-      '#..cc....c..c......cc#',
-      'A....................A',
-      '#.....cc......cc.....#',
-      '#..o..cc......cc..o..#',
-      '#....................#',
-      '#.b..T.........ooo...#',
-      '#....................#',
-      '#..c............c..b.#',
-      '#..........@.........#',
-      '######################',
+      '#####L######U######L####',
+      '#hh....................#',
+      '#.....ooo.........cc...#',
+      '#..cc.............cc...#',
+      '#..cc.......T......ooo.#',
+      'A......................A',
+      '#=u=u=====......=u=u===#',
+      '#......................#',
+      '#...ooo.......cc.......#',
+      '#.............cc....b..#',
+      '#..c..b................#',
+      '#.........c.....o...c..#',
+      '#...........@..........#',
+      '########################',
     ],
   },
   sorting: {
-    name: 'The Sorting Line', subtitle: 'Everything here is stock',
+    name: 'The Sorting Line', subtitle: 'Everything here is stock', lamps: { L: 'hazard', A: 'amber' },
     rows: [
-      '####A######U#####A####',
-      '#....................#',
-      '#..x..............x..#',
-      '#====u==q===w==q==u==#',
-      '#....................#',
-      'L.....o........o.....L',
-      '#..cc....x.......cc..#',
-      '#....................#',
-      '#=q===u==w====q==u===#',
-      '#....................#',
-      '#...o....x.......o...#',
-      '#..b..............b..#',
-      '#....................#',
-      '##########V###########',
+      '###A#####A#####U####A#####A###',
+      '#............................#',
+      '#=u==q===w==q==u===q==w==u===#',
+      '#....x.......................L',
+      '#.........o.........x....o...#',
+      '#=q===u==w====q==u===w==q====#',
+      '#....................o.......#',
+      '#..cc.....x..............cc..L',
+      '#=w==u===q==w=====u==q===w===#',
+      '#.......o....................#',
+      '##############V###############',
     ],
   },
   gallery: {
-    name: 'Control Gallery', subtitle: 'Something is watching the line',
+    name: 'Control Gallery', subtitle: 'Something is watching the line', lamps: { L: 'alarm', A: 'alarm' },
     rows: [
-      '####L#####U######L####',
-      '#hh.....s.....s....hh#',
-      '#....dd........dd....#',
-      '#.k................k.#',
-      '#..........x.........#',
-      'L..s..............s..L',
-      '#....kk........kk....#',
-      '#.....o..........o...#',
-      '#l...................#',
-      '#Y.......s..........l#',
-      '#l.....dd.....dd.....#',
-      '#....................#',
-      '#..b..............b..#',
-      '##########V###########',
+      '####L######U#######L####',
+      '#hh.....s........s...hh#',
+      '#......................#',
+      '#..k..k..........k..k..#',
+      '#..s..##########..s....#',
+      'L.....##########.......L',
+      '#.....##########...x...#',
+      '#..o..##########.......#',
+      '#.....##########.......#',
+      '#Y.....k......k......l.#',
+      '#l.....dd.....s..dd....#',
+      '#......................#',
+      '#..b..............b....#',
+      '###########V############',
     ],
   },
   assembly: {
-    name: 'Assembly Hall', subtitle: 'Where the order is kept',
+    name: 'Assembly Hall', subtitle: 'Where the order is kept', lamps: { L: 'amber', A: 'molten' },
     rows: [
-      '####A#####A##A#####A####',
-      '#...FFF.....Z.....FFF..#',
-      '#......................#',
-      '#..C......C...C....C...#',
-      '#......................#',
-      'L..........E...........L',
-      '#......................#',
-      '#..C...............C...#',
-      '#......................#',
-      '#..b...x........x...b..#',
-      '#......................#',
-      '#...cc............cc...#',
-      '#......................#',
-      '###########V############',
+      '####A#####A#####Z#####A#####A#',
+      '#....FFF.....................#',
+      '#............................#',
+      '#...C.....C.........C.....C..#',
+      '#............................#',
+      'L............................L',
+      '#...C.....C....E....C.....C..#',
+      '#............................#',
+      '#............................#',
+      '#...C.....C.........C.....C..#',
+      '#.................FFF........#',
+      '#.....x..............x.......#',
+      '#..b......................b..#',
+      '#....cc..............cc......#',
+      '#............................#',
+      '##############V###############',
     ],
   },
 };
@@ -98,8 +98,6 @@ const onBelt = (prop: number): RoomKey => ({ ...solid(prop), ground: Ground.Belt
 const KEY: Record<string, RoomKey> = {
   '.': {},
   '#': { prop: Prop.Wall, frontProp: Prop.WallLow, solid: true },
-  L: { prop: Prop.WallLight, solid: true, light: { radius: 3.6, intensity: 0.9, colour: 'cyan', flicker: 0.3, lean: 0.7 } },
-  A: { prop: Prop.WallLight, solid: true, light: { radius: 3.2, intensity: 1, colour: 'amber', flicker: 0.8, lean: 0.7 } },
   F: { prop: Prop.Furnace, solid: true, light: { radius: 3.8, intensity: 1.2, colour: 'molten', flicker: 1.4 } },
   C: solid(Prop.Column),
   c: solid(Prop.Crate),
@@ -122,6 +120,15 @@ const KEY: Record<string, RoomKey> = {
   E: { spawn: 'orderEngine' },
 };
 
+/** The wall lamps, in the floor's own colours: L is the main light and A the accent. */
+function lamps(id: FloorId): Record<string, RoomKey> {
+  const { L, A } = FLOORS[id].lamps;
+  return {
+    L: { prop: Prop.WallLight, solid: true, light: { radius: 3.6, intensity: 0.9, colour: L, flicker: 0.3, lean: 0.7 } },
+    A: { prop: Prop.WallLight, solid: true, light: { radius: 3.2, intensity: 1, colour: A, flicker: 0.8, lean: 0.7 } },
+  };
+}
+
 /** The doors on one floor: deeper through the back wall, and back the way the hero came through the front. */
 function doors(id: FloorId): Record<string, RoomKey> {
   const at = FLOOR_ORDER.indexOf(id);
@@ -142,5 +149,5 @@ function doors(id: FloorId): Record<string, RoomKey> {
 
 export function buildFloor(id: FloorId): LevelContent {
   const { name, subtitle, rows } = FLOORS[id];
-  return roomFromRows({ id, name, subtitle, floor: Ground.Plate, rows, key: { ...KEY, ...doors(id) } });
+  return roomFromRows({ id, name, subtitle, floor: Ground.Plate, rows, key: { ...KEY, ...lamps(id), ...doors(id) } });
 }

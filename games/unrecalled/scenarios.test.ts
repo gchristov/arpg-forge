@@ -34,7 +34,7 @@ describe('Unrecalled scenarios', () => {
   it('starts at the bottom of Intake', () => {
     const state = createGameState(content, 1);
     expect(state.levelId).toBe('intake');
-    expect([state.hero.x, state.hero.y]).toEqual([11.5, 12.5]);
+    expect([state.hero.x, state.hero.y]).toEqual([12.5, 12.5]);
   });
 
   it('goes down through every floor to the Assembly Hall, and back up to Intake', () => {

@@ -255,6 +255,69 @@
         "maxSize": 256,
         "dropDetailMaps": true
       }
+    },
+    {
+      "name": "wall-astra",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallAstra_Straight.gltf",
+      "textures": {
+        "maxSize": 512,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "wall-window",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallWindow_Straight.gltf",
+      "textures": {
+        "maxSize": 512,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "wall-divided",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallAstra_Straight_Divided.gltf",
+      "textures": {
+        "maxSize": 512,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "floor-plates",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Platforms/Platform_3Plates.gltf",
+      "textures": {
+        "maxSize": 512,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "floor-metal",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Platforms/Platform_Metal2.gltf",
+      "textures": {
+        "maxSize": 512,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "floor-dark",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Platforms/Platform_DarkPlates.gltf",
+      "textures": {
+        "maxSize": 512,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "floor-squares",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Platforms/Platform_Squares.gltf",
+      "textures": {
+        "maxSize": 512,
+        "dropDetailMaps": true
+      }
     }
   ]
 }

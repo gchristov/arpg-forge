@@ -45,8 +45,10 @@ describe('wallPanels', () => {
     ]);
   });
 
-  it('puts panels on every face of a free-standing block of wall', () => {
-    expect(panels(['.....', '..#..', '.....'], 3)).toHaveLength(4);
+  it('draws walls inside the room low on every side, so they never hide the floor behind them', () => {
+    const block = panels(['.....', '..#..', '.....'], 3);
+    expect(block).toHaveLength(4);
+    expect(block.every((p) => p.startsWith('front'))).toBe(true);
   });
 });
 
