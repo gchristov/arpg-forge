@@ -215,12 +215,21 @@ describe('Unrecalled scenarios', () => {
     talkTo(state, 'foreman');
 
     const route: string[] = [];
-    for (let goal = questGoal(state); goal && goal.actorId === undefined && route.length < 10; goal = questGoal(state)) {
+    const keepersOn: string[] = [];
+    for (let goal = questGoal(state); goal && route.length < 10; goal = questGoal(state)) {
+      if (goal.actorId !== undefined) {
+        if (state.levelId === 'assembly') break;
+        // A machine still standing keeps the way on sealed, so the guide points at it first.
+        keepersOn.push(state.levelId);
+        silenceFloor(state);
+        continue;
+      }
       const door = currentLevel(state).level.portals.find((p) => p.tx + 0.5 === goal!.x && p.ty + 0.5 === goal!.y)!;
       takeDoor(state, door.to);
       route.push(state.levelId);
     }
     expect(route).toEqual(['tradingPost', ...FLOOR_ORDER]);
+    expect(keepersOn).toEqual(['gallery']);
     const engine = currentLevel(state).enemies.find((e) => e.kind === 'orderEngine')!;
     expect(questGoal(state)?.actorId).toBe(engine.id);
   });

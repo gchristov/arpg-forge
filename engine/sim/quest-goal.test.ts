@@ -60,6 +60,18 @@ describe('questGoal', () => {
     expect(questGoal(state)).toEqual({ x: 1.5, y: 0.5 });
   });
 
+  it('points at the nearest enemy still standing while the doorway on is sealed, then at the doorway', () => {
+    const state = game([{}, { reachedBy: { type: 'enter', levelId: 'crypt' } }]);
+    state.levelId = 'cellar';
+    const cellar = state.levels.cellar!;
+    cellar.level.portals[1]!.sealed = true;
+    cellar.enemies.push(...state.levels.crypt!.enemies.splice(0));
+    const guard = cellar.enemies[0]!;
+    expect(questGoal(state)).toMatchObject({ actorId: guard.id });
+    guard.dead = true;
+    expect(questGoal(state)).toEqual({ x: 3.5, y: 0.5 });
+  });
+
   it('points at the enemy to defeat once on its level, and nowhere once it has fallen', () => {
     const state = game([{}, { reachedBy: { type: 'kill', enemyKind: 'lord' } }]);
     state.levelId = 'crypt';
