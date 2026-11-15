@@ -710,6 +710,84 @@
         "maxSize": 512,
         "dropDetailMaps": true
       }
+    },
+    {
+      "name": "scaffold",
+      "pack": "spacebase",
+      "path": "Assets/gltf/structure_tall.gltf",
+      "textures": {
+        "maxSize": 256,
+        "recolour": {
+          "brightness": 0.62,
+          "saturation": 0.45,
+          "hue": -8
+        }
+      }
+    },
+    {
+      "name": "truck",
+      "pack": "spacebase",
+      "path": "Assets/gltf/spacetruck.gltf",
+      "textures": {
+        "maxSize": 256,
+        "recolour": {
+          "brightness": 0.62,
+          "saturation": 0.45,
+          "hue": -8
+        }
+      }
+    },
+    {
+      "name": "solar-roof",
+      "pack": "spacebase",
+      "path": "Assets/gltf/roofmodule_solarpanels.gltf",
+      "textures": {
+        "maxSize": 256,
+        "recolour": {
+          "brightness": 0.62,
+          "saturation": 0.45,
+          "hue": -8
+        }
+      }
+    },
+    {
+      "name": "cargo-roof",
+      "pack": "spacebase",
+      "path": "Assets/gltf/roofmodule_cargo_A.gltf",
+      "textures": {
+        "maxSize": 256,
+        "recolour": {
+          "brightness": 0.62,
+          "saturation": 0.45,
+          "hue": -8
+        }
+      }
+    },
+    {
+      "name": "crane",
+      "pack": "spacebase",
+      "path": "Assets/gltf/cargodepot_A.gltf",
+      "textures": {
+        "maxSize": 256,
+        "recolour": {
+          "brightness": 0.62,
+          "saturation": 0.45,
+          "hue": -8
+        }
+      }
+    },
+    {
+      "name": "drill",
+      "pack": "spacebase",
+      "path": "Assets/gltf/drill_structure.gltf",
+      "textures": {
+        "maxSize": 256,
+        "recolour": {
+          "brightness": 0.62,
+          "saturation": 0.45,
+          "hue": -8
+        }
+      }
     }
   ]
 }

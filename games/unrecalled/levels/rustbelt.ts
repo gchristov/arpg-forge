@@ -14,17 +14,24 @@ interface BuildingSpec {
   to: string;
   door: { tx: number; ty: number };
   parts: BuildingPart[];
+  /** What stands round it: a prop on a tile, and the further tiles it covers, kept solid. */
+  dressing: Array<{ prop: number; tx: number; ty: number; covers?: Array<[number, number]> }>;
 }
 
 /**
  * Buildings put together from salvaged Foundry walls, each with a door on its front (bottom) edge. Mags's trading
- * post, the old depot, is the biggest: a two-storey hall with a wing and a tower. Pell's workshop has a loft at the
- * back, and the pumphouse its pump tower and a lean-to.
+ * post, the old depot, is the biggest: a two-storey hall with a wing and a tower, a cargo crane beside it. Pell's
+ * workshop has a loft at the back, a scaffold and a truck; the pumphouse its pump tower, a lean-to and the rig that
+ * pumps.
  */
 const BUILDINGS: BuildingSpec[] = [
   {
     kind: 'workshop', name: 'Pell’s Workshop', to: 'workshop', door: { tx: 9, ty: 11 },
     parts: [{ x: 7, y: 8, width: 6, depth: 4, floors: 1 }, { x: 7, y: 6, width: 4, depth: 2, floors: 2 }],
+    dressing: [
+      { prop: Prop.Scaffold, tx: 12, ty: 7 },
+      { prop: Prop.Truck, tx: 5, ty: 10, covers: [[5, 9], [5, 11]] },
+    ],
   },
   {
     kind: 'tradingPost', name: 'Mags’s Trading Post', to: 'tradingPost', door: { tx: 34, ty: 11 },
@@ -33,6 +40,12 @@ const BUILDINGS: BuildingSpec[] = [
       { x: 40, y: 8, width: 4, depth: 4, floors: 1 },
       { x: 34, y: 4, width: 4, depth: 2, floors: 3 },
     ],
+    dressing: [
+      { prop: Prop.Crane, tx: 42, ty: 6, covers: [[41, 6], [43, 6], [41, 7], [42, 7], [43, 7]] },
+      { prop: Prop.Cargo, tx: 40, ty: 13 },
+      { prop: Prop.Cargo, tx: 42, ty: 13 },
+      { prop: Prop.Cargo, tx: 31, ty: 9 },
+    ],
   },
   {
     kind: 'pumphouse', name: 'The Old Pumphouse', to: 'pumphouse', door: { tx: 38, ty: 24 },
@@ -40,6 +53,10 @@ const BUILDINGS: BuildingSpec[] = [
       { x: 37, y: 21, width: 4, depth: 4, floors: 1 },
       { x: 37, y: 19, width: 2, depth: 2, floors: 3 },
       { x: 41, y: 23, width: 2, depth: 2, floors: 1 },
+    ],
+    dressing: [
+      { prop: Prop.PumpRig, tx: 42, ty: 21, covers: [[41, 21], [43, 21], [41, 22], [42, 22], [43, 22]] },
+      { prop: Prop.Tank, tx: 36, ty: 21 },
     ],
   },
 ];
@@ -190,6 +207,10 @@ function addBuilding(level: Level, b: BuildingSpec, seed: number): Structure {
     door: b.door, parts: b.parts,
   };
   level.structures.push(structure);
+  for (const d of b.dressing) {
+    setProp(map, d.tx, d.ty, d.prop, true);
+    for (const [x, y] of d.covers ?? []) setProp(map, x, y, Prop.Building, true);
+  }
   level.lights.push({ x: tx + 0.5, y: ty + 1.25, radius: 2.6, intensity: 0.8, colour: 'amber', flicker: 0.8, seed: seed * 3 });
   return structure;
 }

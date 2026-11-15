@@ -61,8 +61,13 @@ export function kitBuilding(
       place(rail, inset.multiply(along(slot, blockHeight(slot.storey), kit.span)).multiply(panelFit(rail, kit.span)));
     }
   }
+  const paint = kit.tint === undefined ? null : new THREE.Color(kit.tint);
+  const painted = (meshes: THREE.InstancedMesh[]) => {
+    if (paint) for (const mesh of meshes) tintMaterials(mesh, paint);
+    return meshes;
+  };
   for (const [template, matrices] of placed) {
-    const meshes = instancedModel(template, new THREE.Matrix4(), matrices);
+    const meshes = painted(instancedModel(template, new THREE.Matrix4(), matrices));
     if (kit.glass && template === windowPiece) for (const mesh of meshes) lightGlass(mesh, kit.glass.material, kit.glass.colour);
     add(meshes);
   }
@@ -73,9 +78,9 @@ export function kitBuilding(
     const size = modelSize(door);
     const depth = size.z * (kit.door.width / size.x);
     const fit = fitMatrix(door, { type: 'box', width: kit.door.width, height: kit.door.height, depth });
-    add(instancedModel(door, fit, [new THREE.Matrix4()
+    add(painted(instancedModel(door, fit, [new THREE.Matrix4()
       .makeTranslation(doorSlot.x, 0, doorSlot.y)
-      .multiply(new THREE.Matrix4().makeRotationY(Math.atan2(doorSlot.facing.x, doorSlot.facing.y)))]));
+      .multiply(new THREE.Matrix4().makeRotationY(Math.atan2(doorSlot.facing.x, doorSlot.facing.y)))])));
   }
 
   const corner = kit.corner ? models.get(kit.corner) : undefined;
@@ -85,7 +90,7 @@ export function kitBuilding(
       const columns = layout.corners.filter((c) => c.top === top);
       if (!columns.length) continue;
       const fit = fitMatrix(corner, { type: 'box', width: size.x * k, height: storeyHeight + (top ? bandHeight : 0), depth: size.z * k });
-      add(instancedModel(corner, fit, columns.map((c) => new THREE.Matrix4().makeTranslation(c.x, c.storey * storeyHeight, c.y))));
+      add(painted(instancedModel(corner, fit, columns.map((c) => new THREE.Matrix4().makeTranslation(c.x, c.storey * storeyHeight, c.y)))));
     }
   }
 
@@ -97,11 +102,11 @@ export function kitBuilding(
       .makeTranslation(p.x, blockHeight(p.floors), p.y)
       .multiply(new THREE.Matrix4().makeScale(p.width / kit.span, 1, p.depth / kit.span)))));
   }
-  (kit.roofProps ?? []).forEach((name, variant) => {
-    const template = models.get(name);
+  (kit.roofProps ?? []).forEach((prop, variant) => {
+    const template = models.get(typeof prop === 'string' ? prop : prop.name);
     const spots = layout.roofProps.filter((p) => p.variant === variant);
     if (!template || !spots.length) return;
-    const fit = new THREE.Matrix4().makeScale(k, k, k);
+    const fit = typeof prop === 'string' ? new THREE.Matrix4().makeScale(k, k, k) : fitMatrix(template, { type: 'width', width: prop.width });
     add(instancedModel(template, fit, spots.map((p) => new THREE.Matrix4()
       .makeTranslation(p.x, blockHeight(p.floors), p.y)
       .multiply(new THREE.Matrix4().makeRotationY(Math.floor(hash2(p.x * 2, p.y * 2, 9) * 4) * (Math.PI / 2))))));
@@ -129,6 +134,17 @@ export function kitBuilding(
     }))
     : [];
   return { group, lights };
+}
+
+/** Gives a mesh its own copies of its materials, multiplied by `paint`. */
+function tintMaterials(mesh: THREE.InstancedMesh, paint: THREE.Color): void {
+  const tint = (m: THREE.Material) => {
+    const own = m.clone() as THREE.Material & { color?: THREE.Color };
+    own.color?.multiply(paint);
+    own.userData.ownCopy = true;
+    return own;
+  };
+  mesh.material = Array.isArray(mesh.material) ? mesh.material.map(tint) : tint(mesh.material);
 }
 
 /** Swaps a mesh's glass for a glowing copy, lit from inside whatever light falls on it. */

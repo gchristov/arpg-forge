@@ -46,15 +46,20 @@ export interface BuildingKit {
   door: { name: string; width: number; height: number };
   /** A column standing wherever the walls turn a corner, on every storey. */
   corner?: string;
-  /** Plates laid over the roof, and things standing on it, such as vents and fans. */
+  /**
+   * Plates laid over the roof, and things standing on it, such as vents and fans: scaled like the kit's pieces, or
+   * fitted `width` tiles across, for models from elsewhere.
+   */
   roof: string;
-  roofProps?: string[];
+  roofProps?: Array<string | { name: string; width: number }>;
   /** The light inside, seen through the door. */
   inside: number;
   /** Lit windows: the window piece's glass, by material name, glows `colour` and casts the light `light` outside. */
   glass?: { material: string; colour: number; light: string };
   /** A lit sign over the door. */
   sign?: number;
+  /** A colour the walls, columns, bands and door are multiplied by, so buildings from one kit can each have their own paint. */
+  tint?: number;
 }
 
 /** Names of a model's animations for each thing an actor does. Missing ones fall back to `idle`. */
@@ -117,6 +122,14 @@ export interface Mood {
    * natural ground such as earth outdoors. Without it, each tile is one flat colour, which suits floors.
    */
   groundGrain?: number;
+  /** Mist drifting low over the ground, for weather outdoors. */
+  mist?: MistLook;
+}
+
+export interface MistLook {
+  colour: number;
+  /** How thick the mist is where it gathers, from 0 to 1. */
+  density: number;
 }
 
 /**

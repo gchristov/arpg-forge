@@ -19,6 +19,8 @@ const NIGHT: Mood = {
   moon: { colour: 0xa8bcd8, intensity: 0.95 },
   groundGrain: 0.7,
   fill: { sky: 0xb8c8e0, ground: 0x201a14, intensity: 0.55 },
+  // River mist, cold under the moon and warm round the fire and lamps.
+  mist: { colour: 0x8a98ac, density: 0.45 },
 };
 
 /** Each level's own walls, floor plates and air, so the player always knows where they are. */
@@ -62,6 +64,11 @@ const PROPS: Partial<Record<number, PropLook>> = {
   // Old shipping containers and cargo, stacked where they were dropped.
   [Prop.Containers]: { shape: 'box', width: 1, height: 1, colour: 0x5a4a3a, model: { names: ['containers-1', 'containers-2', 'containers-3'], fit: { type: 'footprint', width: 1.1, depth: 1.1 }, turn: 'random' } },
   [Prop.Cargo]: { shape: 'box', width: 0.9, height: 0.9, colour: 0x5a4a3a, model: { names: ['cargo'], fit: { type: 'footprint', width: 1, depth: 1 }, turn: 'random' } },
+  [Prop.Scaffold]: { shape: 'box', width: 1, height: 3, colour: 0x4a4038, model: { names: ['scaffold'], fit: { type: 'footprint', width: 1.5, depth: 1.5 } } },
+  [Prop.Truck]: { shape: 'box', width: 1, height: 1, colour: 0x5a4a3a, model: { names: ['truck'], fit: { type: 'footprint', width: 1.3, depth: 2.6 } } },
+  [Prop.Crane]: { shape: 'box', width: 1.5, height: 2, colour: 0x5a4a3a, model: { names: ['crane'], fit: { type: 'footprint', width: 2.4, depth: 2.4 } } },
+  [Prop.PumpRig]: { shape: 'box', width: 1.5, height: 3, colour: 0x3a4048, model: { names: ['drill'], fit: { type: 'footprint', width: 2.4, depth: 2.4 } } },
+  [Prop.Tank]: { shape: 'cylinder', width: 0.9, height: 1.5, colour: 0x3a4048, model: tall('tank', 1.6) },
   [Prop.FireBarrel]: {
     shape: 'cylinder', width: 0.6, height: 0.8, colour: 0x5a3020, emissive: 0x5a2008, model: tall('fire-barrel', 0.8),
     flame: { height: 0.7, size: 0.45, colour: 0xff6a18 },
@@ -97,10 +104,15 @@ const building = (wall: number, kit: Partial<BuildingKit>): StructureLook => ({
   wall, roof: 0x3a3028, wallHeight: 2.5, roofHeight: 0.2, kit: { ...TOWN_KIT, ...kit },
 });
 
+// Each building has its own paint and its own clutter on the roof, so the town doesn't read as one building three times.
 const STRUCTURES: Record<string, StructureLook> = {
-  workshop: building(0x4a4038, { sign: 0x6ad8ff }),
-  tradingPost: building(0x4a4038, { wall: ['town-wall-band', 'town-wall-band-broken'], window: 'town-window' }),
+  workshop: building(0x4a4038, { sign: 0x6ad8ff, tint: 0xe0a078, roofProps: [{ name: 'solar-roof', width: 1.8 }, 'roof-vent'] }),
+  tradingPost: building(0x4a4038, {
+    wall: ['town-wall-band', 'town-wall-band-broken'], window: 'town-window', tint: 0x90c8bc,
+    roofProps: [{ name: 'cargo-roof', width: 1.8 }, 'roof-fan'],
+  }),
   pumphouse: building(0x3a4048, {
+    tint: 0xa0b0c8, roofProps: [{ name: 'tank', width: 1.1 }, 'roof-vent'],
     wall: ['town-wall-band-broken'],
     window: 'town-window',
     inside: 0x2a3a40,
