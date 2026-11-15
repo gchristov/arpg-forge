@@ -6,9 +6,10 @@ import { ActorFigure, type ActorMoment } from './actor-figure';
 import { Effects } from './effects';
 import { Flames, type FlameSpot } from './flames';
 import { blendedGround } from './ground-blend';
+import { kitBuilding } from './kit-building';
 import { LightMap } from './light-map';
 import type { Look, Mood, PropLook, WallFixture } from './look';
-import { fitMatrix, instancedModel } from './model-instancing';
+import { fitMatrix, instancedModel, panelFit, panelScale } from './model-instancing';
 import { ModelLibrary, type ModelTemplate } from './models';
 import { isWallTile, wallFaces, wallPanels } from './wall-panels';
 
@@ -123,7 +124,7 @@ export class SceneRenderer {
     disposeTree(this.levelGroup);
     this.levelGroup = new THREE.Group();
     this.scene.add(this.levelGroup);
-    this.levelLights = level.lights;
+    this.levelLights = [...level.lights];
     this.lightMap.setArea(level.map.width, level.map.height);
 
     const mood = this.look.mood(level.id);
@@ -538,6 +539,12 @@ export class SceneRenderer {
   private buildStructures(level: Level): THREE.Object3D[] {
     return level.structures.map((s, index) => {
       const look = this.look.structure(s.kind);
+      const built = look.kit && kitBuilding(s, look.kit, this.models);
+      if (built) {
+        built.group.userData.structureIndex = index;
+        this.levelLights.push(...built.lights);
+        return built.group;
+      }
       const group = new THREE.Group();
       const template = look.model && this.models.get(look.model.name);
       if (template && look.model) {
@@ -574,23 +581,6 @@ export class SceneRenderer {
     });
   }
 
-}
-
-/** How much a wall panel lying along z is scaled to span `span` tiles. */
-function panelScale(template: ModelTemplate, span: number): number {
-  const size = new THREE.Box3().setFromObject(template.scene).getSize(new THREE.Vector3());
-  return span / Math.max(size.z, 1e-3);
-}
-
-/**
- * Sizes a wall panel lying along z to `span` tiles long, keeping its proportions unless `height` stretches it. Its
- * back sits on the origin, so placed on the wall's edge it stands just inside the wall tile, facing the floor.
- */
-function panelFit(template: ModelTemplate, span: number, height?: number): THREE.Matrix4 {
-  const size = new THREE.Box3().setFromObject(template.scene).getSize(new THREE.Vector3());
-  const k = panelScale(template, span);
-  const fit = fitMatrix(template, { type: 'box', width: size.x * k, height: height ?? size.y * k, depth: span });
-  return new THREE.Matrix4().makeTranslation((-size.x * k) / 2, 0, 0).multiply(fit);
 }
 
 function propGeometry(look: PropLook): THREE.BufferGeometry {

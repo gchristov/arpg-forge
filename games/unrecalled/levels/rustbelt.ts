@@ -12,10 +12,10 @@ interface BuildingSpec extends Structure {
   to: string;
 }
 
-/** Salvage buildings made of old base modules and cargo depots, each with a door on its front (bottom) edge. */
+/** Buildings put together from salvaged Foundry walls, each with a door on its front (bottom) edge. */
 const BUILDINGS: BuildingSpec[] = [
-  { kind: 'workshop', name: 'Pell’s Workshop', to: 'workshop', x: 7, y: 7, width: 6, depth: 5, door: { tx: 9, ty: 11 } },
-  { kind: 'tradingPost', name: 'Mags’s Trading Post', to: 'tradingPost', x: 32, y: 7, width: 6, depth: 5, door: { tx: 34, ty: 11 } },
+  { kind: 'workshop', name: 'Pell’s Workshop', to: 'workshop', x: 7, y: 8, width: 6, depth: 4, door: { tx: 9, ty: 11 } },
+  { kind: 'tradingPost', name: 'Mags’s Trading Post', to: 'tradingPost', x: 32, y: 8, width: 6, depth: 4, door: { tx: 34, ty: 11 } },
   { kind: 'pumphouse', name: 'The Old Pumphouse', to: 'pumphouse', x: 37, y: 21, width: 4, depth: 4, door: { tx: 38, ty: 24 } },
 ];
 

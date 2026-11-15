@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { hash2, valueNoise } from '../../../engine/core/math';
-import type { ActorLook, Look, Mood, PropLook, StructureLook } from '../../../engine/render/look';
+import type { ActorLook, BuildingKit, Look, Mood, PropLook, StructureLook } from '../../../engine/render/look';
 import { Ground, Prop } from '../content/tiles';
 
 /** Unrecalled's look: Quaternius people and machines, cold workshop light against furnace glow. */
@@ -75,11 +75,35 @@ const PROPS: Partial<Record<number, PropLook>> = {
   [Prop.Computer]: { shape: 'box', width: 0.6, height: 0.9, colour: 0x2a3a4a, emissive: 0x0a4050, model: tall('computer', 0.95) },
 };
 
-/** Rustbelt's buildings, from weathered base modules and cargo depots, doors facing the camera. */
+/** The town's buildings, put together from the Foundry's own wall kit, weathered, as salvage from it would be. */
+const TOWN_KIT: BuildingKit = {
+  span: 2,
+  wall: ['town-wall-astra'],
+  window: 'town-window-astra',
+  top: 'town-top',
+  door: { name: 'town-door', width: 1.3, height: 1.9 },
+  corner: 'town-column',
+  roof: 'town-roof',
+  roofProps: ['roof-vent', 'roof-fan'],
+  inside: 0x6a4420,
+  glass: { material: 'M_Glass', colour: 0xd89a50, light: 'amber' },
+  sign: 0xffb050,
+};
+
+const building = (wall: number, kit: Partial<BuildingKit>): StructureLook => ({
+  wall, roof: 0x3a3028, wallHeight: 2.5, roofHeight: 0.2, kit: { ...TOWN_KIT, ...kit },
+});
+
 const STRUCTURES: Record<string, StructureLook> = {
-  workshop: { wall: 0x4a4038, roof: 0x3a3028, wallHeight: 1.6, roofHeight: 0.6, model: { name: 'workshop', rotation: 0 } },
-  tradingPost: { wall: 0x4a4038, roof: 0x3a3028, wallHeight: 1.6, roofHeight: 0.6, model: { name: 'trading-post', rotation: 0 } },
-  pumphouse: { wall: 0x3a4048, roof: 0x2a3038, wallHeight: 1.4, roofHeight: 0.5, model: { name: 'pumphouse', rotation: 0 } },
+  workshop: building(0x4a4038, { sign: 0x6ad8ff }),
+  tradingPost: building(0x4a4038, { wall: ['town-wall-band', 'town-wall-band-broken'], window: 'town-window' }),
+  pumphouse: building(0x3a4048, {
+    wall: ['town-wall-band-broken'],
+    window: 'town-window',
+    inside: 0x2a3a40,
+    glass: { material: 'M_Glass', colour: 0x7ab8c8, light: 'cyan' },
+    sign: undefined,
+  }),
 };
 
 const LIGHTS: Record<string, number> = { cyan: 0x6ad8ff, amber: 0xffa040, molten: 0xff6a20, alarm: 0xff3a2a, hazard: 0xffc840 };
