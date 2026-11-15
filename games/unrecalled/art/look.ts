@@ -20,7 +20,7 @@ const NIGHT: Mood = {
   groundGrain: 0.7,
   fill: { sky: 0xb8c8e0, ground: 0x201a14, intensity: 0.55 },
   // River mist, cold under the moon and warm round the fire and lamps.
-  mist: { colour: 0x8a98ac, density: 0.45 },
+  mist: { colour: 0x8494aa, density: 0.85 },
 };
 
 /** Each level's own walls, floor plates and air, so the player always knows where they are. */
