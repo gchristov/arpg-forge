@@ -181,6 +181,12 @@ export interface EffectsLook {
    * show only their flash.
    */
   lightning?: number;
+  /**
+   * Guidance to the quest's next goal: an `arrow` on the ground by the hero pointing the way, with a "!" of the same
+   * colour over the townsperson to talk to, and townspeople's names in `name` when the hero is near. Without it, the
+   * game gives no guidance in the world.
+   */
+  guide?: { arrow: number; name: number };
   /** Chimney smoke. */
   smoke: number;
   explosion: BurstLook;

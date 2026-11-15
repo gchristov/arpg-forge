@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { questGoal } from '../../engine/sim/quest-goal';
 import { createGameState } from '../../engine/sim/setup';
 import { currentLevel, type Command, type GameState, type SimEvent } from '../../engine/sim/state';
 import { step } from '../../engine/sim/step';
@@ -130,5 +131,19 @@ describe('Ashen Hollow scenarios', () => {
     };
     expect(run(7)).toBe(run(7));
     expect(run(7)).not.toBe(run(8));
+  });
+
+  it('points the way to Maren, then to the crypt\'s door, then to the Bone Lord, and nowhere once he falls', () => {
+    const state = newGame(5);
+    state.hero.hp = state.hero.maxHp = 100000;
+    const maren = currentLevel(state).npcs[0]!;
+    expect(questGoal(state)?.actorId).toBe(maren.id);
+    play(state, 4, [{ type: 'talk', npcId: maren.id }]);
+
+    const crypt = currentLevel(state).level.structures.find((s) => s.kind === 'crypt')!;
+    expect(questGoal(state)).toEqual({ x: crypt.door.tx + 0.5, y: crypt.door.ty + 0.5 });
+    play(state, 25, [{ type: 'enterStructure', index: structureIndex(state, 'crypt') }]);
+    const lord = currentLevel(state).enemies.find((e) => state.rules.enemies[e.kind]?.boss)!;
+    expect(questGoal(state)?.actorId).toBe(lord.id);
   });
 });

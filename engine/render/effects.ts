@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { EnergyDomes } from './energy-domes';
+import { GoalArrow } from './goal-arrow';
 import { Lightning } from './lightning';
 
 /** Heights above the ground, in tiles. */
@@ -55,6 +56,7 @@ export interface EffectColours {
   /** Item colours by kind, such as gold or a healing item. */
   items: Record<string, number>;
   scan?: number;
+  guide?: { arrow: number };
 }
 
 interface Decal {
@@ -95,6 +97,8 @@ export class Effects {
   private readonly flashes: Flash[] = [];
   private readonly lightning: Lightning;
   private readonly domes: EnergyDomes;
+  /** The way to the quest's next goal, if the look guides the player. */
+  readonly goalArrow: GoalArrow | null;
   private readonly items = new Map<string, THREE.Mesh[]>();
   private readonly itemsUsed = new Map<string, number>();
   private readonly decals: Decal[] = [];
@@ -142,6 +146,7 @@ export class Effects {
     }
     this.lightning = new Lightning(scene);
     this.domes = new EnergyDomes(scene);
+    this.goalArrow = colours.guide ? new GoalArrow(scene, colours.guide.arrow) : null;
     for (let i = 0; i < POOL_SIZE; i++) {
       this.skillShots.push(hidden(scene, new THREE.Mesh(skillGeometry, skillMaterial)));
       this.shots.push(hidden(scene, new THREE.Mesh(shotGeometry, shotMaterial)));
@@ -289,6 +294,7 @@ export class Effects {
     for (const list of [this.skillShots, this.shots, this.circles]) for (const m of list) m.visible = visible;
     for (const f of this.flashes) f.mesh.visible = visible;
     this.domes.setAllVisible(visible);
+    this.goalArrow?.setVisible(visible);
     for (const d of this.decals) d.mesh.visible = visible;
     for (const p of this.puffs) p.mesh.visible = visible;
     for (const pool of this.items.values()) for (const m of pool) m.visible = visible;

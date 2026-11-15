@@ -2,9 +2,11 @@ import { lerp } from '../core/math';
 import type { ScanView } from '../render/effects';
 import type { Look } from '../render/look';
 import type { SceneRenderer } from '../render/scene-renderer';
+import { questGoal, type QuestGoal } from '../sim/quest-goal';
 import { currentLevel, type Actor, type GameState, type SimEvent } from '../sim/state';
 import type { ScreenFade } from '../ui/fade';
 import type { Project, WorldLabels } from '../ui/world-labels';
+import { GoalGuide } from './goal-guide';
 
 /** One screen pixel at zoom 1, in tiles. Heights of labels and taps are measured in these. */
 export const PX = 1 / 39.2;
@@ -25,6 +27,13 @@ const PROJECTILE_HEIGHT = 0.52;
 const CRACKLE_CHANCE = 0.75;
 /** Each chimney puffs this often. */
 const SMOKE_SECONDS = 1.6;
+/** Townspeople's names show within this many tiles of the hero. */
+const NAME_RANGE = 5;
+/**
+ * The arrow to the next goal hides this close to it, in tiles: nearer for a doorway, which is the end of the way on,
+ * than for someone to talk to or fight, who is plain to see by then.
+ */
+const GOAL_NEAR = { doorway: 1.5, actor: 4 };
 
 /**
  * Draws the game state each frame and shows the rules' events in the world: actors and their animations, health
@@ -38,6 +47,13 @@ export class WorldView {
   private readonly windingUp = new Set<number>();
   private nextSmokeAt = 0;
   private stepSeconds = 1 / 60;
+  private guideSeconds = 0;
+  private readonly guide = new GoalGuide();
+  private readonly aim = { x: 0, y: 0 };
+  private readonly goalPoint = { x: 0, y: 0 };
+  /** The goal as last worked out, kept until the quest or level changes; an actor goal follows the actor. */
+  private goal: { quest: number; levelId: string; at: QuestGoal | null } | null = null;
+  private readonly guideColours: { arrow: string; name: string } | null;
   /** Reused each frame for the machines scanning the hero. */
   private readonly scans: ScanView[] = Array.from({ length: 6 }, () => ({
     fromX: 0, fromY: 0, fromHeight: 0, x: 0, y: 0, height: 0, radius: 0, progress: 0,
@@ -50,7 +66,10 @@ export class WorldView {
     private readonly labels: WorldLabels,
     private readonly fade: ScreenFade,
     private readonly project: Project,
-  ) {}
+  ) {
+    const { guide } = look.effects;
+    this.guideColours = guide ? { arrow: cssColour(guide.arrow), name: cssColour(guide.name) } : null;
+  }
 
   /** Body size of an actor kind relative to an ordinary one. */
   scaleOf(kind: string): number {
@@ -172,6 +191,64 @@ export class WorldView {
     renderer.effects.showProjectiles(state.projectiles, alpha);
     renderer.effects.showTelegraphs(state.telegraphs);
     renderer.effects.showItems(ls.items, performance.now() / 1000);
+    this.showGuide(alpha, frameSeconds);
+  }
+
+  /**
+   * Guidance to the quest's next goal: the arrow by the hero along the way there, a "!" over the townsperson to talk
+   * to, and the names of townspeople nearby.
+   */
+  private showGuide(alpha: number, frameSeconds: number): void {
+    const { state, labels, renderer, look, guideColours: colours } = this;
+    const arrow = renderer.effects.goalArrow;
+    if (!colours || !arrow) return;
+    this.guideSeconds += frameSeconds;
+    const ls = currentLevel(state);
+    const hx = lerp(state.hero.prevX, state.hero.x, alpha);
+    const hy = lerp(state.hero.prevY, state.hero.y, alpha);
+    const goal = this.currentGoal();
+    let goalX = goal?.x ?? 0;
+    let goalY = goal?.y ?? 0;
+
+    labels.beginTags();
+    for (const n of ls.npcs) {
+      const x = lerp(n.prevX, n.x, alpha);
+      const y = lerp(n.prevY, n.y, alpha);
+      const height = look.actor(n.kind).height * this.scaleOf(n.kind);
+      if (n.id === goal?.actorId) {
+        goalX = x;
+        goalY = y;
+        const bob = Math.sin(this.guideSeconds * 4) * 0.06;
+        labels.tag(this.project, x, y, height + 0.8 + bob, '!', colours.arrow, 24);
+      }
+      if (Math.hypot(x - hx, y - hy) < NAME_RANGE) labels.tag(this.project, x, y, height + 0.3, n.name, colours.name, 13);
+    }
+    labels.endTags();
+    const enemy = goal?.actorId === undefined ? undefined : ls.enemies.find((e) => e.id === goal.actorId);
+    if (enemy) {
+      goalX = lerp(enemy.prevX, enemy.x, alpha);
+      goalY = lerp(enemy.prevY, enemy.y, alpha);
+    }
+
+    const near = goal?.actorId === undefined ? GOAL_NEAR.doorway : GOAL_NEAR.actor;
+    if (!goal || state.hero.dead || state.transition || Math.hypot(goalX - hx, goalY - hy) < near) {
+      arrow.hide();
+      return;
+    }
+    this.goalPoint.x = goalX;
+    this.goalPoint.y = goalY;
+    const aim = this.guide.aim(ls.level.map, hx, hy, this.goalPoint, this.aim);
+    arrow.show(hx, hy, aim.x - hx, aim.y - hy, this.guideSeconds);
+  }
+
+  private currentGoal(): QuestGoal | null {
+    const { state } = this;
+    const fallen = this.goal?.at?.actorId !== undefined &&
+      currentLevel(state).enemies.some((e) => e.id === this.goal!.at!.actorId && e.dead);
+    if (!this.goal || this.goal.quest !== state.quest || this.goal.levelId !== state.levelId || fallen) {
+      this.goal = { quest: state.quest, levelId: state.levelId, at: questGoal(state) };
+    }
+    return this.goal.at;
   }
 
   private drawActor(actor: Actor & { dead?: boolean }, alpha: number, fade = 1): void {
@@ -333,4 +410,8 @@ export class WorldView {
       this.renderer.effects.smoke(s.chimney.tx + 0.5, s.chimney.ty + 0.5, height, vx, vy, (10 + Math.random() * 8) * PX, this.look.effects.smoke, 3.5);
     }
   }
+}
+
+function cssColour(colour: number): string {
+  return `#${colour.toString(16).padStart(6, '0')}`;
 }

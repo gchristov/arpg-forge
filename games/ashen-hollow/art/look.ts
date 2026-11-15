@@ -149,6 +149,7 @@ export const ashenHollowLook: Look = {
   effects: {
     skill: 0xffa040, shot: 0xe8e1cc, telegraph: 0xb46bff, items: { gold: 0xe8b84a, healingItem: 0xd2303a },
     walkMarker: 0xe8d6a6, targetMarker: 0xff5a4a,
+    guide: { arrow: 0xffd25a, name: 0xe8d6a6 },
     skillLight: 0xff9b3c, telegraphLight: 0xaa5aff, bossLight: 0xaa5aff,
     smoke: 0x6b6672,
     explosion: { flash: 0xff9a3a, scorch: 0x120a06 },
