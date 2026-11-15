@@ -24,8 +24,10 @@
     },
     "nature": {
       "zip": "https://opengameart.org/sites/default/files/stylized_nature_megakitstandard.zip",
-      "sha256": "298f6732b872e4cf7b30e6e7abf9641c7f6dc6b326df37ac089533ed7e3d58c9"
-    }
+      "sha256": "298f6732b872e4cf7b30e6e7abf9641c7f6dc6b326df37ac089533ed7e3d58c9",
+      "textures": "glTF"
+    },
+    "spacebase": "https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Space-Base-Bits-1.0/6dfbcac9927d06283752c4defd4882cfe0d29666/addons/kaykit_space_base_bits"
   },
   "models": [
     {
@@ -366,15 +368,6 @@
       ]
     },
     {
-      "name": "pylon",
-      "pack": "megakit",
-      "path": "Modular SciFi MegaKit[Standard]/glTF/Columns/Column_Large_Straight.gltf",
-      "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
-      }
-    },
-    {
       "name": "post",
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Columns/Column_Astra.gltf",
@@ -395,29 +388,32 @@
     {
       "name": "dead-tree-1",
       "pack": "nature",
-      "path": "glTF/DeadTree_1.gltf",
+      "path": "FBX/DeadTree_1.fbx",
       "textures": {
         "maxSize": 256,
         "dropDetailMaps": true
-      }
+      },
+      "decimate": 0.2
     },
     {
       "name": "dead-tree-2",
       "pack": "nature",
-      "path": "glTF/DeadTree_2.gltf",
+      "path": "FBX/DeadTree_2.fbx",
       "textures": {
         "maxSize": 256,
         "dropDetailMaps": true
-      }
+      },
+      "decimate": 0.2
     },
     {
       "name": "dead-tree-3",
       "pack": "nature",
-      "path": "glTF/DeadTree_4.gltf",
+      "path": "FBX/DeadTree_4.fbx",
       "textures": {
         "maxSize": 256,
         "dropDetailMaps": true
-      }
+      },
+      "decimate": 0.2
     },
     {
       "name": "rock-1",
@@ -471,6 +467,110 @@
       "textures": {
         "maxSize": 256,
         "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "workshop",
+      "pack": "spacebase",
+      "path": "Assets/gltf/basemodule_garage.gltf",
+      "textures": {
+        "maxSize": 256,
+        "recolour": {
+          "brightness": 0.62,
+          "saturation": 0.45,
+          "hue": -8
+        }
+      }
+    },
+    {
+      "name": "trading-post",
+      "pack": "spacebase",
+      "path": "Assets/gltf/cargodepot_A.gltf",
+      "textures": {
+        "maxSize": 256,
+        "recolour": {
+          "brightness": 0.62,
+          "saturation": 0.45,
+          "hue": -8
+        }
+      }
+    },
+    {
+      "name": "pumphouse",
+      "pack": "spacebase",
+      "path": "Assets/gltf/structure_low.gltf",
+      "textures": {
+        "maxSize": 256,
+        "recolour": {
+          "brightness": 0.62,
+          "saturation": 0.45,
+          "hue": -8
+        }
+      }
+    },
+    {
+      "name": "turbine",
+      "pack": "spacebase",
+      "path": "Assets/gltf/windturbine_tall.gltf",
+      "textures": {
+        "maxSize": 256,
+        "recolour": {
+          "brightness": 0.62,
+          "saturation": 0.45,
+          "hue": -8
+        }
+      }
+    },
+    {
+      "name": "containers-1",
+      "pack": "spacebase",
+      "path": "Assets/gltf/containers_A.gltf",
+      "textures": {
+        "maxSize": 256,
+        "recolour": {
+          "brightness": 0.62,
+          "saturation": 0.45,
+          "hue": -8
+        }
+      }
+    },
+    {
+      "name": "containers-2",
+      "pack": "spacebase",
+      "path": "Assets/gltf/containers_B.gltf",
+      "textures": {
+        "maxSize": 256,
+        "recolour": {
+          "brightness": 0.62,
+          "saturation": 0.45,
+          "hue": -8
+        }
+      }
+    },
+    {
+      "name": "containers-3",
+      "pack": "spacebase",
+      "path": "Assets/gltf/containers_C.gltf",
+      "textures": {
+        "maxSize": 256,
+        "recolour": {
+          "brightness": 0.62,
+          "saturation": 0.45,
+          "hue": -8
+        }
+      }
+    },
+    {
+      "name": "cargo",
+      "pack": "spacebase",
+      "path": "Assets/gltf/cargo_A_stacked.gltf",
+      "textures": {
+        "maxSize": 256,
+        "recolour": {
+          "brightness": 0.62,
+          "saturation": 0.45,
+          "hue": -8
+        }
       }
     }
   ]

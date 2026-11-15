@@ -1,8 +1,12 @@
+import * as THREE from 'three';
 import { hash2, valueNoise } from '../../../engine/core/math';
-import type { ActorLook, Look, Mood, PropLook } from '../../../engine/render/look';
+import type { ActorLook, Look, Mood, PropLook, StructureLook } from '../../../engine/render/look';
 import { Ground, Prop } from '../content/tiles';
 
 /** Unrecalled's look: Quaternius people and machines, cold workshop light against furnace glow. */
+
+const colour = new THREE.Color();
+const hsl = (h: number, s: number, l: number): number => colour.setHSL(h / 360, s / 100, l / 100).getHex();
 
 const foundry = (ambient: number, sky: number): Mood => ({
   background: 0x050505, ambient, ambientIntensity: 0.5, alarmAmbient: 0x5a1c18, heroLightRadius: 4.6,
@@ -19,6 +23,9 @@ const NIGHT: Mood = {
 /** Each level's own walls, floor plates and air, so the player always knows where they are. */
 const FLOOR_STYLES: Record<string, { panel: string; plate: string | null; mood: Mood }> = {
   rustbelt: { panel: 'wall', plate: null, mood: NIGHT },
+  workshop: { panel: 'wall', plate: 'floor-metal', mood: foundry(0x40362a, 0xf0d8b8) },
+  tradingPost: { panel: 'wall-astra', plate: 'floor-plates', mood: foundry(0x3e382e, 0xf0e0c8) },
+  pumphouse: { panel: 'wall-divided', plate: 'floor-dark', mood: foundry(0x262c30, 0xc8d4e0) },
   intake: { panel: 'wall', plate: 'floor-plates', mood: foundry(0x343a40, 0xd8e4f0) },
   sorting: { panel: 'wall-astra', plate: 'floor-metal', mood: foundry(0x3a3428, 0xf0e0c0) },
   gallery: { panel: 'wall-window', plate: 'floor-dark', mood: foundry(0x3a2a2c, 0xf0c8c8) },
@@ -48,7 +55,10 @@ const PROPS: Partial<Record<number, PropLook>> = {
   [Prop.Cradle]: { shape: 'box', width: 0.9, height: 2.2, colour: 0x3a3e46, model: tall('cradle', 2.3) },
   [Prop.Cache]: { shape: 'box', width: 0.7, height: 0.5, colour: 0x5a5030, emissive: 0x1a1400, model: tall('cache', 0.6) },
   // The dead power pylon the camp grew up under.
-  [Prop.Pylon]: { shape: 'cylinder', width: 1, height: 5, colour: 0x3a3e46, model: tall('pylon', 5) },
+  [Prop.Pylon]: { shape: 'cylinder', width: 1, height: 5, colour: 0x3a3e46, model: tall('turbine', 5.5) },
+  // Old shipping containers and cargo, stacked where they were dropped.
+  [Prop.Containers]: { shape: 'box', width: 1, height: 1, colour: 0x5a4a3a, model: { names: ['containers-1', 'containers-2', 'containers-3'], fit: { type: 'footprint', width: 1.1, depth: 1.1 }, turn: 'random' } },
+  [Prop.Cargo]: { shape: 'box', width: 0.9, height: 0.9, colour: 0x5a4a3a, model: { names: ['cargo'], fit: { type: 'footprint', width: 1, depth: 1 }, turn: 'random' } },
   [Prop.FireBarrel]: { shape: 'cylinder', width: 0.6, height: 0.8, colour: 0x5a3020, emissive: 0x5a2008, model: tall('fire-barrel', 0.8) },
   // Big crates of salvage the camp is sorting.
   // The wild edge of the camp: dead trees and rocks block the way, weeds and pebbles don't.
@@ -59,6 +69,13 @@ const PROPS: Partial<Record<number, PropLook>> = {
   [Prop.Pebbles]: { shape: 'sphere', width: 0.3, height: 0.1, colour: 0x5a5a58, model: { names: ['pebbles'], fit: { type: 'width', width: 0.45 }, turn: 'random' } },
   [Prop.Post]: { shape: 'cylinder', width: 0.3, height: 1.2, colour: 0x5a5048, model: tall('post', 1.2) },
   [Prop.Computer]: { shape: 'box', width: 0.6, height: 0.9, colour: 0x2a3a4a, emissive: 0x0a4050, model: tall('computer', 0.95) },
+};
+
+/** Rustbelt's buildings, from weathered base modules and cargo depots, doors facing the camera. */
+const STRUCTURES: Record<string, StructureLook> = {
+  workshop: { wall: 0x4a4038, roof: 0x3a3028, wallHeight: 1.6, roofHeight: 0.6, model: { name: 'workshop', rotation: 0 } },
+  tradingPost: { wall: 0x4a4038, roof: 0x3a3028, wallHeight: 1.6, roofHeight: 0.6, model: { name: 'trading-post', rotation: 0 } },
+  pumphouse: { wall: 0x3a4048, roof: 0x2a3038, wallHeight: 1.4, roofHeight: 0.5, model: { name: 'pumphouse', rotation: 0 } },
 };
 
 const LIGHTS: Record<string, number> = { cyan: 0x6ad8ff, amber: 0xffa040, molten: 0xff6a20, alarm: 0xff3a2a, hazard: 0xffc840 };
@@ -124,32 +141,34 @@ export const unrecalledLook: Look = {
   groundColour(kind, tx, ty) {
     const n = valueNoise(tx * 0.25, ty * 0.25);
     const h = hash2(tx, ty, 9);
-    const checker = (tx + ty) % 2 === 0 ? 0.03 : 0;
-    if (kind === Ground.Water) {
-      const ripple = valueNoise(tx * 0.5 + 3, ty * 0.5) * 0.04;
-      return ((Math.round(255 * (0.07 + ripple))) << 16) | (Math.round(255 * (0.14 + ripple)) << 8) | Math.round(255 * (0.22 + ripple));
+    // Outdoors, colours drift slowly across the ground so it reads as earth rather than tiles.
+    const soft = valueNoise(tx * 0.16 + 11, ty * 0.16);
+    switch (kind) {
+      case Ground.Water:
+        return hsl(205 + soft * 10, 40, 14 + soft * 6);
+      case Ground.Mud:
+        return hsl(28 + soft * 6, 22, 15 + soft * 5 + h * 1.5);
+      case Ground.Dirt:
+        return hsl(30 + soft * 8, 20 + soft * 6, 20 + soft * 6 + h * 1.5);
+      case Ground.DeadGrass:
+        return hsl(48 + soft * 18, 18 + soft * 8, 21 + soft * 6 + h * 1.5);
+      case Ground.Path:
+        return hsl(32 + soft * 5, 16, 27 + soft * 5 + h * 2);
+      case Ground.Pad:
+        // An old concrete pad, stained and cracked.
+        return hsl(210, 4, 29 + soft * 6 + h * 2 - (h > 0.93 ? 6 : 0));
+      case Ground.Belt: {
+        // Slats across the belt, with a worn amber edge every few tiles.
+        const v = Math.round(255 * (tx % 2 === 0 ? 0.09 : 0.12));
+        return tx % 6 === 0 ? 0x4a3a1c : (v << 16) | (v << 8) | Math.round(v * 1.1);
+      }
+      default: {
+        const checker = (tx + ty) % 2 === 0 ? 0.03 : 0;
+        const l = kind === Ground.Grime ? 0.14 : 0.2;
+        const v = Math.round(255 * (l + n * 0.05 + h * 0.02 + checker));
+        return (v << 16) | (Math.round(v * 1.04) << 8) | Math.round(v * 1.12);
+      }
     }
-    if (kind === Ground.Pad) {
-      // An old concrete pad, stained and cracked.
-      const crack = h > 0.93 ? -0.05 : 0;
-      const l = 0.27 + n * 0.05 + h * 0.02 + crack;
-      return (Math.round(255 * l) << 16) | (Math.round(255 * l * 1.01) << 8) | Math.round(255 * l * 1.04);
-    }
-    if (kind === Ground.Dirt || kind === Ground.Mud) {
-      // Packed earth in broad patches, some of it gone to scrub, darker and wetter towards the river.
-      const patch = valueNoise(tx * 0.12 + 7, ty * 0.12 + 3);
-      const l = (kind === Ground.Mud ? 0.15 : 0.2) + patch * 0.08 + n * 0.03 + h * 0.02;
-      const scrub = kind === Ground.Dirt && patch > 0.55 ? (patch - 0.55) * 0.5 : 0;
-      return (Math.round(255 * l * (1.1 - scrub)) << 16) | (Math.round(255 * l * (1 + scrub * 0.6)) << 8) | Math.round(255 * l * (0.8 - scrub * 0.4));
-    }
-    if (kind === Ground.Belt) {
-      // Slats across the belt, with a worn amber edge every few tiles.
-      const v = Math.round(255 * (tx % 2 === 0 ? 0.09 : 0.12));
-      return tx % 6 === 0 ? 0x4a3a1c : (v << 16) | (v << 8) | Math.round(v * 1.1);
-    }
-    const l = kind === Ground.Grime ? 0.14 : 0.2;
-    const v = Math.round(255 * (l + n * 0.05 + h * 0.02 + checker));
-    return (v << 16) | (Math.round(v * 1.04) << 8) | Math.round(v * 1.12);
   },
   floorModel: (kind, levelId) => (kind === Ground.Plate ? styleOf(levelId).plate : null),
   prop: (kind) => PROPS[kind] ?? null,
@@ -162,7 +181,7 @@ export const unrecalledLook: Look = {
       { props: [Prop.WallAlarm], name: 'beacon', height: 1.6, turn: Math.PI, tilt: Math.PI / 2 },
     ],
   }),
-  structure: () => ({ wall: 0x3a3e46, roof: 0x2a2e36, wallHeight: 1.2, roofHeight: 0.6 }),
+  structure: (kind) => STRUCTURES[kind] ?? STRUCTURES.workshop!,
   lightColour: (name) => LIGHTS[name] ?? LIGHTS.cyan!,
   actor: (kind) => ACTORS[kind] ?? ACTORS.hero!,
 };

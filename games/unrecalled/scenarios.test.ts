@@ -54,12 +54,26 @@ describe('Unrecalled scenarios', () => {
   it('starts in Rustbelt, where the foreman sends the salvager into the Foundry', () => {
     const state = createGameState(content, 1);
     expect(state.levelId).toBe('rustbelt');
-    expect(currentLevel(state).npcs.map((n) => n.kind).sort()).toEqual(['foreman', 'tinker', 'trader']);
+    expect(currentLevel(state).npcs.map((n) => n.kind)).toEqual(['foreman']);
     const events = talkTo(state, 'foreman');
     expect(events.map((e) => e.type)).toContain('Talked');
     expect(state.quest).toBe(1);
     takeDoor(state, 'intake');
     expect(state.levelId).toBe('intake');
+  });
+
+  it('walks into each of Rustbelt\'s buildings, finds who works there, and back out of the same door', () => {
+    const state = untouchable(createGameState(content, 1));
+    for (const [index, building] of currentLevel(state).level.structures.entries()) {
+      play(state, 25, [{ type: 'enterStructure', index }]);
+      play(state, 1);
+      expect(state.levelId).not.toBe('rustbelt');
+      const inside = state.levelId;
+      expect({ workshop: ['tinker'], tradingPost: ['trader'], pumphouse: [] }[inside]).toEqual(currentLevel(state).npcs.map((n) => n.kind));
+      takeDoor(state, 'rustbelt');
+      expect(state.levelId).toBe('rustbelt');
+      expect(Math.floor(state.hero.y)).toBe(building.door.ty + 1);
+    }
   });
 
   it('goes down through every floor to the Assembly Hall, and back up to Rustbelt', () => {

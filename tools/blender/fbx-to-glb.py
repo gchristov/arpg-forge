@@ -1,8 +1,9 @@
 # Converts an FBX model, with its animations, to a binary glTF that tools/assets/build-models.mjs can process.
 # Usage (inside the Blender image): blender ... --python tools/blender/fbx-to-glb.py -- <in.fbx> <out.glb>
-#   [--textures <folder>] [--borrow <spec.json>]
+#   [--textures <folder>] [--borrow <spec.json>] [--decimate <ratio>]
 # FBX files often point to textures by paths on their author's machine; `--textures` is a folder to find them in.
-# `--borrow` adds animations retargeted from another rig (see retarget.py).
+# `--borrow` adds animations retargeted from another rig (see retarget.py). `--decimate` keeps about that share of each
+# mesh's triangles, for detailed models seen small and many times over; Blender's collapse works across texture seams.
 import argparse
 import json
 import os
@@ -19,6 +20,7 @@ parser.add_argument('source')
 parser.add_argument('target')
 parser.add_argument('--textures')
 parser.add_argument('--borrow')
+parser.add_argument('--decimate', type=float)
 args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
 source, target = args.source, args.target
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -39,36 +41,50 @@ if args.textures:
     for image in bpy.data.images:
         if image.filepath:
             image.pack()
+if args.decimate:
+    for mesh_object in [o for o in bpy.data.objects if o.type == 'MESH']:
+        decimate = mesh_object.modifiers.new('decimate', 'DECIMATE')
+        decimate.ratio = args.decimate
+        bpy.context.view_layer.objects.active = mesh_object
+        bpy.ops.object.modifier_apply(modifier=decimate.name)
 missing = [i.name for i in bpy.data.images if i.source == 'FILE' and not i.has_data and not i.packed_file]
 if missing:
     raise RuntimeError(f'textures not found: {", ".join(missing)}')
-# FBX actions are named "<armature>|<animation>"; keep only the animation's name. Rigs often move only some bones,
-# such as the feet, and let constraints like IK bend the rest; a game engine doesn't run those, so each animation is
-# baked with every bone keyed as it appears. The exporter writes one glTF animation per NLA track, so each baked
-# action gets a track of its own, and none is left active.
-armature = next(o for o in bpy.data.objects if o.type == 'ARMATURE')
-armature.animation_data_create()
-bpy.context.view_layer.objects.active = armature
-armature.select_set(True)
-bpy.ops.object.mode_set(mode='POSE')
-bpy.ops.pose.select_all(action='SELECT')
-for action in list(bpy.data.actions):
-    action.name = action.name.split('|')[-1]
-    armature.animation_data.action = action
-    start, end = (int(f) for f in action.frame_range)
-    bpy.ops.nla.bake(
-        frame_start=start, frame_end=end, only_selected=False, visual_keying=True,
-        clear_constraints=False, use_current_action=True, bake_types={'POSE'},
-    )
-bpy.ops.object.mode_set(mode='OBJECT')
-if args.borrow:
-    with open(args.borrow) as f:
-        borrow(armature, json.load(f))
-for action in list(bpy.data.actions):
-    track = armature.animation_data.nla_tracks.new()
-    track.name = action.name
-    track.strips.new(action.name, int(action.frame_range[0]), action)
-armature.animation_data.action = None
+
+
+def bake_animations(armature):
+    """FBX actions are named "<armature>|<animation>"; keep only the animation's name. Rigs often move only some bones,
+    such as the feet, and let constraints like IK bend the rest; a game engine doesn't run those, so each animation is
+    baked with every bone keyed as it appears. The exporter writes one glTF animation per NLA track, so each baked
+    action gets a track of its own, and none is left active."""
+    armature.animation_data_create()
+    bpy.context.view_layer.objects.active = armature
+    armature.select_set(True)
+    bpy.ops.object.mode_set(mode='POSE')
+    bpy.ops.pose.select_all(action='SELECT')
+    for action in list(bpy.data.actions):
+        action.name = action.name.split('|')[-1]
+        armature.animation_data.action = action
+        start, end = (int(f) for f in action.frame_range)
+        bpy.ops.nla.bake(
+            frame_start=start, frame_end=end, only_selected=False, visual_keying=True,
+            clear_constraints=False, use_current_action=True, bake_types={'POSE'},
+        )
+    bpy.ops.object.mode_set(mode='OBJECT')
+    if args.borrow:
+        with open(args.borrow) as f:
+            borrow(armature, json.load(f))
+    for action in list(bpy.data.actions):
+        track = armature.animation_data.nla_tracks.new()
+        track.name = action.name
+        track.strips.new(action.name, int(action.frame_range[0]), action)
+    armature.animation_data.action = None
+
+
+# Static models, such as props, have no armature and nothing to bake.
+armature = next((o for o in bpy.data.objects if o.type == 'ARMATURE'), None)
+if armature:
+    bake_animations(armature)
 print('animations:', ', '.join(sorted(a.name for a in bpy.data.actions)))
 bpy.ops.export_scene.gltf(
     filepath=target,

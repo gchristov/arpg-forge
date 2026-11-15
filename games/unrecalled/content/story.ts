@@ -106,9 +106,13 @@ export const READINGS: Record<string, { title: string; text: string }> = {
     title: 'Locker',
     text: 'The door is stencilled U-7. Inside hangs a yellow hard hat, dented on the left side. Just like yours.',
   },
+  'pump-log': {
+    title: 'Pump log',
+    text: 'NIGHT OF THE FLOOD. 02:14: Foundry intake gate opened from the inside. 02:15: Pumps overwhelmed. 02:16: Something walked out with the water.',
+  },
   riverbank: {
     title: 'A post on the bank',
-    text: 'Someone carved a mark here: FOUND, NIGHT OF THE FLOOD. Below it, smaller: DIDN’T BREATHE FOR AN HOUR. THEN GOT UP.',
+    text: 'Someone carved a mark on the jetty post: FOUND, NIGHT OF THE FLOOD. Below it, smaller: DIDN’T BREATHE FOR AN HOUR. THEN GOT UP.',
   },
   cradle: {
     title: 'Charging cradle',

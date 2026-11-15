@@ -7,6 +7,8 @@ export const Ground = {
   Mud: 5,
   Water: 6,
   Pad: 7,
+  DeadGrass: 8,
+  Path: 9,
 } as const;
 
 export const Prop = {
@@ -34,4 +36,8 @@ export const Prop = {
   GrassTall: 24,
   GrassShort: 25,
   Pebbles: 26,
+  /** The solid footprint of a building; the building itself is drawn as a structure. */
+  Building: 27,
+  Containers: 28,
+  Cargo: 29,
 } as const;
