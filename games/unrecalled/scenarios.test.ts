@@ -43,22 +43,34 @@ function talkTo(state: GameState, kind: string): SimEvent[] {
   return play(state, 15, [{ type: 'talk', npcId: npc.id }]);
 }
 
-/** A new game, already through Rustbelt's gate into Intake. */
+/** Goes from Rustbelt into the Foundry, through Mags's depot and its loading door. */
+function intoFoundry(state: GameState): void {
+  const depot = currentLevel(state).level.structures.findIndex((s) => s.kind === 'tradingPost');
+  play(state, 25, [{ type: 'enterStructure', index: depot }]);
+  play(state, 1);
+  takeDoor(state, 'intake');
+}
+
+/** The way back up from the deepest floor to Rustbelt, through every floor and the depot. */
+const WAY_BACK = [...[...FLOOR_ORDER].reverse().slice(1), 'tradingPost', 'rustbelt'];
+
+/** A new game, already through the depot into Intake. */
 function inIntake(): GameState {
   const state = untouchable(createGameState(content, 1));
-  takeDoor(state, 'intake');
+  intoFoundry(state);
   return state;
 }
 
 describe('Unrecalled scenarios', () => {
-  it('starts in Rustbelt, where the foreman sends the salvager into the Foundry', () => {
+  it('starts in Rustbelt, where the foreman sends the salvager into the Foundry through the depot', () => {
     const state = createGameState(content, 1);
     expect(state.levelId).toBe('rustbelt');
     expect(currentLevel(state).npcs.map((n) => n.kind)).toEqual(['foreman']);
     const events = talkTo(state, 'foreman');
     expect(events.map((e) => e.type)).toContain('Talked');
     expect(state.quest).toBe(1);
-    takeDoor(state, 'intake');
+    expect(currentLevel(state).level.portals.map((p) => p.to)).not.toContain('intake');
+    intoFoundry(state);
     expect(state.levelId).toBe('intake');
   });
 
@@ -92,13 +104,13 @@ describe('Unrecalled scenarios', () => {
     expect(Math.hypot(state.hero.x - (stairs.tx + 0.5), state.hero.y - (stairs.ty + 0.5))).toBeLessThan(1.5);
   });
 
-  it('goes down through every floor to the Assembly Hall, and back up to Rustbelt', () => {
+  it('goes down through every floor to the Assembly Hall, and back up through the depot to Rustbelt', () => {
     const state = inIntake();
     for (const next of FLOOR_ORDER.slice(1)) {
       takeDoor(state, next);
       expect(state.levelId).toBe(next);
     }
-    for (const previous of [...[...FLOOR_ORDER].reverse().slice(1), 'rustbelt']) {
+    for (const previous of WAY_BACK) {
       takeDoor(state, previous);
       expect(state.levelId).toBe(previous);
     }
@@ -106,7 +118,7 @@ describe('Unrecalled scenarios', () => {
 
   it('lets the salvager walk among the working machines until one is hit, then turns the floor', () => {
     const state = createGameState(content, 1);
-    takeDoor(state, 'intake');
+    intoFoundry(state);
     const hp = state.hero.hp;
     const crawler = currentLevel(state).enemies.find((e) => e.kind === 'crawler')!;
     play(state, 12, [{ type: 'walk', x: crawler.x, y: crawler.y + 1 }]);
@@ -161,7 +173,7 @@ describe('Unrecalled scenarios', () => {
     const state = untouchable(createGameState(content, 1));
     state.hero.damage = [1000, 1000];
     talkTo(state, 'foreman');
-    takeDoor(state, 'intake');
+    intoFoundry(state);
     for (const next of FLOOR_ORDER.slice(1)) takeDoor(state, next);
     expect(state.quest).toBe(4);
     const engine = currentLevel(state).enemies.find((e) => e.kind === 'orderEngine')!;
@@ -172,7 +184,7 @@ describe('Unrecalled scenarios', () => {
     expect(machines.every((e) => e.mode === 'idle')).toBe(true);
     expect(Object.values(state.levels).some((ls) => ls.alarmed)).toBe(false);
 
-    for (const previous of [...[...FLOOR_ORDER].reverse().slice(1), 'rustbelt']) takeDoor(state, previous);
+    for (const previous of WAY_BACK) takeDoor(state, previous);
     talkTo(state, 'foreman');
     expect(state.quest).toBe(ENDING_STEP);
   });

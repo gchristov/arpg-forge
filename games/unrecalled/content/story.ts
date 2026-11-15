@@ -8,7 +8,7 @@ import type { NpcType, QuestStep } from '../../../engine/sim/content';
 /** The quest: what the HUD says at each step, and what moves the quest to it. */
 export const QUEST: Array<QuestStep & { text: string }> = [
   { text: 'Talk to the foreman by the fire.' },
-  { text: 'Get into the Foundry and find what is taking Rustbelt apart.', reachedBy: { type: 'talk', npcKind: 'foreman' } },
+  { text: 'Get into the Foundry through Mags’s depot.', reachedBy: { type: 'talk', npcKind: 'foreman' } },
   { text: 'Follow the line deeper.', reachedBy: { type: 'enter', levelId: 'sorting' } },
   { text: 'Get past the Control Gallery.', reachedBy: { type: 'enter', levelId: 'gallery' } },
   { text: 'Shut down the Order Engine.', reachedBy: { type: 'enter', levelId: 'assembly' } },
@@ -59,8 +59,8 @@ export function dialogueFor(kind: string, questBefore: number, quest: number, de
       const text = quest >= ENDING_STEP
         ? 'Whatever it wants, it’ll ask you first. It always did.'
         : questBefore === 0
-          ? 'Found you in the river after the flood. Never asked. Not asking now. The Foundry’s taking the town apart a crate at a time; the chapel bell went last night. Get in there and find what’s giving the orders.'
-          : 'The gate’s open. Whatever’s running that place, switch it off.';
+          ? 'Found you in the river after the flood. Never asked. Not asking now. The Foundry’s taking the town apart a crate at a time; the chapel bell went last night. Mags’s depot backs onto it; go through her loading door and find what’s giving the orders.'
+          : 'Through Mags’s loading door. Whatever’s running that place, switch it off.';
       return { title: 'Foreman Odell', text, options: [{ label: quest >= ENDING_STEP ? 'Leave' : 'On my way' }] };
     }
     case 'trader':
