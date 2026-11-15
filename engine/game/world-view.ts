@@ -13,8 +13,9 @@ const HERO_FLASH_SECONDS = 0.15;
 /** Lightning: where a burst's arcs start and where they reach an enemy, in tiles above the ground. */
 const BURST_HEIGHT = 0.6;
 const BODY_HEIGHT = 0.5;
-/** How many forks a burst throws out, at least and at most. */
-const BURST_FORKS = [8, 12] as const;
+/** How many main bolts a burst grows, at least and at most, and how many levels of branches they sprout. */
+const BURST_BOLTS = [6, 9] as const;
+const BRANCH_DEPTH = 3;
 /** Skill projectiles fly at this height, and throw off an arc on about this share of frames. */
 const PROJECTILE_HEIGHT = 0.52;
 const CRACKLE_CHANCE = 0.75;
@@ -202,8 +203,8 @@ export class WorldView {
 
   /**
    * Lightning from a burst: strikes on every enemy it hurt, flickering back a few times; arcs jumping between enemies
-   * hit together; and forks crackling out across its radius, some splitting partway. Timings and shapes are random,
-   * so no two bursts look alike.
+   * hit together; and branching bolts filling the dome of its flash. Timings and shapes are random, so no two bursts
+   * look alike.
    */
   private lightningBurst(x: number, y: number, radius: number, events: SimEvent[], colour: number): void {
     const { effects } = this.renderer;
@@ -224,24 +225,52 @@ export class WorldView {
       const b = hits[k]!;
       if (Math.random() < 0.7) effects.arc(a.x, a.y, a.h, b.x, b.y, b.h, colour, 0.15 + Math.random() * 0.1, 0.05 + Math.random() * 0.15);
     }
-    const forks = BURST_FORKS[0] + Math.floor(Math.random() * (BURST_FORKS[1] - BURST_FORKS[0] + 1));
-    for (let k = 0; k < forks; k++) {
-      const angle = Math.random() * Math.PI * 2;
-      const reach = radius * (0.45 + Math.random() * 0.6);
-      const height = BURST_HEIGHT * (0.5 + Math.random());
-      const endX = x + Math.cos(angle) * reach;
-      const endY = y + Math.sin(angle) * reach;
-      const delay = Math.random() * 0.15;
-      const life = 0.12 + Math.random() * 0.18;
-      effects.arc(x, y, height, endX, endY, Math.random() * 0.2, colour, life, delay);
-      if (Math.random() < 0.5) {
-        // A branch splitting off partway along, heading off at an angle.
-        const t = 0.35 + Math.random() * 0.35;
-        const branch = angle + (Math.random() < 0.5 ? -1 : 1) * (0.4 + Math.random() * 0.6);
-        const bx = x + (endX - x) * t;
-        const by = y + (endY - y) * t;
-        effects.arc(bx, by, height * (1 - t), bx + Math.cos(branch) * reach * 0.45, by + Math.sin(branch) * reach * 0.45, 0, colour, life * 0.8, delay + 0.03);
-      }
+    const bolts = BURST_BOLTS[0] + Math.floor(Math.random() * (BURST_BOLTS[1] - BURST_BOLTS[0] + 1));
+    for (let k = 0; k < bolts; k++) {
+      // Up and out from the middle of the burst, at any angle around it.
+      const around = Math.random() * Math.PI * 2;
+      const up = 0.15 + Math.random() * 0.9;
+      const dome = { x, y, h: BURST_HEIGHT, radius };
+      this.branch(dome, x, y, BURST_HEIGHT, Math.cos(around) * Math.cos(up), Math.sin(around) * Math.cos(up), Math.sin(up),
+        radius * (0.55 + Math.random() * 0.35), 1, 0, Math.random() * 0.12, colour);
+    }
+  }
+
+  /**
+   * One stroke of branching lightning, heading along (dx, dy, dh) from a point, kept inside the burst's dome and above
+   * the ground. Strokes sprout thinner, shorter branches partway along, a few levels deep, like real lightning.
+   */
+  private branch(
+    dome: { x: number; y: number; h: number; radius: number },
+    x: number, y: number, h: number, dx: number, dy: number, dh: number,
+    length: number, width: number, depth: number, delay: number, colour: number,
+  ): void {
+    let ex = x + dx * length;
+    let ey = y + dy * length;
+    let eh = Math.max(0.05, h + dh * length);
+    const reach = Math.hypot(ex - dome.x, ey - dome.y, eh - dome.h);
+    if (reach > dome.radius * 0.95) {
+      const pull = (dome.radius * 0.95) / reach;
+      ex = dome.x + (ex - dome.x) * pull;
+      ey = dome.y + (ey - dome.y) * pull;
+      eh = Math.max(0.05, dome.h + (eh - dome.h) * pull);
+    }
+    const life = 0.18 + Math.random() * 0.16;
+    this.renderer.effects.arc(x, y, h, ex, ey, eh, colour, life, delay, width);
+    if (depth >= BRANCH_DEPTH) return;
+    const children = depth === 0 ? 2 + Math.floor(Math.random() * 2) : Math.random() < 0.7 ? 1 + Math.floor(Math.random() * 2) : 0;
+    for (let k = 0; k < children; k++) {
+      const t = 0.3 + Math.random() * 0.55;
+      // Off at an angle from the parent, then renormalised.
+      let cx = dx + (Math.random() - 0.5) * 1.6;
+      let cy = dy + (Math.random() - 0.5) * 1.6;
+      let ch = dh + (Math.random() - 0.3) * 0.8;
+      const n = Math.hypot(cx, cy, ch) || 1;
+      cx /= n;
+      cy /= n;
+      ch /= n;
+      this.branch(dome, x + (ex - x) * t, y + (ey - y) * t, h + (eh - h) * t, cx, cy, ch,
+        length * (0.4 + Math.random() * 0.25), width * 0.6, depth + 1, delay + t * 0.04, colour);
     }
   }
 
