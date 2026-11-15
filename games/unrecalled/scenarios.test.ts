@@ -49,6 +49,22 @@ describe('Unrecalled scenarios', () => {
     }
   });
 
+  it('hides a salvage cache on every floor that pays out scrap and a patch kit', () => {
+    const state = untouchable(createGameState(content, 1));
+    for (const [i, floor] of FLOOR_ORDER.entries()) {
+      if (i > 0) takeDoor(state, floor);
+      // Whatever the hero hasn't picked up yet is still on the floor.
+      const held = (kind: 'gold' | 'healingItem') =>
+        (kind === 'gold' ? state.hero.gold : state.hero.healingItems) +
+        currentLevel(state).items.filter((item) => item.kind === kind).reduce((sum, item) => sum + item.amount, 0);
+      const before = { gold: held('gold'), kits: held('healingItem') };
+      const events = play(state, 25, [{ type: 'open', index: 0 }]);
+      expect(events.map((e) => e.type)).toContain('ContainerOpened');
+      expect(held('gold') - before.gold).toBeGreaterThanOrEqual(30);
+      expect(held('healingItem') - before.kits).toBeGreaterThanOrEqual(1);
+    }
+  });
+
   it('finishes the quest when the Order Engine falls', () => {
     const state = untouchable(createGameState(content, 1));
     state.hero.damage = [1000, 1000];

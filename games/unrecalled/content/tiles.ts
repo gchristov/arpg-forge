@@ -20,4 +20,5 @@ export const Prop = {
   Door: 12,
   Chair: 13,
   Cradle: 14,
+  Cache: 15,
 } as const;

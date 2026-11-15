@@ -7,7 +7,7 @@ import { Ground, Prop } from '../content/tiles';
  * front wall (V). Each floor has its own shape, threat and discovery: a wide receiving bay with the recall notice (T),
  * a long line of belts carrying the town's belongings, a gallery around a shaft with a locker (Y), and a pillared hall
  * with an empty cradle in its back wall (Z). Walls inside a room are drawn low, like railings, and a block of them
- * reads as a shaft in the floor.
+ * reads as a shaft in the floor. Each floor also hides a salvage cache (S) off the main path.
  */
 const FLOORS = {
   intake: {
@@ -16,7 +16,7 @@ const FLOORS = {
       '#####L######U######L####',
       '#hh....................#',
       '#.....ooo.........cc...#',
-      '#..cc.............cc...#',
+      '#S.cc.............cc...#',
       '#..cc.......T......ooo.#',
       'A......................A',
       '#=u=u=====......=u=u===#',
@@ -33,7 +33,7 @@ const FLOORS = {
     name: 'The Sorting Line', subtitle: 'Everything here is stock', lamps: { L: 'hazard', A: 'amber' },
     rows: [
       '###A#####A#####U####A#####A###',
-      '#............................#',
+      '#S...........................#',
       '#=u==q===w==q==u===q==w==u===#',
       '#....x.......................L',
       '#.........o.........x....o...#',
@@ -50,7 +50,7 @@ const FLOORS = {
     rows: [
       '####L######U#######L####',
       '#hh.....s........s...hh#',
-      '#......................#',
+      '#.....................S#',
       '#..k..k..........k..k..#',
       '#..s..##########..s....#',
       'L.....##########.......L',
@@ -68,7 +68,7 @@ const FLOORS = {
     name: 'Assembly Hall', subtitle: 'Where the order is kept', lamps: { L: 'amber', A: 'molten' },
     rows: [
       '####A#####A#####Z#####A#####A#',
-      '#....FFF.....................#',
+      '#S...FFF.....................#',
       '#............................#',
       '#...C.....C.........C.....C..#',
       '#............................#',
@@ -113,6 +113,8 @@ const KEY: Record<string, RoomKey> = {
   q: onBelt(Prop.Chair),
   w: onBelt(Prop.Desk),
   u: onBelt(Prop.Crate),
+  // A salvage cache, tucked off the main path to reward looking around.
+  S: { ...solid(Prop.Cache), container: { gold: 30, healingItems: 1 } },
   '@': { heroStart: true },
   o: { spawn: 'crawler' },
   x: { spawn: 'loader' },

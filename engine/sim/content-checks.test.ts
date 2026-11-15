@@ -62,13 +62,14 @@ describe('checkContent', () => {
     ]);
   });
 
-  it('finds NPCs of unknown kinds and chests nobody can walk up to', () => {
+  it('finds NPCs of unknown kinds, and chests that can\'t be opened because the tile in front is out of reach', () => {
     const c = rooms();
     home(c).npcs.push({ kind: 'ghost', name: 'Ghost', x: 2.5, y: 0.5 });
-    home(c).containers = [{ tx: 6, ty: 0, gold: 1, healingItems: 0 }];
+    home(c).containers = [{ tx: 6, ty: 0, gold: 1, healingItems: 0 }, { tx: 2, ty: 3, gold: 1, healingItems: 0 }, { tx: 2, ty: 1, gold: 1, healingItems: 0 }];
     expect(checkContent(c)).toEqual([
       'home: NPC "Ghost" has unknown kind "ghost"',
-      `home: a container at (6, 0) can't be walked up to from the start`,
+      `home: a container at (6, 0) can't be opened: the tile in front of it can't be reached from the start`,
+      `home: a container at (2, 3) can't be opened: the tile in front of it can't be reached from the start`,
     ]);
   });
 
