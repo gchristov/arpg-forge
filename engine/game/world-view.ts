@@ -210,8 +210,8 @@ export class WorldView {
 
   /**
    * Lightning from a burst: strikes on every enemy it hurt, sometimes flickering back; arcs jumping between enemies
-   * hit together; a few branching bolts reaching through its dome; and sparks spitting out along the ground. Timings and shapes are random, so no two bursts
-   * look alike.
+   * hit together; a few branching bolts reaching through its dome; and sparks spitting out along the ground. Timings
+   * and shapes are random, so no two bursts look alike.
    */
   private lightningBurst(x: number, y: number, radius: number, events: SimEvent[], colour: number): void {
     const { effects } = this.renderer;
