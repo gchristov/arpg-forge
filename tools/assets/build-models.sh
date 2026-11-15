@@ -14,7 +14,8 @@ if [ $# -ne 1 ]; then
   exit 1
 fi
 
-./tools/node/run.sh node tools/assets/build-models.mjs "$1" --list-fbx | sed -n 's/^FBX //p' | while IFS= read -r fbx; do
-  [ -f "$fbx.glb" ] || ./tools/blender/run.sh "$fbx" "$fbx.glb" | grep -E '^(animations|converted)'
+./tools/node/run.sh node tools/assets/build-models.mjs "$1" --list-fbx | sed -n 's/^FBX //p' | while IFS=$'\t' read -r fbx textures; do
+  # Converted again whenever the converter changes.
+  [ "$fbx.glb" -nt tools/blender/fbx-to-glb.py ] || ./tools/blender/run.sh "$fbx" "$fbx.glb" ${textures:+"$textures"} | grep -E '^(animations|converted)'
 done
 ./tools/node/run.sh node tools/assets/build-models.mjs "$1"

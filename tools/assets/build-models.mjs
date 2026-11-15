@@ -2,7 +2,7 @@
 // parts and animations the game uses, compresses it, and writes a .glb next to the manifest.
 //
 // Usage: ./tools/assets/build-models.sh <manifest.json>, which runs this in the Node image after converting any FBX
-// models with the Blender image. `--list-fbx` only fetches the packs and prints each FBX model's local path.
+// models with the Blender image. `--list-fbx` only fetches the packs and prints each FBX model's local path and textures folder.
 //
 // A pack is either a folder URL at a pinned commit, or `{ "zip": url, "sha256": hash }` for packs only published as
 // zip files; a zip whose checksum doesn't match is refused. A zip pack's `textures` names the folder inside it that
@@ -118,7 +118,8 @@ for (const model of manifest.models) {
   // FBX models are read from the glTF that tools/blender converts them to, beside the original.
   const isFbx = model.path.toLowerCase().endsWith('.fbx');
   if (listFbx) {
-    if (isFbx) console.log(`FBX ${fetched}`);
+    // The pack's textures folder, if it names one, for the converter to find the FBX's textures in.
+    if (isFbx) console.log(`FBX ${fetched}\t${typeof pack === 'object' && pack.textures ? join(cacheDir, model.pack, pack.textures) : ''}`);
     continue;
   }
   const local = isFbx ? `${fetched}.glb` : fetched;

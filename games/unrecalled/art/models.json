@@ -15,7 +15,8 @@
     },
     "mechs": {
       "zip": "https://opengameart.org/sites/default/files/animated_mech_pack_-_march_2021.zip",
-      "sha256": "14102eade586a04191fc96a4bf52bc511b91d3e90d76a87e8e621095b8d0ea26"
+      "sha256": "14102eade586a04191fc96a4bf52bc511b91d3e90d76a87e8e621095b8d0ea26",
+      "textures": "Animated Mech Pack - March 2021/Textures"
     }
   },
   "models": [
@@ -152,7 +153,10 @@
         "Jump",
         "HitRecieve_1",
         "Death"
-      ]
+      ],
+      "textures": {
+        "maxSize": 512
+      }
     },
     {
       "name": "wall",
