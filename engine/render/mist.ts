@@ -1,12 +1,19 @@
 import * as THREE from 'three';
+import { ELEVATION } from './camera-angle';
 import type { MistLook } from './look';
 import { NOISE_GLSL } from './shader-noise';
 
-/** Low layers of mist over the ground, at these heights in tiles, each drifting its own way. */
+/**
+ * Layers of mist at these heights in tiles, each drifting its own way. Two lie low over the ground, behind whatever
+ * stands on it; the last drifts over everything, figures and buildings too, like low cloud across the view.
+ */
 const LAYERS = [
-  { height: 0.15, drift: [0.11, 0.05], scale: 0.09, share: 0.6 },
-  { height: 0.55, drift: [-0.07, 0.09], scale: 0.14, share: 0.4 },
+  { height: 0.15, drift: [0.11, 0.05], scale: 0.09, share: 0.6, over: false },
+  { height: 0.55, drift: [-0.07, 0.09], scale: 0.14, share: 0.4, over: false },
+  { height: 2, drift: [0.05, -0.04], scale: 0.07, share: 0.4, over: true },
 ] as const;
+/** Drawn after the level and its effects but before the guide arrow, which stays clear of the mist. */
+const OVER_DRAW_ORDER = 4;
 /** How far past the level's edges the mist reaches, so its edge never shows. */
 const MARGIN = 8;
 
@@ -31,11 +38,15 @@ export class Mist {
           scale: { value: layer.scale },
           density: { value: look.density * layer.share },
           colour: { value: new THREE.Color(look.colour) },
+          // A layer above the ground shows on screen over the ground this far back from it, which is where its light comes from.
+          lift: { value: layer.height / Math.tan(ELEVATION) / Math.SQRT2 },
         },
         transparent: true,
         depthWrite: false,
+        depthTest: !layer.over,
       });
       const mesh = new THREE.Mesh(plane, material);
+      if (layer.over) mesh.renderOrder = OVER_DRAW_ORDER;
       mesh.position.set(width / 2, layer.height, depth / 2);
       this.group.add(mesh);
       this.materials.push(material);
@@ -65,13 +76,15 @@ uniform vec2 drift;
 uniform float scale;
 uniform float density;
 uniform vec3 colour;
+uniform float lift;
 varying vec2 world;
 ${NOISE_GLSL}
 void main() {
   vec2 p = world * scale + drift * time;
   float gather = fbm(p + fbm(p * 0.7 - drift * time * 0.5) * 1.6);
   float amount = smoothstep(0.28, 0.62, gather) * density;
-  vec2 uv = vec2((world.x - lightMapBounds.x) * lightMapBounds.z, 1.0 - (world.y - lightMapBounds.y) * lightMapBounds.w);
+  vec2 below = world - lift;
+  vec2 uv = vec2((below.x - lightMapBounds.x) * lightMapBounds.z, 1.0 - (below.y - lightMapBounds.y) * lightMapBounds.w);
   vec3 lit = colour + texture2D(lightMap, clamp(uv, 0.0, 1.0)).rgb * 0.9;
   gl_FragColor = vec4(lit, amount);
 }
