@@ -31,6 +31,7 @@ export function createGameState(content: GameContent, seed: number, startLevel =
     const ls: LevelState = {
       level: lc.level, enemies: [], npcs: [], camps: lc.camps, items: [],
       containers: (lc.containers ?? []).map((c) => ({ ...c, opened: false })),
+      readables: lc.readables ?? [],
       ...(lc.campRespawns ? { campRespawns: lc.campRespawns } : {}),
       campTimer: lc.campRespawns?.everySeconds ?? 0,
     };

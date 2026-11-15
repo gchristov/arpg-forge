@@ -29,16 +29,27 @@ export function walkToContainer(state: GameState, index: number): void {
   hero.path = planRoute(ls.level.map, hero, { x: c.tx + 0.5, y: c.ty + 1.5 });
 }
 
-/** Talks or opens once close enough; gives up if the way there was lost. */
+/** Walks up to something to read, approaching from the tile in front of it like a container. */
+export function walkToReadable(state: GameState, index: number): void {
+  const { hero } = state;
+  const ls = currentLevel(state);
+  const r = ls.readables[index];
+  if (!r) return;
+  hero.targetId = null;
+  hero.interact = { type: 'readable', index };
+  hero.path = planRoute(ls.level.map, hero, { x: r.tx + 0.5, y: r.ty + 1.5 });
+}
+
+/** Talks, opens or reads once close enough; gives up if the way there was lost. */
 export function updateInteraction(state: GameState, events: SimEvent[]): void {
   const { hero } = state;
   const it = hero.interact;
   if (!it) return;
   const ls = currentLevel(state);
   const npc = it.type === 'npc' ? ls.npcs.find((n) => n.id === it.npcId) : undefined;
-  const container = it.type === 'container' ? ls.containers[it.index] : undefined;
-  const tx = npc ? npc.x : container ? container.tx + 0.5 : NaN;
-  const ty = npc ? npc.y : container ? container.ty + 0.5 : NaN;
+  const thing = it.type === 'container' ? ls.containers[it.index] : it.type === 'readable' ? ls.readables[it.index] : undefined;
+  const tx = npc ? npc.x : thing ? thing.tx + 0.5 : NaN;
+  const ty = npc ? npc.y : thing ? thing.ty + 0.5 : NaN;
   if (Number.isNaN(tx)) {
     hero.interact = null;
     return;
@@ -53,7 +64,8 @@ export function updateInteraction(state: GameState, events: SimEvent[]): void {
       const questBefore = state.quest;
       advanceQuest(state, { type: 'talk', npcKind: npc.kind }, events);
       events.push({ type: 'Talked', npcId: npc.id, kind: npc.kind, name: npc.name, questBefore });
-    } else if (container && it.type === 'container') openContainer(state, it.index, events);
+    } else if (it.type === 'container') openContainer(state, it.index, events);
+    else if (it.type === 'readable') events.push({ type: 'Read', id: ls.readables[it.index]!.id, x: tx, y: ty });
   } else if (!hero.path) hero.interact = null;
 }
 

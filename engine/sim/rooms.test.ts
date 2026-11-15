@@ -17,6 +17,7 @@ const spec = (rows: string[]): RoomSpec => ({
     x: { prop: CRATE, solid: true, container: { gold: 5, healingItems: 1 } },
     s: { spawn: 'ghoul' },
     n: { npc: { kind: 'keeper', name: 'Keeper' } },
+    r: { prop: CRATE, solid: true, readable: 'ledger' },
     '@': { heroStart: true },
   },
 });
@@ -50,6 +51,10 @@ describe('roomFromRows', () => {
     const room = roomFromRows({ ...spec(rows), key: { ...spec(rows).key, '=': { ground: 9 } } });
     expect(room.level.map.ground[tileIndex(room.level.map, 1, 1)]).toBe(9);
     expect(room.level.map.ground[tileIndex(room.level.map, 0, 0)]).toBe(7);
+  });
+
+  it('places things to read', () => {
+    expect(roomFromRows(spec(['###', '#r#', '#.#', '###'])).readables).toEqual([{ tx: 1, ty: 1, id: 'ledger' }]);
   });
 
   it('starts the hero on a marked tile', () => {

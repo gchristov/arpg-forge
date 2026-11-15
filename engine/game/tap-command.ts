@@ -38,6 +38,11 @@ export function tapCommand(
     const p = renderer.screenPosition(n.x, n.y, BODY_PX * PX, screenPoint);
     if (Math.hypot(p.x - x, p.y - y) < TAP_REACH_PX * renderer.zoom) return { type: 'talk', npcId: n.id };
   }
+  // Things to read are often tall, such as a terminal, so they're tapped by their body on screen like an NPC.
+  for (const [index, r] of ls.readables.entries()) {
+    const p = renderer.screenPosition(r.tx + 0.5, r.ty + 0.5, BODY_PX * PX, screenPoint);
+    if (Math.hypot(p.x - x, p.y - y) < TAP_REACH_PX * renderer.zoom) return { type: 'read', index };
+  }
   const picked = renderer.pick(x, y);
   if (!picked) return null;
   if ('structure' in picked) return { type: 'enterStructure', index: picked.structure };

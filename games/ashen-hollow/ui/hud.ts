@@ -1,4 +1,7 @@
 import { currentLevel, type Command, type GameState } from '../../../engine/sim/state';
+import { Banner } from '../../../engine/ui/banner';
+import { bindCommand } from '../../../engine/ui/command-button';
+import { ShownValues } from '../../../engine/ui/shown-values';
 import { QUEST } from '../content/story';
 
 /** The fireball button's skill slot. */
@@ -8,63 +11,52 @@ const $ = <T extends HTMLElement = HTMLElement>(id: string): T => document.getEl
 
 /** Ashen Hollow's HUD: orbs, skill buttons, gold, level, XP bar, boss bar and banners. */
 export class Hud {
-  private readonly shown = new Map<string, string | number | boolean>();
-  private bannerTimer = 0;
+  private readonly shown = new ShownValues();
+  private readonly bannerBox = new Banner({ root: $('banner'), title: $('bannerT'), subtitle: $('bannerS') });
 
   constructor(onCommand: (command: Command) => void) {
-    const bind = (id: string, command: Command): void => {
-      $(id).addEventListener('pointerdown', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onCommand(command);
-      });
-    };
-    bind('bAttack', { type: 'attackNearest' });
-    bind('bFire', { type: 'useSkill', slot: FIREBALL });
-    bind('bPotion', { type: 'heal' });
+    bindCommand($('bAttack'), { type: 'attackNearest' }, onCommand);
+    bindCommand($('bFire'), { type: 'useSkill', slot: FIREBALL }, onCommand);
+    bindCommand($('bPotion'), { type: 'heal' }, onCommand);
   }
 
   update(state: GameState): void {
     const { hero } = state;
     const fireball = state.rules.hero.skills[FIREBALL]!;
-    this.set('hp', `${Math.ceil(hero.hp)}/${hero.maxHp}`, () => {
+    this.shown.set('hp', `${Math.ceil(hero.hp)}/${hero.maxHp}`, () => {
       $('hpTxt').textContent = String(Math.ceil(hero.hp));
       $('hpFill').style.height = `${(hero.hp / hero.maxHp) * 100}%`;
     });
-    this.set('mp', `${Math.floor(hero.resource)}/${hero.maxResource}`, () => {
+    this.shown.set('mp', `${Math.floor(hero.resource)}/${hero.maxResource}`, () => {
       $('mpTxt').textContent = String(Math.floor(hero.resource));
       $('mpFill').style.height = `${(hero.resource / hero.maxResource) * 100}%`;
     });
-    this.set('gold', hero.gold, () => ($('goldN').textContent = String(hero.gold)));
-    this.set('potions', hero.healingItems, () => {
+    this.shown.set('gold', hero.gold, () => ($('goldN').textContent = String(hero.gold)));
+    this.shown.set('potions', hero.healingItems, () => {
       $('potN').textContent = String(hero.healingItems);
       $('bPotion').classList.toggle('off', hero.healingItems <= 0);
     });
-    this.set('level', hero.level, () => ($('lvl').textContent = `Level ${hero.level}`));
-    this.set('xp', Math.round((hero.xp / hero.xpNext) * 100), (v) => ($('xpFill').style.width = `${v}%`));
-    this.set('fireCooldown', Math.round((hero.skillCooldowns[FIREBALL]! / fireball.cooldown) * 100), (v) =>
+    this.shown.set('level', hero.level, () => ($('lvl').textContent = `Level ${hero.level}`));
+    this.shown.set('xp', Math.round((hero.xp / hero.xpNext) * 100), (v) => ($('xpFill').style.width = `${v}%`));
+    this.shown.set('fireCooldown', Math.round((hero.skillCooldowns[FIREBALL]! / fireball.cooldown) * 100), (v) =>
       $('fireCd').style.setProperty('--p', `${v}%`),
     );
-    this.set('fireOff', hero.resource < fireball.cost, (v) => $('bFire').classList.toggle('off', Boolean(v)));
-    this.set('quest', QUEST[state.quest]?.text ?? '', (v) => ($('quest').textContent = String(v)));
+    this.shown.set('fireOff', hero.resource < fireball.cost, (v) => $('bFire').classList.toggle('off', Boolean(v)));
+    this.shown.set('quest', QUEST[state.quest]?.text ?? '', (v) => ($('quest').textContent = String(v)));
     const ls = currentLevel(state);
-    this.set('location', ls.level.name, (v) => ($('locName').textContent = String(v)));
+    this.shown.set('location', ls.level.name, (v) => ($('locName').textContent = String(v)));
     const boss = ls.enemies.find((e) => state.rules.enemies[e.kind]?.boss && !e.dead && e.mode === 'chase');
-    this.set('bossShown', Boolean(boss), (v) => ($('bossbar').hidden = !v));
-    if (boss) this.set('boss', Math.round((boss.hp / boss.maxHp) * 100), (v) => ($('bossFill').style.width = `${v}%`));
+    this.shown.set('bossShown', Boolean(boss), (v) => ($('bossbar').hidden = !v));
+    if (boss) this.shown.set('boss', Math.round((boss.hp / boss.maxHp) * 100), (v) => ($('bossFill').style.width = `${v}%`));
   }
 
   /** A title and subtitle across the middle of the screen. Shown until replaced when `seconds` is Infinity. */
   banner(title: string, subtitle = '', seconds = 2.4): void {
-    $('bannerT').textContent = title;
-    $('bannerS').textContent = subtitle;
-    $('banner').classList.add('show');
-    clearTimeout(this.bannerTimer);
-    if (Number.isFinite(seconds)) this.bannerTimer = window.setTimeout(() => this.hideBanner(), seconds * 1000);
+    this.bannerBox.show(title, subtitle, seconds);
   }
 
   hideBanner(): void {
-    $('banner').classList.remove('show');
+    this.bannerBox.hide();
   }
 
   /** The red edge that flashes when the hero is hurt. */
@@ -76,12 +68,5 @@ export class Hud {
       h.style.transition = 'opacity .45s';
       h.style.opacity = '0';
     });
-  }
-
-  /** Updates an element only when its value changed, so the DOM isn't touched every frame. */
-  private set<T extends string | number | boolean>(key: string, value: T, apply: (value: T) => void): void {
-    if (this.shown.get(key) === value) return;
-    this.shown.set(key, value);
-    apply(value);
   }
 }

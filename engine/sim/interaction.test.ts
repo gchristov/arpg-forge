@@ -67,6 +67,15 @@ describe('vendors', () => {
   });
 });
 
+describe('readables', () => {
+  it('walks up to something to read, then says what was read', () => {
+    const state = arena(OPEN_ROOM, { x: 2.5, y: 2.5 });
+    currentLevel(state).readables.push({ tx: 8, ty: 8, id: 'notice' });
+    const events = run(state, 5, [{ type: 'read', index: 0 }]);
+    expect(ofType(events, 'Read')).toEqual([{ type: 'Read', id: 'notice', x: 8.5, y: 8.5 }]);
+  });
+});
+
 describe('containers, drops and pickups', () => {
   it('opens a container once, spilling its gold and healing items to pick up', () => {
     const state = arena(OPEN_ROOM, { x: 2.5, y: 2.5 });

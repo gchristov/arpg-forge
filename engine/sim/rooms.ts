@@ -25,6 +25,8 @@ export interface RoomKey {
   npc?: { kind: string; name: string };
   /** A container, such as a chest, holding this much. */
   container?: Pick<Container, 'gold' | 'healingItems'>;
+  /** Something to read here, which the game words by this id. */
+  readable?: string;
 }
 
 export interface RoomSpec {
@@ -49,7 +51,7 @@ export function roomFromRows(spec: RoomSpec): LevelContent {
     id: spec.id, name: spec.name, subtitle: spec.subtitle, outdoor: false, map,
     start: { x: 0, y: 0 }, portals: [], lights: [], structures: [],
   };
-  const room: LevelContent = { level, spawns: [], camps: [], npcs: [], containers: [] };
+  const room: LevelContent = { level, spawns: [], camps: [], npcs: [], containers: [], readables: [] };
 
   rows.forEach((row, y) => {
     if (row.length !== width) throw new Error(`${spec.id}: row ${y} is ${row.length} wide, not ${width}`);
@@ -76,6 +78,7 @@ export function roomFromRows(spec: RoomSpec): LevelContent {
       if (key.spawn) room.spawns.push({ kind: key.spawn, x: x + 0.5, y: y + 0.5 });
       if (key.npc) room.npcs.push({ ...key.npc, x: x + 0.5, y: y + 0.5 });
       if (key.container) room.containers!.push({ tx: x, ty: y, ...key.container });
+      if (key.readable) room.readables!.push({ tx: x, ty: y, id: key.readable });
     }
   });
   return room;

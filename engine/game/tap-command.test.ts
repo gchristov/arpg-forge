@@ -54,6 +54,12 @@ describe('tapCommand', () => {
     expect(tapTile(state, 15.5, 3.5)).toEqual({ type: 'walk', x: 15.5, y: 3.5 });
   });
 
+  it('reads something tapped near its body', () => {
+    const state = room();
+    currentLevel(state).readables.push({ tx: 15, ty: 6, id: 'notice' });
+    expect(tapTile(state, 15.5, 6.7)).toEqual({ type: 'read', index: 0 });
+  });
+
   it('walks into a portal tapped', () => {
     const state = room();
     currentLevel(state).level.portals.push({ tx: 17, ty: 9, to: 'home', stepOut: { x: 0, y: -1 } });

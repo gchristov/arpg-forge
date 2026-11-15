@@ -8,11 +8,11 @@ import { Game } from '../../engine/game/game';
 import { PX } from '../../engine/game/world-view';
 import { servicePrice } from '../../engine/sim/interaction';
 import { currentLevel, type SimEvent } from '../../engine/sim/state';
+import { DialogBox } from '../../engine/ui/dialog-box';
 import { ashenHollowLook, MODEL_URLS } from './art/look';
 import { ashenHollowSounds } from './audio/sounds';
 import { BOSS_DEFEATED_STEP, dialogueFor, NPCS } from './content/story';
 import { ashenHollowContent } from './content/world';
-import { DialogBox } from './ui/dialog';
 import { Hud } from './ui/hud';
 
 const game = new Game({
@@ -26,13 +26,13 @@ const { state, labels, platform, view } = game;
 const synth = new Synth();
 synth.muted = platform.load('muted') === 'true';
 const sfx = ashenHollowSounds(synth);
-const dialog = new DialogBox();
+const $ = (id: string): HTMLElement => document.getElementById(id)!;
+const dialog = new DialogBox({ root: $('dialog'), title: $('dlgT'), text: $('dlgP'), choices: $('dlgO') });
 const hud = new Hud((c) => {
   if (c.type === 'attackNearest') dialog.close();
   game.send(c);
 });
 
-const $ = (id: string): HTMLElement => document.getElementById(id)!;
 
 $('title').addEventListener('pointerdown', (e) => {
   e.preventDefault();
@@ -203,7 +203,6 @@ function showDialogue(npcId: number, questBefore: number): void {
   if (!npc || !d) return;
   const services = NPCS[npc.kind]?.services ?? [];
   dialog.open(
-    npcId,
     d.title,
     d.text,
     d.options.map((o) => {
@@ -219,6 +218,7 @@ function showDialogue(npcId: number, questBefore: number): void {
         },
       };
     }),
+    npcId,
   );
 }
 
