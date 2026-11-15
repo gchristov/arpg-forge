@@ -150,8 +150,8 @@ function lamps(id: FloorId): Record<string, RoomKey> {
 function doors(id: FloorId): Record<string, RoomKey> {
   const at = FLOOR_ORDER.indexOf(id);
   const deeper = FLOOR_ORDER[at + 1];
-  // Intake's front door leads out to the town.
-  const back = FLOOR_ORDER[at - 1] ?? 'rustbelt';
+  // Intake's front door leads back out through the loading door of Mags's depot, where deliveries came in.
+  const back = FLOOR_ORDER[at - 1] ?? 'tradingPost';
   return {
     U: deeper
       ? {

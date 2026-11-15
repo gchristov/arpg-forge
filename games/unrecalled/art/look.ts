@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { hash2, valueNoise } from '../../../engine/core/math';
-import type { ActorLook, Look, Mood, PropLook, StructureLook } from '../../../engine/render/look';
+import type { ActorLook, BuildingKit, Look, Mood, PropLook, StructureLook } from '../../../engine/render/look';
 import { Ground, Prop } from '../content/tiles';
 
 /** Unrecalled's look: Quaternius people and machines, cold workshop light against furnace glow. */
@@ -27,6 +27,7 @@ const FLOOR_STYLES: Record<string, { panel: string; plate: string | null; mood: 
   workshop: { panel: 'wall', plate: 'floor-metal', mood: foundry(0x40362a, 0xf0d8b8) },
   tradingPost: { panel: 'wall-astra', plate: 'floor-plates', mood: foundry(0x3e382e, 0xf0e0c8) },
   pumphouse: { panel: 'wall-divided', plate: 'floor-dark', mood: foundry(0x262c30, 0xc8d4e0) },
+  depotOffice: { panel: 'wall-window', plate: 'floor-metal', mood: foundry(0x3e3a32, 0xf0e4cc) },
   intake: { panel: 'wall', plate: 'floor-plates', mood: foundry(0x343a40, 0xd8e4f0) },
   sorting: { panel: 'wall-astra', plate: 'floor-metal', mood: foundry(0x3a3428, 0xf0e0c0) },
   gallery: { panel: 'wall-window', plate: 'floor-dark', mood: foundry(0x3a2a2c, 0xf0c8c8) },
@@ -54,6 +55,7 @@ const PROPS: Partial<Record<number, PropLook>> = {
   [Prop.Chair]: { shape: 'box', width: 0.5, height: 0.8, colour: 0x4a4a52, model: tall('chair', 0.8, 'random') },
   // A rack a delivery unit stands in while it charges; this one's empty.
   [Prop.Cradle]: { shape: 'box', width: 0.9, height: 2.2, colour: 0x3a3e46, model: tall('cradle', 2.3) },
+  [Prop.Stairs]: { shape: 'box', width: 1, height: 1, colour: 0x4a4e56, model: { names: ['stairs'], fit: { type: 'box', width: 0.95, height: 1.1, depth: 1.6 }, turn: Math.PI } },
   [Prop.Cache]: { shape: 'box', width: 0.7, height: 0.5, colour: 0x5a5030, emissive: 0x1a1400, model: tall('cache', 0.6) },
   // The dead power pylon the camp grew up under.
   [Prop.Pylon]: { shape: 'cylinder', width: 1, height: 5, colour: 0x3a3e46, model: tall('turbine', 5.5) },
@@ -75,11 +77,36 @@ const PROPS: Partial<Record<number, PropLook>> = {
   [Prop.Computer]: { shape: 'box', width: 0.6, height: 0.9, colour: 0x2a3a4a, emissive: 0x0a4050, model: tall('computer', 0.95) },
 };
 
-/** Rustbelt's buildings, from weathered base modules and cargo depots, doors facing the camera. */
+/** The town's buildings, put together from the Foundry's own wall kit, weathered, as salvage from it would be. */
+const TOWN_KIT: BuildingKit = {
+  span: 2,
+  wall: ['town-wall-astra'],
+  window: 'town-window-astra',
+  top: 'town-top',
+  rail: 'town-rail',
+  door: { name: 'town-door', width: 1.3, height: 1.9 },
+  corner: 'town-column',
+  roof: 'town-roof',
+  roofProps: ['roof-vent', 'roof-fan'],
+  inside: 0x6a4420,
+  glass: { material: 'M_Glass', colour: 0xd89a50, light: 'amber' },
+  sign: 0xffb050,
+};
+
+const building = (wall: number, kit: Partial<BuildingKit>): StructureLook => ({
+  wall, roof: 0x3a3028, wallHeight: 2.5, roofHeight: 0.2, kit: { ...TOWN_KIT, ...kit },
+});
+
 const STRUCTURES: Record<string, StructureLook> = {
-  workshop: { wall: 0x4a4038, roof: 0x3a3028, wallHeight: 1.6, roofHeight: 0.6, model: { name: 'workshop', rotation: 0 } },
-  tradingPost: { wall: 0x4a4038, roof: 0x3a3028, wallHeight: 1.6, roofHeight: 0.6, model: { name: 'trading-post', rotation: 0 } },
-  pumphouse: { wall: 0x3a4048, roof: 0x2a3038, wallHeight: 1.4, roofHeight: 0.5, model: { name: 'pumphouse', rotation: 0 } },
+  workshop: building(0x4a4038, { sign: 0x6ad8ff }),
+  tradingPost: building(0x4a4038, { wall: ['town-wall-band', 'town-wall-band-broken'], window: 'town-window' }),
+  pumphouse: building(0x3a4048, {
+    wall: ['town-wall-band-broken'],
+    window: 'town-window',
+    inside: 0x2a3a40,
+    glass: { material: 'M_Glass', colour: 0x7ab8c8, light: 'cyan' },
+    sign: undefined,
+  }),
 };
 
 const LIGHTS: Record<string, number> = { cyan: 0x6ad8ff, amber: 0xffa040, molten: 0xff6a20, alarm: 0xff3a2a, hazard: 0xffc840 };
@@ -98,7 +125,7 @@ const robot = (
 
 const ACTORS: Record<string, ActorLook> = {
   hero: {
-    colour: 0x9a8a70, height: 1.2, radius: 0.24,
+    colour: 0x9a8a70, height: 1.2, radius: 0.24, seenThrough: 0x8ae8ff,
     model: {
       name: 'hero',
       animations: { idle: 'Idle', move: 'Run', attack: 'Punch', cast: 'Shoot_OneHanded', hit: 'RecieveHit', death: 'Death' },

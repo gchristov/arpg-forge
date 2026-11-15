@@ -27,6 +27,8 @@ export class ActorFigure {
   /** The frame the actor was last placed in. */
   seen = 0;
   private readonly materials: FlashableMaterial[] = [];
+  /** The outline drawn where the actor is hidden, if its look has one. */
+  private readonly seenThrough: THREE.MeshBasicMaterial | null = null;
   private readonly mixer: THREE.AnimationMixer | null = null;
   /** For hovering actors: the model, bobbed each frame, and the shadow that shows it's off the ground. */
   private hovering: { model: THREE.Object3D; shadow: THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial>; age: number } | null = null;
@@ -42,8 +44,10 @@ export class ActorFigure {
   ) {
     const model = look.model && library.instantiate(look.model.name);
     const template = look.model && library.get(look.model.name);
+    if (look.seenThrough !== undefined) this.seenThrough = seenThroughMaterial(look.seenThrough);
     if (!model || !template || !look.model) {
       this.buildCapsule();
+      this.addSeenThrough();
       return;
     }
     model.scale.setScalar(look.height / template.height);
@@ -95,6 +99,7 @@ export class ActorFigure {
       if (this.base) this.base.reset().play().crossFadeFrom(e.action, BLEND_SECONDS, false);
     });
     this.setBase('idle');
+    this.addSeenThrough();
   }
 
   /**
@@ -134,6 +139,7 @@ export class ActorFigure {
       m.transparent = fade < 1;
     }
     if (this.hovering) this.hovering.shadow.material.opacity = 0.45 * fade;
+    if (this.seenThrough) this.seenThrough.opacity = SEEN_THROUGH_OPACITY * fade;
     this.root.scale.set(1, this.mixer ? 1 : 0.3 + 0.7 * fade, 1);
   }
 
@@ -169,6 +175,7 @@ export class ActorFigure {
       if (o instanceof THREE.Mesh && !this.mixer) o.geometry.dispose();
     });
     for (const m of this.materials) m.dispose();
+    this.seenThrough?.dispose();
     if (this.hovering) {
       this.hovering.shadow.geometry.dispose();
       this.hovering.shadow.material.dispose();
@@ -207,6 +214,34 @@ export class ActorFigure {
     } else if (previous) next.crossFadeFrom(previous, BLEND_SECONDS, false);
   }
 
+  /**
+   * Gives each of the actor's meshes a twin in the outline material, drawn after everything solid. The actor marks
+   * the stencil wherever it shows, and the twin draws only where it doesn't and something nearer hides it.
+   */
+  private addSeenThrough(): void {
+    const material = this.seenThrough;
+    if (!material) return;
+    const meshes: THREE.Mesh[] = [];
+    this.root.traverse((o) => {
+      if (o instanceof THREE.Mesh && o.material !== this.hovering?.shadow.material) meshes.push(o);
+    });
+    for (const mesh of meshes) {
+      for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) markStencil(m);
+      let twin: THREE.Mesh;
+      if (mesh instanceof THREE.SkinnedMesh) {
+        const skinned = new THREE.SkinnedMesh(mesh.geometry, material);
+        skinned.bind(mesh.skeleton, mesh.bindMatrix);
+        twin = skinned;
+      } else twin = new THREE.Mesh(mesh.geometry, material);
+      twin.position.copy(mesh.position);
+      twin.quaternion.copy(mesh.quaternion);
+      twin.scale.copy(mesh.scale);
+      twin.renderOrder = SEEN_THROUGH_ORDER;
+      twin.frustumCulled = false;
+      mesh.parent?.add(twin);
+    }
+  }
+
   /** Each actor gets its own copy of a material, so flashing or fading one doesn't affect the rest. */
   private ownMaterial(material: THREE.Material, tint: THREE.Color | null): THREE.Material {
     const own = material.clone() as FlashableMaterial & { color?: THREE.Color };
@@ -228,4 +263,26 @@ export class ActorFigure {
     this.root.add(body, nose);
     this.root.traverse((o) => (o.castShadow = true));
   }
+}
+
+/** How strongly a hidden actor's outline shows, and when it draws: after everything else that's see-through. */
+const SEEN_THROUGH_OPACITY = 0.5;
+const SEEN_THROUGH_ORDER = 10;
+const STENCIL_SHOWN = 1;
+
+/** Marks the stencil wherever this material's surface is drawn. */
+function markStencil(material: THREE.Material): void {
+  material.stencilWrite = true;
+  material.stencilRef = STENCIL_SHOWN;
+  material.stencilFunc = THREE.AlwaysStencilFunc;
+  material.stencilZPass = THREE.ReplaceStencilOp;
+}
+
+/** Flat colour drawn only behind something nearer, and only where the actor itself didn't show. */
+function seenThroughMaterial(colour: number): THREE.MeshBasicMaterial {
+  return new THREE.MeshBasicMaterial({
+    color: colour, transparent: true, opacity: SEEN_THROUGH_OPACITY, depthWrite: false, depthFunc: THREE.GreaterDepth,
+    stencilWrite: true, stencilRef: STENCIL_SHOWN, stencilFunc: THREE.NotEqualStencilFunc,
+    stencilFail: THREE.KeepStencilOp, stencilZFail: THREE.KeepStencilOp, stencilZPass: THREE.KeepStencilOp,
+  });
 }

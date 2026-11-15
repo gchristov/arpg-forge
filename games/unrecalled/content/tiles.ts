@@ -40,4 +40,6 @@ export const Prop = {
   Building: 27,
   Containers: 28,
   Cargo: 29,
+  /** Stairs up or down to another floor of a building, walked onto to take them. */
+  Stairs: 30,
 } as const;

@@ -24,6 +24,37 @@ export interface StructureLook {
   roofHeight: number;
   /** A model fitted onto the structure's lot, turned `rotation` radians so its door faces the right way. */
   model?: { name: string; rotation: number };
+  /** Pieces to build the structure from, wall by wall, in place of one model. */
+  kit?: BuildingKit;
+}
+
+/**
+ * A kit of models a building is put together from. Wall pieces lie along z with their face towards +x, as wall panels
+ * do (`WallLook.panel`), and are all scaled as `wall[0]` is to span `span` tiles, so parts of one kit fit together.
+ */
+export interface BuildingKit {
+  span: number;
+  /** Plain wall pieces; each piece picks one. */
+  wall: string[];
+  /** A wall piece with windows, on the sides the camera sees: every other piece on the ground, every one above. */
+  window?: string;
+  /** A band laid along the top of each block's walls. */
+  top?: string;
+  /** A railing round the roofs of blocks lower than the tallest. */
+  rail?: string;
+  /** A door frame lying along x, fitted to `width` by `height` tiles around the door. */
+  door: { name: string; width: number; height: number };
+  /** A column standing wherever the walls turn a corner, on every storey. */
+  corner?: string;
+  /** Plates laid over the roof, and things standing on it, such as vents and fans. */
+  roof: string;
+  roofProps?: string[];
+  /** The light inside, seen through the door. */
+  inside: number;
+  /** Lit windows: the window piece's glass, by material name, glows `colour` and casts the light `light` outside. */
+  glass?: { material: string; colour: number; light: string };
+  /** A lit sign over the door. */
+  sign?: number;
 }
 
 /** Names of a model's animations for each thing an actor does. Missing ones fall back to `idle`. */
@@ -37,6 +68,8 @@ export interface ActorAnimations {
 }
 
 export interface ActorLook {
+  /** Drawn as a faint outline of this colour wherever something nearer hides it, so the player never loses it. */
+  seenThrough?: number;
   /** Colour and size of the simple shape drawn when there's no model, or while it loads. */
   colour: number;
   height: number;

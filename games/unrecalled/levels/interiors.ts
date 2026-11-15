@@ -2,7 +2,7 @@ import type { LevelContent } from '../../../engine/sim/content';
 import { roomFromRows, type RoomKey } from '../../../engine/sim/rooms';
 import { Ground, Prop } from '../content/tiles';
 
-/** Rustbelt's buildings, inside. Each one's door (V) leads back out to the town. */
+/** Rustbelt's buildings, inside. Each ground floor's door (V) leads back out to the town; stairs (U, N) join floors. */
 const INTERIORS = {
   workshop: {
     name: 'Pell’s Workshop', subtitle: 'Smells of solder and old oil',
@@ -18,17 +18,33 @@ const INTERIORS = {
       '#####V######',
     ],
   },
+  // The old depot: the shop floor, a storeroom with the stairs up and the loading door into the Foundry (G), a back
+  // room, and the office upstairs.
   tradingPost: {
     name: 'Mags’s Trading Post', subtitle: 'Everything here was somebody’s once',
     rows: [
+      '#####L######LG##',
+      '#hh.dd..#cc...U#',
+      '#.......#......#',
+      '#..2...........#',
+      '#c......#....b.#',
+      'L.......##.#####',
+      '#.......#......#',
+      '#..b..b.#..h.hh#',
+      '#............S.#',
+      '#.......#......#',
+      '#######V########',
+    ],
+  },
+  depotOffice: {
+    name: 'The Depot Office', subtitle: 'Where the Foundry’s deliveries were signed for',
+    rows: [
       '###L####L###',
-      '#hh.dd..hh.#',
-      '#....2.....#',
-      '#c........c#',
-      'L..........L',
-      '#..b....b..#',
+      '#hh..k...dd#',
       '#..........#',
-      '######V#####',
+      '#.c......S.#',
+      '#..........#',
+      '#####N######',
     ],
   },
   pumphouse: {
@@ -64,12 +80,21 @@ const KEY: Record<string, RoomKey> = {
   d: solid(Prop.Desk),
   k: { ...solid(Prop.Computer), light: { radius: 2.2, intensity: 0.6, colour: 'cyan', flicker: 0.6 } },
   S: { ...solid(Prop.Cache), container: { gold: 35, healingItems: 1 } },
+  G: {
+    prop: Prop.Door, portal: { to: 'intake', stepOut: { x: 0, y: 0.9 }, start: { x: 0, y: 0.9 } },
+    light: { radius: 2.2, intensity: 0.8, colour: 'amber', flicker: 0.2, offset: { x: 0, y: 0.7 } },
+  },
+  U: { prop: Prop.Stairs, portal: { to: 'depotOffice', stepOut: { x: 0, y: 0.9 }, start: { x: 0, y: 0.9 } } },
+  N: {
+    portal: { to: 'tradingPost', stepOut: { x: 0, y: -0.9 }, start: { x: 0, y: -0.9 } },
+    light: { radius: 1.8, intensity: 0.5, colour: 'amber', flicker: 0, offset: { x: 0, y: -0.7 } },
+  },
   '2': { npc: { kind: 'trader', name: 'Mags' } },
   '3': { npc: { kind: 'tinker', name: 'Pell' } },
 };
 
-/** What the pumphouse's terminal holds: the pump log from the night of the flood. */
-const READABLE_BY_ROOM: Partial<Record<InteriorId, string>> = { pumphouse: 'pump-log' };
+/** What each room's terminal holds: the pump log from the night of the flood, and the depot's delivery ledger. */
+const READABLE_BY_ROOM: Partial<Record<InteriorId, string>> = { pumphouse: 'pump-log', depotOffice: 'depot-ledger' };
 
 export function buildInterior(id: InteriorId): LevelContent {
   const { name, subtitle, rows } = INTERIORS[id];
