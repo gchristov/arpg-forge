@@ -11,9 +11,9 @@ const foundry = (ambient: number, sky: number): Mood => ({
 
 /** Night over the camp: a cold moon behind the pylon, so the town has shadows the Foundry doesn't. */
 const NIGHT: Mood = {
-  background: 0x06080c, ambient: 0x2a3038, ambientIntensity: 0.55, heroLightRadius: 4.6,
-  moon: { colour: 0x9ab0d0, intensity: 0.55 },
-  fill: { sky: 0xb8c8e0, ground: 0x181410, intensity: 0.45 },
+  background: 0x06080c, ambient: 0x3a4250, ambientIntensity: 0.7, heroLightRadius: 4.6,
+  moon: { colour: 0xa8bcd8, intensity: 0.95 },
+  fill: { sky: 0xb8c8e0, ground: 0x201a14, intensity: 0.55 },
 };
 
 /** Each level's own walls, floor plates and air, so the player always knows where they are. */
@@ -47,13 +47,16 @@ const PROPS: Partial<Record<number, PropLook>> = {
   // A rack a delivery unit stands in while it charges; this one's empty.
   [Prop.Cradle]: { shape: 'box', width: 0.9, height: 2.2, colour: 0x3a3e46, model: tall('cradle', 2.3) },
   [Prop.Cache]: { shape: 'box', width: 0.7, height: 0.5, colour: 0x5a5030, emissive: 0x1a1400, model: tall('cache', 0.6) },
-  // A railing section fitted to one tile, along the map's columns.
-  [Prop.Rail]: { shape: 'box', width: 0.15, height: 0.7, colour: 0x4a4e56, model: { names: ['rail'], fit: { type: 'box', width: 0.15, height: 0.7, depth: 1 } } },
   // The dead power pylon the camp grew up under.
   [Prop.Pylon]: { shape: 'cylinder', width: 1, height: 5, colour: 0x3a3e46, model: tall('pylon', 5) },
   [Prop.FireBarrel]: { shape: 'cylinder', width: 0.6, height: 0.8, colour: 0x5a3020, emissive: 0x5a2008, model: tall('fire-barrel', 0.8) },
   // Big crates of salvage the camp is sorting.
-  [Prop.BigCrate]: { shape: 'box', width: 0.9, height: 0.8, colour: 0x4a5a3a, model: tall('big-crate', 0.9, 'random') },
+  // The wild edge of the camp: dead trees and rocks block the way, weeds and pebbles don't.
+  [Prop.DeadTree]: { shape: 'cone', width: 0.9, height: 2.6, colour: 0x3a3028, model: { names: ['dead-tree-1', 'dead-tree-2', 'dead-tree-3'], fit: { type: 'height', height: 2.8 }, turn: 'random' } },
+  [Prop.Rock]: { shape: 'sphere', width: 0.9, height: 0.7, colour: 0x4a4a48, model: { names: ['rock-1', 'rock-2', 'rock-3'], fit: { type: 'width', width: 1.1 }, turn: 'random' } },
+  [Prop.GrassTall]: { shape: 'cone', width: 0.4, height: 0.5, colour: 0x4a5a2a, model: { names: ['grass-tall'], fit: { type: 'height', height: 0.55 }, turn: 'random' } },
+  [Prop.GrassShort]: { shape: 'cone', width: 0.4, height: 0.3, colour: 0x4a5a2a, model: { names: ['grass-short'], fit: { type: 'height', height: 0.3 }, turn: 'random' } },
+  [Prop.Pebbles]: { shape: 'sphere', width: 0.3, height: 0.1, colour: 0x5a5a58, model: { names: ['pebbles'], fit: { type: 'width', width: 0.45 }, turn: 'random' } },
   [Prop.Post]: { shape: 'cylinder', width: 0.3, height: 1.2, colour: 0x5a5048, model: tall('post', 1.2) },
   [Prop.Computer]: { shape: 'box', width: 0.6, height: 0.9, colour: 0x2a3a4a, emissive: 0x0a4050, model: tall('computer', 0.95) },
 };
@@ -124,12 +127,20 @@ export const unrecalledLook: Look = {
     const checker = (tx + ty) % 2 === 0 ? 0.03 : 0;
     if (kind === Ground.Water) {
       const ripple = valueNoise(tx * 0.5 + 3, ty * 0.5) * 0.04;
-      return ((Math.round(255 * (0.05 + ripple))) << 16) | (Math.round(255 * (0.1 + ripple)) << 8) | Math.round(255 * (0.16 + ripple));
+      return ((Math.round(255 * (0.07 + ripple))) << 16) | (Math.round(255 * (0.14 + ripple)) << 8) | Math.round(255 * (0.22 + ripple));
+    }
+    if (kind === Ground.Pad) {
+      // An old concrete pad, stained and cracked.
+      const crack = h > 0.93 ? -0.05 : 0;
+      const l = 0.27 + n * 0.05 + h * 0.02 + crack;
+      return (Math.round(255 * l) << 16) | (Math.round(255 * l * 1.01) << 8) | Math.round(255 * l * 1.04);
     }
     if (kind === Ground.Dirt || kind === Ground.Mud) {
-      // Packed earth and cinders, darker and wetter towards the river.
-      const l = (kind === Ground.Mud ? 0.11 : 0.16) + n * 0.06 + h * 0.025;
-      return (Math.round(255 * l * 1.1) << 16) | (Math.round(255 * l) << 8) | Math.round(255 * l * 0.85);
+      // Packed earth in broad patches, some of it gone to scrub, darker and wetter towards the river.
+      const patch = valueNoise(tx * 0.12 + 7, ty * 0.12 + 3);
+      const l = (kind === Ground.Mud ? 0.15 : 0.2) + patch * 0.08 + n * 0.03 + h * 0.02;
+      const scrub = kind === Ground.Dirt && patch > 0.55 ? (patch - 0.55) * 0.5 : 0;
+      return (Math.round(255 * l * (1.1 - scrub)) << 16) | (Math.round(255 * l * (1 + scrub * 0.6)) << 8) | Math.round(255 * l * (0.8 - scrub * 0.4));
     }
     if (kind === Ground.Belt) {
       // Slats across the belt, with a worn amber edge every few tiles.

@@ -3,26 +3,28 @@ import { roomFromRows, type RoomKey } from '../../../engine/sim/rooms';
 import { Ground, Prop } from '../content/tiles';
 
 /**
- * Rustbelt, the salvage camp under a dead pylon, between the Foundry's outer wall (with its gate, G) and the river.
- * The foreman (1) waits by the fire, the trader (2) behind her stall and the tinker (3) at his bench. A post on the
- * bank (m) marks where the flood left the salvager.
+ * Rustbelt, the salvage camp under a dead pylon, out in the open between the Foundry's outer wall (with its gate, G)
+ * and the river. The camp stands on an old concrete pad (_) among weeds and pebbles, and fades into dead trees and
+ * rocks at its edges. The foreman (1) waits by the fire, the trader (2) behind her stall and the tinker (3) at his
+ * bench. A post on the bank (m) marks where the flood left the salvager.
  */
 const ROWS = [
-  '##L####B####G####B####L###',
-  'f.......cc.......cc......f',
-  'f..t.........,.......t...f',
-  'f..t.....................f',
-  'f.....hh...........kd....f',
-  'f.....dd2.........3dd....f',
-  'f............P...........f',
-  'f...........X1...........f',
-  'f..t...............b.....f',
-  'f.......c.........c....t.f',
-  'f...m.......@............f',
-  'f........................f',
-  ',,,,,,,,,,,,,,,,,,,,,,,,,,',
-  '~~~~~~~~~~~~~~~~~~~~~~~~~~',
-  '~~~~~~~~~~~~~~~~~~~~~~~~~~',
+  'TwrTr.T#L###B###G###B###L#wrTr',
+  'Trw.w..v.cc.._______..cc.wv.rT',
+  'rr..v.......__________......Tw',
+  'T.w...hh..__________________.r',
+  'rT....dd2.____________kd.w..rw',
+  'T..v......____________3dd....r',
+  'Tr..w....____P_________..v..rw',
+  'Tr.......___X1_________....w.T',
+  'r..c..v..______________..b..rw',
+  'T.w.......____c______c__.v...r',
+  'Tr...m..v.....@.......w...c.rw',
+  'T.v...p......w......p.....v..r',
+  'rT..w.....v.....p.......w..wrT',
+  ',,,,,,,,,,,,,,,,,,,,,,,,,,,,,,',
+  '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+  '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
 ];
 
 const solid = (prop: number): RoomKey => ({ prop, solid: true });
@@ -38,10 +40,14 @@ const KEY: Record<string, RoomKey> = {
     prop: Prop.Door, portal: { to: 'intake', stepOut: { x: 0, y: 0.9 }, start: { x: 0, y: 0.9 } },
     light: { radius: 2.4, intensity: 0.9, colour: 'amber', flicker: 0.2, offset: { x: 0, y: 0.7 } },
   },
-  f: solid(Prop.Rail),
+  _: { ground: Ground.Pad },
+  T: solid(Prop.DeadTree),
+  r: solid(Prop.Rock),
+  w: { prop: Prop.GrassTall },
+  v: { prop: Prop.GrassShort },
+  p: { prop: Prop.Pebbles },
   P: solid(Prop.Pylon),
   X: { ...solid(Prop.FireBarrel), light: { radius: 4.2, intensity: 1.3, colour: 'molten', flicker: 1.6 } },
-  t: solid(Prop.BigCrate),
   c: solid(Prop.Crate),
   b: solid(Prop.Barrel),
   h: solid(Prop.Shelves),
