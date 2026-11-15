@@ -238,7 +238,7 @@ export class WorldView {
     this.goalPoint.x = goalX;
     this.goalPoint.y = goalY;
     const aim = this.guide.aim(ls.level.map, hx, hy, this.goalPoint, this.aim);
-    arrow.show(hx, hy, aim.x - hx, aim.y - hy, this.guideSeconds);
+    arrow.show(hx, hy, aim.x - hx, aim.y - hy, this.guideSeconds, frameSeconds);
   }
 
   private currentGoal(): QuestGoal | null {

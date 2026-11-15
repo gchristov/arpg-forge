@@ -28,4 +28,14 @@ describe('GoalGuide', () => {
     const walled = mapFromRows(['..#..', '..#..']);
     expect(new GoalGuide().aim(walled, 0.5, 0.5, { x: 4.5, y: 0.5 }, { x: 0, y: 0 })).toEqual({ x: 4.5, y: 0.5 });
   });
+
+  it('slides its aim along the walk as the hero moves, never jumping from one tile to the next', () => {
+    const guide = new GoalGuide();
+    let last = guide.aim(MAP, 1.5, 0.5, { x: 5.5, y: 0.5 }, { x: 0, y: 0 });
+    for (let y = 0.55; y < 3.5; y += 0.05) {
+      const aim = guide.aim(MAP, 1.5, y, { x: 5.5, y: 0.5 }, { x: 0, y: 0 });
+      expect(Math.hypot(aim.x - last.x, aim.y - last.y)).toBeLessThan(0.3);
+      last = aim;
+    }
+  });
 });

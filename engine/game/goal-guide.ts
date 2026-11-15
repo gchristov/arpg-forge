@@ -2,7 +2,7 @@ import type { Vec2 } from '../core/math';
 import { findPath } from '../world/pathfinding';
 import type { TileMap } from '../world/tile-map';
 
-/** The arrow aims at the first step of the walk at least this far from the hero, so it turns before corners. */
+/** The arrow aims at the point this far along the walk, so it turns before corners and slides round them smoothly. */
 const AIM_AHEAD = 2.5;
 
 /**
@@ -31,12 +31,19 @@ export class GoalGuide {
     }
     out.x = goal.x;
     out.y = goal.y;
+    let fromX = x;
+    let fromY = y;
+    let left = AIM_AHEAD;
     for (const p of this.path ?? []) {
-      if (Math.hypot(p.x - x, p.y - y) >= AIM_AHEAD) {
-        out.x = p.x;
-        out.y = p.y;
-        break;
+      const length = Math.hypot(p.x - fromX, p.y - fromY);
+      if (length >= left) {
+        out.x = fromX + ((p.x - fromX) * left) / length;
+        out.y = fromY + ((p.y - fromY) * left) / length;
+        return out;
       }
+      left -= length;
+      fromX = p.x;
+      fromY = p.y;
     }
     return out;
   }
