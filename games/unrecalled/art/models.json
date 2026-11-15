@@ -687,6 +687,29 @@
           "hue": -6
         }
       }
+    },
+    {
+      "name": "town-rail",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Props/Prop_Rail_4.gltf",
+      "textures": {
+        "maxSize": 512,
+        "dropDetailMaps": true,
+        "recolour": {
+          "brightness": 1.6,
+          "saturation": 0.6,
+          "hue": -6
+        }
+      }
+    },
+    {
+      "name": "stairs",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Platforms/Platform_Stairs_2.gltf",
+      "textures": {
+        "maxSize": 512,
+        "dropDetailMaps": true
+      }
     }
   ]
 }

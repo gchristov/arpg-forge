@@ -27,6 +27,7 @@ const FLOOR_STYLES: Record<string, { panel: string; plate: string | null; mood: 
   workshop: { panel: 'wall', plate: 'floor-metal', mood: foundry(0x40362a, 0xf0d8b8) },
   tradingPost: { panel: 'wall-astra', plate: 'floor-plates', mood: foundry(0x3e382e, 0xf0e0c8) },
   pumphouse: { panel: 'wall-divided', plate: 'floor-dark', mood: foundry(0x262c30, 0xc8d4e0) },
+  depotOffice: { panel: 'wall-window', plate: 'floor-metal', mood: foundry(0x3e3a32, 0xf0e4cc) },
   intake: { panel: 'wall', plate: 'floor-plates', mood: foundry(0x343a40, 0xd8e4f0) },
   sorting: { panel: 'wall-astra', plate: 'floor-metal', mood: foundry(0x3a3428, 0xf0e0c0) },
   gallery: { panel: 'wall-window', plate: 'floor-dark', mood: foundry(0x3a2a2c, 0xf0c8c8) },
@@ -54,6 +55,7 @@ const PROPS: Partial<Record<number, PropLook>> = {
   [Prop.Chair]: { shape: 'box', width: 0.5, height: 0.8, colour: 0x4a4a52, model: tall('chair', 0.8, 'random') },
   // A rack a delivery unit stands in while it charges; this one's empty.
   [Prop.Cradle]: { shape: 'box', width: 0.9, height: 2.2, colour: 0x3a3e46, model: tall('cradle', 2.3) },
+  [Prop.Stairs]: { shape: 'box', width: 1, height: 1, colour: 0x4a4e56, model: { names: ['stairs'], fit: { type: 'box', width: 0.95, height: 1.1, depth: 1.6 }, turn: Math.PI } },
   [Prop.Cache]: { shape: 'box', width: 0.7, height: 0.5, colour: 0x5a5030, emissive: 0x1a1400, model: tall('cache', 0.6) },
   // The dead power pylon the camp grew up under.
   [Prop.Pylon]: { shape: 'cylinder', width: 1, height: 5, colour: 0x3a3e46, model: tall('turbine', 5.5) },
@@ -81,6 +83,7 @@ const TOWN_KIT: BuildingKit = {
   wall: ['town-wall-astra'],
   window: 'town-window-astra',
   top: 'town-top',
+  rail: 'town-rail',
   door: { name: 'town-door', width: 1.3, height: 1.9 },
   corner: 'town-column',
   roof: 'town-roof',

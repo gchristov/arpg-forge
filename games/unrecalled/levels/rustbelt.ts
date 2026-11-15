@@ -1,22 +1,47 @@
 import { dist, hash2, lerp, valueNoise } from '../../../engine/core/math';
 import type { LevelContent } from '../../../engine/sim/content';
-import type { Level, Structure } from '../../../engine/world/level';
+import type { BuildingPart, Level, Structure } from '../../../engine/world/level';
 import { createTileMap, inBounds, setProp, setSolid, tileIndex, type TileMap } from '../../../engine/world/tile-map';
 import { Ground, Prop } from '../content/tiles';
 
 const WIDTH = 46;
 const HEIGHT = 36;
 
-interface BuildingSpec extends Structure {
+interface BuildingSpec {
+  kind: string;
+  name: string;
   /** The interior its door leads into. */
   to: string;
+  door: { tx: number; ty: number };
+  parts: BuildingPart[];
 }
 
-/** Buildings put together from salvaged Foundry walls, each with a door on its front (bottom) edge. */
+/**
+ * Buildings put together from salvaged Foundry walls, each with a door on its front (bottom) edge. Mags's trading
+ * post, the old depot, is the biggest: a two-storey hall with a wing and a tower. Pell's workshop has a loft at the
+ * back, and the pumphouse its pump tower and a lean-to.
+ */
 const BUILDINGS: BuildingSpec[] = [
-  { kind: 'workshop', name: 'Pell’s Workshop', to: 'workshop', x: 7, y: 8, width: 6, depth: 4, door: { tx: 9, ty: 11 } },
-  { kind: 'tradingPost', name: 'Mags’s Trading Post', to: 'tradingPost', x: 32, y: 8, width: 6, depth: 4, door: { tx: 34, ty: 11 } },
-  { kind: 'pumphouse', name: 'The Old Pumphouse', to: 'pumphouse', x: 37, y: 21, width: 4, depth: 4, door: { tx: 38, ty: 24 } },
+  {
+    kind: 'workshop', name: 'Pell’s Workshop', to: 'workshop', door: { tx: 9, ty: 11 },
+    parts: [{ x: 7, y: 8, width: 6, depth: 4, floors: 1 }, { x: 7, y: 6, width: 4, depth: 2, floors: 2 }],
+  },
+  {
+    kind: 'tradingPost', name: 'Mags’s Trading Post', to: 'tradingPost', door: { tx: 34, ty: 11 },
+    parts: [
+      { x: 32, y: 6, width: 8, depth: 6, floors: 2 },
+      { x: 40, y: 8, width: 4, depth: 4, floors: 1 },
+      { x: 34, y: 4, width: 4, depth: 2, floors: 3 },
+    ],
+  },
+  {
+    kind: 'pumphouse', name: 'The Old Pumphouse', to: 'pumphouse', door: { tx: 38, ty: 24 },
+    parts: [
+      { x: 37, y: 21, width: 4, depth: 4, floors: 1 },
+      { x: 37, y: 19, width: 2, depth: 2, floors: 3 },
+      { x: 41, y: 23, width: 2, depth: 2, floors: 1 },
+    ],
+  },
 ];
 
 /** Worn paths between the gate, the camp, each door and the jetty, as points to walk between. */
@@ -103,8 +128,10 @@ export function buildRustbelt(): LevelContent {
   reserve(CAMP.x - 8, CAMP.y - 6, 17, 13);
   for (const path of PATHS) paintPath(map, path, reserve);
 
-  BUILDINGS.forEach((b, i) => addBuilding(level, b, i));
-  for (const b of BUILDINGS) reserve(b.x - 1, b.y - 1, b.width + 2, b.depth + 3);
+  BUILDINGS.forEach((b, i) => {
+    const s = addBuilding(level, b, i);
+    reserve(s.x - 1, s.y - 1, s.width + 2, s.depth + 3);
+  });
 
   // The camp: the dead turbine it grew up under, the fire, and salvage stacked where it was dropped.
   setProp(map, 22, 10, Prop.Pylon, true);
@@ -114,7 +141,7 @@ export function buildRustbelt(): LevelContent {
   for (const [x, y] of [[17, 10], [26, 9], [27, 15], [16, 16], [29, 11], [14, 9], [30, 16]] as const) {
     setProp(map, x, y, Prop.Containers, true);
   }
-  for (const [x, y] of [[25, 11], [18, 15], [31, 9]] as const) setProp(map, x, y, Prop.Cargo, true);
+  for (const [x, y] of [[25, 11], [18, 15], [28, 7]] as const) setProp(map, x, y, Prop.Cargo, true);
   for (const [x, y] of [[15, 12], [29, 14]] as const) {
     setProp(map, x, y, Prop.Post, true);
     level.lights.push({ x: x + 0.5, y: y + 0.5, radius: 3.2, intensity: 0.8, colour: 'amber', flicker: 0.6, seed: x * 3 });
@@ -150,14 +177,25 @@ function paintPath(map: TileMap, points: Array<[number, number]>, reserve: (x: n
   }
 }
 
-function addBuilding(level: Level, b: BuildingSpec, seed: number): void {
+function addBuilding(level: Level, b: BuildingSpec, seed: number): Structure {
   const { map } = level;
-  for (let y = b.y; y < b.y + b.depth; y++) for (let x = b.x; x < b.x + b.width; x++) setProp(map, x, y, Prop.Building, true);
+  for (const p of b.parts) {
+    for (let y = p.y; y < p.y + p.depth; y++) for (let x = p.x; x < p.x + p.width; x++) setProp(map, x, y, Prop.Building, true);
+  }
   const { tx, ty } = b.door;
   setSolid(map, tx, ty, false);
   level.portals.push({ tx, ty, to: b.to, stepOut: { x: 0, y: 1 } });
-  level.structures.push({ kind: b.kind, name: b.name, x: b.x, y: b.y, width: b.width, depth: b.depth, door: b.door });
+  const x = Math.min(...b.parts.map((p) => p.x));
+  const y = Math.min(...b.parts.map((p) => p.y));
+  const structure: Structure = {
+    kind: b.kind, name: b.name, x, y,
+    width: Math.max(...b.parts.map((p) => p.x + p.width)) - x,
+    depth: Math.max(...b.parts.map((p) => p.y + p.depth)) - y,
+    door: b.door, parts: b.parts,
+  };
+  level.structures.push(structure);
   level.lights.push({ x: tx + 0.5, y: ty + 1.25, radius: 2.6, intensity: 0.8, colour: 'amber', flicker: 0.8, seed: seed * 3 });
+  return structure;
 }
 
 /** Dead trees thicken towards the map's edges; rocks, weeds and pebbles scatter over the rest. */

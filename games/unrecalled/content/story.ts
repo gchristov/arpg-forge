@@ -106,6 +106,10 @@ export const READINGS: Record<string, { title: string; text: string }> = {
     title: 'Locker',
     text: 'The door is stencilled U-7. Inside hangs a yellow hard hat, dented on the left side. Just like yours.',
   },
+  'depot-ledger': {
+    title: 'Depot ledger',
+    text: 'FOUNDRY DELIVERIES, SIGNED FOR. U-3, U-4, U-5, U-6: received, Rustbelt depot. U-7: dispatched. Never signed for. In the margin, newer ink: Ask the new one where they came from.',
+  },
   'pump-log': {
     title: 'Pump log',
     text: 'NIGHT OF THE FLOOD. 02:14: Foundry intake gate opened from the inside. 02:15: Pumps overwhelmed. 02:16: Something walked out with the water.',

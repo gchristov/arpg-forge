@@ -76,6 +76,22 @@ describe('Unrecalled scenarios', () => {
     }
   });
 
+  it('climbs the depot\'s stairs to its office, reads the ledger and comes back down to the stairs', () => {
+    const state = untouchable(createGameState(content, 1));
+    const depot = currentLevel(state).level.structures.findIndex((s) => s.kind === 'tradingPost');
+    play(state, 25, [{ type: 'enterStructure', index: depot }]);
+    play(state, 1);
+    expect(state.levelId).toBe('tradingPost');
+    takeDoor(state, 'depotOffice');
+    expect(state.levelId).toBe('depotOffice');
+    const read = play(state, 15, [{ type: 'read', index: 0 }]);
+    expect(read.filter((e) => e.type === 'Read').map((e) => (e.type === 'Read' ? e.id : ''))).toEqual(['depot-ledger']);
+    takeDoor(state, 'tradingPost');
+    expect(state.levelId).toBe('tradingPost');
+    const stairs = currentLevel(state).level.portals.find((p) => p.to === 'depotOffice')!;
+    expect(Math.hypot(state.hero.x - (stairs.tx + 0.5), state.hero.y - (stairs.ty + 0.5))).toBeLessThan(1.5);
+  });
+
   it('goes down through every floor to the Assembly Hall, and back up to Rustbelt', () => {
     const state = inIntake();
     for (const next of FLOOR_ORDER.slice(1)) {

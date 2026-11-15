@@ -36,13 +36,15 @@ export interface BuildingKit {
   span: number;
   /** Plain wall pieces; each piece picks one. */
   wall: string[];
-  /** A wall piece with windows, in every other piece on the sides the camera sees. */
+  /** A wall piece with windows, on the sides the camera sees: every other piece on the ground, every one above. */
   window?: string;
-  /** A band laid along the top of the walls. */
+  /** A band laid along the top of each block's walls. */
   top?: string;
+  /** A railing round the roofs of blocks lower than the tallest. */
+  rail?: string;
   /** A door frame lying along x, fitted to `width` by `height` tiles around the door. */
   door: { name: string; width: number; height: number };
-  /** A column standing at each corner, as tall as the walls. */
+  /** A column standing wherever the walls turn a corner, on every storey. */
   corner?: string;
   /** Plates laid over the roof, and things standing on it, such as vents and fans. */
   roof: string;

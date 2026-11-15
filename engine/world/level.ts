@@ -28,7 +28,19 @@ export interface Portal {
   sealed?: boolean;
 }
 
-/** A building or other large block on the map, with a door the player walks to when it's tapped. */
+/** A block of a building, `floors` storeys tall, over `width` by `depth` tiles from `x`, `y`. */
+export interface BuildingPart {
+  x: number;
+  y: number;
+  width: number;
+  depth: number;
+  floors: number;
+}
+
+/**
+ * A building or other large block on the map, with a door the player walks to when it's tapped. `x`, `y`, `width`
+ * and `depth` bound it; `parts`, if given, are the blocks it's made of, so it needn't be a plain box.
+ */
 export interface Structure {
   kind: string;
   name: string;
@@ -37,6 +49,7 @@ export interface Structure {
   width: number;
   depth: number;
   door: { tx: number; ty: number };
+  parts?: BuildingPart[];
   /** Where smoke rises, if anywhere. */
   chimney?: { tx: number; ty: number };
 }
