@@ -1,7 +1,7 @@
 import type { Vec2 } from '../core/math';
 import type { Rng } from '../core/rng';
 import type { Level } from '../world/level';
-import type { Camp, CampRespawns, EnemyType, HeroRules, NpcType, QuestStep } from './content';
+import type { Camp, CampRespawns, EnemyType, HeroRules, NpcType, QuestStep, Readable } from './content';
 import type { Walker } from './walking';
 
 export interface Actor extends Walker {
@@ -40,7 +40,7 @@ export interface Hero extends Actor {
   targetId: number | null;
   repathTimer: number;
   /** Who or what the hero is walking up to, to talk or open once close enough. */
-  interact: { type: 'npc'; npcId: number } | { type: 'container'; index: number } | null;
+  interact: { type: 'npc'; npcId: number } | { type: 'container' | 'readable'; index: number } | null;
   /** Melee upgrades bought so far; each one costs more than the last. */
   meleeUpgrades: number;
 }
@@ -119,6 +119,7 @@ export interface LevelState {
   npcs: Npc[];
   items: GroundItem[];
   containers: ContainerState[];
+  readables: Readable[];
   camps: Camp[];
   campRespawns?: CampRespawns;
   campTimer: number;
@@ -173,6 +174,7 @@ export type Command =
   | { type: 'respawn' }
   | { type: 'talk'; npcId: number }
   | { type: 'open'; index: number }
+  | { type: 'read'; index: number }
   | { type: 'useService'; npcId: number; service: number };
 
 export interface StepInput {
@@ -209,5 +211,6 @@ export type SimEvent =
   | { type: 'Talked'; npcId: number; kind: string; name: string; questBefore: number }
   | { type: 'ServiceUsed'; npcId: number; service: number; x: number; y: number }
   | { type: 'ContainerOpened'; index: number; x: number; y: number }
+  | { type: 'Read'; id: string; x: number; y: number }
   | { type: 'PickedUp'; kind: GroundItem['kind']; amount: number; x: number; y: number }
   | { type: 'QuestAdvanced'; step: number };

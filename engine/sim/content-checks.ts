@@ -37,10 +37,10 @@ function checkLevel(lc: LevelContent, content: GameContent, levels: Map<string, 
     else if (map.solid[tileIndex(map, tx, ty)]) problems.push(`${what} at ${where(tx, ty)} is inside something solid`);
     else if (!reached[tileIndex(map, tx, ty)]) problems.push(`${what} at ${where(tx, ty)} can't be reached from the start`);
   };
-  /** A container is opened from the tile in front of it (below it on the map), so that tile must be reachable. */
-  const mustOpen = (tx: number, ty: number): void => {
+  /** Containers and readables are used from the tile in front of them (below on the map), so it must be reachable. */
+  const mustUse = (what: string, use: string, tx: number, ty: number): void => {
     const front = inBounds(map, tx, ty + 1) && reached[tileIndex(map, tx, ty + 1)];
-    if (!front) problems.push(`a container at ${where(tx, ty)} can't be opened: the tile in front of it can't be reached from the start`);
+    if (!front) problems.push(`${what} at ${where(tx, ty)} can't be ${use}: the tile in front of it can't be reached from the start`);
   };
 
   mustReach('the start', ...tileOf(level.start));
@@ -72,7 +72,8 @@ function checkLevel(lc: LevelContent, content: GameContent, levels: Map<string, 
     if (!content.npcs[n.kind]) problems.push(`NPC "${n.name}" has unknown kind "${n.kind}"`);
     mustReach(`NPC "${n.name}"`, ...tileOf(n));
   }
-  for (const c of lc.containers ?? []) mustOpen(c.tx, c.ty);
+  for (const c of lc.containers ?? []) mustUse('a container', 'opened', c.tx, c.ty);
+  for (const r of lc.readables ?? []) mustUse(`"${r.id}"`, 'read', r.tx, r.ty);
   for (const s of level.structures) mustReach(`the door of "${s.name}"`, s.door.tx, s.door.ty);
   return problems;
 }

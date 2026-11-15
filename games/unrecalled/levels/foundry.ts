@@ -4,10 +4,11 @@ import { Ground, Prop } from '../content/tiles';
 
 /**
  * The Foundry, floor by floor, going deeper through the door in each back wall (U) and back through the gap in the
- * front wall (V). Each floor has its own shape, threat and discovery: a wide receiving bay with the recall notice (T),
- * a long line of belts carrying the town's belongings, a gallery around a shaft with a locker (Y), and a pillared hall
- * with an empty cradle in its back wall (Z). Walls inside a room are drawn low, like railings, and a block of them
- * reads as a shaft in the floor. Each floor also hides a salvage cache (S) off the main path.
+ * front wall (V). Each floor has its own shape, threat and discovery to read: a wide receiving bay with the recall
+ * notice (T), a long line of belts carrying the town's belongings with a tagged crate (R), a gallery around a shaft
+ * with a locker (Y), and a pillared hall with an empty cradle in its back wall (Z). Walls inside a room are drawn low,
+ * like railings, and a block of them reads as a shaft in the floor. Each floor also hides a salvage cache (S) off the
+ * main path.
  */
 const FLOORS = {
   intake: {
@@ -34,7 +35,7 @@ const FLOORS = {
     rows: [
       '###A#####A#####U####A#####A###',
       '#S...........................#',
-      '#=u==q===w==q==u===q==w==u===#',
+      '#=R==q===w==q==u===q==w==u===#',
       '#....x.......................L',
       '#.........o.........x....o...#',
       '#=q===u==w====q==u===w==q====#',
@@ -58,7 +59,7 @@ const FLOORS = {
       '#..o..##########.......#',
       '#.....##########.......#',
       '#Y.....k......k......l.#',
-      '#l.....dd.....s..dd....#',
+      '#......dd.....s..dd....#',
       '#......................#',
       '#..b..............b....#',
       '###########V############',
@@ -103,16 +104,17 @@ const KEY: Record<string, RoomKey> = {
   c: solid(Prop.Crate),
   b: solid(Prop.Barrel),
   l: solid(Prop.Locker),
-  Y: solid(Prop.Locker),
+  Y: { ...solid(Prop.Locker), readable: 'locker' },
   h: solid(Prop.Shelves),
   d: solid(Prop.Desk),
   k: { ...solid(Prop.Computer), light: { radius: 2.2, intensity: 0.6, colour: 'cyan', flicker: 0.6 } },
-  T: { ...solid(Prop.Computer), light: { radius: 2.4, intensity: 0.8, colour: 'amber', flicker: 0.4 } },
-  Z: { ...solid(Prop.Cradle), light: { radius: 2.6, intensity: 0.8, colour: 'cyan', flicker: 0.2 } },
+  T: { ...solid(Prop.Computer), readable: 'recall-notice', light: { radius: 2.4, intensity: 0.8, colour: 'amber', flicker: 0.4 } },
+  Z: { ...solid(Prop.Cradle), readable: 'cradle', light: { radius: 2.6, intensity: 0.8, colour: 'cyan', flicker: 0.2 } },
   '=': { ground: Ground.Belt },
   q: onBelt(Prop.Chair),
   w: onBelt(Prop.Desk),
   u: onBelt(Prop.Crate),
+  R: { ...onBelt(Prop.Crate), readable: 'stock-tag' },
   // A salvage cache, tucked off the main path to reward looking around.
   S: { ...solid(Prop.Cache), container: { gold: 30, healingItems: 1 } },
   '@': { heroStart: true },

@@ -4,7 +4,7 @@ import { hasLineOfSight } from '../world/line-of-sight';
 import { planRoute } from '../world/pathfinding';
 import { tileIndex } from '../world/tile-map';
 import { damageEnemy, findEnemy, nearestEnemy } from './combat';
-import { updateInteraction, useService, walkToContainer, walkToNpc } from './interaction';
+import { updateInteraction, useService, walkToContainer, walkToNpc, walkToReadable } from './interaction';
 import { placeAt } from './setup';
 import type { ProjectileSkill } from './content';
 import { currentLevel, type Command, type GameState, type SimEvent } from './state';
@@ -81,6 +81,9 @@ export function applyCommand(state: GameState, command: Command, events: SimEven
       break;
     case 'open':
       walkToContainer(state, command.index);
+      break;
+    case 'read':
+      walkToReadable(state, command.index);
       break;
     case 'useService':
       useService(state, command.npcId, command.service, events);

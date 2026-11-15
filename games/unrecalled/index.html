@@ -10,16 +10,24 @@
 </head>
 <body>
 <canvas id="game"></canvas>
+<div id="top">
+  <div class="objective"><div class="loc" id="loc"></div><div id="quest"></div></div>
+  <div class="stats"><span id="scrap"></span><span id="lvl"></span></div>
+</div>
+<div id="banner"><div class="t" id="bannerT"></div><div class="s" id="bannerS"></div></div>
+<div id="dialog" hidden><div class="t" id="dlgT"></div><p id="dlgP"></p><div class="choices" id="dlgO"></div></div>
 <div id="fallen" hidden><div class="t">You went down</div><div class="s">Tap to try again</div></div>
 <div id="bossbar" hidden><div class="n" id="bossName"></div><div class="bar"><i id="bossFill"></i></div></div>
 <div id="hud">
   <div class="bars">
     <div class="bar hp"><i id="hpFill"></i><span id="hpTxt"></span></div>
     <div class="bar charge"><i id="chargeFill"></i><span id="chargeTxt"></span></div>
+    <div class="xp"><i id="xpFill"></i></div>
   </div>
   <div class="buttons">
     <button id="bAttack" aria-label="Attack the nearest machine">Strike</button>
     <button id="bBolt" aria-label="Fire an arc bolt">Arc bolt</button>
+    <button id="bPatch" aria-label="Use a patch kit">Patch <b id="patchN"></b></button>
   </div>
 </div>
 <div id="title">

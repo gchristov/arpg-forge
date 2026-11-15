@@ -2,10 +2,12 @@ import '@fontsource/alegreya-sans/500.css';
 import '@fontsource/alegreya-sans/700.css';
 import { Game } from '../../engine/game/game';
 import { PX } from '../../engine/game/world-view';
-import type { Command, GameState, SimEvent } from '../../engine/sim/state';
+import { currentLevel, type RefusalReason, type SimEvent } from '../../engine/sim/state';
+import { DialogBox } from '../../engine/ui/dialog-box';
 import { MODEL_URLS, unrecalledLook } from './art/look';
-import { ENEMIES } from './content/enemies';
+import { ENGINE_CALLS, ENGINE_DOWN_STEP, ENGINE_FALLS, READINGS, SENTRY_SPOTS } from './content/story';
 import { unrecalledContent } from './content/world';
+import { Hud } from './ui/hud';
 
 const game = new Game({
   canvas: document.querySelector<HTMLCanvasElement>('#game')!,
@@ -14,8 +16,13 @@ const game = new Game({
   look: unrecalledLook,
   models: MODEL_URLS,
 });
-const { labels, view } = game;
+const { state, labels, view } = game;
 const $ = (id: string): HTMLElement => document.getElementById(id)!;
+const dialog = new DialogBox({ root: $('dialog'), title: $('dlgT'), text: $('dlgP'), choices: $('dlgO') });
+const hud = new Hud((command) => {
+  if (command.type === 'attackNearest') dialog.close();
+  game.send(command);
+});
 
 $('title').addEventListener('pointerdown', (e) => {
   e.preventDefault();
@@ -26,46 +33,78 @@ const ready = goLabel.textContent;
 goLabel.textContent = 'Loading…';
 void game.modelsLoaded.then(() => (goLabel.textContent = ready));
 
-const bind = (id: string, command: Command): void => {
-  $(id).addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    game.send(command);
-  });
+const REFUSALS: Record<RefusalReason, string> = {
+  noResource: 'No charge',
+  noHealingItems: 'No patch kits',
+  fullHealth: 'Already patched up',
 };
-bind('bAttack', { type: 'attackNearest' });
-bind('bBolt', { type: 'useSkill', slot: 0 });
 
-/** Damage numbers; the rest of the HUD comes once the look is settled. */
+const kindOf = (enemyId: number): string | undefined => currentLevel(state).enemies.find((e) => e.id === enemyId)?.kind;
+
+/** Unrecalled's words and banners for the rules' events; the engine shows the rest in the world. */
 function react(events: SimEvent[]): void {
   for (const e of events) {
-    if (e.type === 'EnemyDamaged') {
-      const kind = game.state.levels[game.state.levelId]!.enemies.find((en) => en.id === e.enemyId)?.kind;
-      labels.text(e.x, e.y, 40 * PX * (kind ? view.scaleOf(kind) : 1), String(e.amount), e.crit ? '#ffd070' : '#dfe7ee', e.crit ? 20 : 15);
-    } else if (e.type === 'HeroHurt') {
-      labels.text(e.x, e.y, 46 * PX, `-${e.amount}`, '#ff7a5a', 15);
+    switch (e.type) {
+      case 'EnteredLevel': {
+        const { level } = currentLevel(state);
+        if (!state.hero.dead && events.every((other) => other.type !== 'HeroRespawned')) hud.banner(level.name, level.subtitle, 2);
+        break;
+      }
+      case 'EnemyDamaged': {
+        const kind = kindOf(e.enemyId);
+        labels.text(e.x, e.y, 40 * PX * (kind ? view.scaleOf(kind) : 1), String(e.amount), e.crit ? '#ffd070' : '#dfe7ee', e.crit ? 20 : 15);
+        break;
+      }
+      case 'EnemyAlerted': {
+        const enemy = currentLevel(state).enemies.find((en) => en.id === e.enemyId);
+        if (enemy?.kind === 'sentry') labels.text(enemy.x, enemy.y, 70 * PX, SENTRY_SPOTS, '#ff8a6a', 17);
+        break;
+      }
+      case 'HeroHurt':
+        labels.text(e.x, e.y, 46 * PX, `-${e.amount}`, '#ff7a5a', 15);
+        break;
+      case 'Healed':
+        labels.text(e.x, e.y, 46 * PX, `+${e.amount}`, '#7ae08a', 16);
+        break;
+      case 'Refused':
+        labels.text(e.x, e.y, 50 * PX, REFUSALS[e.reason], '#8a98a6', 13);
+        break;
+      case 'Summoned':
+        hud.banner(ENGINE_CALLS.title, ENGINE_CALLS.subtitle, 2.6);
+        break;
+      case 'LevelUp':
+        hud.banner(`Level ${e.level}`, 'Patched up, and hitting harder.');
+        break;
+      case 'PickedUp':
+        if (e.kind === 'gold') labels.text(e.x, e.y, 30 * PX, `+${e.amount} scrap`, '#e8c870', 13);
+        else labels.text(e.x, e.y, 30 * PX, '+1 patch kit', '#7ae08a', 13);
+        break;
+      case 'Read': {
+        const reading = READINGS[e.id];
+        if (reading) dialog.open(reading.title, reading.text, [{ label: 'Close', onChoose: () => dialog.close() }]);
+        break;
+      }
+      case 'QuestAdvanced':
+        if (e.step === ENGINE_DOWN_STEP) setTimeout(() => hud.banner(ENGINE_FALLS.title, ENGINE_FALLS.subtitle, 5), 600);
+        break;
+      case 'HeroDied':
+        dialog.close();
+        hud.hideBanner();
+        break;
+      case 'HeroRespawned':
+        if (e.goldLost) setTimeout(() => hud.banner('Back on your feet', `You dropped ${e.goldLost} scrap in the scramble.`), 400);
+        break;
     }
   }
 }
 
-function update(state: GameState): void {
-  const { hero } = state;
-  const boss = state.levels[state.levelId]!.enemies.find((e) => ENEMIES[e.kind]?.boss && !e.dead && e.mode === 'chase');
-  $('bossbar').hidden = !boss;
-  if (boss) {
-    $('bossName').textContent = ENEMIES[boss.kind]!.name;
-    $('bossFill').style.transform = `scaleX(${boss.hp / boss.maxHp})`;
-  }
-  // Taps go through to the game, which gets the hero back up.
-  $('fallen').hidden = !hero.dead;
-  $('hpFill').style.transform = `scaleX(${hero.hp / hero.maxHp})`;
-  $('hpTxt').textContent = `${Math.ceil(hero.hp)} / ${hero.maxHp}`;
-  $('chargeFill').style.transform = `scaleX(${hero.resource / hero.maxResource})`;
-  $('chargeTxt').textContent = `${Math.floor(hero.resource)} charge`;
-}
-
 game.run({
   react,
-  update,
-  onStart: () => ($('title').hidden = true),
+  update: (s) => hud.update(s),
+  onStart() {
+    $('title').hidden = true;
+    const { level } = currentLevel(state);
+    hud.banner(level.name, level.subtitle, 3);
+  },
+  onWorldTap: () => dialog.close(),
 });

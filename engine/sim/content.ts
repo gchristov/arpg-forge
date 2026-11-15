@@ -31,6 +31,13 @@ export interface Container {
   healingItems: number;
 }
 
+/** Something on a tile the hero can walk up to and read, such as a notice. The game words it by its `id`. */
+export interface Readable {
+  tx: number;
+  ty: number;
+  id: string;
+}
+
 export interface LevelContent {
   level: Level;
   spawns: SpawnPoint[];
@@ -38,6 +45,7 @@ export interface LevelContent {
   campRespawns?: CampRespawns;
   npcs: Array<SpawnPoint & { name: string }>;
   containers?: Container[];
+  readables?: Readable[];
 }
 
 /** What a vendor offers. */
