@@ -2,12 +2,15 @@
 // parts and animations the game uses, compresses it, and writes a .glb next to the manifest.
 //
 // Usage: ./tools/assets/build-models.sh <manifest.json>, which runs this in the Node image after converting any FBX
-// models with the Blender image. `--list-fbx` only fetches the packs and prints each FBX model's local path and textures folder.
+// models with the Blender image. `--list-fbx` only fetches the packs and prints each FBX model's local path, textures folder and borrow spec, separated by |.
 //
 // A pack is either a folder URL at a pinned commit, or `{ "zip": url, "sha256": hash }` for packs only published as
 // zip files; a zip whose checksum doesn't match is refused. A zip pack's `textures` names the folder inside it that
 // holds images its .gltf files expect beside them. A model's `textures` option shrinks its textures to
 // `maxSize` pixels and can drop its normal and occlusion-roughness-metal maps, for packs made for close-up games.
+// An FBX model's `borrow` adds animations its pack lacks, retargeted from another pack's rig by the converter: `path`
+// in `pack` is the source glTF, `animations` maps new names to the source's, `pose` is the source animation that
+// matches the model's rest pose, and `bones` maps the model's bones to the source's (see tools/blender/retarget.py).
 //
 // Downloads are cached in tools/assets/cache (gitignored). The output goes in a `models/` folder beside the manifest.
 import { execFileSync } from 'node:child_process';
@@ -108,6 +111,21 @@ function dropRestingChannels() {
   };
 }
 
+/**
+ * Fetches the rig a model borrows animations from and writes the converter's spec beside the FBX, only when it changed
+ * so the model isn't converted again for nothing. Returns the spec's path, or '' when the model borrows nothing.
+ */
+async function borrowSpec(model, fetched) {
+  if (!model.borrow) return '';
+  const { pack: packName, path, ...rest } = model.borrow;
+  const pack = manifest.packs[packName];
+  if (!pack) throw new Error(`unknown pack ${packName} for ${model.name}'s borrowed animations`);
+  const spec = JSON.stringify({ from: await fetchModel(pack, packName, path), ...rest }, null, 2);
+  const specPath = `${fetched}.borrow.json`;
+  if (!(await exists(specPath)) || (await readFile(specPath, 'utf8')) !== spec) await writeFile(specPath, spec);
+  return specPath;
+}
+
 await MeshoptEncoder.ready;
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.encoder': MeshoptEncoder });
 
@@ -119,7 +137,7 @@ for (const model of manifest.models) {
   const isFbx = model.path.toLowerCase().endsWith('.fbx');
   if (listFbx) {
     // The pack's textures folder, if it names one, for the converter to find the FBX's textures in.
-    if (isFbx) console.log(`FBX ${fetched}\t${typeof pack === 'object' && pack.textures ? join(cacheDir, model.pack, pack.textures) : ''}`);
+    if (isFbx) console.log(`FBX ${fetched}|${typeof pack === 'object' && pack.textures ? join(cacheDir, model.pack, pack.textures) : ''}|${await borrowSpec(model, fetched)}`);
     continue;
   }
   const local = isFbx ? `${fetched}.glb` : fetched;

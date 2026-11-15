@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Usage: ./tools/blender/run.sh <in.fbx> <out.glb> [textures folder]
+# Usage: ./tools/blender/run.sh <in.fbx> <out.glb> [--textures <folder>] [--borrow <spec.json>]
 # e.g.   ./tools/blender/run.sh tools/assets/cache/mechs/FBX/Stan.fbx tools/assets/cache/mechs/FBX/Stan.fbx.glb
 #
 # Converts an FBX model and its animations to glTF with Blender, in Docker, so Blender doesn't need installing on this
@@ -11,7 +11,7 @@ set -e
 cd "$(dirname "$0")/../.."
 
 if [ $# -lt 2 ]; then
-  echo "❌ Usage: ./tools/blender/run.sh <in.fbx> <out.glb> [textures folder]"
+  echo "❌ Usage: ./tools/blender/run.sh <in.fbx> <out.glb> [--textures <folder>] [--borrow <spec.json>]"
   exit 1
 fi
 

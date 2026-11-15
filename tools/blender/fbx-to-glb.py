@@ -1,17 +1,30 @@
 # Converts an FBX model, with its animations, to a binary glTF that tools/assets/build-models.mjs can process.
-# Usage (inside the Blender image): blender ... --python tools/blender/fbx-to-glb.py -- <in.fbx> <out.glb> [textures]
-# FBX files often point to textures by paths on their author's machine; `textures` is a folder to find them in.
+# Usage (inside the Blender image): blender ... --python tools/blender/fbx-to-glb.py -- <in.fbx> <out.glb>
+#   [--textures <folder>] [--borrow <spec.json>]
+# FBX files often point to textures by paths on their author's machine; `--textures` is a folder to find them in.
+# `--borrow` adds animations retargeted from another rig (see retarget.py).
+import argparse
+import json
 import os
 import sys
 
 import bpy
 
-args = sys.argv[sys.argv.index('--') + 1:]
-source, target = args[:2]
+sys.dont_write_bytecode = True
+sys.path.append(os.path.dirname(__file__))
+from retarget import borrow  # noqa: E402
+
+parser = argparse.ArgumentParser()
+parser.add_argument('source')
+parser.add_argument('target')
+parser.add_argument('--textures')
+parser.add_argument('--borrow')
+args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
+source, target = args.source, args.target
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.fbx(filepath=source)
-if len(args) > 2:
-    textures = args[2]
+if args.textures:
+    textures = args.textures
     bpy.ops.file.find_missing_files(directory=textures)
     # Some packs name each material after its texture but leave it unlinked, expecting it to be assigned by hand.
     for material in bpy.data.materials:
@@ -48,6 +61,9 @@ for action in list(bpy.data.actions):
         clear_constraints=False, use_current_action=True, bake_types={'POSE'},
     )
 bpy.ops.object.mode_set(mode='OBJECT')
+if args.borrow:
+    with open(args.borrow) as f:
+        borrow(armature, json.load(f))
 for action in list(bpy.data.actions):
     track = armature.animation_data.nla_tracks.new()
     track.name = action.name
