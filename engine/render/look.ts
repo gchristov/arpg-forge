@@ -13,6 +13,8 @@ export interface PropLook {
   emissive?: number;
   /** Models from the game's library; each tile picks one of `names`, and turns by `turn` radians or at random. */
   model?: { names: string[]; fit: Fit; turn?: number | 'random' };
+  /** Flames burning on top, such as a fire in a barrel: `height` tiles up, about `size` tiles tall. */
+  flame?: { height: number; size: number; colour: number };
 }
 
 export interface StructureLook {

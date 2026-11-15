@@ -60,7 +60,10 @@ const PROPS: Partial<Record<number, PropLook>> = {
   // Old shipping containers and cargo, stacked where they were dropped.
   [Prop.Containers]: { shape: 'box', width: 1, height: 1, colour: 0x5a4a3a, model: { names: ['containers-1', 'containers-2', 'containers-3'], fit: { type: 'footprint', width: 1.1, depth: 1.1 }, turn: 'random' } },
   [Prop.Cargo]: { shape: 'box', width: 0.9, height: 0.9, colour: 0x5a4a3a, model: { names: ['cargo'], fit: { type: 'footprint', width: 1, depth: 1 }, turn: 'random' } },
-  [Prop.FireBarrel]: { shape: 'cylinder', width: 0.6, height: 0.8, colour: 0x5a3020, emissive: 0x5a2008, model: tall('fire-barrel', 0.8) },
+  [Prop.FireBarrel]: {
+    shape: 'cylinder', width: 0.6, height: 0.8, colour: 0x5a3020, emissive: 0x5a2008, model: tall('fire-barrel', 0.8),
+    flame: { height: 0.72, size: 0.6, colour: 0xff6a18 },
+  },
   // Big crates of salvage the camp is sorting.
   // The wild edge of the camp: dead trees and rocks block the way, weeds and pebbles don't.
   [Prop.DeadTree]: { shape: 'cone', width: 0.9, height: 2.6, colour: 0x3a3028, model: { names: ['dead-tree-1', 'dead-tree-2', 'dead-tree-3'], fit: { type: 'height', height: 2.8 }, turn: 'random' } },
