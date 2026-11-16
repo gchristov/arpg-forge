@@ -73,9 +73,6 @@ const PROPS: Partial<Record<number, PropLook>> = {
   [Prop.Crane]: { shape: 'box', width: 1.5, height: 2, colour: 0x5a4a3a, model: { names: ['crane'], fit: { type: 'footprint', width: 2.4, depth: 2.4 } } },
   [Prop.PumpRig]: { shape: 'box', width: 1.5, height: 3, colour: 0x3a4048, model: { names: ['drill'], fit: { type: 'footprint', width: 2.4, depth: 2.4 } } },
   [Prop.Tank]: { shape: 'cylinder', width: 0.9, height: 1.5, colour: 0x3a4048, model: tall('tank', 1.6) },
-  // Taller than the walls, so their tops show over them.
-  [Prop.PipeRun]: { shape: 'cylinder', width: 0.6, height: 3.6, colour: 0x3a3e46, model: tall('column', 3.6, 'random') },
-  [Prop.Silo]: { shape: 'cylinder', width: 1.2, height: 3, colour: 0x3a3e46, model: tall('tank', 3, 'random') },
   [Prop.FireBarrel]: {
     shape: 'cylinder', width: 0.6, height: 0.8, colour: 0x5a3020, emissive: 0x5a2008, model: tall('fire-barrel', 0.8),
     flame: { height: 0.7, size: 0.45, colour: 0xff6a18 },
@@ -225,6 +222,8 @@ export const unrecalledLook: Look = {
   prop: (kind) => PROPS[kind] ?? null,
   walls: (levelId) => ({
     props: [Prop.Wall, Prop.WallLow, Prop.WallLight, Prop.WallAlarm], panel: styleOf(levelId).panel, span: 3, front: { name: 'wall-front', height: 0.3 },
+    // Cable trays running over the walls, some hanging down into the room: a glimpse of the works past the wall tops.
+    crown: ['top-cables', 'top-cables', 'top-cables-hanging'],
     // The kit's ceiling strip light, stood up on the wall with its light facing the room.
     fixtures: [
       { props: [Prop.WallLight], name: 'lamp', height: 0.7, turn: Math.PI, tilt: Math.PI / 2 },

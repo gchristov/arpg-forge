@@ -48,7 +48,4 @@ export const Prop = {
   Crane: 33,
   PumpRig: 34,
   Tank: 35,
-  /** The works behind the walls indoors, only ever seen: tall pipe runs and silos. */
-  PipeRun: 36,
-  Silo: 37,
 } as const;

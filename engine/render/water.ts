@@ -135,22 +135,22 @@ void main() {
   float lines = first * weight + second * (1.0 - weight);
 
   float broad = fbm(world * 0.12 + vec2(fbm(world * 0.2 - flow * time * 0.05)) * 1.5);
-  vec3 colour = mix(shallow, deep, midstream) * (0.8 + 0.4 * broad);
-  colour += glint * lines * 0.3;
+  vec3 colour = mix(shallow, deep, midstream) * (0.85 + 0.3 * broad);
+  colour += glint * lines * 0.16;
 
   // Sparkles: now and then a spot on the drifting surface catches the light and twinkles.
   vec2 sparkleCell = world * 2.5 - flow * time * 0.6;
   float chance = hash(floor(sparkleCell));
-  float twinkle = pow(max(0.0, sin(time * 2.5 + chance * 60.0)), 24.0) * step(0.9, chance);
-  colour += glint * twinkle * smoothstep(0.35, 0.0, length(fract(sparkleCell) - 0.5));
+  float twinkle = pow(max(0.0, sin(time * 2.5 + chance * 60.0)), 24.0) * step(0.95, chance);
+  colour += glint * twinkle * 0.5 * smoothstep(0.35, 0.0, length(fract(sparkleCell) - 0.5));
 
   // Foam along the shore, broken up and ebbing.
   float shoreBand = smoothstep(0.42, 0.52, wetness) * (1.0 - smoothstep(0.55, 0.8, wetness));
   float froth = smoothstep(0.5, 0.72, fbm(world * 1.8 + vec2(time * 0.25, 0.0)) + 0.12 * sin(time * 1.1 + world.x * 0.7 + world.y * 0.5));
-  colour = mix(colour, glint * 0.55, shoreBand * froth * 0.7);
+  colour = mix(colour, glint * 0.5, shoreBand * froth * 0.35);
 
   vec2 lightUv = vec2((world.x - lightMapBounds.x) * lightMapBounds.z, 1.0 - (world.y - lightMapBounds.y) * lightMapBounds.w);
-  colour += texture2D(lightMap, clamp(lightUv, 0.0, 1.0)).rgb * (0.8 + lines);
+  colour += texture2D(lightMap, clamp(lightUv, 0.0, 1.0)).rgb * (0.8 + lines * 0.5);
   float shade = texture2D(shadeMap, vec2((world.x - shadeBounds.x) * shadeBounds.z, (world.y - shadeBounds.y) * shadeBounds.w)).r;
   // The shore: a line through the corners' wetness, softened over a little of a tile and wavering with the ripples.
   float shore = smoothstep(0.4, 0.6, wetness + (broad - 0.5) * 0.15);

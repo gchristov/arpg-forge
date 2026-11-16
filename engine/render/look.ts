@@ -173,6 +173,11 @@ export interface WallLook {
    * (+x). Both are in radians.
    */
   fixtures?: WallFixture[];
+  /**
+   * Models laid along the top of every full-height wall, in the panel's own frame and fitted as it is, such as cables
+   * running over the wall: what the player glimpses past the top of a wall. Each piece of wall picks one.
+   */
+  crown?: string[];
 }
 
 export interface WallFixture {

@@ -10,7 +10,7 @@ import { kitBuilding } from './kit-building';
 import { ELEVATION } from './camera-angle';
 import { LightMap } from './light-map';
 import { Mist } from './mist';
-import type { Look, Mood, PropLook, Surroundings, WallFixture, WaterLook } from './look';
+import type { Look, Mood, PropLook, Surroundings, WallFixture, WallLook, WaterLook } from './look';
 import { fitMatrix, instancedModel, panelFit, panelScale } from './model-instancing';
 import { ModelLibrary, type ModelTemplate } from './models';
 import { playDistances, shadeArea, shadeAt } from './shade-map';
@@ -450,10 +450,24 @@ export class SceneRenderer {
     }
     const meshes = [
       ...instancedModel(panel, panelFit(panel, look.span), backs),
+      ...this.buildCrown(look, panelFit(panel, look.span), backs),
       ...(front && look.front && fronts.length ? instancedModel(front, panelFit(front, look.span, look.front.height), fronts) : []),
       ...(look.fixtures ?? []).flatMap((f) => this.buildFixtures(level, f, isWallTile(level.map, kinds), panelScale(panel, look.span))),
     ];
     return { meshes, kinds };
+  }
+
+  /** The crown along the top of the back walls: each piece picks a model and shares its wall panel's placement and fit. */
+  private buildCrown(look: WallLook, fit: THREE.Matrix4, backs: readonly THREE.Matrix4[]): THREE.InstancedMesh[] {
+    const crowns = (look.crown ?? []).map((name) => this.models.get(name));
+    const placements = crowns.map(() => [] as THREE.Matrix4[]);
+    const at = new THREE.Vector3();
+    for (const placement of backs) {
+      at.setFromMatrixPosition(placement);
+      const pick = Math.floor(hash2(Math.floor(at.x * 2), Math.floor(at.z * 2), 47) * crowns.length);
+      if (crowns[pick]) placements[pick]!.push(placement);
+    }
+    return crowns.flatMap((template, i) => (template && placements[i]!.length ? instancedModel(template, fit, placements[i]!) : []));
   }
 
   private buildFixtures(level: Level, fixture: WallFixture, isWall: (tx: number, ty: number) => boolean, scale: number): THREE.InstancedMesh[] {
