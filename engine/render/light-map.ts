@@ -158,7 +158,11 @@ export class LightMap {
     if (material.userData.lightMapped) return;
     if (!(material instanceof THREE.MeshLambertMaterial || material instanceof THREE.MeshStandardMaterial)) return;
     material.userData.lightMapped = true;
-    if (fade === 'cutaway') material.transparent = true;
+    // A wall cut away round the hero is drawn see-through, and mustn't hide the walls behind it where it's cut.
+    if (fade === 'cutaway') {
+      material.transparent = true;
+      material.depthWrite = false;
+    }
     material.onBeforeCompile = (shader) => {
       Object.assign(shader.uniforms, this.uniforms);
       shader.vertexShader = shader.vertexShader

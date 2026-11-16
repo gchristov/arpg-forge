@@ -11,7 +11,7 @@ import { ELEVATION } from './camera-angle';
 import { LightMap, type SurfaceFade } from './light-map';
 import { Mist } from './mist';
 import type { Look, Mood, PropLook, Surroundings, WallFixture, WallLook, WaterLook } from './look';
-import { fitMatrix, instancedModel, panelFit, panelScale } from './model-instancing';
+import { fitMatrix, instancedModel, modelSize, panelFit, panelScale } from './model-instancing';
 import { ModelLibrary, type ModelTemplate } from './models';
 import { playDistances, shadeArea, shadeAt } from './shade-map';
 import { WaterSurface } from './water';
@@ -494,6 +494,9 @@ export class SceneRenderer {
     this.lightMap.setCutaway(look.cutaway?.radius ?? null);
     const backs: THREE.Matrix4[] = [];
     const fronts: THREE.Matrix4[] = [];
+    // A panel stands just behind its edge, on the wall's side; turned to face the camera, it's moved back over by its
+    // own thickness, so it stays on the wall's side and meets the walls either side of it.
+    const thickness = modelSize(panel).x * panelScale(panel, look.span);
     for (const p of wallPanels(level.map, isWallTile(level.map, kinds), look.span)) {
       if (p.front && !front) continue;
       // Front pieces are seen from outside the room, so they face the camera rather than the floor.
@@ -502,6 +505,7 @@ export class SceneRenderer {
         .makeTranslation(p.x, 0, p.y)
         .multiply(new THREE.Matrix4().makeRotationY(Math.atan2(-facing.y, facing.x)))
         .multiply(new THREE.Matrix4().makeScale(1, 1, p.length / look.span));
+      if (p.front && look.cutaway) placement.multiply(new THREE.Matrix4().makeTranslation(thickness, 0, 0));
       (p.front ? fronts : backs).push(placement);
     }
     const meshes = [
