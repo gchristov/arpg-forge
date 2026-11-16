@@ -1,11 +1,12 @@
 import { currentLevel, type GameState } from '../sim/state';
-import { hasLineOfSight } from '../world/line-of-sight';
 import { inBounds, tileIndex } from '../world/tile-map';
 
 /** Newly found ground fades in over about this long. */
 const REVEAL_SECONDS = 0.4;
 /** How far inside a tile its nearest point to the hero is taken, so that point lies just within the tile. */
 const NEAR_SIDE = 0.02;
+/** Sight lines are checked this often along their length, in tiles. */
+const SIGHT_STEP = 0.2;
 
 interface LevelExploration {
   /** Whether the hero has seen each tile. */
@@ -20,13 +21,15 @@ interface LevelExploration {
 
 /**
  * What the hero has found of each level, so the rest stays dark until they get there: every tile within `range` tiles
- * of the hero, in their line of sight, is found and stays found, fading in. Kept for every level the hero visits.
+ * of the hero, in their line of sight, is found and stays found, fading in. Only what `blocksSight` says blocks sight,
+ * such as walls: the hero sees past crates and machines, so nothing stays dark behind them. Kept for every level the
+ * hero visits.
  */
 export class Exploration {
   private readonly levels = new Map<string, LevelExploration>();
 
   /** Looks around from the hero and fades in what they found, over `frameSeconds`; true if anything changed. */
-  update(state: GameState, frameSeconds: number, range: number): boolean {
+  update(state: GameState, frameSeconds: number, range: number, blocksSight: (tx: number, ty: number) => boolean): boolean {
     const ls = currentLevel(state);
     const { map } = ls.level;
     let level = this.levels.get(state.levelId);
@@ -48,7 +51,7 @@ export class Exploration {
           // Seen once the near side of the tile is in sight, so a wall counts as soon as its face shows.
           const nearX = Math.min(Math.max(hero.x, tx + NEAR_SIDE), tx + 1 - NEAR_SIDE);
           const nearY = Math.min(Math.max(hero.y, ty + NEAR_SIDE), ty + 1 - NEAR_SIDE);
-          if (!hasLineOfSight(map, hero.x, hero.y, nearX, nearY)) continue;
+          if (!clearSight(hero.x, hero.y, nearX, nearY, blocksSight)) continue;
           level.found[tileIndex(map, tx, ty)] = 1;
           level.fading = true;
         }
@@ -74,4 +77,14 @@ export class Exploration {
   found(levelId: string, tx: number, ty: number, width: number): boolean {
     return Boolean(this.levels.get(levelId)?.found[ty * width + tx]);
   }
+}
+
+/** Whether nothing that blocks sight lies on the line from a to b, its ends aside. */
+function clearSight(ax: number, ay: number, bx: number, by: number, blocksSight: (tx: number, ty: number) => boolean): boolean {
+  const samples = Math.ceil(Math.hypot(bx - ax, by - ay) / SIGHT_STEP);
+  for (let k = 1; k < samples; k++) {
+    const t = k / samples;
+    if (blocksSight(Math.floor(ax + (bx - ax) * t), Math.floor(ay + (by - ay) * t))) return false;
+  }
+  return true;
 }

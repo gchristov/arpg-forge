@@ -15,7 +15,7 @@ import { fitMatrix, instancedModel, modelSize, panelFit, panelScale } from './mo
 import { ModelLibrary, type ModelTemplate } from './models';
 import { playDistances, shadeArea, shadeAt } from './shade-map';
 import { WaterSurface } from './water';
-import { isWallTile, kitWalls, wallFaces, wallPanels, type KitCorner } from './wall-panels';
+import { isWallTile, kitWalls, wallFaces, wallPanels, type KitCorner, type KitOpening } from './wall-panels';
 
 /** On-screen width of one tile at zoom 1. */
 const TILE_PIXELS = 64;
@@ -33,6 +33,9 @@ const SHAKE_PIXELS = 10;
 
 /** A modular wall kit's cell, in its own units: a straight panel is one long, a corner piece one each way. */
 const KIT_CELL = 4;
+/** A kit wall's height, in its own units, and how much taller than the walls a doorway's frame stands. */
+const KIT_WALL_HEIGHT = 3;
+const DOOR_RISE = 1.15;
 /** The turn about the vertical that points a kit corner's two arms, +x and +z, along the given map directions. */
 const KIT_CORNER_TURN: Record<string, number> = { '1,1': 0, '1,-1': Math.PI / 2, '-1,-1': Math.PI, '-1,1': (3 * Math.PI) / 2 };
 
@@ -560,7 +563,7 @@ export class SceneRenderer {
       const wallAt = (x: number, y: number) => inBounds(map, x, y) && isWall(x, y);
       return (wallAt(tx - 1, ty) && wallAt(tx + 1, ty)) || (wallAt(tx, ty - 1) && wallAt(tx, ty + 1));
     };
-    const { panels, corners } = kitWalls(map, isWall, look.span, isOpening);
+    const { panels, corners, openings } = kitWalls(map, isWall, look.span, isOpening);
     const k = look.span / KIT_CELL;
     const scale = new THREE.Matrix4().makeScale(k, k, k);
     const straight = (p: { x: number; y: number; facing: Vec2 }) => new THREE.Matrix4()
@@ -592,7 +595,23 @@ export class SceneRenderer {
       if (front && look.cutaway) for (const mesh of made) mesh.userData.cutaway = true;
       return made;
     });
-    return [...meshes, ...(look.fixtures ?? []).flatMap((f) => this.buildFixtures(level, f, isWall, k))];
+    return [...meshes, ...this.kitDoors(level, kit, openings, k), ...(look.fixtures ?? []).flatMap((f) => this.buildFixtures(level, f, isWall, k))];
+  }
+
+  /**
+   * A door frame in each doorway of kit walls, centred on the wall's line across its cell, as wide as the kit's frame
+   * at the kit's scale and a little taller than the walls, so it reads as the way through.
+   */
+  private kitDoors(level: Level, kit: NonNullable<WallLook['kit']>, openings: KitOpening[], k: number): THREE.InstancedMesh[] {
+    const frame = kit.door ? this.models.get(kit.door) : undefined;
+    if (!frame) return [];
+    const doorways = openings.filter((o) => level.portals.some((p) => p.tx === o.tx && p.ty === o.ty));
+    const size = modelSize(frame);
+    const fit = fitMatrix(frame, { type: 'box', width: size.x * k, height: KIT_WALL_HEIGHT * k * DOOR_RISE, depth: size.z * k });
+    // The frame's width lies along its x, so it's turned a quarter more than a panel, to run along the wall.
+    return instancedModel(frame, fit, doorways.map((o) => new THREE.Matrix4()
+      .makeTranslation(o.x, 0, o.y)
+      .multiply(new THREE.Matrix4().makeRotationY(Math.atan2(-o.facing.y, o.facing.x) + Math.PI / 2))));
   }
 
   private buildFixtures(level: Level, fixture: WallFixture, isWall: (tx: number, ty: number) => boolean, scale: number): THREE.InstancedMesh[] {

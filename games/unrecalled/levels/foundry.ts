@@ -293,7 +293,7 @@ function doors(id: FloorId): Record<string, RoomKey> {
   return {
     U: deeper
       ? {
-        prop: Prop.Door, portal: { to: deeper, stepOut: { x: 0, y: 0.9 }, start: { x: 0, y: 0.9 }, sealed: (FLOORS[id] as FloorSpec).sealed ?? false },
+        portal: { to: deeper, stepOut: { x: 0, y: 0.9 }, start: { x: 0, y: 0.9 }, sealed: (FLOORS[id] as FloorSpec).sealed ?? false },
         light: { radius: 2.2, intensity: 0.8, colour: 'amber', flicker: 0.2, offset: { x: 0, y: 0.7 } },
       }
       : { prop: Prop.Wall, solid: true },

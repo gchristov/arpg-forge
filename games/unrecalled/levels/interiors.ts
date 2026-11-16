@@ -27,24 +27,24 @@ const INTERIORS = {
       '##################',
     ],
   },
-  // The old depot: an open shop floor, a storeroom with the stairs up and the loading door into the Foundry (G), a
-  // back room through a doorway from the storeroom, and the office upstairs.
+  // The old depot: one open shop floor, with the stairs up to the office and the loading door into the Foundry (G)
+  // along its back wall.
   tradingPost: {
     name: 'Mags’s Trading Post', subtitle: 'Everything here was somebody’s once',
     rows: [
       '##############################',
       '##############################',
-      '#####L#####L#######L##G#######',
+      '#####L#####L#####L####G#######',
       '###hh.dd..k.......cc.....U.###',
       '###........................###',
       '###...2....................###',
-      '###............###.........###',
-      '###c...........###.......b.###',
-      '###............###.........###',
-      '##L............######...######',
-      '###............######...######',
-      '###.b....b.....######...######',
-      '###................h....hh.###',
+      '###........................###',
+      '###......................b.###',
+      '###c.......................###',
+      '##L........................###',
+      '###........................###',
+      '###........................###',
+      '###.b....b.........h...hh..###',
       '###.........c............S.###',
       '###........................###',
       '#######V######################',
@@ -109,7 +109,7 @@ const KEY: Record<string, RoomKey> = {
   k: { ...solid(Prop.Computer), light: { radius: 2.2, intensity: 0.6, colour: 'cyan', flicker: 0.6 } },
   S: { ...solid(Prop.Cache), container: { gold: 35, healingItems: 1 } },
   G: {
-    prop: Prop.Door, portal: { to: 'intake', stepOut: { x: 0, y: 0.9 }, start: { x: 0, y: 0.9 } },
+    portal: { to: 'intake', stepOut: { x: 0, y: 0.9 }, start: { x: 0, y: 0.9 } },
     light: { radius: 2.2, intensity: 0.8, colour: 'amber', flicker: 0.2, offset: { x: 0, y: 0.7 } },
   },
   U: { prop: Prop.Stairs, portal: { to: 'depotOffice', stepOut: { x: 0, y: 0.9 }, start: { x: 0, y: 0.9 } } },

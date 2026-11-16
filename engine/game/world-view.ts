@@ -4,6 +4,7 @@ import type { Look } from '../render/look';
 import type { SceneRenderer } from '../render/scene-renderer';
 import { questGoal, type QuestGoal } from '../sim/quest-goal';
 import { currentLevel, type Actor, type GameState, type SimEvent } from '../sim/state';
+import { inBounds, tileIndex } from '../world/tile-map';
 import type { ScreenFade } from '../ui/fade';
 import type { Project, WorldLabels } from '../ui/world-labels';
 import { EnemySight } from './enemy-sight';
@@ -177,7 +178,9 @@ export class WorldView {
       // A level drawn afresh shows everything until told what's been found, so it's told on arrival too.
       const arrived = this.exploredLevel !== state.levelId;
       this.exploredLevel = state.levelId;
-      if (this.exploration.update(state, frameSeconds, sightRange) || arrived) renderer.setExplored(this.exploration.shown(state.levelId)!);
+      if (this.exploration.update(state, frameSeconds, sightRange, this.blocksSight()) || arrived) {
+        renderer.setExplored(this.exploration.shown(state.levelId)!);
+      }
     }
     this.sight.update(state, frameSeconds, sightRange === undefined ? null : this.exploration);
     for (const e of ls.enemies) {
@@ -259,6 +262,18 @@ export class WorldView {
     const aim = this.guide.aim(ls.level.map, hx, hy, this.goalPoint, this.aim);
     const height = look.actor(state.hero.kind).height * this.scaleOf(state.hero.kind);
     arrow.show(hx, hy, height, aim.x - hx, aim.y - hy, this.guideSeconds, frameSeconds);
+  }
+
+  /** What blocks the hero's sight on the current level: its walls, or anything solid on a level without walls drawn. */
+  private blocksSight(): (tx: number, ty: number) => boolean {
+    const { map } = currentLevel(this.state).level;
+    const walls = this.look.walls?.(this.state.levelId);
+    const kinds = walls ? new Set(walls.props) : null;
+    return (tx, ty) => {
+      if (!inBounds(map, tx, ty)) return true;
+      const i = tileIndex(map, tx, ty);
+      return map.solid[i] === 1 && (!kinds || kinds.has(map.prop[i]!));
+    };
   }
 
   private currentGoal(): QuestGoal | null {

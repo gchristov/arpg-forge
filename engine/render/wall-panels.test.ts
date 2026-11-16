@@ -105,6 +105,8 @@ describe('kitWalls', () => {
     const { panels, corners } = kitWalls(mapFromRows(rows), (x, y) => rows[y]![x] === '#', 3, (x, y) => rows[y]![x] === 'D');
     expect(panels.filter((p) => p.y === 3)).toEqual([]);
     expect(corners).toHaveLength(4);
+    expect(kitWalls(mapFromRows(rows), (x, y) => rows[y]![x] === '#', 3, (x, y) => rows[y]![x] === 'D').openings)
+      .toEqual([{ x: 7.5, y: 3, facing: { x: 0, y: 1 }, tx: 7, ty: 2 }]);
   });
 
   it('leaves a cell only partly walled open', () => {

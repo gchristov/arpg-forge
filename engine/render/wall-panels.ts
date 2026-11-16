@@ -130,8 +130,9 @@ export function kitWalls(
   isWall: (tx: number, ty: number) => boolean,
   span: number,
   isOpening: (tx: number, ty: number) => boolean = () => false,
-): { panels: WallPanel[]; corners: KitCorner[] } {
+): { panels: WallPanel[]; corners: KitCorner[]; openings: KitOpening[] } {
   const wallAt = (tx: number, ty: number) => !inBounds(map, tx, ty) || isWall(tx, ty) || isOpening(tx, ty);
+  const openings: KitOpening[] = [];
   const corners: KitCorner[] = [];
   const covered = new Set<string>();
   for (let y = 1; y < map.height; y++) {
@@ -170,20 +171,28 @@ export function kitWalls(
           wallBefore = before;
         }
         if (wallBefore === null) continue;
-        const opening = Array.from({ length: span }, (_, i) => start + i).some((at) => {
-          const [wx, wy] = horizontal ? [at, wallBefore ? line - 1 : line] : [wallBefore ? line - 1 : line, at];
-          return inBounds(map, wx, wy) && isOpening(wx, wy);
-        });
-        if (opening) continue;
         const toFloor = wallBefore ? 1 : -1;
         const middle = start + span / 2;
-        panels.push({
-          x: horizontal ? middle : line, y: horizontal ? line : middle, length: span,
-          facing: horizontal ? { x: 0, y: toFloor } : { x: toFloor, y: 0 },
-          front: toFloor < 0,
-        });
+        const facing = horizontal ? { x: 0, y: toFloor } : { x: toFloor, y: 0 };
+        const opening = Array.from({ length: span }, (_, i) => start + i)
+          .map((at) => (horizontal ? [at, wallBefore ? line - 1 : line] : [wallBefore ? line - 1 : line, at]) as [number, number])
+          .find(([wx, wy]) => inBounds(map, wx, wy) && isOpening(wx, wy));
+        if (opening) {
+          openings.push({ x: horizontal ? middle : line, y: horizontal ? line : middle, facing, tx: opening[0], ty: opening[1] });
+          continue;
+        }
+        panels.push({ x: horizontal ? middle : line, y: horizontal ? line : middle, length: span, facing, front: toFloor < 0 });
       }
     }
   }
-  return { panels, corners };
+  return { panels, corners, openings };
+}
+
+/** A cell of wall left open, centred on its edge and facing the floor, and the opening's own tile, such as a doorway. */
+export interface KitOpening {
+  x: number;
+  y: number;
+  facing: Vec2;
+  tx: number;
+  ty: number;
 }
