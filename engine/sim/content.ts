@@ -46,6 +46,8 @@ export interface LevelContent {
   npcs: Array<SpawnPoint & { name: string }>;
   containers?: Container[];
   readables?: Readable[];
+  /** A level for trying mechanics out, such as a combat arena, reached only by its address, so no portal leads to it. */
+  practice?: boolean;
 }
 
 /** What a vendor offers. */

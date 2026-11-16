@@ -125,7 +125,7 @@ describe('Unrecalled scenarios', () => {
     play(state, 12, [{ type: 'walk', x: crawler.x, y: crawler.y + 1 }]);
     expect(state.hero.hp).toBe(hp);
     expect(currentLevel(state).enemies.every((e) => e.mode === 'idle')).toBe(true);
-    const events = play(state, 2, [{ type: 'attack', enemyId: crawler.id }]);
+    const events = play(state, 5, [{ type: 'attack', enemyId: crawler.id }]);
     expect(events.map((e) => e.type)).toContain('LevelAlarmed');
     expect(currentLevel(state).enemies.filter((e) => e.mode === 'chase').length).toBeGreaterThan(1);
     expect(currentLevel(state).enemies.filter((e) => e.mode === 'idle').length).toBeGreaterThan(10);

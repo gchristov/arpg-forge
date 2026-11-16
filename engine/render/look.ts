@@ -73,6 +73,20 @@ export interface ActorAnimations {
   death?: string;
 }
 
+/** A weapon fitted into a hand it wasn't made for. */
+export interface HeldWeapon {
+  /** A model from the game's model library. */
+  name: string;
+  /** The bone that holds it, by its name in the model file. */
+  bone: string;
+  /** Its longest side, in tiles. */
+  length: number;
+  /** Turns about the bone's x, y and z, in radians, to point it the way the hand holds it. */
+  turn: [number, number, number];
+  /** How far it sits from the bone, in tiles along the bone's own axes, so the grip lands in the hand. */
+  offset?: [number, number, number];
+}
+
 export interface ActorLook {
   /** Drawn as a faint outline of this colour wherever something nearer hides it, so the player never loses it. */
   seenThrough?: number;
@@ -96,8 +110,11 @@ export interface ActorLook {
     animations: ActorAnimations;
     /** Multiplies the model's colours, for example to turn a rogue into a goblin. */
     tint?: number;
-    /** A separate weapon model held in the right hand. */
-    weapon?: string;
+    /**
+     * A separate weapon model held in the right hand: by name, one made to sit on a `handslot.r` bone as it is, or a
+     * `HeldWeapon` fitted to another bone.
+     */
+    weapon?: string | HeldWeapon;
     /**
      * Plays the move animation faster or slower to match how fast the actor moves, so its feet stay planted. Leave
      * it off for animations meant to play at their own pace whatever the speed.

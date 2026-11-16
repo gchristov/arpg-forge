@@ -219,3 +219,29 @@ describe('ActorFigure seen through', () => {
     expect(meshesOf(boxFigure())).toHaveLength(1);
   });
 });
+
+describe('ActorFigure weapon', () => {
+  it('fits a weapon made for another hand into the named bone, sized in tiles whatever the bones\' scale', () => {
+    // An actor model twice its height in its own units, with a hand bone scaled up a hundredfold, as converted models are.
+    const scene = new THREE.Group();
+    const hand = new THREE.Object3D();
+    hand.name = 'FistR';
+    hand.scale.setScalar(100);
+    scene.add(hand, new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1).translate(0, 1, 0)));
+    const actor: ModelTemplate = { scene, animations: [new THREE.AnimationClip('Idle', 1, [])], height: 2 };
+    const saw = new THREE.Group().add(new THREE.Mesh(new THREE.BoxGeometry(4, 1, 1)));
+    const weapon: ModelTemplate = { scene: saw, animations: [], height: 1 };
+    const library = {
+      get: (name: string) => (name === 'saw' ? weapon : actor),
+      instantiate: (name: string) => (name === 'saw' ? saw.clone() : scene.clone()),
+    } as unknown as ModelLibrary;
+    const f = new ActorFigure({
+      colour: 0, height: 1, radius: 0.3,
+      model: { name: 'actor', animations: { idle: 'Idle' }, weapon: { name: 'saw', bone: 'Fist.R', length: 0.6, turn: [0, Math.PI, 0] } },
+    }, library);
+    f.root.updateMatrixWorld(true);
+    const held = f.root.getObjectByName('FistR')!.children[0]!;
+    const size = new THREE.Box3().setFromObject(held).getSize(new THREE.Vector3());
+    expect(size.x).toBeCloseTo(0.6);
+  });
+});

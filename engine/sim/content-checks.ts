@@ -129,7 +129,9 @@ function unreachableLevels(content: GameContent, levels: Map<string, LevelConten
       queue.push(p.to);
     }
   }
-  return [...levels.keys()].filter((id) => !seen.has(id)).map((id) => `no portal leads to level "${id}"`);
+  return [...levels]
+    .filter(([id, lc]) => !seen.has(id) && !lc.practice)
+    .map(([id]) => `no portal leads to level "${id}"`);
 }
 
 function checkQuest(content: GameContent, levels: Map<string, LevelContent>): string[] {

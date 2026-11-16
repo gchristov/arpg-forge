@@ -40,6 +40,7 @@ const FLOOR_STYLES: Record<string, { panel: string; plate: string | null; mood: 
   intake: { panel: 'wall', plate: 'floor-plates', mood: { ...foundry(0x343a40, 0xd8e4f0), sightRange: FOUND_AS_YOU_GO } },
   sorting: { panel: 'wall-astra', plate: 'floor-metal', mood: { ...foundry(0x3a3428, 0xf0e0c0), sightRange: FOUND_AS_YOU_GO } },
   gallery: { panel: 'wall-window', plate: 'floor-dark', mood: { ...foundry(0x3a2a2c, 0xf0c8c8), sightRange: FOUND_AS_YOU_GO } },
+  arena: { panel: 'wall', plate: 'floor-plates', mood: foundry(0x343a40, 0xd8e4f0) },
   assembly: { panel: 'wall-divided', plate: 'floor-squares', mood: { ...foundry(0x3a2c22, 0xf0d0b0), sightRange: FOUND_AS_YOU_GO } },
 };
 /** Each wall style's corner pieces, from the same kit, so walls turn in the style they're built in. */
@@ -153,7 +154,8 @@ const ACTORS: Record<string, ActorLook> = {
     colour: 0x9a8a70, height: 1.2, radius: 0.24, seenThrough: 0x8ae8ff,
     model: {
       name: 'hero',
-      animations: { idle: 'Idle', move: 'Run', attack: 'Punch', cast: 'Shoot_OneHanded', hit: 'RecieveHit', death: 'Death' },
+      animations: { idle: 'SwordIdle', move: 'Run', attack: 'SwordAttack', cast: 'Shoot_OneHanded', hit: 'RecieveHit', death: 'Death' },
+      weapon: { name: 'chainsaw', bone: 'Fist.R', length: 0.65, turn: [0, Math.PI, 0] },
       matchPace: true,
     },
   },

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import type { ActorLook } from './look';
+import type { ActorLook, HeldWeapon } from './look';
+import { modelSize } from './model-instancing';
 import type { ModelLibrary } from './models';
 import { walkPace } from './walk-pace';
 
@@ -68,18 +69,7 @@ export class ActorFigure {
       o.castShadow = true;
       o.material = this.ownMaterial(o.material as THREE.Material, tint);
     });
-    if (look.model.weapon) {
-      const weapon = library.instantiate(look.model.weapon);
-      const hand = model.getObjectByName('handslot.r');
-      if (weapon && hand) {
-        weapon.traverse((o) => {
-          if (!(o instanceof THREE.Mesh)) return;
-          o.castShadow = true;
-          o.material = this.ownMaterial(o.material as THREE.Material, null);
-        });
-        hand.add(weapon);
-      }
-    }
+    if (look.model.weapon) this.holdWeapon(model, look.model.weapon, library);
     this.root.add(model);
     model.traverse((o) => {
       // Three.js keeps every object's `rotation` angles in step with its quaternion. Animation moves bones by their
@@ -141,6 +131,29 @@ export class ActorFigure {
     if (this.hovering) this.hovering.shadow.material.opacity = 0.45 * fade;
     if (this.seenThrough) this.seenThrough.opacity = SEEN_THROUGH_OPACITY * fade;
     this.root.scale.set(1, this.mixer ? 1 : 0.3 + 0.7 * fade, 1);
+  }
+
+  private holdWeapon(model: THREE.Object3D, held: string | HeldWeapon, library: ModelLibrary): void {
+    const name = typeof held === 'string' ? held : held.name;
+    const weapon = library.instantiate(name);
+    const hand = model.getObjectByName(typeof held === 'string' ? 'handslot.r' : THREE.PropertyBinding.sanitizeNodeName(held.bone));
+    if (!weapon || !hand) return;
+    weapon.traverse((o) => {
+      if (!(o instanceof THREE.Mesh)) return;
+      o.castShadow = true;
+      o.material = this.ownMaterial(o.material as THREE.Material, null);
+    });
+    if (typeof held !== 'string') {
+      // Sized in tiles, so undo the scale the hand's bones and the model already carry.
+      model.updateMatrixWorld(true);
+      const handScale = hand.getWorldScale(new THREE.Vector3()).x;
+      const size = modelSize(library.get(name)!);
+      weapon.scale.setScalar(held.length / Math.max(size.x, size.y, size.z) / handScale);
+      weapon.rotation.set(...held.turn);
+      const [ox, oy, oz] = held.offset ?? [0, 0, 0];
+      weapon.position.set(ox / handScale, oy / handScale, oz / handScale);
+    }
+    hand.add(weapon);
   }
 
   /** Names of the animations currently showing, for tests and debugging. */

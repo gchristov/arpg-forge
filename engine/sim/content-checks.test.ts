@@ -52,6 +52,14 @@ describe('checkContent', () => {
     expect(checkContent(c)).toContain(`no portal leads to level "cellar"`);
   });
 
+  it('lets a practice level go without a portal, since it\'s reached by its address', () => {
+    const c = rooms();
+    c.levels[1]!.level.portals = [];
+    home(c).level.portals = [];
+    c.levels[1]!.practice = true;
+    expect(checkContent(c).filter((p) => p.includes('no portal leads'))).toEqual([]);
+  });
+
   it('finds spawns inside walls, out of reach or of unknown kinds', () => {
     const c = rooms();
     home(c).spawns.push({ kind: 'brute', x: 4.5, y: 1.5 }, { kind: 'brute', x: 5.5, y: 1.5 }, { kind: 'dragon', x: 2.5, y: 1.5 });
