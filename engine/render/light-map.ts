@@ -149,16 +149,16 @@ export class LightMap {
 
   /**
    * Makes a material add the light map's light: the light under each pixel, times the surface's own colour, and take
-   * the level's darkness. A `fade` makes it see-through where it fades, so whatever lies behind shows rather than a
-   * dark shape: `height` fades it away up through the height fade, for the level's tall surfaces, and `cutaway` also
-   * fades it out round the hero, for walls that would stand between them and the camera. A fading material is drawn
-   * with the see-through ones, so give each its own copy. Safe to call more than once.
+   * the level's darkness. A `fade` fades it: `height` into black up through the height fade, for the level's tall
+   * surfaces, and `cutaway` also to see-through round the hero, for walls that would stand between them and the
+   * camera; those are drawn with the see-through surfaces. Give each fading material its own copy. Safe to call more
+   * than once.
    */
   light(material: THREE.Material, fade: SurfaceFade = 'none'): void {
     if (material.userData.lightMapped) return;
     if (!(material instanceof THREE.MeshLambertMaterial || material instanceof THREE.MeshStandardMaterial)) return;
     material.userData.lightMapped = true;
-    if (fade !== 'none') material.transparent = true;
+    if (fade === 'cutaway') material.transparent = true;
     material.onBeforeCompile = (shader) => {
       Object.assign(shader.uniforms, this.uniforms);
       shader.vertexShader = shader.vertexShader
@@ -203,13 +203,14 @@ export type SurfaceFade = 'none' | 'height' | 'cutaway';
 /** Walls cut away round the hero are fully see-through within this share of the cutaway's radius. */
 const CUTAWAY_CLEAR_SHARE = 0.55;
 
-/** Fades a surface away by making it see-through, and a little darker as it goes, so it melts into the dark. */
+/**
+ * Fades a surface into black as it rises through the height fade; walls cut away round the hero also turn
+ * see-through there, so the hero shows through them.
+ */
 function fadeGlsl(cutaway: boolean): string {
   return `
-          float keep = heightFade.y > heightFade.x ? 1.0 - smoothstep(heightFade.x, heightFade.y, vLightMapHeight) : 1.0;
-          ${cutaway ? 'if (cutaway.y > 0.0) keep *= smoothstep(cutaway.x, cutaway.y, distance(vWorldXZ, heroAt));' : ''}
-          outgoingLight *= mix(0.5, 1.0, keep);
-          diffuseColor.a *= keep;`;
+          if (heightFade.y > heightFade.x) outgoingLight *= 1.0 - smoothstep(heightFade.x, heightFade.y, vLightMapHeight);
+          ${cutaway ? 'if (cutaway.y > 0.0) diffuseColor.a *= smoothstep(cutaway.x, cutaway.y, distance(vWorldXZ, heroAt));' : ''}`;
 }
 
 /** One white texel: everything fully lit. */
