@@ -1,10 +1,14 @@
-import { dist, hash2, lerp, valueNoise } from '../../../engine/core/math';
+import { valueNoise } from '../../../engine/core/math';
 import type { LevelContent } from '../../../engine/sim/content';
 import type { BuildingPart, Level, Structure } from '../../../engine/world/level';
-import { createTileMap, inBounds, setProp, setSolid, tileIndex, type TileMap } from '../../../engine/world/tile-map';
+import { createTileMap, inBounds, setProp, setSolid, tileIndex } from '../../../engine/world/tile-map';
 import { Ground, Prop } from '../content/tiles';
+import { paintPath, scatterWilds } from './wilds';
+import { addWoods, WOODS_TRAIL_ROW, WOODS_WIDTH, woodsTreeChance } from './woods';
 
-const WIDTH = 46;
+/** The town's own columns; the dead woods carry the map on east of them. */
+export const TOWN_WIDTH = 46;
+const WIDTH = TOWN_WIDTH + WOODS_WIDTH;
 const HEIGHT = 36;
 
 interface BuildingSpec {
@@ -61,12 +65,13 @@ const BUILDINGS: BuildingSpec[] = [
   },
 ];
 
-/** Worn paths between the camp, each door and the jetty, as points to walk between. */
+/** Worn paths between the camp, each door, the jetty and the woods, as points to walk between. */
 const PATHS: Array<Array<[number, number]>> = [
   [[20, 13], [14, 13], [9, 13], [9, 12]],
   [[24, 13], [30, 13], [34, 13], [34, 12]],
   [[23, 16], [27, 20], [33, 24], [38, 25]],
   [[20, 16], [16, 22], [13, 26]],
+  [[34, 14], [40, WOODS_TRAIL_ROW], [TOWN_WIDTH, WOODS_TRAIL_ROW]],
 ];
 
 /** The camp sits on an old concrete pad around the dead turbine. */
@@ -82,7 +87,8 @@ const riverRow = (x: number): number => 30.5 + Math.sin(x * 0.21) * 1.6 + Math.s
  * Rustbelt, the salvage camp in the Foundry's shadow, as a map built from fixed features and `hash2` and
  * `valueNoise`, so it comes out the same every time. The camp's concrete pad and its dead wind turbine sit in the
  * middle, with paths out to Pell's workshop, Mags's trading post (the way into the Foundry), the old pumphouse and
- * the jetty where the flood left the salvager. Dead trees thicken towards the edges.
+ * the jetty where the flood left the salvager, and a trail east into the dead woods. Dead trees thicken towards the
+ * town's edges.
  */
 export function buildRustbelt(): LevelContent {
   const map = createTileMap(WIDTH, HEIGHT);
@@ -152,9 +158,10 @@ export function buildRustbelt(): LevelContent {
     setProp(map, x, y, Prop.Containers, true);
   }
   for (const [x, y] of [[25, 11], [18, 15], [28, 7]] as const) setProp(map, x, y, Prop.Cargo, true);
+  // Braziers at the camp's edges. Posts are kept for things to read, so they don't look like something to tap.
   for (const [x, y] of [[15, 12], [29, 14]] as const) {
-    setProp(map, x, y, Prop.Post, true);
-    level.lights.push({ x: x + 0.5, y: y + 0.5, radius: 3.2, intensity: 0.8, colour: 'amber', flicker: 0.6, seed: x * 3 });
+    setProp(map, x, y, Prop.FireBarrel, true);
+    level.lights.push({ x: x + 0.5, y: y + 0.5, radius: 3.2, intensity: 0.9, colour: 'molten', flicker: 1.2, seed: x * 3 });
   }
 
   // A stash someone forgot, out in the dead trees to the north-west.
@@ -162,29 +169,9 @@ export function buildRustbelt(): LevelContent {
   room.containers!.push({ tx: 3, ty: 4, gold: 40, healingItems: 1 });
   reserve(2, 3, 3, 4);
 
-  scatterWilds(map, reserved);
+  addWoods(room, reserve, TOWN_WIDTH);
+  scatterWilds(map, reserved, (x, y) => (x < TOWN_WIDTH ? treeChance(x, y) : woodsTreeChance(x - TOWN_WIDTH, y)));
   return room;
-}
-
-/** Wears a path two tiles wide between each pair of points. */
-function paintPath(map: TileMap, points: Array<[number, number]>, reserve: (x: number, y: number, w: number, h: number) => void): void {
-  for (let k = 0; k < points.length - 1; k++) {
-    const [ax, ay] = points[k]!;
-    const [bx, by] = points[k + 1]!;
-    const samples = Math.ceil(dist(ax, ay, bx, by) * 4);
-    for (let s = 0; s <= samples; s++) {
-      const px = lerp(ax, bx, s / samples);
-      const py = lerp(ay, by, s / samples);
-      for (let dy = 0; dy < 2; dy++) {
-        for (let dx = 0; dx < 2; dx++) {
-          const x = Math.floor(px) + dx;
-          const y = Math.floor(py) + dy;
-          if (inBounds(map, x, y) && map.ground[tileIndex(map, x, y)] !== Ground.Pad) map.ground[tileIndex(map, x, y)] = Ground.Path;
-        }
-      }
-      reserve(Math.floor(px) - 1, Math.floor(py) - 1, 4, 4);
-    }
-  }
 }
 
 function addBuilding(level: Level, b: BuildingSpec, seed: number): Structure {
@@ -212,28 +199,9 @@ function addBuilding(level: Level, b: BuildingSpec, seed: number): Structure {
   return structure;
 }
 
-/** The share of the river's muddy banks with reeds on them. */
-const REED_SHARE = 0.35;
-
-/** Dead trees thicken towards the map's edges; rocks, weeds and pebbles scatter over the rest, and reeds line the river. */
-function scatterWilds(map: TileMap, reserved: Uint8Array): void {
-  for (let y = 0; y < HEIGHT; y++) {
-    for (let x = 0; x < WIDTH; x++) {
-      const i = tileIndex(map, x, y);
-      if (reserved[i] || map.prop[i] || map.solid[i]) continue;
-      // Reeds crowd the river's muddy banks.
-      if (map.ground[i] === Ground.Mud) {
-        if (hash2(x, y, 29) < REED_SHARE) setProp(map, x, y, Prop.GrassTall, false);
-        continue;
-      }
-      const edge = Math.min(x, y, WIDTH - 1 - x);
-      const h = hash2(x, y, 23);
-      const thicket = valueNoise(x * 0.18 + 5, y * 0.18) > 0.6;
-      if ((edge < 2 && h < 0.4) || (edge < 4 && h < 0.12) || (thicket && h < 0.07)) setProp(map, x, y, Prop.DeadTree, true);
-      else if (h > 0.965) setProp(map, x, y, Prop.Rock, true);
-      else if (h > 0.9) setProp(map, x, y, Prop.GrassTall, false);
-      else if (h > 0.84) setProp(map, x, y, Prop.GrassShort, false);
-      else if (h > 0.82) setProp(map, x, y, Prop.Pebbles, false);
-    }
-  }
+/** Dead trees thicken towards the town's edges, except the river's, and gather in a few thickets. */
+function treeChance(x: number, y: number): number {
+  const edge = Math.min(x, y, TOWN_WIDTH - 1 - x);
+  const thicket = valueNoise(x * 0.18 + 5, y * 0.18) > 0.6;
+  return Math.max(edge < 2 ? 0.4 : 0, edge < 4 ? 0.12 : 0, thicket ? 0.07 : 0);
 }

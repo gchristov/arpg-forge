@@ -13,6 +13,7 @@ import {
   CHAINSAW_FOUND, dialogueFor, LOCKED, ENDING, ENDING_STEP, ENGINE_CALLS, ENGINE_DOWN_STEP, ENGINE_FALLS, LINE_ALERT, MACHINE_SCANS, NPCS, READINGS,
   stillRunning, UNSEALED,
 } from './content/story';
+import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
 import { Hud } from './ui/hud';
 
@@ -114,12 +115,22 @@ function reactToService(npcId: number, index: number, x: number, y: number): voi
     dialog.close();
     return;
   }
-  if (service.type === 'sellWeapon') {
-    dialog.close();
-    return;
-  }
   if (service.type === 'upgradeMelee') labels.text(x, y, 46 * PX, 'Upgraded', '#e8c870', 15);
   if (dialog.npcId === npcId) showDialogue(npcId, state.quest);
+}
+
+/** Where the salvager was last frame: the place, which level it's on, and how far east. */
+let place: { at: Place; levelId: string; x: number } | null = null;
+
+/**
+ * Banners the place the salvager has walked into within a level, such as from the town into the woods. Moving between
+ * levels has its own banner, and getting back up after a fall moves the salvager further than a walk does.
+ */
+function showPlace(): void {
+  const at = placeOf(state, place?.at ?? null);
+  const walked = place !== null && place.levelId === state.levelId && Math.abs(state.hero.x - place.x) < 1;
+  if (walked && at.name !== place!.at.name) hud.banner(at.name, at.subtitle, 2);
+  place = { at, levelId: state.levelId, x: state.hero.x };
 }
 
 /** The light upriver, then the card that closes the demo on its question. */
@@ -296,7 +307,8 @@ function react(events: SimEvent[]): void {
 game.run({
   react,
   update: (s) => {
-    hud.update(s);
+    showPlace();
+    hud.update(s, place!.at.name);
     chainsaw.update(s, playing);
   },
   onStart() {

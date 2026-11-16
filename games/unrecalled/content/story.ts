@@ -8,7 +8,10 @@ import type { NpcType, QuestStep } from '../../../engine/sim/content';
 /** The quest: what the HUD says at each step, and what moves the quest to it. */
 export const QUEST: Array<QuestStep & { text: string }> = [
   { text: 'Talk to the foreman by the fire.' },
-  { text: 'Get into the Foundry through Mags’s depot.', reachedBy: { type: 'talk', npcKind: 'foreman' } },
+  { text: 'Find Pell’s old saw at the logging camp, east through the woods.', reachedBy: { type: 'talk', npcKind: 'foreman' } },
+  { text: 'Throw the breaker on the camp’s turbine.', reachedBy: { type: 'arm', weapon: 'chainsaw' } },
+  // Throwing the breaker first skips the saw: it stays in its crate for whoever goes back for it.
+  { text: 'Get into the Foundry through Mags’s loading door.', reachedBy: { type: 'use', id: 'breaker' } },
   { text: 'Follow the line deeper.', reachedBy: { type: 'enter', levelId: 'sorting' } },
   { text: 'Get past the Control Gallery.', reachedBy: { type: 'enter', levelId: 'gallery' } },
   { text: 'Shut down the Order Engine.', reachedBy: { type: 'enter', levelId: 'assembly' } },
@@ -17,16 +20,18 @@ export const QUEST: Array<QuestStep & { text: string }> = [
   { text: 'The order was reassigned.', reachedBy: { type: 'talk', npcKind: 'foreman' } },
 ];
 
+/** The quest step reached by throwing the breaker, which opens Mags's loading door into the Foundry. */
+export const POWER_ON_STEP = 3;
 /** The quest step reached when the Order Engine falls. */
-export const ENGINE_DOWN_STEP = 5;
+export const ENGINE_DOWN_STEP = 7;
 /** The quest step reached by telling the foreman, which ends the story. */
-export const ENDING_STEP = 6;
+export const ENDING_STEP = 8;
 
 export const NPCS: Record<string, NpcType> = {
   foreman: { services: [] },
   trader: { services: [{ type: 'restore' }, { type: 'sellHealingItem', price: 20 }] },
-  // Pell builds the chainsaw, then keeps whatever the salvager fights with sharp.
-  tinker: { services: [{ type: 'sellWeapon', weapon: 'chainsaw', price: 60 }, { type: 'upgradeMelee', basePrice: 40, priceStep: 30, bonus: 3 }] },
+  // Pell keeps whatever the salvager fights with sharp: their knuckles, then her old saw.
+  tinker: { services: [{ type: 'upgradeMelee', basePrice: 40, priceStep: 30, bonus: 3 }] },
 };
 
 export interface DialogueOption {
@@ -60,10 +65,12 @@ export function dialogueFor(kind: string, questBefore: number, quest: number, de
       const text = quest >= ENDING_STEP
         ? 'Whatever it wants, it’ll ask you first. It always did.'
         : questBefore === 0
-          ? 'Found you in the river after the flood. Never asked. Not asking now. The Foundry’s taking the town apart a crate at a time; the chapel bell went last night. Mags’s depot backs onto it; go through her loading door and find what’s giving the orders. And if your fists won’t do, Pell will build you something, for scrap.'
-          : weapon === null
-            ? 'Through Mags’s loading door. Bring back scrap, and Pell will build you something better than your fists.'
-            : 'Through Mags’s loading door. Whatever’s running that place, switch it off.';
+          ? 'Found you in the river after the flood. Never asked. Not asking now. The Foundry’s taking the town apart a crate at a time; the chapel bell went last night. Mags’s depot backs onto it, but her loading door’s been dead since the machines threw the breaker at the logging camp, east through the woods past the pumphouse. Throw it back. Pell left her old saw out there, too. Your fists won’t get you far.'
+          : quest >= POWER_ON_STEP
+            ? 'Heard the turbine from here. Mags’s door is open; go through and find what’s giving the orders, and switch it off.'
+            : weapon === null
+              ? 'East through the woods to the logging camp. Pell’s saw is in a crate by the bench, and the breaker’s on the turbine.'
+              : 'Found Pell’s saw, then. Now the breaker on the turbine, and Mags’s door will open.';
       return { title: 'Foreman Odell', text, options: [{ label: quest >= ENDING_STEP ? 'Leave' : 'On my way' }] };
     }
     case 'trader':
@@ -71,7 +78,9 @@ export function dialogueFor(kind: string, questBefore: number, quest: number, de
         title: 'Mags the Trader',
         text: deaths > 0
           ? 'Patched up again. You’re getting expensive.'
-          : 'Patch kits, fresh off the line. Well, a line. Sit down and I’ll see to those dents for free.',
+          : quest > 0 && quest < POWER_ON_STEP
+            ? 'The loading door? Dead since they cut the power. Get the breaker thrown and it’s yours. Patch kits first?'
+            : 'Patch kits, fresh off the line. Well, a line. Sit down and I’ll see to those dents for free.',
         options: [
           { label: 'Get patched up', service: 0, tag: () => 'Free' },
           { label: 'Buy a patch kit', service: 1, tag: (price) => `${price} scrap` },
@@ -82,17 +91,13 @@ export function dialogueFor(kind: string, questBefore: number, quest: number, de
       return weapon === null
         ? {
           title: 'Pell the Tinker',
-          text: 'You’re going down there with your fists? Those machines are built to lift crates. There’s a saw in the back that only wants an engine. Bring me scrap and I’ll give it teeth.',
-          options: [
-            { label: 'Build the chainsaw', service: 0, tag: (price) => `${price} scrap` },
-            { label: 'Harden your knuckles (+3 damage)', service: 1, tag: (price) => `${price} scrap` },
-            { label: 'Leave' },
-          ],
+          text: 'You’re going out there with your fists? Those machines are built to lift crates. I left my old saw at the logging camp when they came for the turbine; it’s in a crate by the bench. Till you fetch it, I can harden those knuckles.',
+          options: [{ label: 'Harden your knuckles (+3 damage)', service: 0, tag: (price) => `${price} scrap` }, { label: 'Leave' }],
         }
         : {
           title: 'Pell the Tinker',
-          text: 'Mind the chain. It doesn’t care what it’s cutting. Bring scrap and I’ll keep it biting.',
-          options: [{ label: 'Sharpen the chain (+3 damage)', service: 1, tag: (price) => `${price} scrap` }, { label: 'Leave' }],
+          text: 'You found her. Mind the chain; it doesn’t care what it’s cutting. Bring scrap and I’ll keep it biting.',
+          options: [{ label: 'Sharpen the chain (+3 damage)', service: 0, tag: (price) => `${price} scrap` }, { label: 'Leave' }],
         };
     default:
       return null;
@@ -136,6 +141,10 @@ export const READINGS: Record<string, { title: string; text: string }> = {
   riverbank: {
     title: 'A post on the bank',
     text: 'Someone carved a mark on the jetty post: FOUND, NIGHT OF THE FLOOD. Below it, smaller: DIDN’T BREATHE FOR AN HOUR. THEN GOT UP.',
+  },
+  breaker: {
+    title: 'Breaker',
+    text: 'Someone wired it open and bent the handle. You force it home. The turbine shudders, and far off towards town a loading door clanks.',
   },
   cradle: {
     title: 'Charging cradle',

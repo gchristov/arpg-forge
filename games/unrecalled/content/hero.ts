@@ -1,7 +1,7 @@
 import type { HeroRules } from '../../../engine/sim/content';
 
 /**
- * The salvager's numbers. They fight with their fists until Pell builds them a chainsaw; the resource is charge,
+ * The salvager's numbers. They fight with their fists until they find Pell's old chainsaw; the resource is charge,
  * healing items are patch kits, and the skill is an EMP.
  */
 export const HERO: HeroRules = {

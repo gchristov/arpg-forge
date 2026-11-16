@@ -8,8 +8,8 @@ import { HERO } from './hero';
 import { NPCS, QUEST } from './story';
 
 /**
- * Unrecalled as the rules see it: Rustbelt and its buildings, and the Foundry's four floors down to the Order Engine,
- * plus a practice arena off the map.
+ * Unrecalled as the rules see it: Rustbelt, its buildings and the dead woods to its east, and the Foundry's four floors
+ * down to the Order Engine, plus a practice arena off the map.
  */
 export function unrecalledContent(): GameContent {
   return {
