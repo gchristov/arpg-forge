@@ -107,7 +107,8 @@ export const isWallTile = (map: TileMap, kinds: ReadonlySet<number>) => (tx: num
 
 /**
  * A corner piece of a modular wall kit, at a tile corner: `inner` where a room turns, outer where a wall juts into one.
- * `arms` point along the two walls it joins, away from the corner, each one kit cell long.
+ * `arms` point along the two walls it joins, away from the corner, each one kit cell long. It's `front` when both
+ * those walls stand between the room and the camera.
  */
 export interface KitCorner {
   x: number;
@@ -121,7 +122,8 @@ export interface KitCorner {
  * Walls laid the way a modular kit expects, on a grid of `span`-tile cells from the map's corner: a straight panel for
  * every whole cell of edge between wall and floor, and a corner piece wherever the edges turn, covering a cell of each
  * wall it joins. Rooms drawn on the grid come out with every piece whole. An opening in a wall, such as a doorway,
- * counts as wall for where it turns, but its cell gets no panel; nor does a cell only partly edged.
+ * counts as wall for where it turns, but its cell gets no panel; nor does a cell only partly edged. A wall stands
+ * between the room and the camera, `front`, when its face looks away from the camera: towards -x or -y.
  */
 export function kitWalls(
   map: TileMap,
@@ -130,7 +132,6 @@ export function kitWalls(
   isOpening: (tx: number, ty: number) => boolean = () => false,
 ): { panels: WallPanel[]; corners: KitCorner[] } {
   const wallAt = (tx: number, ty: number) => !inBounds(map, tx, ty) || isWall(tx, ty) || isOpening(tx, ty);
-  const isFront = frontTest(map, isWall);
   const corners: KitCorner[] = [];
   const covered = new Set<string>();
   for (let y = 1; y < map.height; y++) {
@@ -141,7 +142,10 @@ export function kitWalls(
       const odd = walls.length === 3 ? tiles.find(([tx, ty]) => !wallAt(tx, ty)) : walls.length === 1 ? walls[0] : undefined;
       if (!odd) continue;
       const arms = { x: odd[0] === x ? 1 : -1, y: odd[1] === y ? 1 : -1 };
-      corners.push({ x, y, inner: walls.length === 3, arms, front: walls.some(([tx, ty]) => inBounds(map, tx, ty) && isFront(tx, ty)) });
+      const inner = walls.length === 3;
+      // An inner corner's walls face along its arms, into the room; an outer one's face the other way, out from the wall.
+      const faces = inner ? arms : { x: -arms.x, y: -arms.y };
+      corners.push({ x, y, inner, arms, front: faces.x < 0 && faces.y < 0 });
       covered.add(`h${y}:${arms.x > 0 ? x : x - span}`);
       covered.add(`v${x}:${arms.y > 0 ? y : y - span}`);
     }
@@ -173,11 +177,10 @@ export function kitWalls(
         if (opening) continue;
         const toFloor = wallBefore ? 1 : -1;
         const middle = start + span / 2;
-        const wallTile = horizontal ? [Math.floor(middle), wallBefore ? line - 1 : line] : [wallBefore ? line - 1 : line, Math.floor(middle)];
         panels.push({
           x: horizontal ? middle : line, y: horizontal ? line : middle, length: span,
           facing: horizontal ? { x: 0, y: toFloor } : { x: toFloor, y: 0 },
-          front: inBounds(map, wallTile[0]!, wallTile[1]!) && isFront(wallTile[0]!, wallTile[1]!),
+          front: toFloor < 0,
         });
       }
     }
