@@ -14,13 +14,13 @@ function figure(changes: Partial<ActorLook> = {}): ActorFigure {
   scene.add(bone);
   const template: ModelTemplate = {
     scene,
-    animations: [clip('Idle', 1), clip('Run', 0.8), clip('Attack', 0.5), clip('Hit', 0.6), clip('Death', 1)],
+    animations: [clip('Idle', 1), clip('Run', 0.8), clip('Attack', 0.5), clip('Cut', 0.7), clip('Hit', 0.6), clip('Death', 1)],
     height: 1,
   };
   const library = { get: () => template, instantiate: () => scene.clone() } as unknown as ModelLibrary;
   const look: ActorLook = {
     colour: 0, height: 1, radius: 0.3,
-    model: { name: 'm', animations: { idle: 'Idle', move: 'Run', attack: 'Attack', hit: 'Hit', death: 'Death' } },
+    model: { name: 'm', animations: { idle: 'Idle', move: 'Run', attack: 'Attack', channel: 'Cut', hit: 'Hit', death: 'Death' } },
     ...changes,
   };
   return new ActorFigure(look, library);
@@ -217,6 +217,21 @@ describe('ActorFigure seen through', () => {
 
   it('leaves actors without an outline as they are', () => {
     expect(meshesOf(boxFigure())).toHaveLength(1);
+  });
+});
+
+describe('ActorFigure channelling', () => {
+  it('loops the channel animation while the actor keeps up a continuous attack, and walks when it moves off', () => {
+    const f = figure();
+    f.pose(false, false, undefined, true);
+    run(f, 1.5);
+    expect(f.activeAnimations()).toContain('Cut');
+    f.pose(true, false, undefined, true);
+    run(f, 0.5);
+    expect(f.activeAnimations()).toEqual(['Run']);
+    f.pose(false, false);
+    run(f, 0.5);
+    expect(f.activeAnimations()).toEqual(['Idle']);
   });
 });
 

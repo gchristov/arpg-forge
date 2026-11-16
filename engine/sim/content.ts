@@ -177,6 +177,12 @@ export interface HeroRules {
     critChance: number;
     critMultiplier: number;
     knockback: number;
+    /**
+     * Cuts rather than swings, like a chainsaw: while the hero is engaged with the target, a tick of damage lands every
+     * `tickSeconds`, each the share of a swing's damage that keeps the damage a second the same as swinging every
+     * `cooldown`, without knockback.
+     */
+    continuous?: { tickSeconds: number };
   };
   /** Skills on top of the melee attack, by slot, each costing resource and with its own cooldown. */
   skills: Skill[];

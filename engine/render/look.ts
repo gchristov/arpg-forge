@@ -68,6 +68,8 @@ export interface ActorAnimations {
   idle: string;
   move?: string;
   attack?: string;
+  /** Looped while the actor keeps up a continuous attack, such as cutting with a chainsaw. */
+  channel?: string;
   cast?: string;
   hit?: string;
   death?: string;

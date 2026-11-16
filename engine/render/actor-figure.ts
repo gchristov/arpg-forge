@@ -8,6 +8,8 @@ import { walkPace } from './walk-pace';
 export type ActorMoment = 'attack' | 'cast' | 'hit';
 
 const BLEND_SECONDS = 0.15;
+/** How far, in tiles, a held weapon shakes each way while it cuts. */
+const BUZZ_TILES = 0.012;
 /** Hovering actors bob this many tiles up and down, this many times a second. */
 const BOB_HEIGHT = 0.07;
 const BOB_RATE = 0.35;
@@ -38,6 +40,10 @@ export class ActorFigure {
   private moment: THREE.AnimationAction | null = null;
   /** Tiles a second the move animation carries the actor at its normal speed, or null if it couldn't be measured. */
   private readonly movePace: number | null = null;
+  /** The weapon in hand, where it rests in the hand, and how many of the hand's own units make a tile. */
+  private held: { weapon: THREE.Object3D; rest: THREE.Vector3; tilesToBone: number } | null = null;
+  /** Whether the actor is keeping up a continuous attack. */
+  private channelling = false;
 
   constructor(
     private readonly look: ActorLook,
@@ -93,11 +99,13 @@ export class ActorFigure {
   }
 
   /**
-   * Sets the ongoing pose: dying wins over moving, which wins over idling. For looks that match their pace, the move
+   * Sets the ongoing pose: dying wins over moving, which wins over keeping up a continuous attack, which wins over
+   * idling. While channelling, a held weapon buzzes. For looks that match their pace, the move
    * animation plays faster or slower to match `speed`, in tiles a second, so its feet don't slide over the ground.
    */
-  pose(moving: boolean, dead: boolean, speed?: number): void {
-    this.setBase(dead ? 'death' : moving ? 'move' : 'idle');
+  pose(moving: boolean, dead: boolean, speed?: number, channelling = false): void {
+    this.channelling = channelling && !dead && !moving;
+    this.setBase(dead ? 'death' : moving ? 'move' : this.channelling ? 'channel' : 'idle');
     const move = this.action('move');
     if (move && speed && this.movePace) move.timeScale = THREE.MathUtils.clamp(speed / this.movePace, ...PACE_RANGE);
   }
@@ -143,10 +151,10 @@ export class ActorFigure {
       o.castShadow = true;
       o.material = this.ownMaterial(o.material as THREE.Material, null);
     });
+    // Sizes in tiles undo the scale the hand's bones and the model already carry.
+    model.updateMatrixWorld(true);
+    const handScale = hand.getWorldScale(new THREE.Vector3()).x;
     if (typeof held !== 'string') {
-      // Sized in tiles, so undo the scale the hand's bones and the model already carry.
-      model.updateMatrixWorld(true);
-      const handScale = hand.getWorldScale(new THREE.Vector3()).x;
       const size = modelSize(library.get(name)!);
       weapon.scale.setScalar(held.length / Math.max(size.x, size.y, size.z) / handScale);
       weapon.rotation.set(...held.turn);
@@ -154,6 +162,7 @@ export class ActorFigure {
       weapon.position.set(ox / handScale, oy / handScale, oz / handScale);
     }
     hand.add(weapon);
+    this.held = { weapon, rest: weapon.position.clone(), tilesToBone: 1 / handScale };
   }
 
   /** Names of the animations currently showing, for tests and debugging. */
@@ -175,6 +184,16 @@ export class ActorFigure {
 
   update(frameSeconds: number): void {
     this.mixer?.update(frameSeconds);
+    if (this.held) {
+      const { weapon, rest, tilesToBone } = this.held;
+      weapon.position.copy(rest);
+      if (this.channelling) {
+        const buzz = BUZZ_TILES * tilesToBone;
+        weapon.position.x += (Math.random() * 2 - 1) * buzz;
+        weapon.position.y += (Math.random() * 2 - 1) * buzz;
+        weapon.position.z += (Math.random() * 2 - 1) * buzz;
+      }
+    }
     if (this.hovering) {
       const h = this.hovering;
       h.age += frameSeconds;
@@ -205,7 +224,7 @@ export class ActorFigure {
    * handler) and the old one stops, so no pose is left running underneath. Dying cuts a moment short, and so does
    * moving off during a flinch.
    */
-  private setBase(name: 'idle' | 'move' | 'death'): void {
+  private setBase(name: 'idle' | 'move' | 'channel' | 'death'): void {
     const next = this.action(name) ?? this.action('idle');
     if (!next || next === this.base) return;
     const previous = this.base;

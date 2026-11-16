@@ -4,6 +4,7 @@ import { hasLineOfSight } from '../world/line-of-sight';
 import { planRoute } from '../world/pathfinding';
 import { tileIndex } from '../world/tile-map';
 import { burst, damageEnemy, findEnemy, nearestEnemy } from './combat';
+import { cut, stopCutting } from './cutting';
 import { updateInteraction, useService, walkToContainer, walkToNpc, walkToReadable } from './interaction';
 import { placeAt } from './setup';
 import type { ProjectileSkill } from './content';
@@ -236,10 +237,13 @@ export function updateHeroTimers(state: GameState, dt: number, events: SimEvent[
   }
 }
 
-/** Walking, or chasing and swinging at the target. */
+/** Walking, or chasing and attacking the target: swinging at it, or cutting into it with a continuous attack. */
 export function updateHeroMovement(state: GameState, held: { x: number; y: number } | null, dt: number, events: SimEvent[]): void {
   const { hero } = state;
-  if (hero.dead) return;
+  if (hero.dead) {
+    stopCutting(state, events);
+    return;
+  }
   const { map } = currentLevel(state).level;
   if (held && hero.targetId === null) {
     state.holdTimer -= dt;
@@ -249,12 +253,14 @@ export function updateHeroMovement(state: GameState, held: { x: number; y: numbe
     }
   }
   if (hero.targetId === null) {
+    stopCutting(state, events);
     followPath(map, hero, hero.speed, dt);
     updateInteraction(state, events);
     return;
   }
   const e = findEnemy(state, hero.targetId);
   if (!e) {
+    stopCutting(state, events);
     hero.targetId = null;
     hero.moving = false;
     return;
@@ -265,8 +271,12 @@ export function updateHeroMovement(state: GameState, held: { x: number; y: numbe
     hero.moving = false;
     hero.facingX = lerp(hero.facingX, (e.x - hero.x) / d, 0.4);
     hero.facingY = lerp(hero.facingY, (e.y - hero.y) / d, 0.4);
-    if (hero.attackCooldown <= 0 && hero.swing < 0) startSwing(state, events);
-  } else if (hasLineOfSight(map, hero.x, hero.y, e.x, e.y, hero.r)) {
+    if (state.rules.hero.melee.continuous) cut(state, e, dt, events);
+    else if (hero.attackCooldown <= 0 && hero.swing < 0) startSwing(state, events);
+    return;
+  }
+  stopCutting(state, events);
+  if (hasLineOfSight(map, hero.x, hero.y, e.x, e.y, hero.r)) {
     hero.path = null;
     steerTowards(map, hero, e.x, e.y, hero.speed, dt);
   } else {

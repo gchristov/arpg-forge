@@ -41,12 +41,12 @@
       "animations": [
         "Idle",
         "Run",
-        "Punch",
         "Shoot_OneHanded",
         "RecieveHit",
         "Death",
-        "SwordIdle",
-        "SwordAttack"
+        "PistolIdle",
+        "PushLoop",
+        "PunchCross"
       ],
       "borrow": {
         "pack": "animations",
@@ -55,8 +55,9 @@
         "animations": {
           "Run": "Sprint_Loop",
           "Death": "Death01",
-          "SwordIdle": "Sword_Idle",
-          "SwordAttack": "Sword_Attack"
+          "PushLoop": "Push_Loop",
+          "PistolIdle": "Pistol_Idle_Loop",
+          "PunchCross": "Punch_Cross"
         },
         "bones": {
           "Body": "DEF-hips",

@@ -293,7 +293,10 @@ export class WorldView {
     const speed = Math.hypot(actor.x - actor.prevX, actor.y - actor.prevY) / this.stepSeconds;
     this.renderer.setActor(
       String(actor.id), actor.kind, x, y, actor.facingX, actor.facingY,
-      { moving: actor.moving, dead: Boolean(actor.dead), flash: (this.flashes.get(actor.id) ?? 0) > 0 ? 1 : 0, fade, speed },
+      {
+        moving: actor.moving, dead: Boolean(actor.dead), flash: (this.flashes.get(actor.id) ?? 0) > 0 ? 1 : 0, fade, speed,
+        channelling: actor === this.state.hero && this.state.hero.cut !== null,
+      },
     );
     const light = this.look.actor(actor.kind).light;
     if (light && fade > 0) this.renderer.glow(x, y, light.radius, light.colour, light.intensity * fade);
