@@ -9,9 +9,8 @@ import { surroundingsOf } from './surroundings';
 const colour = new THREE.Color();
 const hsl = (h: number, s: number, l: number): number => colour.setHSL(h / 360, s / 100, l / 100).getHex();
 
-// Indoors, wall tops and the cables over them dissolve into the dark above head height.
 const foundry = (ambient: number, sky: number): Mood => ({
-  background: 0x050505, ambient, ambientIntensity: 0.5, alarmAmbient: 0x5a1c18, heroLightRadius: 4.6, heightFade: { from: 0.8, to: 2.0 },
+  background: 0x050505, ambient, ambientIntensity: 0.5, alarmAmbient: 0x5a1c18, heroLightRadius: 4.6,
   fill: { sky, ground: 0x201810, intensity: 0.55 },
 });
 
@@ -233,8 +232,6 @@ export const unrecalledLook: Look = {
   prop: (kind) => PROPS[kind] ?? null,
   walls: (levelId) => ({
     props: [Prop.Wall, Prop.WallLow, Prop.WallLight, Prop.WallAlarm], panel: styleOf(levelId).panel, span: 3, front: { name: 'wall-front', height: 0.3 },
-    // Walls on the camera's side stand full height, cut away round the salvager so they never hide them.
-    cutaway: { radius: 4.5 },
     kit: KIT_CORNERS[styleOf(levelId).panel],
     // Now and then, cables hang down a wall into the room from the works past its top.
     crown: ['hanging-cables', null, null, null, null, null, null, null, null],
