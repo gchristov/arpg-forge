@@ -97,8 +97,9 @@ export class SceneRenderer {
     canvas: HTMLCanvasElement,
     private readonly look: Look,
     private readonly models = new ModelLibrary(),
+    antialias = true,
   ) {
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, stencil: true });
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias, stencil: true });
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.scene.add(this.ambient, this.fill, this.moon, this.moon.target, this.heroLight, this.levelGroup);
@@ -128,7 +129,7 @@ export class SceneRenderer {
   resize(width: number, height: number, pixelRatio: number): void {
     this.width = width;
     this.height = height;
-    this.renderer.setPixelRatio(Math.min(2, pixelRatio));
+    this.renderer.setPixelRatio(pixelRatio);
     this.renderer.setSize(width, height, false);
     const zoom = clamp(Math.min(width, height) / 430, 0.78, 1.3);
     this.pixelsPerUnit = (TILE_PIXELS * zoom) / Math.SQRT2;

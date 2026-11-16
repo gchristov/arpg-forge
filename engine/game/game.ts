@@ -6,6 +6,7 @@ import type { Platform } from '../platform/platform';
 import { webPlatform } from '../platform/web';
 import { DebugOverlay } from '../render/debug-overlay';
 import type { Look } from '../render/look';
+import { drawingQuality } from '../render/drawing-quality';
 import { ModelLibrary } from '../render/models';
 import { SceneRenderer } from '../render/scene-renderer';
 import type { GameContent } from '../sim/content';
@@ -70,7 +71,10 @@ export class Game {
     const params = new URLSearchParams(location.search);
     const debugMode = params.has('debug');
     const models = new ModelLibrary();
-    this.renderer = new SceneRenderer(setup.canvas, setup.look, models);
+    const resolution = debugMode ? Number(params.get('resolution')) || 0 : 0;
+    const quality = () => (resolution ? { pixelRatio: resolution, antialias: true } : drawingQuality(devicePixelRatio));
+    // Antialiasing is fixed when the drawing surface is made; the pixel density follows the browser's zoom.
+    this.renderer = new SceneRenderer(setup.canvas, setup.look, models, quality().antialias);
     this.modelsLoaded = models.load(setup.models);
     this.pointer = new PointerInput(setup.canvas);
     this.labels = new WorldLabels(document.body);
@@ -94,8 +98,7 @@ export class Game {
       ' ': () => this.send({ type: 'attackNearest' }),
       ...Object.fromEntries(content.hero.skills.map((_, slot) => [String(slot + 3), () => this.send({ type: 'useSkill', slot })])),
     });
-    const resolution = debugMode ? Number(params.get('resolution')) || 0 : 0;
-    const fit = (): void => this.renderer.resize(innerWidth, innerHeight, resolution || devicePixelRatio);
+    const fit = (): void => this.renderer.resize(innerWidth, innerHeight, quality().pixelRatio);
     addEventListener('resize', fit);
     fit();
     this.view.showCurrentLevel();
