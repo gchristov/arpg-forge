@@ -46,12 +46,16 @@ export function updateEnemies(state: GameState, dt: number, events: SimEvent[]):
 }
 
 /**
- * The alarm sounds once a provoked enemy first hunts the hero, and then stays on: from then on every calm enemy on the
- * level comes for the hero as soon as it sees them. Only the story calming everything puts it out.
+ * The alarm sounds once a provoked enemy first hunts the hero, and then stays on, on the level and on every other floor
+ * of its building: from then on every calm enemy there comes for the hero as soon as it sees them. Only the story
+ * calming everything puts it out.
  */
 function soundAlarm(state: GameState, ls: LevelState, events: SimEvent[]): void {
   if (ls.alarmed || !ls.enemies.some((e) => !e.dead && e.provoked && e.mode === 'chase')) return;
-  ls.alarmed = true;
+  const { building } = ls.level;
+  for (const other of Object.values(state.levels)) {
+    if (other === ls || (building !== undefined && other.level.building === building)) other.alarmed = true;
+  }
   events.push({ type: 'LevelAlarmed', levelId: state.levelId });
 }
 

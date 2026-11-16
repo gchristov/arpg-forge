@@ -131,6 +131,25 @@ describe('Unrecalled scenarios', () => {
     expect(currentLevel(state).enemies.filter((e) => e.mode === 'idle').length).toBeGreaterThan(10);
   });
 
+  it('puts the whole Foundry on alert after a fight on one floor, so the next floor\'s machines attack on sight', () => {
+    const state = inIntake();
+    const { hero } = state;
+    const crawler = currentLevel(state).enemies
+      .filter((e) => e.kind === 'crawler')
+      .sort((a, b) => Math.hypot(a.x - hero.x, a.y - hero.y) - Math.hypot(b.x - hero.x, b.y - hero.y))[0]!;
+    play(state, 10, [{ type: 'attack', enemyId: crawler.id }]);
+    expect(FLOOR_ORDER.every((id) => state.levels[id]!.alarmed)).toBe(true);
+    expect(state.levels.rustbelt!.alarmed).toBe(false);
+
+    takeDoor(state, 'sorting');
+    const loader = currentLevel(state).enemies.find((e) => e.kind === 'loader')!;
+    state.hero.x = state.hero.prevX = loader.x + 2;
+    state.hero.y = state.hero.prevY = loader.y;
+    const events = play(state, 1);
+    expect(loader.mode).toBe('chase');
+    expect(events.filter((e) => e.type === 'EnemyRecognised')).toHaveLength(0);
+  });
+
   it('sets off an EMP among a pack of crawlers, hitting them all and sounding the alarm', () => {
     const state = inIntake();
     const pack = currentLevel(state).enemies.filter((e) => e.kind === 'crawler').slice(0, 3);

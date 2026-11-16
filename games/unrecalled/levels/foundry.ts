@@ -249,7 +249,12 @@ function doors(id: FloorId): Record<string, RoomKey> {
   };
 }
 
+/** A breach on any floor puts the whole Foundry on alert. */
+const BUILDING = 'foundry';
+
 export function buildFloor(id: FloorId): LevelContent {
   const { name, subtitle, rows } = FLOORS[id];
-  return roomFromRows({ id, name, subtitle, floor: Ground.Plate, rows, key: { ...KEY, ...lamps(id), ...doors(id) } });
+  const floor = roomFromRows({ id, name, subtitle, floor: Ground.Plate, rows, key: { ...KEY, ...lamps(id), ...doors(id) } });
+  floor.level.building = BUILDING;
+  return floor;
 }
