@@ -17,9 +17,9 @@ const SCENERY_REACH = 7;
  */
 const WORKS_BEHIND = [Prop.PipeRun, Prop.PipeRun, Prop.Silo];
 const WORKS_IN_FRONT = [Prop.Crate, Prop.Barrel, Prop.Crate];
-const WORKS_BAND = [1.9, 3] as const;
-const WORKS_SHARE = 0.3;
-const INDOOR = { margin: 4, fade: 2 };
+const WORKS_BAND = [1.9, 2.5] as const;
+const WORKS_SHARE = 0.2;
+const INDOOR = { margin: 4, fade: 1.1 };
 /** How far a tile looks for the room it stands behind (down and right), and for one it would stand in front of. */
 const BEHIND_REACH = 4;
 const IN_FRONT_REACH = 3;
