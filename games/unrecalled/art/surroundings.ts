@@ -18,8 +18,9 @@ const CLUTTER_SHARE = 0.12;
 
 /** The Foundry itself looms past the middle of Rustbelt's top edge: tanks, scaffolds and cranes in the dark. */
 const FOUNDRY_BEYOND = [Prop.Tank, Prop.Scaffold, Prop.Crane, Prop.Tank];
-const FOUNDRY_SHARE = 0.22;
-const FOUNDRY_EDGE_SHARE = 0.7;
+/** Shares of tiles past that edge with a piece of the Foundry, and with a dead tree, further out and along the edge itself. */
+const FOUNDRY_SHARE = { out: 0.08, edge: 0.15 };
+const TREE_SHARE = { out: 0.12, edge: 0.3 };
 
 /**
  * Past every level's walls and edges, so the player never sees where the map stops: in the Foundry, more of the works
@@ -58,8 +59,10 @@ function woodsBeyond(level: Level): Surroundings['scenery'] {
       if (edge === Ground.Water || edge === Ground.Mud) continue;
       const h = hash2(tx, ty, 71);
       if (ty < 0 && tx >= FOUNDRY_SIDE.from && tx <= FOUNDRY_SIDE.to) {
-        // Packed close along the edge itself, so the yard is what stops the salvager, not an unseen line.
-        if (h < (ty === -1 ? FOUNDRY_EDGE_SHARE : FOUNDRY_SHARE)) scenery.push({ prop: FOUNDRY_BEYOND[Math.floor(hash2(tx, ty, 73) * FOUNDRY_BEYOND.length)]!, x: tx + 0.5, y: ty + 0.5 });
+        // Closer together along the edge itself, so trees and the yard are what stop the salvager, not an unseen line.
+        const at = ty === -1 ? 'edge' : 'out';
+        if (h < FOUNDRY_SHARE[at]) scenery.push({ prop: FOUNDRY_BEYOND[Math.floor(hash2(tx, ty, 73) * FOUNDRY_BEYOND.length)]!, x: tx + 0.5, y: ty + 0.5 });
+        else if (h < FOUNDRY_SHARE[at] + TREE_SHARE[at]) scenery.push({ prop: Prop.DeadTree, x: tx + 0.5, y: ty + 0.5 });
       } else if (h < 0.1) scenery.push({ prop: Prop.DeadTree, x: tx + 0.5, y: ty + 0.5 });
       else if (h > 0.97) scenery.push({ prop: Prop.Rock, x: tx + 0.5, y: ty + 0.5 });
     }
