@@ -35,6 +35,18 @@ describe('checkContent', () => {
     expect(checkContent(rooms())).toEqual([]);
   });
 
+  it('finds enemies with no strength, and enemies that weaken as the hero levels up', () => {
+    const c = rooms();
+    home(c).enemyStrength = 0;
+    c.levels[1]!.camps.push({ tx: 1, ty: 1, kind: 'brute', strength: -1 });
+    c.enemyGrowthPerHeroLevel = -0.1;
+    expect(checkContent(c)).toEqual([
+      'home: enemies there have a strength that isn\'t above 0',
+      'cellar: enemies there have a strength that isn\'t above 0',
+      'enemies weaken as the hero levels up',
+    ]);
+  });
+
   it('finds a missing start level and a portal to nowhere', () => {
     const c = rooms();
     c.startLevel = 'attic';

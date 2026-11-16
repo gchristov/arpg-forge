@@ -11,6 +11,8 @@ export interface Camp {
   tx: number;
   ty: number;
   kind: string;
+  /** The camp's own strength, in place of its level's `enemyStrength`, for a part of a level tougher or easier than the rest. */
+  strength?: number;
 }
 
 /** Camps that refill over time while the hero is far enough away. */
@@ -51,6 +53,11 @@ export interface LevelContent {
   npcs: Array<SpawnPoint & { name: string }>;
   containers?: Container[];
   readables?: Readable[];
+  /**
+   * How much tougher than their kind the level's enemies are: their health and damage are multiplied by it, so the
+   * way gets harder the deeper it goes. 1 if not given.
+   */
+  enemyStrength?: number;
   /** A level for trying mechanics out, such as a combat arena, reached only by its address, so no portal leads to it. */
   practice?: boolean;
 }
@@ -222,4 +229,6 @@ export interface GameContent {
   npcRadius: number;
   npcs: Record<string, NpcType>;
   quest: QuestStep[];
+  /** Every enemy grows this share stronger, in health and damage, for each level the hero gains. None if not given. */
+  enemyGrowthPerHeroLevel?: number;
 }

@@ -30,6 +30,11 @@ export function checkContent(content: GameContent): string[] {
         problems.push(`${lc.level.id}: the portal to "${p.to}" waits for quest step ${p.lockedUntilStep}, which doesn't exist`);
       }
     }
+    const strengths = [lc.enemyStrength, ...lc.camps.map((c) => c.strength)].filter((s) => s !== undefined);
+    if (strengths.some((s) => !(s > 0))) problems.push(`${lc.level.id}: enemies there have a strength that isn't above 0`);
+  }
+  if (content.enemyGrowthPerHeroLevel !== undefined && content.enemyGrowthPerHeroLevel < 0) {
+    problems.push('enemies weaken as the hero levels up');
   }
   for (const [kind, npc] of Object.entries(content.npcs)) {
     for (const service of npc.services) {

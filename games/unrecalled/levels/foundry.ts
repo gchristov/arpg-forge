@@ -21,6 +21,12 @@ interface FloorSpec {
   rows: string[];
 }
 
+/**
+ * How much tougher than their kind each floor's machines are: the deeper the floor, the tougher. The Order Engine is
+ * tuned on its own.
+ */
+const STRENGTH: Record<FloorId, number> = { intake: 1, sorting: 1.15, gallery: 1.3, assembly: 1.4 };
+
 const FLOORS = {
   intake: {
     name: 'Intake', subtitle: 'Receiving for the Valley Order', lamps: { L: 'cyan', A: 'amber' },
@@ -310,5 +316,6 @@ export function buildFloor(id: FloorId): LevelContent {
   const { name, subtitle, rows } = FLOORS[id];
   const floor = roomFromRows({ id, name, subtitle, floor: Ground.Plate, rows, key: { ...KEY, ...lamps(id), ...doors(id) } });
   floor.level.building = BUILDING;
+  floor.enemyStrength = STRENGTH[id];
   return floor;
 }

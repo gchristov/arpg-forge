@@ -5,6 +5,7 @@ import { hasLineOfSight } from '../world/line-of-sight';
 import { planRoute } from '../world/pathfinding';
 import type { EnemyType } from './content';
 import { hurtHero } from './combat';
+import { enemyDamage } from './enemy-strength';
 import { slide } from './knockback';
 import { makeEnemy, spawnCamp } from './setup';
 import { currentLevel, type Enemy, type GameState, type LevelState, type SimEvent } from './state';
@@ -184,7 +185,7 @@ function attack(state: GameState, e: Enemy, type: EnemyType, fx: number, fy: num
     const y = e.y + fy * SHOT_OFFSET;
     state.projectiles.push({
       kind: 'shot', slot: -1, x, y, prevX: x, prevY: y, vx: fx * SHOT_SPEED, vy: fy * SHOT_SPEED, life: SHOT_LIFETIME,
-      damage: int(state.rng, type.damage[0], type.damage[1]),
+      damage: enemyDamage(state, e, int(state.rng, type.damage[0], type.damage[1])),
     });
     events.push({ type: 'ShotFired', enemyId: e.id });
     e.swing = 0.5;
@@ -193,7 +194,7 @@ function attack(state: GameState, e: Enemy, type: EnemyType, fx: number, fy: num
   e.swing = 0.4;
   events.push({ type: 'Swung', actorId: e.id });
   if (dist(e.x, e.y, hero.x, hero.y) <= type.range + hero.r + e.r + MELEE_GRACE) {
-    hurtHero(state, int(state.rng, type.damage[0], type.damage[1]), events);
+    hurtHero(state, enemyDamage(state, e, int(state.rng, type.damage[0], type.damage[1])), events);
   }
 }
 
@@ -212,7 +213,7 @@ function useAbilities(
     e.slamTimer -= dt;
     if (e.slamTimer <= 0 && d < slam.reach && e.windUp < 0) {
       e.slamTimer = range(state.rng, slam.everySeconds[0], slam.everySeconds[1]);
-      state.telegraphs.push({ x: hero.x, y: hero.y, radius: slam.radius, elapsed: 0, delay: slam.delay, damage: slam.damage });
+      state.telegraphs.push({ x: hero.x, y: hero.y, radius: slam.radius, elapsed: 0, delay: slam.delay, damage: [enemyDamage(state, e, slam.damage[0]), enemyDamage(state, e, slam.damage[1])] });
       e.swing = 0;
       events.push({ type: 'SlamWarned', enemyId: e.id, x: hero.x, y: hero.y });
     }
@@ -227,7 +228,7 @@ function useAbilities(
       const x = e.x + Math.cos(a) * summon.distance;
       const y = e.y + Math.sin(a) * summon.distance;
       if (isBlocked(ls.level.map, x, y, body.radius)) continue;
-      const s = makeEnemy(state, summon.kind, x, y);
+      const s = makeEnemy(state, summon.kind, x, y, ls.enemyStrength);
       s.mode = 'chase';
       s.provoked = true;
       s.homeX = e.homeX;

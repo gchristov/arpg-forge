@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { gainXp } from '../../engine/sim/combat';
 import { questGoal } from '../../engine/sim/quest-goal';
 import { createGameState } from '../../engine/sim/setup';
 import { currentLevel, type Command, type GameState, type SimEvent } from '../../engine/sim/state';
@@ -354,5 +355,20 @@ describe('Unrecalled scenarios', () => {
     state.hero.gold = 50;
     play(state, 0.1, [{ type: 'useService', npcId: pell.id, service: 0 }]);
     expect([state.hero.bonusDamage, state.hero.gold, state.hero.weapon]).toEqual([3, 10, null]);
+  });
+
+  it('makes the machines weakest in the woods and tougher on every floor down, and keeps pace as the salvager levels up', () => {
+    const state = createGameState(content, 1);
+    const toughest = (levelId: string, kind: string) => Math.max(...state.levels[levelId]!.enemies.filter((e) => e.kind === kind).map((e) => e.maxHp));
+    const crawlers = ['rustbelt', ...FLOOR_ORDER.filter((id) => state.levels[id]!.enemies.some((e) => e.kind === 'crawler'))].map((id) => toughest(id, 'crawler'));
+    expect(crawlers).toEqual([...crawlers].sort((a, b) => a - b));
+    expect(new Set(crawlers).size).toBe(crawlers.length);
+
+    const loader = state.levels.sorting!.enemies.find((e) => e.kind === 'loader')!;
+    const before = loader.maxHp;
+    gainXp(state, state.hero.xpNext, []);
+    expect(state.hero.level).toBe(2);
+    // Five percent stronger, give or take rounding.
+    expect(Math.abs(loader.maxHp - before * 1.05)).toBeLessThanOrEqual(1);
   });
 });

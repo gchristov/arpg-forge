@@ -93,6 +93,8 @@ export interface Enemy extends Actor {
   /** How fast it's sliding from a knock-back, in tiles a second. */
   slideX: number;
   slideY: number;
+  /** How much tougher than its kind it is, from where it stands; see `enemy-strength.ts`. */
+  strength: number;
 }
 
 export interface Projectile {
@@ -145,6 +147,8 @@ export interface LevelState {
   camps: Camp[];
   campRespawns?: CampRespawns;
   campTimer: number;
+  /** The strength of enemies that turn up here later, such as a boss's summons or a camp refilling. */
+  enemyStrength: number;
 }
 
 /** Walking through a portal: the screen fades, then the hero arrives on the other side. */
@@ -166,6 +170,7 @@ export interface GameState {
     npcRadius: number;
     npcs: Record<string, NpcType>;
     quest: QuestStep[];
+    enemyGrowthPerHeroLevel?: number;
   };
   /** Index of the current quest step. */
   quest: number;

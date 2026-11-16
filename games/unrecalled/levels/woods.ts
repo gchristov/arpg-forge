@@ -31,6 +31,9 @@ interface Ellipse {
 const CAMP: Ellipse = { x: 41, y: 11, rx: 7.5, ry: 6.5 };
 /** The sawmill yard by the river, where the logs were cut. */
 const YARD: Ellipse = { x: 31, y: 23, rx: 4.5, ry: 2.6 };
+/** How much tougher than their kind the machines in the woods are. */
+const WOODS_STRENGTH = 0.5;
+
 /** A still pond in the trees north of the trail. */
 const POND: Ellipse = { x: 24, y: 7, rx: 4.5, ry: 2.6 };
 
@@ -97,8 +100,9 @@ export function addWoods(room: LevelContent, reserve: (x: number, y: number, w: 
 
   cache(7, 5, 30);
 
-  // Crawlers along the trail, at the yard and working the camp, and sentries on the pond's bank.
-  const camp = (x: number, y: number, kind: string) => room.camps.push({ tx: x0 + x, ty: y, kind });
+  // Crawlers along the trail, at the yard and working the camp, and sentries on the pond's bank. Out here they're weaker
+  // than the Foundry's own, for a salvager on their fists.
+  const camp = (x: number, y: number, kind: string) => room.camps.push({ tx: x0 + x, ty: y, kind, strength: WOODS_STRENGTH });
   camp(9, 17, 'crawler');
   camp(18, 21, 'crawler');
   camp(24, 11, 'sentry');

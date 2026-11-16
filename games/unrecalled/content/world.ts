@@ -20,5 +20,7 @@ export function unrecalledContent(): GameContent {
     npcRadius: 0.32,
     npcs: NPCS,
     quest: QUEST.map(({ text: _text, ...step }) => step),
+    // Machines keep pace with the salvager, so a level gained makes fights easier without making them trivial.
+    enemyGrowthPerHeroLevel: 0.05,
   };
 }
