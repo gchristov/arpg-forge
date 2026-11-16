@@ -3,7 +3,11 @@ import type { Synth } from '../../../engine/audio/synth';
 /** Unrecalled's sound recipes: metal, servos, sparks and sirens, all made by the synth rather than recorded. */
 export function unrecalledSounds(s: Synth) {
   return {
-    swing: () => s.noise(0.12, 0.14, 2200, 0.9),
+    /** The chainsaw revved at nothing. */
+    rev: () => {
+      s.tone(70, 0.4, 'sawtooth', 0.05, 2.4);
+      s.noise(0.3, 0.06, 1800, 1.2);
+    },
     /** The wrench, or a bolt, on a machine's casing. */
     clank: () => {
       s.tone(880, 0.08, 'square', 0.035, 0.7);
