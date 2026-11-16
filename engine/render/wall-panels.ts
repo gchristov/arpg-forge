@@ -104,3 +104,31 @@ export function wallFaces(map: TileMap, isWall: (tx: number, ty: number) => bool
 
 export const isWallTile = (map: TileMap, kinds: ReadonlySet<number>) => (tx: number, ty: number) =>
   map.solid[tileIndex(map, tx, ty)] === 1 && kinds.has(map.prop[tileIndex(map, tx, ty)]!);
+
+/** A point where walls turn a corner, at a tile corner; `front` if it's on a wall facing the camera. */
+export interface WallCorner {
+  x: number;
+  y: number;
+  front: boolean;
+}
+
+/**
+ * Every tile corner where wall edges turn: where the four tiles meeting there aren't a straight edge (two walls side by
+ * side) nor all one kind. Straight runs of panels meet badly there, so a column stands on each.
+ */
+export function wallCorners(map: TileMap, isWall: (tx: number, ty: number) => boolean): WallCorner[] {
+  const wallAt = (tx: number, ty: number) => inBounds(map, tx, ty) && isWall(tx, ty);
+  const isFront = frontTest(map, isWall);
+  const corners: WallCorner[] = [];
+  for (let y = 1; y < map.height; y++) {
+    for (let x = 1; x < map.width; x++) {
+      const tiles = [[x - 1, y - 1], [x, y - 1], [x - 1, y], [x, y]] as const;
+      const walls = tiles.filter(([tx, ty]) => wallAt(tx, ty));
+      if (walls.length === 0 || walls.length === 4) continue;
+      // Two walls side by side make a straight edge; two diagonal ones still turn.
+      if (walls.length === 2 && (walls[0]![0] === walls[1]![0] || walls[0]![1] === walls[1]![1])) continue;
+      corners.push({ x, y, front: walls.some(([tx, ty]) => isFront(tx, ty)) });
+    }
+  }
+  return corners;
+}

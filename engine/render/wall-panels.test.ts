@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { mapFromRows } from '../world/testing';
-import { wallFaces, wallPanels } from './wall-panels';
+import { wallCorners, wallFaces, wallPanels } from './wall-panels';
 
 /** `#` is wall, anything else floor; the tests read panels as text so the layout is easy to check. */
 function panels(rows: string[], span: number) {
@@ -60,6 +60,16 @@ describe('wallPanels', () => {
   it('keeps a thin wall between two rooms low, so it never hides the room behind it', () => {
     const rooms = panels(['#####', '#...#', '#####', '#...#', '#####'], 3);
     expect(rooms.filter((p) => p.includes(',3 ') && p.includes('facing 0,1'))).toEqual(['front 2.5,3 ×3 facing 0,1']);
+  });
+});
+
+describe('wallCorners', () => {
+  it('finds where walls turn, inside and out, and not along straight walls', () => {
+    const rows = ['#####', '#...#', '#.#.#', '#...#', '#####'];
+    const map = mapFromRows(rows);
+    const corners = wallCorners(map, (x, y) => rows[y]![x] === '#').map((c) => `${c.x},${c.y}${c.front ? ' front' : ''}`);
+    // The room's four inner corners, and the pillar's four outer ones.
+    expect(corners.sort()).toEqual(['1,1', '1,4 front', '2,2 front', '2,3 front', '3,2 front', '3,3 front', '4,1 front', '4,4 front'].sort());
   });
 });
 

@@ -183,6 +183,8 @@ export interface WallLook {
    * within `radius` tiles, instead of being drawn low; the hero is never hidden behind one.
    */
   cutaway?: { radius: number };
+  /** A column standing wherever walls turn a corner, fitted to the panel's height, covering where straight runs meet. */
+  corner?: string;
   /**
    * Models laid along the top of every full-height wall, in the panel's own frame and fitted as it is, such as cables
    * running over the wall: what the player glimpses past the top of a wall. Each piece of wall picks one; null leaves it

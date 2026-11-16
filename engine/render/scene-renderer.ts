@@ -15,7 +15,7 @@ import { fitMatrix, instancedModel, modelSize, panelFit, panelScale } from './mo
 import { ModelLibrary, type ModelTemplate } from './models';
 import { playDistances, shadeArea, shadeAt } from './shade-map';
 import { WaterSurface } from './water';
-import { isWallTile, wallFaces, wallPanels } from './wall-panels';
+import { isWallTile, wallCorners, wallFaces, wallPanels } from './wall-panels';
 
 /** On-screen width of one tile at zoom 1. */
 const TILE_PIXELS = 64;
@@ -513,6 +513,7 @@ export class SceneRenderer {
       ...this.buildCrown(look, panelFit(panel, look.span), backs),
       ...(front && fronts.length ? this.frontWalls(look, front, fronts) : []),
       ...(look.fixtures ?? []).flatMap((f) => this.buildFixtures(level, f, isWallTile(level.map, kinds), panelScale(panel, look.span))),
+      ...this.wallCorners(level, look, kinds, modelSize(panel).y * panelScale(panel, look.span)),
     ];
     return { meshes, kinds };
   }
@@ -536,6 +537,20 @@ export class SceneRenderer {
       if (crowns[pick]) placements[pick]!.push(placement);
     }
     return crowns.flatMap((template, i) => (template && placements[i]!.length ? instancedModel(template, fit, placements[i]!) : []));
+  }
+
+  /** Columns where walls turn, as tall as the walls; on the camera's side, cut away round the hero like the walls. */
+  private wallCorners(level: Level, look: WallLook, kinds: ReadonlySet<number>, height: number): THREE.InstancedMesh[] {
+    const column = look.corner ? this.models.get(look.corner) : undefined;
+    if (!column) return [];
+    const fit = fitMatrix(column, { type: 'height', height });
+    const corners = wallCorners(level.map, isWallTile(level.map, kinds));
+    const at = (front: boolean) => corners.filter((c) => c.front === front).map((c) => new THREE.Matrix4().makeTranslation(c.x, 0, c.y));
+    const backs = instancedModel(column, fit, at(false));
+    // Without a cutaway, front walls are drawn low, so the columns among them would stand alone: none there.
+    const fronts = look.cutaway ? instancedModel(column, fit, at(true)) : [];
+    for (const mesh of fronts) mesh.userData.cutaway = true;
+    return [...backs, ...fronts].filter((mesh) => mesh.count > 0);
   }
 
   private buildFixtures(level: Level, fixture: WallFixture, isWall: (tx: number, ty: number) => boolean, scale: number): THREE.InstancedMesh[] {
