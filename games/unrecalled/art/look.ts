@@ -9,9 +9,9 @@ import { surroundingsOf } from './surroundings';
 const colour = new THREE.Color();
 const hsl = (h: number, s: number, l: number): number => colour.setHSL(h / 360, s / 100, l / 100).getHex();
 
-// Indoors, wall tops and the cables over them fade into the dark above head height.
+// Indoors, wall tops and the cables over them dissolve into the dark above head height.
 const foundry = (ambient: number, sky: number): Mood => ({
-  background: 0x050505, ambient, ambientIntensity: 0.5, alarmAmbient: 0x5a1c18, heroLightRadius: 4.6, heightFade: { from: 0.9, to: 2.8 },
+  background: 0x050505, ambient, ambientIntensity: 0.5, alarmAmbient: 0x5a1c18, heroLightRadius: 4.6, heightFade: { from: 1.2, to: 2.6 },
   fill: { sky, ground: 0x201810, intensity: 0.55 },
 });
 

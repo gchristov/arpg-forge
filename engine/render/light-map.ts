@@ -44,7 +44,7 @@ export class LightMap {
     lightMapBounds: { value: new THREE.Vector4(0, 0, 1, 1) },
     shadeMap: { value: fullyLit() as THREE.Texture },
     shadeBounds: { value: new THREE.Vector4(0, 0, 1, 1) },
-    /** Surfaces fade into darkness between these heights; equal heights turn the fade off. */
+    /** The level's surfaces dissolve away between these heights; equal heights turn the fade off. */
     heightFade: { value: new THREE.Vector2(1e4, 1e4) },
   };
 
@@ -104,7 +104,7 @@ export class LightMap {
     this.uniforms.shadeBounds.value.set(x0, y0, 1 / width, 1 / depth);
   }
 
-  /** Fades surfaces into darkness from `from` to `to` tiles up, or nothing with null. */
+  /** Dissolves the level's surfaces away from `from` to `to` tiles up, or nothing with null. */
   setHeightFade(fade: { from: number; to: number } | null): void {
     this.uniforms.heightFade.value.set(fade?.from ?? 1e4, fade?.to ?? 1e4);
   }
@@ -136,10 +136,12 @@ export class LightMap {
   }
 
   /**
-   * Makes a material add the light map's light: the light under each pixel, times the surface's own colour. Safe to
-   * call more than once.
+   * Makes a material add the light map's light: the light under each pixel, times the surface's own colour, and take
+   * the level's darkness. With `fadesAway`, for the level's own surfaces, it also dissolves through the height fade:
+   * a growing share of its pixels isn't drawn as it rises, in a fine scattered pattern, so whatever lies behind shows
+   * through rather than a dark shape. Safe to call more than once.
    */
-  light(material: THREE.Material): void {
+  light(material: THREE.Material, fadesAway = false): void {
     if (material.userData.lightMapped) return;
     if (!(material instanceof THREE.MeshLambertMaterial || material instanceof THREE.MeshStandardMaterial)) return;
     material.userData.lightMapped = true;
@@ -166,11 +168,11 @@ export class LightMap {
           `float lightMapReach = clamp(1.0 - (vLightMapHeight - ${FULL_HEIGHT.toFixed(2)}) / ${FADE_HEIGHT.toFixed(2)}, 0.0, 1.0);
           outgoingLight += diffuseColor.rgb * texture2D(lightMap, vLightMapUv).rgb * ${HEADROOM.toFixed(1)} * lightMapReach;
           outgoingLight *= texture2D(shadeMap, vShadeUv).r;
-          if (heightFade.y > heightFade.x) outgoingLight *= 1.0 - smoothstep(heightFade.x, heightFade.y, vLightMapHeight);
+          ${fadesAway ? DISSOLVE_GLSL : ''}
           #include <opaque_fragment>`,
         );
     };
-    material.customProgramCacheKey = () => 'light-map';
+    material.customProgramCacheKey = () => (fadesAway ? 'light-map-fades-away' : 'light-map');
     material.needsUpdate = true;
   }
 
@@ -179,6 +181,18 @@ export class LightMap {
     this.uniforms.shadeMap.value.dispose();
   }
 }
+
+/**
+ * Screen-door transparency: past the height fade's start, drop the pixels whose place in a fine, even scatter (an
+ * interleaved gradient noise) falls below how far the surface has risen, and darken what's left a little. It needs no
+ * sorting, unlike real transparency, so walls stay cheap to draw.
+ */
+const DISSOLVE_GLSL = `
+          if (heightFade.y > heightFade.x) {
+            float rise = smoothstep(heightFade.x, heightFade.y, vLightMapHeight);
+            if (rise >= fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))))) discard;
+            outgoingLight *= 1.0 - rise * 0.6;
+          }`;
 
 /** One white texel: everything fully lit. */
 function fullyLit(): THREE.DataTexture {

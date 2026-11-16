@@ -169,7 +169,7 @@ export class SceneRenderer {
     for (const mesh of this.buildProps(level, walls?.kinds)) this.levelGroup.add(mesh);
     this.structures = this.buildStructures(level);
     for (const mesh of this.structures) this.levelGroup.add(mesh);
-    this.levelGroup.traverse((o) => this.lightUp(o));
+    this.levelGroup.traverse((o) => this.lightUp(o, true));
     this.mist = mood.mist ? new Mist(level.map.width, level.map.height, mood.mist, this.lightMap.uniforms) : null;
     if (this.mist) this.levelGroup.add(this.mist.group);
     // Flames give their own light, so they stay out of the light map.
@@ -182,10 +182,10 @@ export class SceneRenderer {
     this.extraGlows.push({ x, y, radius, colour, intensity });
   }
 
-  /** Makes an object's materials take light from the light map. */
-  private lightUp(o: THREE.Object3D): void {
+  /** Makes an object's materials take light from the light map; the level's own surfaces also dissolve with height. */
+  private lightUp(o: THREE.Object3D, ofLevel = false): void {
     if (!(o instanceof THREE.Mesh)) return;
-    for (const m of Array.isArray(o.material) ? o.material : [o.material]) this.lightMap.light(m);
+    for (const m of Array.isArray(o.material) ? o.material : [o.material]) this.lightMap.light(m, ofLevel);
   }
 
   /**

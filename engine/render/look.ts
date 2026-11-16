@@ -133,8 +133,8 @@ export interface Mood {
   /** Moving water drawn over the ground of one kind, such as a river. */
   water?: WaterLook;
   /**
-   * Surfaces fade into darkness from `from` to `to` tiles up, so the tops of walls and what runs over them melt into
-   * the dark instead of ending in a hard edge.
+   * The level's surfaces dissolve away from `from` to `to` tiles up, so the tops of walls and what runs over them melt
+   * into the dark, showing what lies behind, instead of ending in a hard edge. Characters never fade.
    */
   heightFade?: { from: number; to: number };
 }
