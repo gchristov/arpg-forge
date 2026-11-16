@@ -10,10 +10,11 @@ import { kitBuilding } from './kit-building';
 import { ELEVATION } from './camera-angle';
 import { LightMap } from './light-map';
 import { Mist } from './mist';
-import type { Look, Mood, PropLook, Surroundings, WallFixture } from './look';
+import type { Look, Mood, PropLook, Surroundings, WallFixture, WaterLook } from './look';
 import { fitMatrix, instancedModel, panelFit, panelScale } from './model-instancing';
 import { ModelLibrary, type ModelTemplate } from './models';
 import { playDistances, shadeArea, shadeAt } from './shade-map';
+import { WaterSurface } from './water';
 import { isWallTile, wallFaces, wallPanels } from './wall-panels';
 
 /** On-screen width of one tile at zoom 1. */
@@ -71,6 +72,7 @@ export class SceneRenderer {
   private alarmed = false;
   private mood: Mood | null = null;
   private mist: Mist | null = null;
+  private water: WaterSurface | null = null;
   private flames: Flames | null = null;
   private width = 1;
   private height = 1;
@@ -154,6 +156,8 @@ export class SceneRenderer {
     const walls = this.buildWalls(level);
     this.levelGroup.add(this.buildGround(level, walls?.kinds, surroundings));
     for (const mesh of this.buildScenery(level, surroundings)) this.levelGroup.add(mesh);
+    this.water = mood.water ? this.buildWater(level, mood.water, surroundings) : null;
+    if (this.water) this.levelGroup.add(this.water.mesh);
     for (const mesh of this.buildFloors(level, walls?.kinds)) this.levelGroup.add(mesh);
     for (const mesh of walls?.meshes ?? []) this.levelGroup.add(mesh);
     for (const mesh of this.buildProps(level, walls?.kinds)) this.levelGroup.add(mesh);
@@ -275,6 +279,7 @@ export class SceneRenderer {
     this.effects.update(frameSeconds);
     this.flames?.update(seconds, frameSeconds);
     this.mist?.update(seconds);
+    this.water?.update(seconds);
     this.removeUnseenActors();
     for (const figure of this.actors.values()) figure.update(frameSeconds);
     this.renderer.render(this.scene, this.camera);
@@ -483,6 +488,15 @@ export class SceneRenderer {
       if (flame) spots.push({ x: (i % map.width) + 0.5, y: Math.floor(i / map.width) + 0.5, ...flame });
     }
     return spots;
+  }
+
+  /** The level's water, over its tiles of the water's ground kind and on past its edges with the ground. */
+  private buildWater(level: Level, look: WaterLook, surroundings: Surroundings | null): WaterSurface {
+    const { map } = level;
+    const area = shadeArea(map, surroundings?.margin ?? 0);
+    const isWater = (tx: number, ty: number) =>
+      map.ground[clamp(ty, 0, map.height - 1) * map.width + clamp(tx, 0, map.width - 1)] === look.ground;
+    return new WaterSurface(area, isWater, look, this.lightMap.uniforms);
   }
 
   /** Scenery standing in the dark round a level, grouped by kind and drawn like props of that kind. */

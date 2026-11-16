@@ -23,6 +23,8 @@ const NIGHT: Mood = {
   fill: { sky: 0xb8c8e0, ground: 0x201a14, intensity: 0.55 },
   // River mist, cold under the moon and warm round the fire and lamps.
   mist: { colour: 0x8494aa, density: 0.85 },
+  // The river runs east under the moon, dark in its troughs with cold light on its ripples.
+  water: { ground: Ground.Water, flow: { x: 0.5, y: 0 }, deep: 0x0c1c2c, shallow: 0x23506a, glint: 0xa8c8e0 },
 };
 
 /** Each level's own walls, floor plates and air, so the player always knows where they are. */

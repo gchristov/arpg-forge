@@ -212,12 +212,20 @@ function addBuilding(level: Level, b: BuildingSpec, seed: number): Structure {
   return structure;
 }
 
-/** Dead trees thicken towards the map's edges; rocks, weeds and pebbles scatter over the rest. */
+/** The share of the river's muddy banks with reeds on them. */
+const REED_SHARE = 0.35;
+
+/** Dead trees thicken towards the map's edges; rocks, weeds and pebbles scatter over the rest, and reeds line the river. */
 function scatterWilds(map: TileMap, reserved: Uint8Array): void {
   for (let y = 0; y < HEIGHT; y++) {
     for (let x = 0; x < WIDTH; x++) {
       const i = tileIndex(map, x, y);
-      if (reserved[i] || map.prop[i] || map.solid[i] || map.ground[i] === Ground.Mud) continue;
+      if (reserved[i] || map.prop[i] || map.solid[i]) continue;
+      // Reeds crowd the river's muddy banks.
+      if (map.ground[i] === Ground.Mud) {
+        if (hash2(x, y, 29) < REED_SHARE) setProp(map, x, y, Prop.GrassTall, false);
+        continue;
+      }
       const edge = Math.min(x, y, WIDTH - 1 - x);
       const h = hash2(x, y, 23);
       const thicket = valueNoise(x * 0.18 + 5, y * 0.18) > 0.6;

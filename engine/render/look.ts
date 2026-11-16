@@ -130,6 +130,19 @@ export interface Mood {
    * found. Without it, every enemy on the level shows.
    */
   sightRange?: number;
+  /** Moving water drawn over the ground of one kind, such as a river. */
+  water?: WaterLook;
+}
+
+export interface WaterLook {
+  /** The ground kind the water lies over. */
+  ground: number;
+  /** Which way, and how fast, the water runs, in tiles a second. */
+  flow: { x: number; y: number };
+  /** The water's colour in its troughs and on its ripples, and the light glinting off its crests. */
+  deep: number;
+  shallow: number;
+  glint: number;
 }
 
 export interface MistLook {
