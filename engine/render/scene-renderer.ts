@@ -586,10 +586,17 @@ export class SceneRenderer {
       }
     }
     this.lightMap.setCutaway(look.cutaway?.radius ?? null);
+    // Seen from outside, walls between the room and the camera show plain plating rather than their inside's trim.
+    // Both sides, as the kit's own materials are: its walls' faces are shells, seen here from behind.
+    const outside = kit.outside === undefined ? null : new THREE.MeshLambertMaterial({ color: kit.outside, side: THREE.DoubleSide });
+    if (outside) outside.userData.ownCopy = true;
     const meshes = pieces.flatMap(({ template, placements, front }) => {
       if (!template || !placements.length) return [];
       const made = instancedModel(template, new THREE.Matrix4(), placements);
-      if (front && look.cutaway) for (const mesh of made) mesh.userData.cutaway = true;
+      for (const mesh of made) {
+        if (front && outside) mesh.material = outside;
+        if (front && look.cutaway) mesh.userData.cutaway = true;
+      }
       return made;
     });
     return [...meshes, ...(look.fixtures ?? []).flatMap((f) => this.buildFixtures(level, f, isWall, k))];
