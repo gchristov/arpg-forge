@@ -377,7 +377,7 @@ export class SceneRenderer {
     const area = shadeArea(level.map, surroundings.margin);
     const inside = (tx: number, ty: number) =>
       level.structures.some((s) => tx >= s.x && ty >= s.y && tx < s.x + s.width && ty < s.y + s.depth);
-    const values = playDistances(level.map, area, inside).map(shadeAt);
+    const values = playDistances(level.map, area, inside).map((d) => shadeAt(d, surroundings.fade));
     return { values, ...area };
   }
 
@@ -390,8 +390,9 @@ export class SceneRenderer {
     const margin = surroundings?.margin ?? 0;
     const kindAt = (tx: number, ty: number): number => {
       const i = clamp(ty, 0, map.height - 1) * map.width + clamp(tx, 0, map.width - 1);
-      if (surroundings) return map.ground[i] || surroundings.ground;
-      return walls.has(map.prop[i]!) ? 0 : map.ground[i]!;
+      if (surroundings?.ground !== undefined) return map.ground[i] || surroundings.ground;
+      const onMap = tx >= 0 && ty >= 0 && tx < map.width && ty < map.height;
+      return !onMap || walls.has(map.prop[i]!) ? 0 : map.ground[i]!;
     };
     const grain = this.look.mood(level.id).groundGrain;
     if (grain !== undefined) {

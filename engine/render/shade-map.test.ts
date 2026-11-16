@@ -31,4 +31,9 @@ describe('shadeAt', () => {
     expect(shadeAt(20)).toBe(0);
     for (let d = 0; d < 15; d += 0.5) expect(shadeAt(d + 0.5)).toBeLessThanOrEqual(shadeAt(d));
   });
+
+  it('fades over fewer tiles when told to, as indoors', () => {
+    expect(shadeAt(4, 4)).toBeLessThan(shadeAt(4));
+    expect(shadeAt(6, 4)).toBe(0);
+  });
 });

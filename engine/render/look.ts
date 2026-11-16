@@ -249,8 +249,13 @@ export interface Look {
 export interface Surroundings {
   /** How many tiles past the map's edges the ground carries on. Past an edge, it's the ground at the nearest edge tile. */
   margin: number;
-  /** The ground kind drawn where the map has none, such as under its walls. */
-  ground: number;
+  /**
+   * The ground kind drawn where the map has none, such as under its walls. Without it, the ground stops at the walls,
+   * as indoors, where what lies past them is only hinted at.
+   */
+  ground?: number;
+  /** How many tiles past the playable world it takes to fade into darkness; 10 when not set. */
+  fade?: number;
   /** Things standing in the dark, drawn like props of their kind at these points; they're only ever seen. */
   scenery: Array<{ prop: number; x: number; y: number }>;
 }

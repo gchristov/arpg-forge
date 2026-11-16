@@ -73,6 +73,9 @@ const PROPS: Partial<Record<number, PropLook>> = {
   [Prop.Crane]: { shape: 'box', width: 1.5, height: 2, colour: 0x5a4a3a, model: { names: ['crane'], fit: { type: 'footprint', width: 2.4, depth: 2.4 } } },
   [Prop.PumpRig]: { shape: 'box', width: 1.5, height: 3, colour: 0x3a4048, model: { names: ['drill'], fit: { type: 'footprint', width: 2.4, depth: 2.4 } } },
   [Prop.Tank]: { shape: 'cylinder', width: 0.9, height: 1.5, colour: 0x3a4048, model: tall('tank', 1.6) },
+  // Taller than the walls, so their tops show over them.
+  [Prop.PipeRun]: { shape: 'cylinder', width: 0.6, height: 3.6, colour: 0x3a3e46, model: tall('column', 3.6, 'random') },
+  [Prop.Silo]: { shape: 'cylinder', width: 1.2, height: 3, colour: 0x3a3e46, model: tall('tank', 3, 'random') },
   [Prop.FireBarrel]: {
     shape: 'cylinder', width: 0.6, height: 0.8, colour: 0x5a3020, emissive: 0x5a2008, model: tall('fire-barrel', 0.8),
     flame: { height: 0.7, size: 0.45, colour: 0xff6a18 },

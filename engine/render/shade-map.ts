@@ -2,7 +2,7 @@ import { tileIndex, type TileMap } from '../world/tile-map';
 
 /** Ground this close to where the hero can walk, in tiles, is fully lit. */
 const LIT_REACH = 1.5;
-/** Past that, the world fades into darkness over this many tiles. */
+/** Past that, the world fades into darkness over this many tiles, unless told otherwise. */
 const FADE_TILES = 10;
 
 /** The tiles of a level and a margin round it, as one grid: `x0`, `y0` is its top-left corner, in the level's tiles. */
@@ -61,9 +61,12 @@ export function playDistances(map: TileMap, area: ShadeArea, inside: (tx: number
   return d;
 }
 
-/** How lit a spot `distance` tiles from the playable world is, from 1 down to 0, easing off rather than stopping. */
-export function shadeAt(distance: number): number {
+/**
+ * How lit a spot `distance` tiles from the playable world is, from 1 down to 0 over `fade` tiles, easing off rather
+ * than stopping.
+ */
+export function shadeAt(distance: number, fade = FADE_TILES): number {
   if (distance <= LIT_REACH) return 1;
-  const left = Math.max(0, 1 - (distance - LIT_REACH) / FADE_TILES);
+  const left = Math.max(0, 1 - (distance - LIT_REACH) / fade);
   return left * Math.sqrt(left);
 }
