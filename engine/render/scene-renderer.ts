@@ -97,9 +97,8 @@ export class SceneRenderer {
     canvas: HTMLCanvasElement,
     private readonly look: Look,
     private readonly models = new ModelLibrary(),
-    antialias = true,
   ) {
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias, stencil: true });
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, stencil: true });
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.scene.add(this.ambient, this.fill, this.moon, this.moon.target, this.heroLight, this.levelGroup);
