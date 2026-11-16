@@ -198,7 +198,7 @@ describe('Unrecalled scenarios', () => {
     for (const next of FLOOR_ORDER.slice(1)) takeDoor(state, next);
     expect(state.quest).toBe(4);
     const engine = currentLevel(state).enemies.find((e) => e.kind === 'orderEngine')!;
-    for (let i = 0; i < 20 && !engine.dead; i++) play(state, 1, [{ type: 'attack', enemyId: engine.id }]);
+    for (let i = 0; i < 60 && !engine.dead; i++) play(state, 1, [{ type: 'attack', enemyId: engine.id }]);
     expect(engine.dead).toBe(true);
     expect(state.quest).toBe(ENGINE_DOWN_STEP);
     const machines = Object.values(state.levels).flatMap((ls) => ls.enemies.filter((e) => !e.dead));

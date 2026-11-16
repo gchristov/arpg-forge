@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { clamp, hash2, type Vec2 } from '../core/math';
 import type { Level, LevelLight } from '../world/level';
-import { tileIndex } from '../world/tile-map';
+import { inBounds, tileIndex } from '../world/tile-map';
 import { ActorFigure, type ActorMoment } from './actor-figure';
 import { Effects } from './effects';
 import { Flames, type FlameSpot } from './flames';
@@ -15,7 +15,7 @@ import { fitMatrix, instancedModel, modelSize, panelFit, panelScale } from './mo
 import { ModelLibrary, type ModelTemplate } from './models';
 import { playDistances, shadeArea, shadeAt } from './shade-map';
 import { WaterSurface } from './water';
-import { isWallTile, wallCorners, wallFaces, wallPanels } from './wall-panels';
+import { isWallTile, kitPartitions, kitWalls, wallFaces, wallPanels, type KitCorner } from './wall-panels';
 
 /** On-screen width of one tile at zoom 1. */
 const TILE_PIXELS = 64;
@@ -30,6 +30,14 @@ const MARKER_SECONDS = 0.6;
 /** Screen shake decays this much a second, and moves the view up to this many pixels at full strength. */
 const SHAKE_DECAY = 1.6;
 const SHAKE_PIXELS = 10;
+
+/** A modular wall kit's cell, in its own units: a straight panel is one long, a corner piece one each way. */
+const KIT_CELL = 4;
+/** A kit wall's height, in its own units, and how much taller than the walls a doorway's frame stands. */
+const KIT_WALL_HEIGHT = 3;
+const DOOR_RISE = 1.15;
+/** The turn about the vertical that points a kit corner's two arms, +x and +z, along the given map directions. */
+const KIT_CORNER_TURN: Record<string, number> = { '1,1': 0, '1,-1': Math.PI / 2, '-1,-1': Math.PI, '-1,1': (3 * Math.PI) / 2 };
 
 const VIEW_DIRECTION = new THREE.Vector3(
   Math.cos(ELEVATION) / Math.SQRT2,
@@ -161,11 +169,13 @@ export class SceneRenderer {
     this.lightMap.setHeightFade(mood.heightFade ?? null);
     this.lightMap.setCutaway(null);
     const walls = this.buildWalls(level);
-    this.levelGroup.add(this.buildGround(level, walls?.kinds, surroundings));
+    // A framed doorway's own tile lies in the wall's line, outside the room; its floor would poke out past the wall.
+    const doorways = walls && this.look.walls?.(level.id)?.kit ? this.doorwayTiles(level, walls.kinds) : new Set<number>();
+    this.levelGroup.add(this.buildGround(level, walls?.kinds, surroundings, doorways));
     for (const mesh of this.buildScenery(level, surroundings)) this.levelGroup.add(mesh);
     this.water = mood.water ? this.buildWater(level, mood.water, surroundings) : null;
     if (this.water) this.levelGroup.add(this.water.mesh);
-    for (const mesh of this.buildFloors(level, walls?.kinds)) this.levelGroup.add(mesh);
+    for (const mesh of this.buildFloors(level, walls?.kinds, doorways)) this.levelGroup.add(mesh);
     for (const mesh of walls?.meshes ?? []) this.levelGroup.add(mesh);
     for (const mesh of this.buildProps(level, walls?.kinds)) this.levelGroup.add(mesh);
     this.structures = this.buildStructures(level);
@@ -439,14 +449,16 @@ export class SceneRenderer {
    * Ground tiles, except under walls drawn as panels, where the room ends at the panel. With surroundings, the ground
    * carries on under the walls too, and past the map's edges.
    */
-  private buildGround(level: Level, walls: ReadonlySet<number> = new Set(), surroundings: Surroundings | null = null): THREE.Mesh {
+  private buildGround(
+    level: Level, walls: ReadonlySet<number> = new Set(), surroundings: Surroundings | null = null, holes: ReadonlySet<number> = new Set(),
+  ): THREE.Mesh {
     const { map } = level;
     const margin = surroundings?.margin ?? 0;
     const kindAt = (tx: number, ty: number): number => {
       const i = clamp(ty, 0, map.height - 1) * map.width + clamp(tx, 0, map.width - 1);
       if (surroundings?.ground !== undefined) return map.ground[i] || surroundings.ground;
       const onMap = tx >= 0 && ty >= 0 && tx < map.width && ty < map.height;
-      return !onMap || walls.has(map.prop[i]!) ? 0 : map.ground[i]!;
+      return !onMap || walls.has(map.prop[i]!) || holes.has(i) ? 0 : map.ground[i]!;
     };
     const grain = this.look.mood(level.id).groundGrain;
     if (grain !== undefined) {
@@ -489,6 +501,7 @@ export class SceneRenderer {
     const panel = look && this.models.get(look.panel);
     if (!look || !panel) return null;
     const kinds = new Set(look.props);
+    if (look.kit) return { meshes: this.buildKitWalls(level, look, look.kit, panel, kinds), kinds };
     // Cut away round the hero, front walls stand full height like back walls; otherwise they're drawn low.
     const front = look.cutaway ? panel : look.front && this.models.get(look.front.name);
     this.lightMap.setCutaway(look.cutaway?.radius ?? null);
@@ -513,7 +526,6 @@ export class SceneRenderer {
       ...this.buildCrown(look, panelFit(panel, look.span), backs),
       ...(front && fronts.length ? this.frontWalls(look, front, fronts) : []),
       ...(look.fixtures ?? []).flatMap((f) => this.buildFixtures(level, f, isWallTile(level.map, kinds), panelScale(panel, look.span))),
-      ...this.wallCorners(level, look, kinds, modelSize(panel).y * panelScale(panel, look.span)),
     ];
     return { meshes, kinds };
   }
@@ -539,18 +551,77 @@ export class SceneRenderer {
     return crowns.flatMap((template, i) => (template && placements[i]!.length ? instancedModel(template, fit, placements[i]!) : []));
   }
 
-  /** Columns where walls turn, as tall as the walls; on the camera's side, cut away round the hero like the walls. */
-  private wallCorners(level: Level, look: WallLook, kinds: ReadonlySet<number>, height: number): THREE.InstancedMesh[] {
-    const column = look.corner ? this.models.get(look.corner) : undefined;
-    if (!column) return [];
-    const fit = fitMatrix(column, { type: 'height', height });
-    const corners = wallCorners(level.map, isWallTile(level.map, kinds));
-    const at = (front: boolean) => corners.filter((c) => c.front === front).map((c) => new THREE.Matrix4().makeTranslation(c.x, 0, c.y));
-    const backs = instancedModel(column, fit, at(false));
-    // Without a cutaway, front walls are drawn low, so the columns among them would stand alone: none there.
-    const fronts = look.cutaway ? instancedModel(column, fit, at(true)) : [];
-    for (const mesh of fronts) mesh.userData.cutaway = true;
-    return [...backs, ...fronts].filter((mesh) => mesh.count > 0);
+  /**
+   * Walls from a modular kit, each piece in the kit's own frame: a straight panel's face stands on the edge of its
+   * 4-unit cell, and a corner piece is an L across one cell, so the pieces meet as the kit was made to. Walls between the
+   * room and the camera face the room like the rest; with a cutaway they turn see-through round the hero.
+   */
+  private buildKitWalls(level: Level, look: WallLook, kit: NonNullable<WallLook['kit']>, panel: ModelTemplate, kinds: ReadonlySet<number>): THREE.InstancedMesh[] {
+    const { map } = level;
+    const isWall = isWallTile(map, kinds);
+    // Openings in a wall's line, between wall tiles: doorways, and anything solid set into it, such as a cradle.
+    const isOpening = (tx: number, ty: number) => {
+      if (isWall(tx, ty)) return false;
+      const doorway = level.portals.some((p) => p.tx === tx && p.ty === ty);
+      if (!doorway && !map.solid[tileIndex(map, tx, ty)]) return false;
+      const wallAt = (x: number, y: number) => inBounds(map, x, y) && isWall(x, y);
+      return (wallAt(tx - 1, ty) && wallAt(tx + 1, ty)) || (wallAt(tx, ty - 1) && wallAt(tx, ty + 1));
+    };
+    const { panels, corners, openings } = kitWalls(map, isWall, look.span, isOpening);
+    const k = look.span / KIT_CELL;
+    const scale = new THREE.Matrix4().makeScale(k, k, k);
+    const straight = (p: { x: number; y: number; facing: Vec2 }) => new THREE.Matrix4()
+      .makeTranslation(p.x, 0, p.y)
+      .multiply(new THREE.Matrix4().makeRotationY(Math.atan2(-p.facing.y, p.facing.x)))
+      .multiply(scale)
+      .multiply(new THREE.Matrix4().makeTranslation(KIT_CELL / 2, 0, 0));
+    // Both kinds of corner piece have their corner a cell back from the origin and arms running along +x and +z; an inner
+    // piece's walls face in between its arms, an outer one's out. Moved a cell over, they're turned to run along `arms`.
+    const cornerAt = (c: KitCorner) => new THREE.Matrix4()
+      .makeTranslation(c.x, 0, c.y)
+      .multiply(new THREE.Matrix4().makeRotationY(KIT_CORNER_TURN[`${c.arms.x},${c.arms.y}`]!))
+      .multiply(scale)
+      .multiply(new THREE.Matrix4().makeTranslation(KIT_CELL, 0, KIT_CELL));
+    const pieces: Array<{ template: ModelTemplate | undefined; placements: THREE.Matrix4[]; front: boolean }> = [];
+    for (const front of [false, true]) {
+      pieces.push({ template: panel, placements: panels.filter((p) => p.front === front).map(straight), front });
+      for (const inner of [true, false]) {
+        const template = this.models.get(inner ? kit.inner : kit.outer);
+        pieces.push({ template, placements: corners.filter((c) => c.front === front && c.inner === inner).map(cornerAt), front });
+      }
+    }
+    this.lightMap.setCutaway(look.cutaway?.radius ?? null);
+    const meshes = pieces.flatMap(({ template, placements, front }) => {
+      if (!template || !placements.length) return [];
+      const made = instancedModel(template, new THREE.Matrix4(), placements);
+      if (front && look.cutaway) for (const mesh of made) mesh.userData.cutaway = true;
+      return made;
+    });
+    const partitionKinds = new Set(look.partitions ?? []);
+    const isPartition = (tx: number, ty: number) => partitionKinds.has(map.prop[tileIndex(map, tx, ty)]!);
+    const inner = kitPartitions(map, isPartition, isWall, look.span);
+    const doorways = openings.filter((o) => level.portals.some((p) => p.tx === o.tx && p.ty === o.ty));
+    return [
+      ...meshes,
+      ...instancedModel(panel, new THREE.Matrix4(), inner.panels.map(straight)),
+      ...this.kitDoors(kit, [...doorways, ...inner.doorways], k),
+      ...(look.fixtures ?? []).flatMap((f) => this.buildFixtures(level, f, isWall, k)),
+    ];
+  }
+
+  /**
+   * A door frame in each doorway of kit walls, centred on the wall's line across its cell, as wide as the kit's frame
+   * at the kit's scale and a little taller than the walls, so it reads as the way through.
+   */
+  private kitDoors(kit: NonNullable<WallLook['kit']>, doorways: ReadonlyArray<{ x: number; y: number; facing: Vec2 }>, k: number): THREE.InstancedMesh[] {
+    const frame = kit.door ? this.models.get(kit.door) : undefined;
+    if (!frame || !doorways.length) return [];
+    const size = modelSize(frame);
+    const fit = fitMatrix(frame, { type: 'box', width: size.x * k, height: KIT_WALL_HEIGHT * k * DOOR_RISE, depth: size.z * k });
+    // The frame's width lies along its x, so it's turned a quarter more than a panel, to run along the wall.
+    return instancedModel(frame, fit, doorways.map((o) => new THREE.Matrix4()
+      .makeTranslation(o.x, 0, o.y)
+      .multiply(new THREE.Matrix4().makeRotationY(Math.atan2(-o.facing.y, o.facing.x) + Math.PI / 2))));
   }
 
   private buildFixtures(level: Level, fixture: WallFixture, isWall: (tx: number, ty: number) => boolean, scale: number): THREE.InstancedMesh[] {
@@ -667,12 +738,21 @@ export class SceneRenderer {
 
   /** Floor models laid over the ground tiles of the kinds that have one. */
   /** Floor models over the ground, except under walls drawn as panels, like the ground itself. */
-  private buildFloors(level: Level, walls: ReadonlySet<number> = new Set()): THREE.InstancedMesh[] {
+  /** Tiles of the level's doorways set into a wall's line, between wall tiles, as indexes. */
+  private doorwayTiles(level: Level, kinds: ReadonlySet<number>): Set<number> {
+    const { map } = level;
+    const wallAt = (x: number, y: number) => inBounds(map, x, y) && kinds.has(map.prop[tileIndex(map, x, y)]!) && map.solid[tileIndex(map, x, y)] === 1;
+    return new Set(level.portals
+      .filter((p) => (wallAt(p.tx - 1, p.ty) && wallAt(p.tx + 1, p.ty)) || (wallAt(p.tx, p.ty - 1) && wallAt(p.tx, p.ty + 1)))
+      .map((p) => tileIndex(map, p.tx, p.ty)));
+  }
+
+  private buildFloors(level: Level, walls: ReadonlySet<number> = new Set(), holes: ReadonlySet<number> = new Set()): THREE.InstancedMesh[] {
     const { map } = level;
     const byName = new Map<string, THREE.Matrix4[]>();
     for (let ty = 0; ty < map.height; ty++) {
       for (let tx = 0; tx < map.width; tx++) {
-        if (walls.has(map.prop[ty * map.width + tx]!)) continue;
+        if (walls.has(map.prop[ty * map.width + tx]!) || holes.has(ty * map.width + tx)) continue;
         const name = this.look.floorModel?.(map.ground[ty * map.width + tx]!, level.id);
         if (!name || !this.models.get(name)) continue;
         let list = byName.get(name);

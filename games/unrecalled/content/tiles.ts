@@ -23,7 +23,6 @@ export const Prop = {
   Computer: 9,
   WallLight: 10,
   Furnace: 11,
-  Door: 12,
   Chair: 13,
   Cradle: 14,
   Cache: 15,
@@ -48,4 +47,6 @@ export const Prop = {
   Crane: 33,
   PumpRig: 34,
   Tank: 35,
+  /** An inner wall a tile thick, between rooms of a building. */
+  Partition: 36,
 } as const;

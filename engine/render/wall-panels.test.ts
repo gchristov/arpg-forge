@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { mapFromRows } from '../world/testing';
-import { wallCorners, wallFaces, wallPanels } from './wall-panels';
+import { kitPartitions, kitWalls, wallFaces, wallPanels } from './wall-panels';
 
 /** `#` is wall, anything else floor; the tests read panels as text so the layout is easy to check. */
 function panels(rows: string[], span: number) {
@@ -63,13 +63,91 @@ describe('wallPanels', () => {
   });
 });
 
-describe('wallCorners', () => {
-  it('finds where walls turn, inside and out, and not along straight walls', () => {
-    const rows = ['#####', '#...#', '#.#.#', '#...#', '#####'];
-    const map = mapFromRows(rows);
-    const corners = wallCorners(map, (x, y) => rows[y]![x] === '#').map((c) => `${c.x},${c.y}${c.front ? ' front' : ''}`);
-    // The room's four inner corners, and the pillar's four outer ones.
-    expect(corners.sort()).toEqual(['1,1', '1,4 front', '2,2 front', '2,3 front', '3,2 front', '3,3 front', '4,1 front', '4,4 front'].sort());
+describe('kitWalls', () => {
+  const walls = (rows: string[]) => kitWalls(mapFromRows(rows), (x, y) => rows[y]![x] === '#', 3);
+
+  it('lays a piece at each corner of a room on the grid, and whole panels along the walls between them', () => {
+    // A room three cells wide and two deep, walled a cell thick all round.
+    const rows = ['###############', '###############', '###############',
+      ...Array.from({ length: 6 }, () => '###.........###'),
+      '###############', '###############', '###############'];
+    const { panels, corners } = walls(rows);
+    expect(corners.map((c) => `${c.x},${c.y} ${c.inner ? 'inner' : 'outer'} ${c.arms.x},${c.arms.y}`).sort()).toEqual([
+      '12,3 inner -1,1', '12,9 inner -1,-1', '3,3 inner 1,1', '3,9 inner 1,-1',
+    ]);
+    // Each corner takes a cell of both walls it joins, so only the middle cell of the long walls is left.
+    expect(panels.map((p) => `${p.x},${p.y} facing ${p.facing.x},${p.facing.y}`).sort()).toEqual(['7.5,3 facing 0,1', '7.5,9 facing 0,-1']);
+  });
+
+  it('cuts away only the walls between the room and the camera: south and east, and the corner joining the two', () => {
+    const rows = ['###############', '###############', '###############',
+      ...Array.from({ length: 6 }, () => '###.........###'),
+      '###############', '###############', '###############'];
+    const { panels, corners } = walls(rows);
+    expect(panels.map((p) => `${p.y} ${p.front ? 'front' : 'back'}`).sort()).toEqual(['3 back', '9 front']);
+    expect(corners.filter((c) => c.front).map((c) => `${c.x},${c.y}`)).toEqual(['12,9']);
+  });
+
+  it('turns outer corners round a pillar standing in a room', () => {
+    const rows = ['###############', '###############', '###############',
+      '###.........###', '###.........###', '###.........###',
+      '###...###...###', '###...###...###', '###...###...###',
+      '###.........###', '###.........###', '###.........###',
+      '###############', '###############', '###############'];
+    const outer = walls(rows).corners.filter((c) => !c.inner);
+    expect(outer.map((c) => `${c.x},${c.y} ${c.arms.x},${c.arms.y}`).sort()).toEqual(['6,6 1,1', '6,9 1,-1', '9,6 -1,1', '9,9 -1,-1']);
+  });
+
+  it('leaves a doorway\'s cell open, without turning corners round it', () => {
+    const rows = ['###############', '###############', '#######D#######',
+      ...Array.from({ length: 6 }, () => '###.........###'),
+      '###############', '###############', '###############'];
+    const { panels, corners } = kitWalls(mapFromRows(rows), (x, y) => rows[y]![x] === '#', 3, (x, y) => rows[y]![x] === 'D');
+    expect(panels.filter((p) => p.y === 3)).toEqual([]);
+    expect(corners).toHaveLength(4);
+    expect(kitWalls(mapFromRows(rows), (x, y) => rows[y]![x] === '#', 3, (x, y) => rows[y]![x] === 'D').openings)
+      .toEqual([{ x: 7.5, y: 3, facing: { x: 0, y: 1 }, tx: 7, ty: 2 }]);
+  });
+
+  it('leaves a cell only partly walled open', () => {
+    const rows = ['###############', '###############', '#######.#######',
+      ...Array.from({ length: 6 }, () => '###.........###'),
+      '###############', '###############', '###############'];
+    expect(walls(rows).panels.filter((p) => p.y === 3)).toEqual([]);
+  });
+});
+
+describe('kitPartitions', () => {
+  // A building three cells by four, split by a partition (%) across its middle with a doorway a cell wide in it, and
+  // the room above split again by a partition down from it, open to the top wall.
+  const ROWS = [
+    '###############',
+    '###############',
+    '###############',
+    '###.........###',
+    '###.....%...###',
+    '###.....%...###',
+    '###%%%...%%%###',
+    '###.........###',
+    '###.........###',
+    '###############',
+  ];
+  const isPartition = (x: number, y: number) => ROWS[y]![x] === '%';
+  const isWall = (x: number, y: number) => ROWS[y]![x] === '#';
+  const { panels, doorways } = kitPartitions(mapFromRows(ROWS), isPartition, isWall, 3);
+
+  it('lays a panel down the middle of each cell of partition', () => {
+    expect(panels.map((p) => `${p.x},${p.y}`).sort()).toEqual(['10.5,6.5', '4.5,6.5']);
+  });
+
+  it('frames the gap a cell wide between two runs of partition as a doorway', () => {
+    expect(doorways.map((d) => `${d.x},${d.y}`)).toEqual(['7.5,6.5']);
+  });
+
+  it('leaves walls where a building\'s own walls are, outer walls running on past a partition\'s end', () => {
+    const outer = kitWalls(mapFromRows(ROWS), isWall, 3);
+    expect(outer.corners.filter((c) => c.inner)).toHaveLength(4);
+    expect(outer.panels.filter((p) => p.x === 3)).toHaveLength(0);
   });
 });
 

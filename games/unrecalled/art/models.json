@@ -802,11 +802,56 @@
       ]
     },
     {
-      "name": "corner-post",
+      "name": "wall-band-inner",
       "pack": "megakit",
-      "path": "Modular SciFi MegaKit[Standard]/glTF/Columns/Column_Simple.gltf",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallBand_Corner_Square_Inner.gltf",
       "textures": {
-        "maxSize": 256,
+        "maxSize": 512,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "wall-band-outer",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallBand_Corner_Square_Outer.gltf",
+      "textures": {
+        "maxSize": 512,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "wall-astra-inner",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallAstra_Corner_Square_Inner.gltf",
+      "textures": {
+        "maxSize": 512,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "wall-astra-outer",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallAstra_Corner_Square_Outer.gltf",
+      "textures": {
+        "maxSize": 512,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "wall-window-inner",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallWindow_Corner_Square_Inner.gltf",
+      "textures": {
+        "maxSize": 512,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "wall-window-outer",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallWindow_Corner_Square_Outer.gltf",
+      "textures": {
+        "maxSize": 512,
         "dropDetailMaps": true
       }
     }

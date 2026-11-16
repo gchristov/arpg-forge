@@ -183,8 +183,22 @@ export interface WallLook {
    * within `radius` tiles, instead of being drawn low; the hero is never hidden behind one.
    */
   cutaway?: { radius: number };
-  /** A column standing wherever walls turn a corner, fitted to the panel's height, covering where straight runs meet. */
-  corner?: string;
+  /**
+   * The corner pieces of the modular kit the panel comes from: walls are then laid on the kit's own grid of `span`-tile
+   * cells, with an inner piece wherever a room turns and an outer one wherever a wall juts into a room, all in the
+   * kit's own frame. Rooms are drawn on that grid for the pieces to come out whole.
+   */
+  kit?: {
+    inner: string;
+    outer: string;
+    /** A door frame stood in every doorway, a portal set into a wall, filling the cell of wall it's in. */
+    door?: string;
+  };
+  /**
+   * Prop kinds that are partitions: inner walls a tile thick between rooms of a kit-walled building, drawn as panels
+   * down the middle of their tiles, with a door frame in each gap a cell wide. They block sight like walls.
+   */
+  partitions?: number[];
   /**
    * Models laid along the top of every full-height wall, in the panel's own frame and fitted as it is, such as cables
    * running over the wall: what the player glimpses past the top of a wall. Each piece of wall picks one; null leaves it
