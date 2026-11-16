@@ -8,7 +8,7 @@ import { Flames, type FlameSpot } from './flames';
 import { blendedGround } from './ground-blend';
 import { kitBuilding } from './kit-building';
 import { ELEVATION } from './camera-angle';
-import { LightMap } from './light-map';
+import { LightMap, type SurfaceFade } from './light-map';
 import { Mist } from './mist';
 import type { Look, Mood, PropLook, Surroundings, WallFixture, WallLook, WaterLook } from './look';
 import { fitMatrix, instancedModel, panelFit, panelScale } from './model-instancing';
@@ -159,6 +159,7 @@ export class SceneRenderer {
     this.shade = this.shadeOf(level, surroundings);
     this.lightMap.setShade(surroundings && this.shade);
     this.lightMap.setHeightFade(mood.heightFade ?? null);
+    this.lightMap.setCutaway(null);
     const walls = this.buildWalls(level);
     this.levelGroup.add(this.buildGround(level, walls?.kinds, surroundings));
     for (const mesh of this.buildScenery(level, surroundings)) this.levelGroup.add(mesh);
@@ -182,10 +183,33 @@ export class SceneRenderer {
     this.extraGlows.push({ x, y, radius, colour, intensity });
   }
 
-  /** Makes an object's materials take light from the light map; the level's own surfaces also dissolve with height. */
+  /**
+   * Makes an object's materials take light from the light map. Of the level's own surfaces, those reaching up into the
+   * mood's height fade, or marked to cut away, get their own copies that fade.
+   */
   private lightUp(o: THREE.Object3D, ofLevel = false): void {
     if (!(o instanceof THREE.Mesh)) return;
-    for (const m of Array.isArray(o.material) ? o.material : [o.material]) this.lightMap.light(m, ofLevel);
+    const fade = ofLevel ? this.fadeOf(o) : 'none';
+    if (fade !== 'none') {
+      const own = (m: THREE.Material) => {
+        const copy = m.clone();
+        copy.userData = { ownCopy: true };
+        // A see-through material showing both sides would be drawn twice, back faces first; walls don't need that.
+        copy.forceSinglePass = true;
+        return copy;
+      };
+      o.material = Array.isArray(o.material) ? o.material.map(own) : own(o.material);
+    }
+    for (const m of Array.isArray(o.material) ? o.material : [o.material]) this.lightMap.light(m, fade);
+  }
+
+  private fadeOf(mesh: THREE.Mesh): SurfaceFade {
+    if (mesh.userData.cutaway) return 'cutaway';
+    const fadeFrom = this.mood?.heightFade?.from;
+    if (fadeFrom === undefined) return 'none';
+    if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+    const box = mesh instanceof THREE.InstancedMesh ? (mesh.computeBoundingBox(), mesh.boundingBox!) : mesh.geometry.boundingBox!.clone().applyMatrix4(mesh.matrixWorld);
+    return box.max.y > fadeFrom ? 'height' : 'none';
   }
 
   /**
@@ -274,6 +298,7 @@ export class SceneRenderer {
     this.target.x += (x - this.target.x) * k;
     this.target.z += (y - this.target.z) * k;
     this.heroLight.position.set(x, 1.2, y);
+    this.lightMap.setHero(x, y);
   }
 
   render(seconds: number, frameSeconds: number): void {
@@ -464,7 +489,9 @@ export class SceneRenderer {
     const panel = look && this.models.get(look.panel);
     if (!look || !panel) return null;
     const kinds = new Set(look.props);
-    const front = look.front && this.models.get(look.front.name);
+    // Cut away round the hero, front walls stand full height like back walls; otherwise they're drawn low.
+    const front = look.cutaway ? panel : look.front && this.models.get(look.front.name);
+    this.lightMap.setCutaway(look.cutaway?.radius ?? null);
     const backs: THREE.Matrix4[] = [];
     const fronts: THREE.Matrix4[] = [];
     for (const p of wallPanels(level.map, isWallTile(level.map, kinds), look.span)) {
@@ -480,10 +507,18 @@ export class SceneRenderer {
     const meshes = [
       ...instancedModel(panel, panelFit(panel, look.span), backs),
       ...this.buildCrown(look, panelFit(panel, look.span), backs),
-      ...(front && look.front && fronts.length ? instancedModel(front, panelFit(front, look.span, look.front.height), fronts) : []),
+      ...(front && fronts.length ? this.frontWalls(look, front, fronts) : []),
       ...(look.fixtures ?? []).flatMap((f) => this.buildFixtures(level, f, isWallTile(level.map, kinds), panelScale(panel, look.span))),
     ];
     return { meshes, kinds };
+  }
+
+  /** Walls between the room and the camera: full panels cut away round the hero, or the look's low piece. */
+  private frontWalls(look: WallLook, front: ModelTemplate, fronts: THREE.Matrix4[]): THREE.InstancedMesh[] {
+    if (!look.cutaway) return instancedModel(front, panelFit(front, look.span, look.front!.height), fronts);
+    const meshes = instancedModel(front, panelFit(front, look.span), fronts);
+    for (const mesh of meshes) mesh.userData.cutaway = true;
+    return meshes;
   }
 
   /** The crown along the top of the back walls: each piece picks a model and shares its wall panel's placement and fit. */

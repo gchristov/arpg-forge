@@ -225,6 +225,8 @@ export const unrecalledLook: Look = {
   prop: (kind) => PROPS[kind] ?? null,
   walls: (levelId) => ({
     props: [Prop.Wall, Prop.WallLow, Prop.WallLight, Prop.WallAlarm], panel: styleOf(levelId).panel, span: 3, front: { name: 'wall-front', height: 0.3 },
+    // Walls on the camera's side stand full height, cut away round the salvager so they never hide them.
+    cutaway: { radius: 4.5 },
     // Cable trays running over every wall, now and then hanging down into the room: a glimpse of the works past the tops.
     crown: ['top-cables', 'top-cables', 'top-cables', 'top-cables', 'top-cables', 'top-cables', 'top-cables', 'top-cables', 'top-cables-hanging'],
     // The kit's ceiling strip light, stood up on the wall with its light facing the room.

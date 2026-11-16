@@ -133,7 +133,7 @@ export interface Mood {
   /** Moving water drawn over the ground of one kind, such as a river. */
   water?: WaterLook;
   /**
-   * The level's surfaces dissolve away from `from` to `to` tiles up, so the tops of walls and what runs over them melt
+   * The level's tall surfaces fade away from `from` to `to` tiles up, so the tops of walls and what runs over them melt
    * into the dark, showing what lies behind, instead of ending in a hard edge. Characters never fade.
    */
   heightFade?: { from: number; to: number };
@@ -178,6 +178,11 @@ export interface WallLook {
    * (+x). Both are in radians.
    */
   fixtures?: WallFixture[];
+  /**
+   * Walls between the room and the camera stand full height, like back walls, and turn see-through round the hero
+   * within `radius` tiles, instead of being drawn low; the hero is never hidden behind one.
+   */
+  cutaway?: { radius: number };
   /**
    * Models laid along the top of every full-height wall, in the panel's own frame and fitted as it is, such as cables
    * running over the wall: what the player glimpses past the top of a wall. Each piece of wall picks one; null leaves it
