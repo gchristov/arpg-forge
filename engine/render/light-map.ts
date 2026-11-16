@@ -49,6 +49,8 @@ export class LightMap {
     /** Where the hero stands, and the radii between which walls cut away round them turn from see-through to solid. */
     heroAt: { value: new THREE.Vector2() },
     cutaway: { value: new THREE.Vector2(0, 0) },
+    /** Along the ground, towards the camera: only what lies that way of the hero can hide them, so only that cuts away. */
+    cutawayToward: { value: new THREE.Vector2(0, 0) },
   };
 
   constructor() {
@@ -112,9 +114,13 @@ export class LightMap {
     this.uniforms.heightFade.value.set(fade?.from ?? 1e4, fade?.to ?? 1e4);
   }
 
-  /** Cuts walls away round the hero within `radius` tiles, fully see-through at its middle; null cuts nothing. */
-  setCutaway(radius: number | null): void {
+  /**
+   * Cuts walls away round the hero within `radius` tiles, fully see-through at its middle, where they lie on the camera's
+   * side of the hero, `toward` along the ground; null cuts nothing.
+   */
+  setCutaway(radius: number | null, toward: { x: number; y: number } = { x: 0, y: 0 }): void {
     this.uniforms.cutaway.value.set(radius === null ? 0 : radius * CUTAWAY_CLEAR_SHARE, radius ?? 0);
+    this.uniforms.cutawayToward.value.set(toward.x, toward.y).normalize();
   }
 
   setHero(x: number, y: number): void {
@@ -181,7 +187,7 @@ export class LightMap {
           vShadeUv = vec2((lightMapWorld.x - shadeBounds.x) * shadeBounds.z, (lightMapWorld.z - shadeBounds.y) * shadeBounds.w);`,
         );
       shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\nvarying vec2 vLightMapUv;\nvarying vec2 vShadeUv;\nvarying vec2 vWorldXZ;\nvarying float vLightMapHeight;\nuniform sampler2D lightMap;\nuniform sampler2D shadeMap;\nuniform vec2 heightFade;\nuniform vec2 heroAt;\nuniform vec2 cutaway;')
+        .replace('#include <common>', '#include <common>\nvarying vec2 vLightMapUv;\nvarying vec2 vShadeUv;\nvarying vec2 vWorldXZ;\nvarying float vLightMapHeight;\nuniform sampler2D lightMap;\nuniform sampler2D shadeMap;\nuniform vec2 heightFade;\nuniform vec2 heroAt;\nuniform vec2 cutaway;\nuniform vec2 cutawayToward;')
         .replace(
           '#include <opaque_fragment>',
           `float lightMapReach = clamp(1.0 - (vLightMapHeight - ${FULL_HEIGHT.toFixed(2)}) / ${FADE_HEIGHT.toFixed(2)}, 0.0, 1.0);
@@ -206,6 +212,14 @@ export type SurfaceFade = 'none' | 'height' | 'cutaway';
 
 /** Walls cut away round the hero are fully see-through within this share of the cutaway's radius. */
 const CUTAWAY_CLEAR_SHARE = 0.55;
+/**
+ * See-through round the hero, but only on the camera's side of them, turning solid over a tile behind it: a corner piece
+ * carries a wall behind the hero as well as one in front, and the one behind must stay.
+ */
+const CUTAWAY_GLSL = `if (cutaway.y > 0.0) {
+            float nearer = smoothstep(-1.0, 0.0, dot(vWorldXZ - heroAt, cutawayToward));
+            diffuseColor.a *= mix(1.0, smoothstep(cutaway.x, cutaway.y, distance(vWorldXZ, heroAt)), nearer);
+          }`;
 
 /**
  * Fades a surface into black as it rises through the height fade; walls cut away round the hero also turn
@@ -214,7 +228,7 @@ const CUTAWAY_CLEAR_SHARE = 0.55;
 function fadeGlsl(cutaway: boolean): string {
   return `
           if (heightFade.y > heightFade.x) outgoingLight *= 1.0 - smoothstep(heightFade.x, heightFade.y, vLightMapHeight);
-          ${cutaway ? 'if (cutaway.y > 0.0) diffuseColor.a *= smoothstep(cutaway.x, cutaway.y, distance(vWorldXZ, heroAt));' : ''}`;
+          ${cutaway ? CUTAWAY_GLSL : ''}`;
 }
 
 /** One white texel: everything fully lit. */

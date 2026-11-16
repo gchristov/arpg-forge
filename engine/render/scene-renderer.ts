@@ -504,7 +504,7 @@ export class SceneRenderer {
     if (look.kit) return { meshes: this.buildKitWalls(level, look, look.kit, panel, kinds), kinds };
     // Cut away round the hero, front walls stand full height like back walls; otherwise they're drawn low.
     const front = look.cutaway ? panel : look.front && this.models.get(look.front.name);
-    this.lightMap.setCutaway(look.cutaway?.radius ?? null);
+    this.lightMap.setCutaway(look.cutaway?.radius ?? null, { x: VIEW_DIRECTION.x, y: VIEW_DIRECTION.z });
     const backs: THREE.Matrix4[] = [];
     const fronts: THREE.Matrix4[] = [];
     // A panel stands just behind its edge, on the wall's side; turned to face the camera, it's moved back over by its
@@ -590,7 +590,7 @@ export class SceneRenderer {
         pieces.push({ template, placements: corners.filter((c) => c.front === front && c.inner === inner).map(cornerAt), front });
       }
     }
-    this.lightMap.setCutaway(look.cutaway?.radius ?? null);
+    this.lightMap.setCutaway(look.cutaway?.radius ?? null, { x: VIEW_DIRECTION.x, y: VIEW_DIRECTION.z });
     const meshes = pieces.flatMap(({ template, placements, front }) => {
       if (!template || !placements.length) return [];
       const made = instancedModel(template, new THREE.Matrix4(), placements);

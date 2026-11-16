@@ -79,13 +79,13 @@ describe('kitWalls', () => {
     expect(panels.map((p) => `${p.x},${p.y} facing ${p.facing.x},${p.facing.y}`).sort()).toEqual(['7.5,3 facing 0,1', '7.5,9 facing 0,-1']);
   });
 
-  it('cuts away only the walls between the room and the camera: south and east, and the corner joining the two', () => {
+  it('cuts away only the walls between the room and the camera: south and east, and every corner on them', () => {
     const rows = ['###############', '###############', '###############',
       ...Array.from({ length: 6 }, () => '###.........###'),
       '###############', '###############', '###############'];
     const { panels, corners } = walls(rows);
     expect(panels.map((p) => `${p.y} ${p.front ? 'front' : 'back'}`).sort()).toEqual(['3 back', '9 front']);
-    expect(corners.filter((c) => c.front).map((c) => `${c.x},${c.y}`)).toEqual(['12,9']);
+    expect(corners.filter((c) => c.front).map((c) => `${c.x},${c.y}`).sort()).toEqual(['12,3', '12,9', '3,9']);
   });
 
   it('turns outer corners round a pillar standing in a room', () => {
