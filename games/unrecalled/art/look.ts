@@ -42,9 +42,6 @@ const FLOOR_STYLES: Record<string, { panel: string; plate: string | null; mood: 
   gallery: { panel: 'wall-window', plate: 'floor-dark', mood: { ...foundry(0x3a2a2c, 0xf0c8c8), sightRange: FOUND_AS_YOU_GO } },
   assembly: { panel: 'wall-divided', plate: 'floor-squares', mood: { ...foundry(0x3a2c22, 0xf0d0b0), sightRange: FOUND_AS_YOU_GO } },
 };
-/** The plain dark plating of a wall's outside, seen on the walls between a room and the camera. */
-const WALL_OUTSIDE = 0x2a2e34;
-
 /** Each wall style's corner pieces, from the same kit, so walls turn in the style they're built in. */
 const KIT_CORNERS: Record<string, { inner: string; outer: string }> = {
   'wall': { inner: 'wall-band-inner', outer: 'wall-band-outer' },
@@ -238,7 +235,7 @@ export const unrecalledLook: Look = {
     props: [Prop.Wall, Prop.WallLow, Prop.WallLight, Prop.WallAlarm], panel: styleOf(levelId).panel, span: 3, front: { name: 'wall-front', height: 0.3 },
     // Walls on the camera's side stand full height, cut away round the salvager so they never hide them.
     cutaway: { radius: 4.5 },
-    kit: { ...KIT_CORNERS[styleOf(levelId).panel]!, outside: WALL_OUTSIDE },
+    kit: KIT_CORNERS[styleOf(levelId).panel],
     // Now and then, cables hang down a wall into the room from the works past its top.
     crown: ['hanging-cables', null, null, null, null, null, null, null, null],
     // The kit's ceiling strip light, stood up on the wall with its light facing the room.

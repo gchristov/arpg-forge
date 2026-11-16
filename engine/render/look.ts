@@ -188,15 +188,7 @@ export interface WallLook {
    * cells, with an inner piece wherever a room turns and an outer one wherever a wall juts into a room, all in the
    * kit's own frame. Rooms are drawn on that grid for the pieces to come out whole.
    */
-  kit?: {
-    inner: string;
-    outer: string;
-    /**
-     * The colour of the walls' outsides. A kit's walls often look the same from both sides, so walls between the room
-     * and the camera, seen from outside, are drawn plain in this colour rather than showing their inside face's trim.
-     */
-    outside?: number;
-  };
+  kit?: { inner: string; outer: string };
   /**
    * Models laid along the top of every full-height wall, in the panel's own frame and fitted as it is, such as cables
    * running over the wall: what the player glimpses past the top of a wall. Each piece of wall picks one; null leaves it
