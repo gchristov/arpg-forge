@@ -72,11 +72,14 @@ const PATHS: Array<Array<[number, number]>> = [
 /** The camp sits on an old concrete pad around the dead turbine. */
 const CAMP = { x: 22, y: 13, rx: 6.5, ry: 4.5 };
 
+/** The columns of the top edge the Foundry looms beyond. The way in is through Mags's depot, built at its foot. */
+export const FOUNDRY_SIDE = { from: 7, to: 37 };
+
 /** The river's middle row at each column, winding gently along the bottom of the map. */
 const riverRow = (x: number): number => 30.5 + Math.sin(x * 0.21) * 1.6 + Math.sin(x * 0.07 + 1) * 0.8;
 
 /**
- * Rustbelt, the salvage camp under the Foundry's outer wall, as a map built from fixed features and `hash2` and
+ * Rustbelt, the salvage camp in the Foundry's shadow, as a map built from fixed features and `hash2` and
  * `valueNoise`, so it comes out the same every time. The camp's concrete pad and its dead wind turbine sit in the
  * middle, with paths out to Pell's workshop, Mags's trading post (the way into the Foundry), the old pumphouse and
  * the jetty where the flood left the salvager. Dead trees thicken towards the edges.
@@ -124,14 +127,8 @@ export function buildRustbelt(): LevelContent {
   setProp(map, jetty.x, jetty.y - 4, Prop.Post, true);
   room.readables!.push({ tx: jetty.x, ty: jetty.y - 4, id: 'riverbank' });
 
-  // The Foundry's outer wall across the middle of the top edge. The way in is through Mags's depot, built against it.
-  for (let x = 8; x <= 36; x++) {
-    const lamp = x === 12 || x === 32;
-    const beacon = x === 16 || x === 28;
-    setProp(map, x, 0, lamp ? Prop.WallLight : beacon ? Prop.WallAlarm : Prop.Wall, true);
-    if (lamp) level.lights.push({ x: x + 0.5, y: 1.2, radius: 3.6, intensity: 0.9, colour: 'cyan', flicker: 0.3, seed: x });
-  }
-  reserve(7, 0, 31, 3);
+  // The Foundry stands in the dark past the middle of the top edge, so the ground there is kept open towards it.
+  reserve(FOUNDRY_SIDE.from, 0, FOUNDRY_SIDE.to - FOUNDRY_SIDE.from + 1, 3);
 
   for (let y = 0; y < HEIGHT; y++) {
     for (let x = 0; x < WIDTH; x++) {
@@ -215,12 +212,20 @@ function addBuilding(level: Level, b: BuildingSpec, seed: number): Structure {
   return structure;
 }
 
-/** Dead trees thicken towards the map's edges; rocks, weeds and pebbles scatter over the rest. */
+/** The share of the river's muddy banks with reeds on them. */
+const REED_SHARE = 0.35;
+
+/** Dead trees thicken towards the map's edges; rocks, weeds and pebbles scatter over the rest, and reeds line the river. */
 function scatterWilds(map: TileMap, reserved: Uint8Array): void {
   for (let y = 0; y < HEIGHT; y++) {
     for (let x = 0; x < WIDTH; x++) {
       const i = tileIndex(map, x, y);
-      if (reserved[i] || map.prop[i] || map.solid[i] || map.ground[i] === Ground.Mud) continue;
+      if (reserved[i] || map.prop[i] || map.solid[i]) continue;
+      // Reeds crowd the river's muddy banks.
+      if (map.ground[i] === Ground.Mud) {
+        if (hash2(x, y, 29) < REED_SHARE) setProp(map, x, y, Prop.GrassTall, false);
+        continue;
+      }
       const edge = Math.min(x, y, WIDTH - 1 - x);
       const h = hash2(x, y, 23);
       const thicket = valueNoise(x * 0.18 + 5, y * 0.18) > 0.6;

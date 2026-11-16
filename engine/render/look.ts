@@ -1,3 +1,4 @@
+import type { Level } from '../world/level';
 import type { Fit } from './model-instancing';
 
 /**
@@ -124,6 +125,29 @@ export interface Mood {
   groundGrain?: number;
   /** Mist drifting low over the ground, for weather outdoors. */
   mist?: MistLook;
+  /**
+   * How far the hero sees, in tiles, when nothing stands between them. With it, the level stays dark until the hero
+   * finds it, and an enemy shows only while it stands on ground the hero has found. Without it, everything shows.
+   */
+  sightRange?: number;
+  /** Moving water drawn over the ground of one kind, such as a river. */
+  water?: WaterLook;
+  /**
+   * The level's tall surfaces fade into black from `from` to `to` tiles up, so the tops of walls and what runs over
+   * them melt into the dark instead of ending in a hard edge. Characters never fade.
+   */
+  heightFade?: { from: number; to: number };
+}
+
+export interface WaterLook {
+  /** The ground kind the water lies over. */
+  ground: number;
+  /** Which way, and how fast, the water runs, in tiles a second. */
+  flow: { x: number; y: number };
+  /** The water's colour in its troughs and on its ripples, and the light glinting off its crests. */
+  deep: number;
+  shallow: number;
+  glint: number;
 }
 
 export interface MistLook {
@@ -154,6 +178,19 @@ export interface WallLook {
    * (+x). Both are in radians.
    */
   fixtures?: WallFixture[];
+  /**
+   * Walls between the room and the camera stand full height, like back walls, and turn see-through round the hero
+   * within `radius` tiles, instead of being drawn low; the hero is never hidden behind one.
+   */
+  cutaway?: { radius: number };
+  /** A column standing wherever walls turn a corner, fitted to the panel's height, covering where straight runs meet. */
+  corner?: string;
+  /**
+   * Models laid along the top of every full-height wall, in the panel's own frame and fitted as it is, such as cables
+   * running over the wall: what the player glimpses past the top of a wall. Each piece of wall picks one; null leaves it
+   * bare.
+   */
+  crown?: Array<string | null>;
 }
 
 export interface WallFixture {
@@ -217,6 +254,26 @@ export interface Look {
   structure(kind: string): StructureLook;
   /** How walls are drawn on a level; without it, or if the models don't load, wall props are drawn as props. */
   walls?(levelId: string): WallLook | null;
+  /** What lies past a level's playable world; without it, the level ends where its map does. */
+  surroundings?(level: Level): Surroundings | null;
   lightColour(name: string): number;
   actor(kind: string): ActorLook;
+}
+
+/**
+ * What lies past a level's playable world, fading into darkness away from it, so the player never sees where the map
+ * stops: ground under its walls and on past its edges, and scenery standing in the dark.
+ */
+export interface Surroundings {
+  /** How many tiles past the map's edges the ground carries on. Past an edge, it's the ground at the nearest edge tile. */
+  margin: number;
+  /**
+   * The ground kind drawn where the map has none, such as under its walls. Without it, the ground stops at the walls,
+   * as indoors, where what lies past them is only hinted at.
+   */
+  ground?: number;
+  /** How many tiles past the playable world it takes to fade into darkness; 10 when not set. */
+  fade?: number;
+  /** Things standing in the dark, drawn like props of their kind at these points; they're only ever seen. */
+  scenery: Array<{ prop: number; x: number; y: number }>;
 }

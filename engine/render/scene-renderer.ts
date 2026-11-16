@@ -8,12 +8,14 @@ import { Flames, type FlameSpot } from './flames';
 import { blendedGround } from './ground-blend';
 import { kitBuilding } from './kit-building';
 import { ELEVATION } from './camera-angle';
-import { LightMap } from './light-map';
+import { LightMap, type SurfaceFade } from './light-map';
 import { Mist } from './mist';
-import type { Look, Mood, PropLook, WallFixture } from './look';
-import { fitMatrix, instancedModel, panelFit, panelScale } from './model-instancing';
+import type { Look, Mood, PropLook, Surroundings, WallFixture, WallLook, WaterLook } from './look';
+import { fitMatrix, instancedModel, modelSize, panelFit, panelScale } from './model-instancing';
 import { ModelLibrary, type ModelTemplate } from './models';
-import { isWallTile, wallFaces, wallPanels } from './wall-panels';
+import { playDistances, shadeArea, shadeAt } from './shade-map';
+import { WaterSurface } from './water';
+import { isWallTile, wallCorners, wallFaces, wallPanels } from './wall-panels';
 
 /** On-screen width of one tile at zoom 1. */
 const TILE_PIXELS = 64;
@@ -70,6 +72,11 @@ export class SceneRenderer {
   private alarmed = false;
   private mood: Mood | null = null;
   private mist: Mist | null = null;
+  private water: WaterSurface | null = null;
+  /** The level's darkness: by distance from the playable world (`base`), times what the hero has found. */
+  private shade: {
+    values: Float32Array; base: Float32Array | null; x0: number; y0: number; width: number; depth: number; mapWidth: number; mapHeight: number;
+  } | null = null;
   private flames: Flames | null = null;
   private width = 1;
   private height = 1;
@@ -148,14 +155,22 @@ export class SceneRenderer {
     }
 
     this.warmUpPending = true;
+    const surroundings = this.look.surroundings?.(level) ?? null;
+    this.shade = this.shadeOf(level, surroundings);
+    this.lightMap.setShade(surroundings && this.shade);
+    this.lightMap.setHeightFade(mood.heightFade ?? null);
+    this.lightMap.setCutaway(null);
     const walls = this.buildWalls(level);
-    this.levelGroup.add(this.buildGround(level, walls?.kinds));
+    this.levelGroup.add(this.buildGround(level, walls?.kinds, surroundings));
+    for (const mesh of this.buildScenery(level, surroundings)) this.levelGroup.add(mesh);
+    this.water = mood.water ? this.buildWater(level, mood.water, surroundings) : null;
+    if (this.water) this.levelGroup.add(this.water.mesh);
     for (const mesh of this.buildFloors(level, walls?.kinds)) this.levelGroup.add(mesh);
     for (const mesh of walls?.meshes ?? []) this.levelGroup.add(mesh);
     for (const mesh of this.buildProps(level, walls?.kinds)) this.levelGroup.add(mesh);
     this.structures = this.buildStructures(level);
     for (const mesh of this.structures) this.levelGroup.add(mesh);
-    this.levelGroup.traverse((o) => this.lightUp(o));
+    this.levelGroup.traverse((o) => this.lightUp(o, true));
     this.mist = mood.mist ? new Mist(level.map.width, level.map.height, mood.mist, this.lightMap.uniforms) : null;
     if (this.mist) this.levelGroup.add(this.mist.group);
     // Flames give their own light, so they stay out of the light map.
@@ -168,10 +183,33 @@ export class SceneRenderer {
     this.extraGlows.push({ x, y, radius, colour, intensity });
   }
 
-  /** Makes an object's materials take light from the light map. */
-  private lightUp(o: THREE.Object3D): void {
+  /**
+   * Makes an object's materials take light from the light map. Of the level's own surfaces, those reaching up into the
+   * mood's height fade, or marked to cut away, get their own copies that fade.
+   */
+  private lightUp(o: THREE.Object3D, ofLevel = false): void {
     if (!(o instanceof THREE.Mesh)) return;
-    for (const m of Array.isArray(o.material) ? o.material : [o.material]) this.lightMap.light(m);
+    const fade = ofLevel ? this.fadeOf(o) : 'none';
+    if (fade !== 'none') {
+      const own = (m: THREE.Material) => {
+        const copy = m.clone();
+        copy.userData = { ownCopy: true };
+        // A see-through material showing both sides would be drawn twice, back faces first; walls don't need that.
+        copy.forceSinglePass = true;
+        return copy;
+      };
+      o.material = Array.isArray(o.material) ? o.material.map(own) : own(o.material);
+    }
+    for (const m of Array.isArray(o.material) ? o.material : [o.material]) this.lightMap.light(m, fade);
+  }
+
+  private fadeOf(mesh: THREE.Mesh): SurfaceFade {
+    if (mesh.userData.cutaway) return 'cutaway';
+    const fadeFrom = this.mood?.heightFade?.from;
+    if (fadeFrom === undefined) return 'none';
+    if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+    const box = mesh instanceof THREE.InstancedMesh ? (mesh.computeBoundingBox(), mesh.boundingBox!) : mesh.geometry.boundingBox!.clone().applyMatrix4(mesh.matrixWorld);
+    return box.max.y > fadeFrom ? 'height' : 'none';
   }
 
   /**
@@ -260,6 +298,7 @@ export class SceneRenderer {
     this.target.x += (x - this.target.x) * k;
     this.target.z += (y - this.target.z) * k;
     this.heroLight.position.set(x, 1.2, y);
+    this.lightMap.setHero(x, y);
   }
 
   render(seconds: number, frameSeconds: number): void {
@@ -271,6 +310,7 @@ export class SceneRenderer {
     this.effects.update(frameSeconds);
     this.flames?.update(seconds, frameSeconds);
     this.mist?.update(seconds);
+    this.water?.update(seconds);
     this.removeUnseenActors();
     for (const figure of this.actors.values()) figure.update(frameSeconds);
     this.renderer.render(this.scene, this.camera);
@@ -363,28 +403,72 @@ export class SceneRenderer {
     }
   }
 
-  /** Ground tiles, except under walls drawn as panels, where the room ends at the panel. */
-  private buildGround(level: Level, walls: ReadonlySet<number> = new Set()): THREE.Mesh {
+  /**
+   * How lit each tile of a level and its surroundings is, by how far it lies from the playable world; fully lit
+   * everywhere without surroundings.
+   */
+  private shadeOf(level: Level, surroundings: Surroundings | null) {
+    const area = shadeArea(level.map, surroundings?.margin ?? 0);
+    if (!surroundings) return { values: new Float32Array(area.width * area.depth).fill(1), base: null, ...area, mapWidth: level.map.width, mapHeight: level.map.height };
+    const inside = (tx: number, ty: number) =>
+      level.structures.some((s) => tx >= s.x && ty >= s.y && tx < s.x + s.width && ty < s.y + s.depth);
+    const values = playDistances(level.map, area, inside).map((d) => shadeAt(d, surroundings.fade));
+    return { values, base: values.slice(), ...area, mapWidth: level.map.width, mapHeight: level.map.height };
+  }
+
+  /**
+   * Darkens what the hero hasn't found yet: `shown` says how far each of the level's tiles has been revealed, from 0
+   * to 1. Past the map's edges, the surroundings' own darkness holds.
+   */
+  setExplored(shown: Float32Array): void {
+    const shade = this.shade;
+    if (!shade) return;
+    const { values, base, x0, y0, width, depth, mapWidth, mapHeight } = shade;
+    for (let y = 0; y < depth; y++) {
+      for (let x = 0; x < width; x++) {
+        const tx = x + x0;
+        const ty = y + y0;
+        const onMap = tx >= 0 && ty >= 0 && tx < mapWidth && ty < mapHeight;
+        values[y * width + x] = (base?.[y * width + x] ?? 1) * (onMap ? shown[ty * mapWidth + tx]! : 1);
+      }
+    }
+    this.lightMap.setShade(shade);
+  }
+
+  /**
+   * Ground tiles, except under walls drawn as panels, where the room ends at the panel. With surroundings, the ground
+   * carries on under the walls too, and past the map's edges.
+   */
+  private buildGround(level: Level, walls: ReadonlySet<number> = new Set(), surroundings: Surroundings | null = null): THREE.Mesh {
     const { map } = level;
+    const margin = surroundings?.margin ?? 0;
+    const kindAt = (tx: number, ty: number): number => {
+      const i = clamp(ty, 0, map.height - 1) * map.width + clamp(tx, 0, map.width - 1);
+      if (surroundings?.ground !== undefined) return map.ground[i] || surroundings.ground;
+      const onMap = tx >= 0 && ty >= 0 && tx < map.width && ty < map.height;
+      return !onMap || walls.has(map.prop[i]!) ? 0 : map.ground[i]!;
+    };
     const grain = this.look.mood(level.id).groundGrain;
     if (grain !== undefined) {
       const colour = new THREE.Color();
-      return blendedGround(map.width, map.height, (tx, ty) => {
-        const kind = map.ground[ty * map.width + tx]!;
-        if (!kind || walls.has(map.prop[ty * map.width + tx]!)) return null;
-        colour.set(this.look.groundColour(kind, tx, ty, level.id));
+      const ground = blendedGround(map.width + margin * 2, map.height + margin * 2, (x, y) => {
+        const kind = kindAt(x - margin, y - margin);
+        if (!kind) return null;
+        colour.set(this.look.groundColour(kind, x - margin, y - margin, level.id));
         return [colour.r, colour.g, colour.b];
       }, grain);
+      ground.position.set(-margin, 0, -margin);
+      return ground;
     }
     const tile = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
-    const mesh = new THREE.InstancedMesh(tile, new THREE.MeshLambertMaterial(), map.width * map.height);
+    const mesh = new THREE.InstancedMesh(tile, new THREE.MeshLambertMaterial(), (map.width + margin * 2) * (map.height + margin * 2));
     const matrix = new THREE.Matrix4();
     const colour = new THREE.Color();
     let n = 0;
-    for (let ty = 0; ty < map.height; ty++) {
-      for (let tx = 0; tx < map.width; tx++) {
-        const kind = map.ground[ty * map.width + tx]!;
-        if (!kind || walls.has(map.prop[ty * map.width + tx]!)) continue;
+    for (let ty = -margin; ty < map.height + margin; ty++) {
+      for (let tx = -margin; tx < map.width + margin; tx++) {
+        const kind = kindAt(tx, ty);
+        if (!kind) continue;
         matrix.makeTranslation(tx + 0.5, 0, ty + 0.5);
         mesh.setMatrixAt(n, matrix);
         mesh.setColorAt(n, colour.set(this.look.groundColour(kind, tx, ty, level.id)));
@@ -405,9 +489,14 @@ export class SceneRenderer {
     const panel = look && this.models.get(look.panel);
     if (!look || !panel) return null;
     const kinds = new Set(look.props);
-    const front = look.front && this.models.get(look.front.name);
+    // Cut away round the hero, front walls stand full height like back walls; otherwise they're drawn low.
+    const front = look.cutaway ? panel : look.front && this.models.get(look.front.name);
+    this.lightMap.setCutaway(look.cutaway?.radius ?? null);
     const backs: THREE.Matrix4[] = [];
     const fronts: THREE.Matrix4[] = [];
+    // A panel stands just behind its edge, on the wall's side; turned to face the camera, it's moved back over by its
+    // own thickness, so it stays on the wall's side and meets the walls either side of it.
+    const thickness = modelSize(panel).x * panelScale(panel, look.span);
     for (const p of wallPanels(level.map, isWallTile(level.map, kinds), look.span)) {
       if (p.front && !front) continue;
       // Front pieces are seen from outside the room, so they face the camera rather than the floor.
@@ -416,14 +505,52 @@ export class SceneRenderer {
         .makeTranslation(p.x, 0, p.y)
         .multiply(new THREE.Matrix4().makeRotationY(Math.atan2(-facing.y, facing.x)))
         .multiply(new THREE.Matrix4().makeScale(1, 1, p.length / look.span));
+      if (p.front && look.cutaway) placement.multiply(new THREE.Matrix4().makeTranslation(thickness, 0, 0));
       (p.front ? fronts : backs).push(placement);
     }
     const meshes = [
       ...instancedModel(panel, panelFit(panel, look.span), backs),
-      ...(front && look.front && fronts.length ? instancedModel(front, panelFit(front, look.span, look.front.height), fronts) : []),
+      ...this.buildCrown(look, panelFit(panel, look.span), backs),
+      ...(front && fronts.length ? this.frontWalls(look, front, fronts) : []),
       ...(look.fixtures ?? []).flatMap((f) => this.buildFixtures(level, f, isWallTile(level.map, kinds), panelScale(panel, look.span))),
+      ...this.wallCorners(level, look, kinds, modelSize(panel).y * panelScale(panel, look.span)),
     ];
     return { meshes, kinds };
+  }
+
+  /** Walls between the room and the camera: full panels cut away round the hero, or the look's low piece. */
+  private frontWalls(look: WallLook, front: ModelTemplate, fronts: THREE.Matrix4[]): THREE.InstancedMesh[] {
+    if (!look.cutaway) return instancedModel(front, panelFit(front, look.span, look.front!.height), fronts);
+    const meshes = instancedModel(front, panelFit(front, look.span), fronts);
+    for (const mesh of meshes) mesh.userData.cutaway = true;
+    return meshes;
+  }
+
+  /** The crown along the top of the back walls: each piece picks a model and shares its wall panel's placement and fit. */
+  private buildCrown(look: WallLook, fit: THREE.Matrix4, backs: readonly THREE.Matrix4[]): THREE.InstancedMesh[] {
+    const crowns = (look.crown ?? []).map((name) => (name === null ? undefined : this.models.get(name)));
+    const placements = crowns.map(() => [] as THREE.Matrix4[]);
+    const at = new THREE.Vector3();
+    for (const placement of backs) {
+      at.setFromMatrixPosition(placement);
+      const pick = Math.floor(hash2(Math.floor(at.x * 2), Math.floor(at.z * 2), 47) * crowns.length);
+      if (crowns[pick]) placements[pick]!.push(placement);
+    }
+    return crowns.flatMap((template, i) => (template && placements[i]!.length ? instancedModel(template, fit, placements[i]!) : []));
+  }
+
+  /** Columns where walls turn, as tall as the walls; on the camera's side, cut away round the hero like the walls. */
+  private wallCorners(level: Level, look: WallLook, kinds: ReadonlySet<number>, height: number): THREE.InstancedMesh[] {
+    const column = look.corner ? this.models.get(look.corner) : undefined;
+    if (!column) return [];
+    const fit = fitMatrix(column, { type: 'height', height });
+    const corners = wallCorners(level.map, isWallTile(level.map, kinds));
+    const at = (front: boolean) => corners.filter((c) => c.front === front).map((c) => new THREE.Matrix4().makeTranslation(c.x, 0, c.y));
+    const backs = instancedModel(column, fit, at(false));
+    // Without a cutaway, front walls are drawn low, so the columns among them would stand alone: none there.
+    const fronts = look.cutaway ? instancedModel(column, fit, at(true)) : [];
+    for (const mesh of fronts) mesh.userData.cutaway = true;
+    return [...backs, ...fronts].filter((mesh) => mesh.count > 0);
   }
 
   private buildFixtures(level: Level, fixture: WallFixture, isWall: (tx: number, ty: number) => boolean, scale: number): THREE.InstancedMesh[] {
@@ -461,6 +588,29 @@ export class SceneRenderer {
     return spots;
   }
 
+  /** The level's water, over its tiles of the water's ground kind and on past its edges with the ground. */
+  private buildWater(level: Level, look: WaterLook, surroundings: Surroundings | null): WaterSurface {
+    const { map } = level;
+    const area = shadeArea(map, surroundings?.margin ?? 0);
+    const isWater = (tx: number, ty: number) =>
+      map.ground[clamp(ty, 0, map.height - 1) * map.width + clamp(tx, 0, map.width - 1)] === look.ground;
+    return new WaterSurface(area, isWater, look, this.lightMap.uniforms);
+  }
+
+  /** Scenery standing in the dark round a level, grouped by kind and drawn like props of that kind. */
+  private buildScenery(level: Level, surroundings: Surroundings | null): THREE.InstancedMesh[] {
+    const byKind = new Map<number, Vec2[]>();
+    for (const piece of surroundings?.scenery ?? []) {
+      let list = byKind.get(piece.prop);
+      if (!list) byKind.set(piece.prop, (list = []));
+      list.push(piece);
+    }
+    return [...byKind].flatMap(([kind, points]) => {
+      const model = this.look.prop(kind, level.id)?.model;
+      return (model && this.modelledProps(points, model, kind)) ?? [];
+    });
+  }
+
   private buildProps(level: Level, skip: ReadonlySet<number> = new Set()): THREE.InstancedMesh[] {
     const { map } = level;
     const tilesByKind = new Map<number, number[]>();
@@ -475,7 +625,8 @@ export class SceneRenderer {
     const meshes: THREE.InstancedMesh[] = [];
     for (const [kind, tiles] of tilesByKind) {
       const look = this.look.prop(kind, level.id)!;
-      const fromModels = look.model && this.modelledProps(map.width, tiles, look.model, kind);
+      const points = tiles.map((i) => ({ x: (i % map.width) + 0.5, y: Math.floor(i / map.width) + 0.5 }));
+      const fromModels = look.model && this.modelledProps(points, look.model, kind);
       if (fromModels) {
         meshes.push(...fromModels);
         continue;
@@ -494,25 +645,20 @@ export class SceneRenderer {
   }
 
   /**
-   * Props drawn from models, each tile picking one of the variants and a turn from the map's stable hash, so a
-   * level looks the same on every visit. Null if none of the models loaded.
+   * Props drawn from models at `points`, each picking one of the variants and a turn from the map's stable hash of its
+   * tile, so a level looks the same on every visit. Null if none of the models loaded.
    */
-  private modelledProps(
-    mapWidth: number,
-    tiles: number[],
-    model: NonNullable<PropLook['model']>,
-    salt: number,
-  ): THREE.InstancedMesh[] | null {
+  private modelledProps(points: readonly Vec2[], model: NonNullable<PropLook['model']>, salt: number): THREE.InstancedMesh[] | null {
     const variants = model.names.map((name) => this.models.get(name));
     if (variants.every((v) => !v)) return null;
     const placements = variants.map(() => [] as THREE.Matrix4[]);
-    for (const i of tiles) {
-      const tx = i % mapWidth;
-      const ty = Math.floor(i / mapWidth);
+    for (const p of points) {
+      const tx = Math.floor(p.x);
+      const ty = Math.floor(p.y);
       let v = Math.floor(hash2(tx, ty, 31 + salt) * variants.length);
       if (!variants[v]) v = variants.findIndex(Boolean);
       const turn = model.turn === 'random' ? hash2(tx, ty, 37 + salt) * Math.PI * 2 : (model.turn ?? 0);
-      placements[v]!.push(new THREE.Matrix4().makeTranslation(tx + 0.5, 0, ty + 0.5).multiply(new THREE.Matrix4().makeRotationY(turn)));
+      placements[v]!.push(new THREE.Matrix4().makeTranslation(p.x, 0, p.y).multiply(new THREE.Matrix4().makeRotationY(turn)));
     }
     return variants.flatMap((template, v) =>
       template && placements[v]!.length ? instancedModel(template, fitMatrix(template, model.fit), placements[v]!) : [],

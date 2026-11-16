@@ -26,6 +26,9 @@ export interface Glow {
  * top-down texture covering the level, and every lit material adds the light under each of its pixels. A lamp, a
  * hundred torches and a flying fireball all cost the same: one texture lookup per pixel. It suits a game seen from
  * above at a fixed angle, where light pooling on the ground and on what stands on it is what matters.
+ *
+ * It also darkens what lies away from the playable world: a second, fixed texture of how lit each tile is, which every
+ * lit material multiplies by, so a level fades into darkness past its walls and edges instead of stopping.
  */
 export class LightMap {
   private readonly target = new THREE.WebGLRenderTarget(1, 1, { depthBuffer: false });
@@ -39,6 +42,13 @@ export class LightMap {
   readonly uniforms = {
     lightMap: { value: this.target.texture as THREE.Texture },
     lightMapBounds: { value: new THREE.Vector4(0, 0, 1, 1) },
+    shadeMap: { value: fullyLit() as THREE.Texture },
+    shadeBounds: { value: new THREE.Vector4(0, 0, 1, 1) },
+    /** The level's tall surfaces fade away between these heights; equal heights turn the fade off. */
+    heightFade: { value: new THREE.Vector2(1e4, 1e4) },
+    /** Where the hero stands, and the radii between which walls cut away round them turn from see-through to solid. */
+    heroAt: { value: new THREE.Vector2() },
+    cutaway: { value: new THREE.Vector2(0, 0) },
   };
 
   constructor() {
@@ -68,6 +78,49 @@ export class LightMap {
     this.uniforms.lightMapBounds.value.set(0, 0, 1 / width, 1 / depth);
   }
 
+  /**
+   * How lit each tile is, from 0 to 1, over an area of `width` × `depth` tiles whose top-left corner is the tile `x0`,
+   * `y0`; shading blends smoothly between tiles. Null lights everything fully.
+   */
+  setShade(shade: { values: Float32Array; x0: number; y0: number; width: number; depth: number } | null): void {
+    const current = this.uniforms.shadeMap.value as THREE.DataTexture;
+    if (!shade) {
+      current.dispose();
+      this.uniforms.shadeMap.value = fullyLit();
+      this.uniforms.shadeBounds.value.set(0, 0, 1, 1);
+      return;
+    }
+    const { values, x0, y0, width, depth } = shade;
+    // Changes to the same area, such as ground being revealed, rewrite the texture rather than making a new one.
+    const same = current.image.width === width && current.image.height === depth;
+    const texture = same ? current : new THREE.DataTexture(new Uint8Array(width * depth * 4), width, depth);
+    const bytes = texture.image.data as Uint8Array;
+    values.forEach((v, i) => bytes.fill(Math.round(Math.min(1, Math.max(0, v)) * 255), i * 4, i * 4 + 4));
+    texture.needsUpdate = true;
+    if (!same) {
+      current.dispose();
+      texture.magFilter = THREE.LinearFilter;
+      texture.minFilter = THREE.LinearFilter;
+      this.uniforms.shadeMap.value = texture;
+    }
+    // Texel centres sit on tile centres, so a tile's shade is exact at its middle and blends towards its neighbours.
+    this.uniforms.shadeBounds.value.set(x0, y0, 1 / width, 1 / depth);
+  }
+
+  /** Fades the level's tall surfaces away from `from` to `to` tiles up, or nothing with null. */
+  setHeightFade(fade: { from: number; to: number } | null): void {
+    this.uniforms.heightFade.value.set(fade?.from ?? 1e4, fade?.to ?? 1e4);
+  }
+
+  /** Cuts walls away round the hero within `radius` tiles, fully see-through at its middle; null cuts nothing. */
+  setCutaway(radius: number | null): void {
+    this.uniforms.cutaway.value.set(radius === null ? 0 : radius * CUTAWAY_CLEAR_SHARE, radius ?? 0);
+  }
+
+  setHero(x: number, y: number): void {
+    this.uniforms.heroAt.value.set(x, y);
+  }
+
   /** Starts a frame's glows. Call `add` for each light, then `render`. */
   begin(): void {
     this.used = 0;
@@ -95,17 +148,25 @@ export class LightMap {
   }
 
   /**
-   * Makes a material add the light map's light: the light under each pixel, times the surface's own colour. Safe to
-   * call more than once.
+   * Makes a material add the light map's light: the light under each pixel, times the surface's own colour, and take
+   * the level's darkness. A `fade` fades it: `height` into black up through the height fade, for the level's tall
+   * surfaces, and `cutaway` also to see-through round the hero, for walls that would stand between them and the
+   * camera; those are drawn with the see-through surfaces. Give each fading material its own copy. Safe to call more
+   * than once.
    */
-  light(material: THREE.Material): void {
+  light(material: THREE.Material, fade: SurfaceFade = 'none'): void {
     if (material.userData.lightMapped) return;
     if (!(material instanceof THREE.MeshLambertMaterial || material instanceof THREE.MeshStandardMaterial)) return;
     material.userData.lightMapped = true;
+    // A wall cut away round the hero is drawn see-through, and mustn't hide the walls behind it where it's cut.
+    if (fade === 'cutaway') {
+      material.transparent = true;
+      material.depthWrite = false;
+    }
     material.onBeforeCompile = (shader) => {
       Object.assign(shader.uniforms, this.uniforms);
       shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', '#include <common>\nvarying vec2 vLightMapUv;\nvarying float vLightMapHeight;\nuniform vec4 lightMapBounds;')
+        .replace('#include <common>', '#include <common>\nvarying vec2 vLightMapUv;\nvarying vec2 vShadeUv;\nvarying vec2 vWorldXZ;\nvarying float vLightMapHeight;\nuniform vec4 lightMapBounds;\nuniform vec4 shadeBounds;')
         .replace(
           '#include <project_vertex>',
           `#include <project_vertex>
@@ -115,24 +176,52 @@ export class LightMap {
           #endif
           lightMapWorld = modelMatrix * lightMapWorld;
           vLightMapHeight = lightMapWorld.y;
-          vLightMapUv = vec2((lightMapWorld.x - lightMapBounds.x) * lightMapBounds.z, 1.0 - (lightMapWorld.z - lightMapBounds.y) * lightMapBounds.w);`,
+          vWorldXZ = lightMapWorld.xz;
+          vLightMapUv = vec2((lightMapWorld.x - lightMapBounds.x) * lightMapBounds.z, 1.0 - (lightMapWorld.z - lightMapBounds.y) * lightMapBounds.w);
+          vShadeUv = vec2((lightMapWorld.x - shadeBounds.x) * shadeBounds.z, (lightMapWorld.z - shadeBounds.y) * shadeBounds.w);`,
         );
       shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\nvarying vec2 vLightMapUv;\nvarying float vLightMapHeight;\nuniform sampler2D lightMap;')
+        .replace('#include <common>', '#include <common>\nvarying vec2 vLightMapUv;\nvarying vec2 vShadeUv;\nvarying vec2 vWorldXZ;\nvarying float vLightMapHeight;\nuniform sampler2D lightMap;\nuniform sampler2D shadeMap;\nuniform vec2 heightFade;\nuniform vec2 heroAt;\nuniform vec2 cutaway;')
         .replace(
           '#include <opaque_fragment>',
           `float lightMapReach = clamp(1.0 - (vLightMapHeight - ${FULL_HEIGHT.toFixed(2)}) / ${FADE_HEIGHT.toFixed(2)}, 0.0, 1.0);
           outgoingLight += diffuseColor.rgb * texture2D(lightMap, vLightMapUv).rgb * ${HEADROOM.toFixed(1)} * lightMapReach;
+          outgoingLight *= texture2D(shadeMap, vShadeUv).r;
+          ${fade === 'none' ? '' : fadeGlsl(fade === 'cutaway')}
           #include <opaque_fragment>`,
         );
     };
-    material.customProgramCacheKey = () => 'light-map';
+    material.customProgramCacheKey = () => `light-map-${fade}`;
     material.needsUpdate = true;
   }
 
   dispose(): void {
     this.target.dispose();
+    this.uniforms.shadeMap.value.dispose();
   }
+}
+
+/** How a lit surface fades: not at all, away with height, or with height and round the hero too. */
+export type SurfaceFade = 'none' | 'height' | 'cutaway';
+
+/** Walls cut away round the hero are fully see-through within this share of the cutaway's radius. */
+const CUTAWAY_CLEAR_SHARE = 0.55;
+
+/**
+ * Fades a surface into black as it rises through the height fade; walls cut away round the hero also turn
+ * see-through there, so the hero shows through them.
+ */
+function fadeGlsl(cutaway: boolean): string {
+  return `
+          if (heightFade.y > heightFade.x) outgoingLight *= 1.0 - smoothstep(heightFade.x, heightFade.y, vLightMapHeight);
+          ${cutaway ? 'if (cutaway.y > 0.0) diffuseColor.a *= smoothstep(cutaway.x, cutaway.y, distance(vWorldXZ, heroAt));' : ''}`;
+}
+
+/** One white texel: everything fully lit. */
+function fullyLit(): THREE.DataTexture {
+  const texture = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
+  texture.needsUpdate = true;
+  return texture;
 }
 
 /** A soft round glow, brightest in the middle and fading smoothly to nothing at the edge. */

@@ -21,7 +21,8 @@ export type TapView = Pick<SceneRenderer, 'screenPosition' | 'pick' | 'zoom'>;
 
 /**
  * Turns a tap on the world at screen point `x`, `y` into a command, checking in this order: enemies, NPCs,
- * buildings, chests, portals, then the ground. Null when the tap hits nothing.
+ * buildings, chests, portals, then the ground. Only enemies `seen` says the hero can see can be tapped. Null when the
+ * tap hits nothing.
  */
 export function tapCommand(
   state: GameState,
@@ -29,11 +30,12 @@ export function tapCommand(
   scaleOf: (kind: string) => number,
   x: number,
   y: number,
+  seen: (enemyId: number) => boolean = () => true,
 ): Command | null {
   const ls = currentLevel(state);
   let best: { id: number; d: number } | null = null;
   for (const e of ls.enemies) {
-    if (e.dead) continue;
+    if (e.dead || !seen(e.id)) continue;
     const scale = scaleOf(e.kind);
     const p = renderer.screenPosition(e.x, e.y, BODY_PX * PX * scale, screenPoint);
     const d = Math.hypot(p.x - x, p.y - y);

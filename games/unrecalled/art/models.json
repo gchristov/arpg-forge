@@ -788,6 +788,27 @@
           "hue": -8
         }
       }
+    },
+    {
+      "name": "hanging-cables",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/TopCables_Straight_Hanging.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      },
+      "keepMaterials": [
+        "MI_Trim_03_Cables_Blue"
+      ]
+    },
+    {
+      "name": "corner-post",
+      "pack": "megakit",
+      "path": "Modular SciFi MegaKit[Standard]/glTF/Columns/Column_Simple.gltf",
+      "textures": {
+        "maxSize": 256,
+        "dropDetailMaps": true
+      }
     }
   ]
 }

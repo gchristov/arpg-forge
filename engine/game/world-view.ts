@@ -6,6 +6,8 @@ import { questGoal, type QuestGoal } from '../sim/quest-goal';
 import { currentLevel, type Actor, type GameState, type SimEvent } from '../sim/state';
 import type { ScreenFade } from '../ui/fade';
 import type { Project, WorldLabels } from '../ui/world-labels';
+import { EnemySight } from './enemy-sight';
+import { Exploration } from './exploration';
 import { GoalGuide } from './goal-guide';
 
 /** One screen pixel at zoom 1, in tiles. Heights of labels and taps are measured in these. */
@@ -51,6 +53,10 @@ export class WorldView {
   private stepSeconds = 1 / 60;
   private guideSeconds = 0;
   private readonly guide = new GoalGuide();
+  /** What the hero has found of each level, and so which enemies show; the rest stays dark until found. */
+  private readonly exploration = new Exploration();
+  private exploredLevel = '';
+  readonly sight = new EnemySight();
   private readonly aim = { x: 0, y: 0 };
   private readonly goalPoint = { x: 0, y: 0 };
   /** The goal as last worked out, kept until the quest or level changes; an actor goal follows the actor. */
@@ -166,10 +172,19 @@ export class WorldView {
     this.drawActor(state.hero, alpha);
     for (const n of ls.npcs) this.drawActor(n, alpha);
     labels.beginBars();
+    const sightRange = look.mood(state.levelId).sightRange;
+    if (sightRange !== undefined) {
+      // A level drawn afresh shows everything until told what's been found, so it's told on arrival too.
+      const arrived = this.exploredLevel !== state.levelId;
+      this.exploredLevel = state.levelId;
+      if (this.exploration.update(state, frameSeconds, sightRange) || arrived) renderer.setExplored(this.exploration.shown(state.levelId)!);
+    }
+    this.sight.update(state, frameSeconds, sightRange === undefined ? null : this.exploration);
     for (const e of ls.enemies) {
-      this.drawActor(e, alpha, e.dead ? Math.max(0, 1 - e.deadFor) : 1);
+      const seen = this.sight.of(e.id);
+      this.drawActor(e, alpha, seen * (e.dead ? Math.max(0, 1 - e.deadFor) : 1));
       const scale = this.scaleOf(e.kind);
-      if (!e.dead && !state.rules.enemies[e.kind]?.boss && (e.hp < e.maxHp || e.id === state.hero.targetId)) {
+      if (seen > 0.5 && !e.dead && !state.rules.enemies[e.kind]?.boss && (e.hp < e.maxHp || e.id === state.hero.targetId)) {
         const x = lerp(e.prevX, e.x, alpha);
         const y = lerp(e.prevY, e.y, alpha);
         labels.bar(this.project, x, y, (44 * scale + 6) * PX, e.hp / e.maxHp, 28 * Math.max(1, scale * 0.8) * renderer.zoom);
@@ -186,7 +201,7 @@ export class WorldView {
     }
     for (const e of ls.enemies) {
       if (!e.dead && state.rules.enemies[e.kind]?.boss) {
-        renderer.glow(lerp(e.prevX, e.x, alpha), lerp(e.prevY, e.y, alpha), 2.2, look.effects.bossLight, 0.6);
+        renderer.glow(lerp(e.prevX, e.x, alpha), lerp(e.prevY, e.y, alpha), 2.2, look.effects.bossLight, 0.6 * this.sight.of(e.id));
       }
     }
     renderer.setAlarmed(ls.alarmed);
@@ -276,7 +291,7 @@ export class WorldView {
     let count = 0;
     for (const e of currentLevel(state).enemies) {
       const scanner = look.actor(e.kind).scanner;
-      if (e.scan < 0 || e.dead || !scanner || count >= this.scans.length) continue;
+      if (e.scan < 0 || e.dead || !scanner || this.sight.of(e.id) < 0.5 || count >= this.scans.length) continue;
       const s = this.scans[count++]!;
       s.fromX = lerp(e.prevX, e.x, alpha);
       s.fromY = lerp(e.prevY, e.y, alpha);

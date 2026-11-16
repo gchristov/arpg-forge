@@ -29,6 +29,12 @@ describe('tapCommand', () => {
     expect(tapTile(state, 5.9, 5.5)).toEqual({ type: 'attack', enemyId: enemy.id });
   });
 
+  it('ignores enemies the hero can\'t see, and walks there instead', () => {
+    const state = room();
+    const enemy = currentLevel(state).enemies[0]!;
+    expect(tapCommand(state, view, () => 1, 5.5 * PIXELS, 5.5 * PIXELS, (id) => id !== enemy.id)).toEqual({ type: 'walk', x: 5.5, y: 5.5 });
+  });
+
   it('ignores dead enemies and walks there instead', () => {
     const state = room();
     currentLevel(state).enemies[0]!.dead = true;

@@ -15,6 +15,9 @@
 // in `pack` is the source glTF, `animations` maps new names to the source's, `pose` is the source animation that
 // matches the model's rest pose, and `bones` maps the model's bones to the source's (see tools/blender/retarget.py).
 //
+// A model's `keepMeshes` keeps only the meshes of the named nodes, and `keepMaterials` only the parts drawn in the
+// named materials.
+//
 // Downloads are cached in tools/assets/cache (gitignored). The output goes in a `models/` folder beside the manifest.
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -161,6 +164,14 @@ for (const model of manifest.models) {
   if (model.keepMeshes) {
     for (const node of root.listNodes()) {
       if (node.getMesh() && !model.keepMeshes.includes(node.getName())) node.dispose();
+    }
+  }
+  // Keeps only the parts of each mesh drawn in these materials, for a model that's one mesh of several pieces.
+  if (model.keepMaterials) {
+    for (const mesh of root.listMeshes()) {
+      for (const primitive of mesh.listPrimitives()) {
+        if (!model.keepMaterials.includes(primitive.getMaterial()?.getName() ?? '')) primitive.dispose();
+      }
     }
   }
   if (model.animations) {
