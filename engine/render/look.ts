@@ -195,6 +195,11 @@ export interface WallLook {
     door?: string;
   };
   /**
+   * Prop kinds that are partitions: inner walls a tile thick between rooms of a kit-walled building, drawn as panels
+   * down the middle of their tiles, with a door frame in each gap a cell wide. They block sight like walls.
+   */
+  partitions?: number[];
+  /**
    * Models laid along the top of every full-height wall, in the panel's own frame and fitted as it is, such as cables
    * running over the wall: what the player glimpses past the top of a wall. Each piece of wall picks one; null leaves it
    * bare.

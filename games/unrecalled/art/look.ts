@@ -234,6 +234,7 @@ export const unrecalledLook: Look = {
     props: [Prop.Wall, Prop.WallLow, Prop.WallLight, Prop.WallAlarm], panel: styleOf(levelId).panel, span: 3, front: { name: 'wall-front', height: 0.3 },
     // Every doorway gets the kit's frame, so the ways in and out are clear.
     kit: { ...KIT_CORNERS[styleOf(levelId).panel]!, door: 'door' },
+    partitions: [Prop.Partition],
     // Now and then, cables hang down a wall into the room from the works past its top.
     crown: ['hanging-cables', null, null, null, null, null, null, null, null],
     // The kit's ceiling strip light, stood up on the wall with its light facing the room.

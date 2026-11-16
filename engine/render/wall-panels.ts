@@ -196,3 +196,42 @@ export interface KitOpening {
   tx: number;
   ty: number;
 }
+
+/**
+ * Inner walls a tile thick, `isPartition`, between rooms of a kit-walled building, laid as whole panels down the
+ * middle of their tiles, one per cell of partition along a row or column. A cell left open in a partition's line, with
+ * partition on one side and partition or wall on the other, is a doorway between the rooms.
+ */
+export function kitPartitions(
+  map: TileMap,
+  isPartition: (tx: number, ty: number) => boolean,
+  isWall: (tx: number, ty: number) => boolean,
+  span: number,
+): { panels: Array<{ x: number; y: number; facing: Vec2 }>; doorways: Array<{ x: number; y: number; facing: Vec2 }> } {
+  const panels: Array<{ x: number; y: number; facing: Vec2 }> = [];
+  const doorways: Array<{ x: number; y: number; facing: Vec2 }> = [];
+  for (const horizontal of [true, false]) {
+    const lines = horizontal ? map.height : map.width;
+    const length = horizontal ? map.width : map.height;
+    const tile = (line: number, at: number): [number, number] => (horizontal ? [at, line] : [line, at]);
+    const partitionAt = (line: number, at: number) => inBounds(map, ...tile(line, at)) && isPartition(...tile(line, at));
+    const wallAt = (line: number, at: number) => !inBounds(map, ...tile(line, at)) || isWall(...tile(line, at));
+    const facing = horizontal ? { x: 0, y: 1 } : { x: 1, y: 0 };
+    for (let line = 0; line < lines; line++) {
+      const full = (start: number) => start >= 0 && start + span <= length && Array.from({ length: span }, (_, i) => start + i).every((at) => partitionAt(line, at));
+      const empty = (start: number) => Array.from({ length: span }, (_, i) => start + i).every((at) => !partitionAt(line, at) && !wallAt(line, at));
+      for (let start = 0; start + span <= length; start += span) {
+        const middle = horizontal ? { x: start + span / 2, y: line + 0.5 } : { x: line + 0.5, y: start + span / 2 };
+        if (full(start)) {
+          panels.push({ ...middle, facing });
+          continue;
+        }
+        if (!empty(start)) continue;
+        const before = full(start - span) || (full(start + span) && wallAt(line, start - 1));
+        const after = full(start + span) || (full(start - span) && wallAt(line, start + span));
+        if (before && after) doorways.push({ ...middle, facing });
+      }
+    }
+  }
+  return { panels, doorways };
+}

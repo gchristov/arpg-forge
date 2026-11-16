@@ -268,7 +268,7 @@ export class WorldView {
   private blocksSight(): (tx: number, ty: number) => boolean {
     const { map } = currentLevel(this.state).level;
     const walls = this.look.walls?.(this.state.levelId);
-    const kinds = walls ? new Set(walls.props) : null;
+    const kinds = walls ? new Set([...walls.props, ...(walls.partitions ?? [])]) : null;
     return (tx, ty) => {
       if (!inBounds(map, tx, ty)) return true;
       const i = tileIndex(map, tx, ty);

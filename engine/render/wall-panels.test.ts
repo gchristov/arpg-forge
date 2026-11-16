@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { mapFromRows } from '../world/testing';
-import { kitWalls, wallFaces, wallPanels } from './wall-panels';
+import { kitPartitions, kitWalls, wallFaces, wallPanels } from './wall-panels';
 
 /** `#` is wall, anything else floor; the tests read panels as text so the layout is easy to check. */
 function panels(rows: string[], span: number) {
@@ -114,6 +114,40 @@ describe('kitWalls', () => {
       ...Array.from({ length: 6 }, () => '###.........###'),
       '###############', '###############', '###############'];
     expect(walls(rows).panels.filter((p) => p.y === 3)).toEqual([]);
+  });
+});
+
+describe('kitPartitions', () => {
+  // A building three cells by four, split by a partition (%) across its middle with a doorway a cell wide in it, and
+  // the room above split again by a partition down from it, open to the top wall.
+  const ROWS = [
+    '###############',
+    '###############',
+    '###############',
+    '###.........###',
+    '###.....%...###',
+    '###.....%...###',
+    '###%%%...%%%###',
+    '###.........###',
+    '###.........###',
+    '###############',
+  ];
+  const isPartition = (x: number, y: number) => ROWS[y]![x] === '%';
+  const isWall = (x: number, y: number) => ROWS[y]![x] === '#';
+  const { panels, doorways } = kitPartitions(mapFromRows(ROWS), isPartition, isWall, 3);
+
+  it('lays a panel down the middle of each cell of partition', () => {
+    expect(panels.map((p) => `${p.x},${p.y}`).sort()).toEqual(['10.5,6.5', '4.5,6.5']);
+  });
+
+  it('frames the gap a cell wide between two runs of partition as a doorway', () => {
+    expect(doorways.map((d) => `${d.x},${d.y}`)).toEqual(['7.5,6.5']);
+  });
+
+  it('leaves walls where a building\'s own walls are, outer walls running on past a partition\'s end', () => {
+    const outer = kitWalls(mapFromRows(ROWS), isWall, 3);
+    expect(outer.corners.filter((c) => c.inner)).toHaveLength(4);
+    expect(outer.panels.filter((p) => p.x === 3)).toHaveLength(0);
   });
 });
 

@@ -15,7 +15,7 @@ import { fitMatrix, instancedModel, modelSize, panelFit, panelScale } from './mo
 import { ModelLibrary, type ModelTemplate } from './models';
 import { playDistances, shadeArea, shadeAt } from './shade-map';
 import { WaterSurface } from './water';
-import { isWallTile, kitWalls, wallFaces, wallPanels, type KitCorner, type KitOpening } from './wall-panels';
+import { isWallTile, kitPartitions, kitWalls, wallFaces, wallPanels, type KitCorner } from './wall-panels';
 
 /** On-screen width of one tile at zoom 1. */
 const TILE_PIXELS = 64;
@@ -595,17 +595,25 @@ export class SceneRenderer {
       if (front && look.cutaway) for (const mesh of made) mesh.userData.cutaway = true;
       return made;
     });
-    return [...meshes, ...this.kitDoors(level, kit, openings, k), ...(look.fixtures ?? []).flatMap((f) => this.buildFixtures(level, f, isWall, k))];
+    const partitionKinds = new Set(look.partitions ?? []);
+    const isPartition = (tx: number, ty: number) => partitionKinds.has(map.prop[tileIndex(map, tx, ty)]!);
+    const inner = kitPartitions(map, isPartition, isWall, look.span);
+    const doorways = openings.filter((o) => level.portals.some((p) => p.tx === o.tx && p.ty === o.ty));
+    return [
+      ...meshes,
+      ...instancedModel(panel, new THREE.Matrix4(), inner.panels.map(straight)),
+      ...this.kitDoors(kit, [...doorways, ...inner.doorways], k),
+      ...(look.fixtures ?? []).flatMap((f) => this.buildFixtures(level, f, isWall, k)),
+    ];
   }
 
   /**
    * A door frame in each doorway of kit walls, centred on the wall's line across its cell, as wide as the kit's frame
    * at the kit's scale and a little taller than the walls, so it reads as the way through.
    */
-  private kitDoors(level: Level, kit: NonNullable<WallLook['kit']>, openings: KitOpening[], k: number): THREE.InstancedMesh[] {
+  private kitDoors(kit: NonNullable<WallLook['kit']>, doorways: ReadonlyArray<{ x: number; y: number; facing: Vec2 }>, k: number): THREE.InstancedMesh[] {
     const frame = kit.door ? this.models.get(kit.door) : undefined;
-    if (!frame) return [];
-    const doorways = openings.filter((o) => level.portals.some((p) => p.tx === o.tx && p.ty === o.ty));
+    if (!frame || !doorways.length) return [];
     const size = modelSize(frame);
     const fit = fitMatrix(frame, { type: 'box', width: size.x * k, height: KIT_WALL_HEIGHT * k * DOOR_RISE, depth: size.z * k });
     // The frame's width lies along its x, so it's turned a quarter more than a panel, to run along the wall.

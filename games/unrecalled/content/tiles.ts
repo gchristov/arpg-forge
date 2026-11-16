@@ -48,4 +48,6 @@ export const Prop = {
   Crane: 33,
   PumpRig: 34,
   Tank: 35,
+  /** An inner wall a tile thick, between rooms of a building. */
+  Partition: 36,
 } as const;

@@ -27,24 +27,24 @@ const INTERIORS = {
       '##################',
     ],
   },
-  // The old depot: one open shop floor, with the stairs up to the office and the loading door into the Foundry (G)
-  // along its back wall.
+  // The old depot: the shop floor, a storeroom with the stairs up to the office and the loading door into the Foundry
+  // (G), and a back room, divided by partitions (%) with a doorway between each.
   tradingPost: {
     name: 'Mags’s Trading Post', subtitle: 'Everything here was somebody’s once',
     rows: [
       '##############################',
       '##############################',
-      '#####L#####L#####L####G#######',
-      '###hh.dd..k.......cc.....U.###',
+      '#####L#####L#######L##G#######',
+      '###hh.dd..k......cc......U.###',
       '###........................###',
       '###...2....................###',
-      '###........................###',
-      '###......................b.###',
-      '###c.......................###',
-      '##L........................###',
-      '###........................###',
-      '###........................###',
-      '###.b....b.........h...hh..###',
+      '###............%...........###',
+      '###............%.........b.###',
+      '###c...........%...........###',
+      '##L............%%%%%%...%%%###',
+      '###............%...........###',
+      '###............%...........###',
+      '###.b....b.......h......hh.###',
       '###.........c............S.###',
       '###........................###',
       '#######V######################',
@@ -96,6 +96,7 @@ const solid = (prop: number): RoomKey => ({ prop, solid: true });
 const KEY: Record<string, RoomKey> = {
   '.': {},
   '#': { prop: Prop.Wall, frontProp: Prop.WallLow, solid: true },
+  '%': { prop: Prop.Partition, solid: true },
   L: { prop: Prop.WallLight, solid: true, light: { radius: 3.4, intensity: 0.9, colour: 'amber', flicker: 0.5, lean: 0.7 } },
   V: {
     portal: { to: 'rustbelt', stepOut: { x: 0, y: -0.9 }, start: { x: 0, y: -0.9 } },
