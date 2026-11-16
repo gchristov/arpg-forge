@@ -3,7 +3,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { describe, expect, it } from 'vitest';
 import { cornerArms } from './corner-arms';
 
-/** Each arm's triangles, as the x and z ranges their middles span. */
+/** Where the middle of each of a model's triangles stands. */
 const spans = (scene: THREE.Object3D) => {
   const middles: THREE.Vector3[] = [];
   scene.traverse((o) => {
