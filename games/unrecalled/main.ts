@@ -114,10 +114,6 @@ function reactToService(npcId: number, index: number, x: number, y: number): voi
     dialog.close();
     return;
   }
-  if (service.type === 'sellWeapon') {
-    dialog.close();
-    return;
-  }
   if (service.type === 'upgradeMelee') labels.text(x, y, 46 * PX, 'Upgraded', '#e8c870', 15);
   if (dialog.npcId === npcId) showDialogue(npcId, state.quest);
 }

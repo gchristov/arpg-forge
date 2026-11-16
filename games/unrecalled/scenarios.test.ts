@@ -4,7 +4,7 @@ import { createGameState } from '../../engine/sim/setup';
 import { currentLevel, type Command, type GameState, type SimEvent } from '../../engine/sim/state';
 import { step } from '../../engine/sim/step';
 import { unrecalledContent } from './content/world';
-import { ENDING_STEP, ENGINE_DOWN_STEP } from './content/story';
+import { ENDING_STEP, ENGINE_DOWN_STEP, POWER_ON_STEP } from './content/story';
 import { FLOOR_ORDER } from './levels/foundry';
 
 const DT = 1 / 60;
@@ -44,8 +44,32 @@ function talkTo(state: GameState, kind: string): SimEvent[] {
   return play(state, 15, [{ type: 'talk', npcId: npc.id }]);
 }
 
-/** Goes from Rustbelt into the Foundry, through Mags's depot and its loading door. */
+/** Opens the current level's container holding `weapon`, walking up to it first. */
+function openCrateWith(state: GameState, weapon: string): SimEvent[] {
+  const index = currentLevel(state).containers.findIndex((c) => c.weapon === weapon);
+  return play(state, 20, [{ type: 'open', index }]);
+}
+
+/** Uses the current level's readable `id`, walking up to it first. */
+function use(state: GameState, id: string): SimEvent[] {
+  const index = currentLevel(state).readables.findIndex((r) => r.id === id);
+  return play(state, 20, [{ type: 'read', index }]);
+}
+
+/** From Rustbelt out to the logging camp, for Pell's saw and the breaker, and back. */
+function throughWoods(state: GameState): void {
+  takeDoor(state, 'woods');
+  openCrateWith(state, 'chainsaw');
+  use(state, 'breaker');
+  takeDoor(state, 'rustbelt');
+}
+
+/**
+ * Goes from Rustbelt into the Foundry, through Mags's depot and its loading door; with the power put back on first, if
+ * the story hasn't, for tests about what lies beyond.
+ */
 function intoFoundry(state: GameState): void {
+  state.quest = Math.max(state.quest, POWER_ON_STEP);
   const depot = currentLevel(state).level.structures.findIndex((s) => s.kind === 'tradingPost');
   play(state, 25, [{ type: 'enterStructure', index: depot }]);
   play(state, 1);
@@ -63,15 +87,29 @@ function inIntake(): GameState {
 }
 
 describe('Unrecalled scenarios', () => {
-  it('starts in Rustbelt, where the foreman sends the salvager into the Foundry through the depot', () => {
-    const state = createGameState(content, 1);
+  it('starts in Rustbelt, where the foreman sends the salvager to the woods, since the depot\'s door has no power', () => {
+    const state = untouchable(createGameState(content, 1));
     expect(state.levelId).toBe('rustbelt');
     expect(currentLevel(state).npcs.map((n) => n.kind)).toEqual(['foreman']);
     const events = talkTo(state, 'foreman');
     expect(events.map((e) => e.type)).toContain('Talked');
     expect(state.quest).toBe(1);
     expect(currentLevel(state).level.portals.map((p) => p.to)).not.toContain('intake');
-    intoFoundry(state);
+
+    const depot = currentLevel(state).level.structures.findIndex((s) => s.kind === 'tradingPost');
+    play(state, 25, [{ type: 'enterStructure', index: depot }]);
+    play(state, 1);
+    const door = currentLevel(state).level.portals.find((p) => p.to === 'intake')!;
+    const locked = play(state, 25, [{ type: 'walkInto', tx: door.tx, ty: door.ty }]);
+    expect(state.levelId).toBe('tradingPost');
+    expect(locked.map((e) => e.type)).toContain('PortalLocked');
+
+    takeDoor(state, 'rustbelt');
+    throughWoods(state);
+    expect(state.quest).toBe(POWER_ON_STEP);
+    play(state, 25, [{ type: 'enterStructure', index: depot }]);
+    play(state, 1);
+    takeDoor(state, 'intake');
     expect(state.levelId).toBe('intake');
   });
 
@@ -194,9 +232,11 @@ describe('Unrecalled scenarios', () => {
     const state = untouchable(createGameState(content, 1));
     state.hero.damage = [1000, 1000];
     talkTo(state, 'foreman');
+    throughWoods(state);
+    expect(state.quest).toBe(POWER_ON_STEP);
     intoFoundry(state);
     for (const next of FLOOR_ORDER.slice(1)) takeDoor(state, next);
-    expect(state.quest).toBe(4);
+    expect(state.quest).toBe(ENGINE_DOWN_STEP - 1);
     const engine = currentLevel(state).enemies.find((e) => e.kind === 'orderEngine')!;
     for (let i = 0; i < 60 && !engine.dead; i++) play(state, 1, [{ type: 'attack', enemyId: engine.id }]);
     expect(engine.dead).toBe(true);
@@ -228,7 +268,7 @@ describe('Unrecalled scenarios', () => {
     expect(state.hero.dead).toBe(false);
   });
 
-  it('points the way from the foreman down to the Order Engine, one door at a time', () => {
+  it('points the way from the foreman out to the logging camp, and back down to the Order Engine, one door at a time', () => {
     const state = untouchable(createGameState(content, 1));
     const foreman = currentLevel(state).npcs.find((n) => n.kind === 'foreman')!;
     expect(questGoal(state)?.actorId).toBe(foreman.id);
@@ -236,7 +276,21 @@ describe('Unrecalled scenarios', () => {
 
     const route: string[] = [];
     const keepersOn: string[] = [];
-    for (let goal = questGoal(state); goal && route.length < 10; goal = questGoal(state)) {
+    const used: string[] = [];
+    for (let goal = questGoal(state); goal && route.length < 12; goal = questGoal(state)) {
+      const at = (t: { tx: number; ty: number }) => t.tx + 0.5 === goal!.x && t.ty + 0.5 === goal!.y;
+      const crate = currentLevel(state).containers.find(at);
+      const readable = currentLevel(state).readables.find(at);
+      if (crate?.weapon) {
+        used.push(crate.weapon);
+        openCrateWith(state, crate.weapon);
+        continue;
+      }
+      if (readable) {
+        used.push(readable.id);
+        use(state, readable.id);
+        continue;
+      }
       if (goal.actorId !== undefined) {
         if (state.levelId === 'assembly') break;
         // A machine still standing keeps the way on sealed, so the guide points at it first.
@@ -248,35 +302,53 @@ describe('Unrecalled scenarios', () => {
       takeDoor(state, door.to);
       route.push(state.levelId);
     }
-    expect(route).toEqual(['tradingPost', ...FLOOR_ORDER]);
+    expect(route).toEqual(['woods', 'rustbelt', 'tradingPost', ...FLOOR_ORDER]);
+    expect(used).toEqual(['chainsaw', 'breaker']);
     expect(keepersOn).toEqual(['gallery']);
     const engine = currentLevel(state).enemies.find((e) => e.kind === 'orderEngine')!;
     expect(questGoal(state)?.actorId).toBe(engine.id);
   });
 
-  it('fights with fists until Pell builds the chainsaw for scrap, then cuts with it', () => {
+  it('fights with fists, then finds Pell\'s old saw in the woods and cuts with it', () => {
     const state = untouchable(createGameState(content, 1));
     expect(state.hero.weapon).toBeNull();
+    talkTo(state, 'foreman');
+    takeDoor(state, 'woods');
+    expect(state.levelId).toBe('woods');
+    const events = openCrateWith(state, 'chainsaw');
+    expect(events.map((e) => e.type)).toContain('Armed');
+    expect(state.hero.weapon).toBe('chainsaw');
+    expect(state.quest).toBe(POWER_ON_STEP - 1);
+
+    const { hero } = state;
+    const crawler = currentLevel(state).enemies
+      .filter((e) => e.kind === 'crawler' && !e.dead)
+      .sort((a, b) => Math.hypot(a.x - hero.x, a.y - hero.y) - Math.hypot(b.x - hero.x, b.y - hero.y))[0]!;
+    const cut = play(state, 10, [{ type: 'attack', enemyId: crawler.id }]);
+    expect(crawler.dead).toBe(true);
+    expect(cut.some((e) => e.type === 'Swung' && e.actorId === hero.id)).toBe(false);
+  });
+
+  it('opens the depot\'s door for a breaker thrown before the saw is found, and leaves the saw for later', () => {
+    const state = untouchable(createGameState(content, 1));
+    talkTo(state, 'foreman');
+    takeDoor(state, 'woods');
+    use(state, 'breaker');
+    expect(state.quest).toBe(POWER_ON_STEP);
+    expect(state.hero.weapon).toBeNull();
+    openCrateWith(state, 'chainsaw');
+    expect([state.hero.weapon, state.quest]).toEqual(['chainsaw', POWER_ON_STEP]);
+  });
+
+  it('lets Pell harden the salvager\'s knuckles for scrap before they find a weapon', () => {
+    const state = untouchable(createGameState(content, 1));
     const workshop = currentLevel(state).level.structures.findIndex((s) => s.kind === 'workshop');
     play(state, 25, [{ type: 'enterStructure', index: workshop }]);
     play(state, 1);
-    expect(state.levelId).toBe('workshop');
     talkTo(state, 'tinker');
     const pell = currentLevel(state).npcs.find((n) => n.kind === 'tinker')!;
+    state.hero.gold = 50;
     play(state, 0.1, [{ type: 'useService', npcId: pell.id, service: 0 }]);
-    expect(state.hero.weapon).toBeNull();
-    state.hero.gold = 70;
-    play(state, 0.1, [{ type: 'useService', npcId: pell.id, service: 0 }]);
-    expect([state.hero.weapon, state.hero.gold]).toEqual(['chainsaw', 10]);
-
-    takeDoor(state, 'rustbelt');
-    intoFoundry(state);
-    const { hero } = state;
-    const crawler = currentLevel(state).enemies
-      .filter((e) => e.kind === 'crawler')
-      .sort((a, b) => Math.hypot(a.x - hero.x, a.y - hero.y) - Math.hypot(b.x - hero.x, b.y - hero.y))[0]!;
-    const events = play(state, 10, [{ type: 'attack', enemyId: crawler.id }]);
-    expect(crawler.dead).toBe(true);
-    expect(events.some((e) => e.type === 'Swung' && e.actorId === hero.id)).toBe(false);
+    expect([state.hero.bonusDamage, state.hero.gold, state.hero.weapon]).toEqual([3, 10, null]);
   });
 });

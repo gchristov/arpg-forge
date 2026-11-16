@@ -23,7 +23,7 @@ const TREE_SHARE = { out: 0.12, edge: 0.3 };
 
 /**
  * Past every level's walls and edges, so the player never sees where the map stops: indoors, darkness past the walls;
- * round Rustbelt, the dead woods carrying on, and the Foundry's bulk past its top edge.
+ * outdoors, the dead woods carrying on, and the Foundry's bulk past Rustbelt's top edge.
  */
 export function surroundingsOf(level: Level): Surroundings {
   if (level.outdoor) return { margin: MARGIN, ground: Ground.Dirt, scenery: woodsBeyond(level) };
@@ -40,7 +40,8 @@ function woodsBeyond(level: Level): Surroundings['scenery'] {
       const edge = map.ground[clamp(ty, 0, map.height - 1) * map.width + clamp(tx, 0, map.width - 1)];
       if (edge === Ground.Water || edge === Ground.Mud) continue;
       const h = hash2(tx, ty, 71);
-      if (ty < 0 && tx >= FOUNDRY_SIDE.from && tx <= FOUNDRY_SIDE.to) {
+      if (nearEdgePortal(level, tx, ty)) continue;
+      if (level.id === 'rustbelt' && ty < 0 && tx >= FOUNDRY_SIDE.from && tx <= FOUNDRY_SIDE.to) {
         // Closer together along the edge itself, so trees and the yard are what stop the salvager, not an unseen line.
         const at = ty === -1 ? 'edge' : 'out';
         if (h < FOUNDRY_SHARE[at]) scenery.push({ prop: FOUNDRY_BEYOND[Math.floor(hash2(tx, ty, 73) * FOUNDRY_BEYOND.length)]!, x: tx + 0.5, y: ty + 0.5 });
@@ -50,4 +51,12 @@ function woodsBeyond(level: Level): Surroundings['scenery'] {
     }
   }
   return scenery;
+}
+
+/** A trail leaving through an edge carries on clear of trees, so the way out looks like one. */
+function nearEdgePortal(level: Level, tx: number, ty: number): boolean {
+  const { map } = level;
+  const x = clamp(tx, 0, map.width - 1);
+  const y = clamp(ty, 0, map.height - 1);
+  return level.portals.some((p) => Math.abs(p.tx - x) + Math.abs(p.ty - y) <= 1);
 }

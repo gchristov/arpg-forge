@@ -773,8 +773,6 @@ export class SceneRenderer {
     );
   }
 
-  /** Floor models laid over the ground tiles of the kinds that have one. */
-  /** Floor models over the ground, except under walls drawn as panels, like the ground itself. */
   /** Tiles of the level's doorways set into a wall's line, between wall tiles, as indexes. */
   private doorwayTiles(level: Level, kinds: ReadonlySet<number>): Set<number> {
     const { map } = level;
@@ -784,6 +782,7 @@ export class SceneRenderer {
       .map((p) => tileIndex(map, p.tx, p.ty)));
   }
 
+  /** Floor models over the ground, except under walls drawn as panels and in doorways, like the ground itself. */
   private buildFloors(level: Level, walls: ReadonlySet<number> = new Set(), holes: ReadonlySet<number> = new Set()): THREE.InstancedMesh[] {
     const { map } = level;
     const byName = new Map<string, THREE.Matrix4[]>();

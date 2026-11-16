@@ -27,12 +27,22 @@ const NIGHT: Mood = {
   water: { ground: Ground.Water, flow: { x: 0.5, y: 0 }, deep: 0x0c1c2c, shallow: 0x23506a, glint: 0xa8c8e0 },
 };
 
+/** Deeper in the dead woods: the same moon, colder and further off through the branches, and thicker mist. */
+const { water: _river, ...dryNight } = NIGHT;
+const WOODS: Mood = {
+  ...dryNight,
+  ambient: 0x323a46, ambientIntensity: 0.6,
+  moon: { colour: 0x98b0d0, intensity: 0.8 },
+  mist: { colour: 0x7a8aa0, density: 1 },
+};
+
 /** On the Foundry's floors, the dark hides all the salvager hasn't found yet, machines included. */
 const FOUND_AS_YOU_GO = 9;
 
 /** Each level's own walls, floor plates and air, so the player always knows where they are. */
 const FLOOR_STYLES: Record<string, { panel: string; plate: string | null; mood: Mood }> = {
   rustbelt: { panel: 'wall', plate: null, mood: NIGHT },
+  woods: { panel: 'wall', plate: null, mood: WOODS },
   workshop: { panel: 'wall', plate: 'floor-metal', mood: foundry(0x40362a, 0xf0d8b8) },
   tradingPost: { panel: 'wall-astra', plate: 'floor-plates', mood: foundry(0x3e382e, 0xf0e0c8) },
   pumphouse: { panel: 'wall-divided', plate: 'floor-dark', mood: foundry(0x262c30, 0xc8d4e0) },
