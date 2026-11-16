@@ -42,6 +42,13 @@ const FLOOR_STYLES: Record<string, { panel: string; plate: string | null; mood: 
   gallery: { panel: 'wall-window', plate: 'floor-dark', mood: { ...foundry(0x3a2a2c, 0xf0c8c8), sightRange: FOUND_AS_YOU_GO } },
   assembly: { panel: 'wall-divided', plate: 'floor-squares', mood: { ...foundry(0x3a2c22, 0xf0d0b0), sightRange: FOUND_AS_YOU_GO } },
 };
+/** Each wall style's corner pieces, from the same kit, so walls turn in the style they're built in. */
+const KIT_CORNERS: Record<string, { inner: string; outer: string }> = {
+  'wall': { inner: 'wall-band-inner', outer: 'wall-band-outer' },
+  'wall-astra': { inner: 'wall-astra-inner', outer: 'wall-astra-outer' },
+  'wall-divided': { inner: 'wall-astra-inner', outer: 'wall-astra-outer' },
+  'wall-window': { inner: 'wall-window-inner', outer: 'wall-window-outer' },
+};
 const styleOf = (levelId: string) => FLOOR_STYLES[levelId] ?? FLOOR_STYLES.intake!;
 
 const tall = (name: string, height: number, turn: number | 'random' = 0): PropLook['model'] => ({
@@ -60,7 +67,8 @@ const PROPS: Partial<Record<number, PropLook>> = {
   [Prop.Shelves]: { shape: 'box', width: 0.9, height: 1.3, colour: 0x4a4a4a, model: tall('shelves', 1.3, Math.PI / 2) },
   [Prop.Desk]: { shape: 'box', width: 0.9, height: 0.6, colour: 0x4a4a52, model: tall('desk', 0.65) },
   [Prop.Column]: { shape: 'cylinder', width: 0.6, height: 1.8, colour: 0x3a3e46, model: tall('column', 1.9) },
-  [Prop.Door]: { shape: 'box', width: 1, height: 2.2, colour: 0x3a3e46, model: { names: ['door'], fit: { type: 'box', width: 1.5, height: 2.3, depth: 0.4 } } },
+  // A doorway's frame, at the wall kit's own scale, so it fills a whole cell of wall.
+  [Prop.Door]: { shape: 'box', width: 1, height: 2.2, colour: 0x3a3e46, model: { names: ['door'], fit: { type: 'height', height: 3.75 } } },
   [Prop.Chair]: { shape: 'box', width: 0.5, height: 0.8, colour: 0x4a4a52, model: tall('chair', 0.8, 'random') },
   // A rack a delivery unit stands in while it charges; this one's empty.
   [Prop.Cradle]: { shape: 'box', width: 0.9, height: 2.2, colour: 0x3a3e46, model: tall('cradle', 2.3) },
@@ -227,8 +235,7 @@ export const unrecalledLook: Look = {
     props: [Prop.Wall, Prop.WallLow, Prop.WallLight, Prop.WallAlarm], panel: styleOf(levelId).panel, span: 3, front: { name: 'wall-front', height: 0.3 },
     // Walls on the camera's side stand full height, cut away round the salvager so they never hide them.
     cutaway: { radius: 4.5 },
-    // Plain posts where walls turn, covering the joins.
-    corner: 'corner-post',
+    kit: KIT_CORNERS[styleOf(levelId).panel],
     // Now and then, cables hang down a wall into the room from the works past its top.
     crown: ['hanging-cables', null, null, null, null, null, null, null, null],
     // The kit's ceiling strip light, stood up on the wall with its light facing the room.

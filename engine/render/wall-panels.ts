@@ -105,30 +105,82 @@ export function wallFaces(map: TileMap, isWall: (tx: number, ty: number) => bool
 export const isWallTile = (map: TileMap, kinds: ReadonlySet<number>) => (tx: number, ty: number) =>
   map.solid[tileIndex(map, tx, ty)] === 1 && kinds.has(map.prop[tileIndex(map, tx, ty)]!);
 
-/** A point where walls turn a corner, at a tile corner; `front` if it's on a wall facing the camera. */
-export interface WallCorner {
+/**
+ * A corner piece of a modular wall kit, at a tile corner: `inner` where a room turns, outer where a wall juts into one.
+ * `arms` point along the two walls it joins, away from the corner, each one kit cell long.
+ */
+export interface KitCorner {
   x: number;
   y: number;
+  inner: boolean;
+  arms: { x: number; y: number };
   front: boolean;
 }
 
 /**
- * Every tile corner where wall edges turn: where the four tiles meeting there aren't a straight edge (two walls side by
- * side) nor all one kind. Straight runs of panels meet badly there, so a column stands on each.
+ * Walls laid the way a modular kit expects, on a grid of `span`-tile cells from the map's corner: a straight panel for
+ * every whole cell of edge between wall and floor, and a corner piece wherever the edges turn, covering a cell of each
+ * wall it joins. Rooms drawn on the grid come out with every piece whole. An opening in a wall, such as a doorway,
+ * counts as wall for where it turns, but its cell gets no panel; nor does a cell only partly edged.
  */
-export function wallCorners(map: TileMap, isWall: (tx: number, ty: number) => boolean): WallCorner[] {
-  const wallAt = (tx: number, ty: number) => inBounds(map, tx, ty) && isWall(tx, ty);
+export function kitWalls(
+  map: TileMap,
+  isWall: (tx: number, ty: number) => boolean,
+  span: number,
+  isOpening: (tx: number, ty: number) => boolean = () => false,
+): { panels: WallPanel[]; corners: KitCorner[] } {
+  const wallAt = (tx: number, ty: number) => !inBounds(map, tx, ty) || isWall(tx, ty) || isOpening(tx, ty);
   const isFront = frontTest(map, isWall);
-  const corners: WallCorner[] = [];
+  const corners: KitCorner[] = [];
+  const covered = new Set<string>();
   for (let y = 1; y < map.height; y++) {
     for (let x = 1; x < map.width; x++) {
       const tiles = [[x - 1, y - 1], [x, y - 1], [x - 1, y], [x, y]] as const;
       const walls = tiles.filter(([tx, ty]) => wallAt(tx, ty));
-      if (walls.length === 0 || walls.length === 4) continue;
-      // Two walls side by side make a straight edge; two diagonal ones still turn.
-      if (walls.length === 2 && (walls[0]![0] === walls[1]![0] || walls[0]![1] === walls[1]![1])) continue;
-      corners.push({ x, y, front: walls.some(([tx, ty]) => isFront(tx, ty)) });
+      // A room's corner has one floor tile among the four; a wall jutting into a room has one wall tile.
+      const odd = walls.length === 3 ? tiles.find(([tx, ty]) => !wallAt(tx, ty)) : walls.length === 1 ? walls[0] : undefined;
+      if (!odd) continue;
+      const arms = { x: odd[0] === x ? 1 : -1, y: odd[1] === y ? 1 : -1 };
+      corners.push({ x, y, inner: walls.length === 3, arms, front: walls.some(([tx, ty]) => inBounds(map, tx, ty) && isFront(tx, ty)) });
+      covered.add(`h${y}:${arms.x > 0 ? x : x - span}`);
+      covered.add(`v${x}:${arms.y > 0 ? y : y - span}`);
     }
   }
-  return corners;
+  const panels: WallPanel[] = [];
+  // Horizontal edges lie between rows y - 1 and y; vertical ones between columns x - 1 and x.
+  for (const horizontal of [true, false]) {
+    const lines = horizontal ? map.height : map.width;
+    const length = horizontal ? map.width : map.height;
+    for (let line = 1; line < lines; line++) {
+      for (let start = 0; start + span <= length; start += span) {
+        if (covered.has(`${horizontal ? 'h' : 'v'}${line}:${start}`)) continue;
+        // Which side the wall is on, the same along the whole cell, or no panel.
+        let wallBefore: boolean | null = null;
+        for (let at = start; at < start + span; at++) {
+          const [bx, by, ax, ay] = horizontal ? [at, line - 1, at, line] : [line - 1, at, line, at];
+          const before = wallAt(bx, by);
+          if (before === wallAt(ax, ay) || (wallBefore !== null && before !== wallBefore)) {
+            wallBefore = null;
+            break;
+          }
+          wallBefore = before;
+        }
+        if (wallBefore === null) continue;
+        const opening = Array.from({ length: span }, (_, i) => start + i).some((at) => {
+          const [wx, wy] = horizontal ? [at, wallBefore ? line - 1 : line] : [wallBefore ? line - 1 : line, at];
+          return inBounds(map, wx, wy) && isOpening(wx, wy);
+        });
+        if (opening) continue;
+        const toFloor = wallBefore ? 1 : -1;
+        const middle = start + span / 2;
+        const wallTile = horizontal ? [Math.floor(middle), wallBefore ? line - 1 : line] : [wallBefore ? line - 1 : line, Math.floor(middle)];
+        panels.push({
+          x: horizontal ? middle : line, y: horizontal ? line : middle, length: span,
+          facing: horizontal ? { x: 0, y: toFloor } : { x: toFloor, y: 0 },
+          front: inBounds(map, wallTile[0]!, wallTile[1]!) && isFront(wallTile[0]!, wallTile[1]!),
+        });
+      }
+    }
+  }
+  return { panels, corners };
 }
