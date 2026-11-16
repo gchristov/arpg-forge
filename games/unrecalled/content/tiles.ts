@@ -23,7 +23,6 @@ export const Prop = {
   Computer: 9,
   WallLight: 10,
   Furnace: 11,
-  Door: 12,
   Chair: 13,
   Cradle: 14,
   Cache: 15,

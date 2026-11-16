@@ -66,8 +66,6 @@ const PROPS: Partial<Record<number, PropLook>> = {
   [Prop.Shelves]: { shape: 'box', width: 0.9, height: 1.3, colour: 0x4a4a4a, model: tall('shelves', 1.3, Math.PI / 2) },
   [Prop.Desk]: { shape: 'box', width: 0.9, height: 0.6, colour: 0x4a4a52, model: tall('desk', 0.65) },
   [Prop.Column]: { shape: 'cylinder', width: 0.6, height: 1.8, colour: 0x3a3e46, model: tall('column', 1.9) },
-  // A doorway's frame, at the wall kit's own scale, so it fills a whole cell of wall.
-  [Prop.Door]: { shape: 'box', width: 1, height: 2.2, colour: 0x3a3e46, model: { names: ['door'], fit: { type: 'height', height: 3.75 } } },
   [Prop.Chair]: { shape: 'box', width: 0.5, height: 0.8, colour: 0x4a4a52, model: tall('chair', 0.8, 'random') },
   // A rack a delivery unit stands in while it charges; this one's empty.
   [Prop.Cradle]: { shape: 'box', width: 0.9, height: 2.2, colour: 0x3a3e46, model: tall('cradle', 2.3) },
