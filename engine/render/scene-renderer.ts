@@ -169,11 +169,13 @@ export class SceneRenderer {
     this.lightMap.setHeightFade(mood.heightFade ?? null);
     this.lightMap.setCutaway(null);
     const walls = this.buildWalls(level);
-    this.levelGroup.add(this.buildGround(level, walls?.kinds, surroundings));
+    // A framed doorway's own tile lies in the wall's line, outside the room; its floor would poke out past the wall.
+    const doorways = walls && this.look.walls?.(level.id)?.kit ? this.doorwayTiles(level, walls.kinds) : new Set<number>();
+    this.levelGroup.add(this.buildGround(level, walls?.kinds, surroundings, doorways));
     for (const mesh of this.buildScenery(level, surroundings)) this.levelGroup.add(mesh);
     this.water = mood.water ? this.buildWater(level, mood.water, surroundings) : null;
     if (this.water) this.levelGroup.add(this.water.mesh);
-    for (const mesh of this.buildFloors(level, walls?.kinds)) this.levelGroup.add(mesh);
+    for (const mesh of this.buildFloors(level, walls?.kinds, doorways)) this.levelGroup.add(mesh);
     for (const mesh of walls?.meshes ?? []) this.levelGroup.add(mesh);
     for (const mesh of this.buildProps(level, walls?.kinds)) this.levelGroup.add(mesh);
     this.structures = this.buildStructures(level);
@@ -447,14 +449,16 @@ export class SceneRenderer {
    * Ground tiles, except under walls drawn as panels, where the room ends at the panel. With surroundings, the ground
    * carries on under the walls too, and past the map's edges.
    */
-  private buildGround(level: Level, walls: ReadonlySet<number> = new Set(), surroundings: Surroundings | null = null): THREE.Mesh {
+  private buildGround(
+    level: Level, walls: ReadonlySet<number> = new Set(), surroundings: Surroundings | null = null, holes: ReadonlySet<number> = new Set(),
+  ): THREE.Mesh {
     const { map } = level;
     const margin = surroundings?.margin ?? 0;
     const kindAt = (tx: number, ty: number): number => {
       const i = clamp(ty, 0, map.height - 1) * map.width + clamp(tx, 0, map.width - 1);
       if (surroundings?.ground !== undefined) return map.ground[i] || surroundings.ground;
       const onMap = tx >= 0 && ty >= 0 && tx < map.width && ty < map.height;
-      return !onMap || walls.has(map.prop[i]!) ? 0 : map.ground[i]!;
+      return !onMap || walls.has(map.prop[i]!) || holes.has(i) ? 0 : map.ground[i]!;
     };
     const grain = this.look.mood(level.id).groundGrain;
     if (grain !== undefined) {
@@ -571,15 +575,13 @@ export class SceneRenderer {
       .multiply(new THREE.Matrix4().makeRotationY(Math.atan2(-p.facing.y, p.facing.x)))
       .multiply(scale)
       .multiply(new THREE.Matrix4().makeTranslation(KIT_CELL / 2, 0, 0));
-    const cornerAt = (c: KitCorner) => {
-      // An inner piece runs along +x and +z from its corner once moved a cell over; an outer one along -x and -z.
-      const along = c.inner ? c.arms : { x: -c.arms.x, y: -c.arms.y };
-      const placement = new THREE.Matrix4()
-        .makeTranslation(c.x, 0, c.y)
-        .multiply(new THREE.Matrix4().makeRotationY(KIT_CORNER_TURN[`${along.x},${along.y}`]!))
-        .multiply(scale);
-      return c.inner ? placement.multiply(new THREE.Matrix4().makeTranslation(KIT_CELL, 0, KIT_CELL)) : placement;
-    };
+    // Both kinds of corner piece have their corner a cell back from the origin and arms running along +x and +z; an inner
+    // piece's walls face in between its arms, an outer one's out. Moved a cell over, they're turned to run along `arms`.
+    const cornerAt = (c: KitCorner) => new THREE.Matrix4()
+      .makeTranslation(c.x, 0, c.y)
+      .multiply(new THREE.Matrix4().makeRotationY(KIT_CORNER_TURN[`${c.arms.x},${c.arms.y}`]!))
+      .multiply(scale)
+      .multiply(new THREE.Matrix4().makeTranslation(KIT_CELL, 0, KIT_CELL));
     const pieces: Array<{ template: ModelTemplate | undefined; placements: THREE.Matrix4[]; front: boolean }> = [];
     for (const front of [false, true]) {
       pieces.push({ template: panel, placements: panels.filter((p) => p.front === front).map(straight), front });
@@ -736,12 +738,21 @@ export class SceneRenderer {
 
   /** Floor models laid over the ground tiles of the kinds that have one. */
   /** Floor models over the ground, except under walls drawn as panels, like the ground itself. */
-  private buildFloors(level: Level, walls: ReadonlySet<number> = new Set()): THREE.InstancedMesh[] {
+  /** Tiles of the level's doorways set into a wall's line, between wall tiles, as indexes. */
+  private doorwayTiles(level: Level, kinds: ReadonlySet<number>): Set<number> {
+    const { map } = level;
+    const wallAt = (x: number, y: number) => inBounds(map, x, y) && kinds.has(map.prop[tileIndex(map, x, y)]!) && map.solid[tileIndex(map, x, y)] === 1;
+    return new Set(level.portals
+      .filter((p) => (wallAt(p.tx - 1, p.ty) && wallAt(p.tx + 1, p.ty)) || (wallAt(p.tx, p.ty - 1) && wallAt(p.tx, p.ty + 1)))
+      .map((p) => tileIndex(map, p.tx, p.ty)));
+  }
+
+  private buildFloors(level: Level, walls: ReadonlySet<number> = new Set(), holes: ReadonlySet<number> = new Set()): THREE.InstancedMesh[] {
     const { map } = level;
     const byName = new Map<string, THREE.Matrix4[]>();
     for (let ty = 0; ty < map.height; ty++) {
       for (let tx = 0; tx < map.width; tx++) {
-        if (walls.has(map.prop[ty * map.width + tx]!)) continue;
+        if (walls.has(map.prop[ty * map.width + tx]!) || holes.has(ty * map.width + tx)) continue;
         const name = this.look.floorModel?.(map.ground[ty * map.width + tx]!, level.id);
         if (!name || !this.models.get(name)) continue;
         let list = byName.get(name);
