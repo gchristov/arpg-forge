@@ -40,11 +40,18 @@ export class Hud {
       $('patchN').textContent = String(v);
       $('bPatch').classList.toggle('off', v <= 0);
     });
-    const emp = state.rules.hero.skills[EMP]!;
-    const recharging = hero.skillCooldowns[EMP]! / emp.cooldown;
-    shown.set('empOff', recharging > 0 || hero.resource < emp.cost, (v) => $('bEmp').classList.toggle('off', v));
-    // The bar along the button's foot fills back up as the EMP recharges.
-    shown.set('empCharge', Math.round((1 - recharging) * 20), (v) => ($('empCd').style.transform = `scaleX(${v / 20})`));
+    const emp = state.rules.hero.skills[EMP];
+    // Charge only powers the EMP, so neither shows until the salvager has it.
+    shown.set('hasEmp', Boolean(emp), (v) => {
+      $('bEmp').hidden = !v;
+      ($('chargeFill').parentElement as HTMLElement).hidden = !v;
+    });
+    if (emp) {
+      const recharging = hero.skillCooldowns[EMP]! / emp.cooldown;
+      shown.set('empOff', recharging > 0 || hero.resource < emp.cost, (v) => $('bEmp').classList.toggle('off', v));
+      // The bar along the button's foot fills back up as the EMP recharges.
+      shown.set('empCharge', Math.round((1 - recharging) * 20), (v) => ($('empCd').style.transform = `scaleX(${v / 20})`));
+    }
     shown.set('quest', QUEST[state.quest]?.text ?? '', (v) => ($('quest').textContent = v));
     const ls = currentLevel(state);
     shown.set('location', place, (v) => ($('loc').textContent = v));

@@ -1,8 +1,17 @@
-import type { HeroRules } from '../../../engine/sim/content';
+import type { AreaSkill, HeroRules } from '../../../engine/sim/content';
 
 /**
- * The salvager's numbers. They fight with their fists until they find Pell's old chainsaw; the resource is charge,
- * healing items are patch kits, and the skill is an EMP.
+ * Hits every machine around the salvager at once and throws them back, for when a floor's alarm brings a crowd. The
+ * salvager doesn't start with it: it's to be earned in the story, which doesn't give it yet.
+ */
+export const EMP: AreaSkill = {
+  type: 'area', id: 'emp',
+  cost: 20, cooldown: 12, radius: 2.6, damage: [16, 24], damagePerLevel: 3, critChance: 0.1, critMultiplier: 1.5, knockback: 1.6,
+};
+
+/**
+ * The salvager's numbers. They fight with their fists until they find Pell's old chainsaw; the resource is charge, for
+ * the EMP once they have it, and healing items are patch kits.
  */
 export const HERO: HeroRules = {
   radius: 0.28,
@@ -26,13 +35,7 @@ export const HERO: HeroRules = {
     // Keeps cutting for as long as it's in contact, at nearly four times the damage a second of punching.
     chainsaw: { continuous: { tickSeconds: 0.1, power: 3.7 } },
   },
-  skills: [
-    // Hits every machine around the salvager at once and throws them back, for when a floor's alarm brings a crowd.
-    {
-      type: 'area', id: 'emp',
-      cost: 20, cooldown: 12, radius: 2.6, damage: [16, 24], damagePerLevel: 3, critChance: 0.1, critMultiplier: 1.5, knockback: 1.6,
-    },
-  ],
+  skills: [],
   heal: { amount: 60, maxItems: 9 },
   attackAssistRange: 7,
   deathGoldLoss: 0.5,
