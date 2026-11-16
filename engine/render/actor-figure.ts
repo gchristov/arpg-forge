@@ -10,6 +10,9 @@ export type ActorMoment = 'attack' | 'cast' | 'hit';
 const BLEND_SECONDS = 0.15;
 /** How far, in tiles, a held weapon shakes each way while it cuts. */
 const BUZZ_TILES = 0.012;
+/** How far, in radians, an actor leans into a continuous attack, and how quickly it leans in and back. */
+const CHANNEL_LEAN = 0.18;
+const LEAN_RATE = 10;
 /** Hovering actors bob this many tiles up and down, this many times a second. */
 const BOB_HEIGHT = 0.07;
 const BOB_RATE = 0.35;
@@ -44,6 +47,7 @@ export class ActorFigure {
   private held: { weapon: THREE.Object3D; rest: THREE.Vector3; tilesToBone: number } | null = null;
   /** Whether the actor is keeping up a continuous attack. */
   private channelling = false;
+  private model: THREE.Object3D | null = null;
 
   constructor(
     private readonly look: ActorLook,
@@ -58,6 +62,7 @@ export class ActorFigure {
       return;
     }
     model.scale.setScalar(look.height / template.height);
+    this.model = model;
     if (look.hover) {
       model.position.y = look.hover;
       // Indoors nothing casts shadows, so without its own a floating actor looks like it stands further back.
@@ -100,7 +105,7 @@ export class ActorFigure {
 
   /**
    * Sets the ongoing pose: dying wins over moving, which wins over keeping up a continuous attack, which wins over
-   * idling. While channelling, a held weapon buzzes. For looks that match their pace, the move
+   * idling. While channelling, the actor leans in and a held weapon buzzes. For looks that match their pace, the move
    * animation plays faster or slower to match `speed`, in tiles a second, so its feet don't slide over the ground.
    */
   pose(moving: boolean, dead: boolean, speed?: number, channelling = false): void {
@@ -184,6 +189,10 @@ export class ActorFigure {
 
   update(frameSeconds: number): void {
     this.mixer?.update(frameSeconds);
+    if (this.model) {
+      const lean = this.channelling ? CHANNEL_LEAN : 0;
+      this.model.rotation.x += (lean - this.model.rotation.x) * Math.min(1, frameSeconds * LEAN_RATE);
+    }
     if (this.held) {
       const { weapon, rest, tilesToBone } = this.held;
       weapon.position.copy(rest);

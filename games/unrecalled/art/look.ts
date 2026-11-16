@@ -154,11 +154,11 @@ const ACTORS: Record<string, ActorLook> = {
     colour: 0x9a8a70, height: 1.2, radius: 0.24, seenThrough: 0x8ae8ff,
     model: {
       name: 'hero',
-      // The chainsaw is held ready in both hands, driven into what it cuts, and revved with a jab at thin air.
+      // The chainsaw is held out ahead in both hands, ready and while cutting, and revved with a jab at thin air.
       animations: {
-        idle: 'PistolIdle', move: 'Run', attack: 'PunchCross', channel: 'PushLoop', cast: 'Shoot_OneHanded', hit: 'RecieveHit', death: 'Death',
+        idle: 'PistolIdle', move: 'Run', attack: 'PunchCross', channel: 'PistolIdle', cast: 'Shoot_OneHanded', hit: 'RecieveHit', death: 'Death',
       },
-      weapon: { name: 'chainsaw', bone: 'Fist.R', length: 0.65, turn: [0, Math.PI / 2, 0] },
+      weapon: { name: 'chainsaw', bone: 'Fist.R', length: 0.65, turn: [0, Math.PI / 2, Math.PI / 2] },
       matchPace: true,
     },
   },

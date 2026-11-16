@@ -45,7 +45,6 @@
         "RecieveHit",
         "Death",
         "PistolIdle",
-        "PushLoop",
         "PunchCross"
       ],
       "borrow": {
@@ -55,7 +54,6 @@
         "animations": {
           "Run": "Sprint_Loop",
           "Death": "Death01",
-          "PushLoop": "Push_Loop",
           "PistolIdle": "Pistol_Idle_Loop",
           "PunchCross": "Punch_Cross"
         },
