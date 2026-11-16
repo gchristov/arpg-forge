@@ -64,4 +64,6 @@ export interface Level {
   portals: Portal[];
   lights: LevelLight[];
   structures: Structure[];
+  /** Levels in one building share its alarm: a fight on one floor puts every floor on alert. */
+  building?: string;
 }

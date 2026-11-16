@@ -148,7 +148,7 @@ describe('calm enemies', () => {
     expect(worker.scan).toBe(-1);
   });
 
-  it('turn on the hero together once one of them is hit, near ones in its sight, while those further off keep working', () => {
+  it('turn on the hero together once one of them is hit, near ones in its sight at once, and the rest on sight from then on', () => {
     const state = arena(Array.from({ length: 6 }, () => '.'.repeat(40)), { x: 3.5, y: 2.5 }, [
       { kind: 'worker', x: 4.5, y: 2.5 }, { kind: 'worker', x: 9.5, y: 2.5 }, { kind: 'worker', x: 36.5, y: 2.5 },
     ]);
@@ -160,17 +160,23 @@ describe('calm enemies', () => {
     struck!.dead = near!.dead = true;
     state.hero.x = state.hero.prevX = 33.5;
     const later = run(state, 1);
-    expect(far!.mode).toBe('idle');
-    expect(ofType(later, 'EnemyRecognised')).toHaveLength(1);
-    expect(currentLevel(state).alarmed).toBe(false);
+    expect(far!.mode).toBe('chase');
+    expect(ofType(later, 'EnemyRecognised')).toHaveLength(0);
+    expect(currentLevel(state).alarmed).toBe(true);
+    expect(ofType(later, 'LevelAlarmed')).toHaveLength(0);
   });
 
-  it('keep working behind a wall while the room next door fights', () => {
-    const rows = ['.....#.....', '.....#.....', '.....#.....'];
+  it('keep working behind a wall while the room next door fights, then come for the hero once they see them', () => {
+    const rows = ['.....#.....', '.....#.....', '...........'];
     const state = arena(rows, { x: 1.5, y: 1.5 }, [{ kind: 'worker', x: 2.5, y: 1.5 }, { kind: 'worker', x: 7.5, y: 1.5 }]);
     const [struck, nextDoor] = enemiesOf(state);
     run(state, 0.5, [{ type: 'attack', enemyId: struck!.id }]);
     expect([struck!.mode, nextDoor!.mode]).toEqual(['chase', 'idle']);
+    struck!.dead = true;
+    state.hero.x = state.hero.prevX = 7.5;
+    state.hero.y = state.hero.prevY = 2.5;
+    run(state, 0.5);
+    expect(nextDoor!.mode).toBe('chase');
   });
 
   it('leave other enemies as they were, without alarming the level', () => {
