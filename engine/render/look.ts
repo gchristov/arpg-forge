@@ -68,9 +68,25 @@ export interface ActorAnimations {
   idle: string;
   move?: string;
   attack?: string;
+  /** Looped while the actor keeps up a continuous attack, such as cutting with a chainsaw. */
+  channel?: string;
   cast?: string;
   hit?: string;
   death?: string;
+}
+
+/** A weapon fitted into a hand it wasn't made for. */
+export interface HeldWeapon {
+  /** A model from the game's model library. */
+  name: string;
+  /** The bone that holds it, by its name in the model file. */
+  bone: string;
+  /** Its longest side, in tiles. */
+  length: number;
+  /** Turns about the bone's x, y and z, in radians, to point it the way the hand holds it. */
+  turn: [number, number, number];
+  /** How far it sits from the bone, in tiles along the bone's own axes, so the grip lands in the hand. */
+  offset?: [number, number, number];
 }
 
 export interface ActorLook {
@@ -88,6 +104,11 @@ export interface ActorLook {
   scanner?: { eyeHeight: number };
   /** A light the actor carries, such as a lantern or a glowing eye, which fades as it dies. */
   light?: { colour: number; radius: number; intensity: number };
+  /**
+   * What spurts out of it while it's cut into, and gushes and puddles under it when it's killed: oil from a machine,
+   * blood from a beast.
+   */
+  spatter?: { colour: number };
   /** The mark a killed enemy leaves on the ground, such as blood or bone dust. */
   remains?: { radius: number; colour: number; opacity: number };
   /** A model from the game's model library, scaled to `height`. */
@@ -96,8 +117,11 @@ export interface ActorLook {
     animations: ActorAnimations;
     /** Multiplies the model's colours, for example to turn a rogue into a goblin. */
     tint?: number;
-    /** A separate weapon model held in the right hand. */
-    weapon?: string;
+    /**
+     * A separate weapon model held in the right hand: by name, one made to sit on a `handslot.r` bone as it is, or a
+     * `HeldWeapon` fitted to another bone.
+     */
+    weapon?: string | HeldWeapon;
     /**
      * Plays the move animation faster or slower to match how fast the actor moves, so its feet stay planted. Leave
      * it off for animations meant to play at their own pace whatever the speed.
@@ -219,10 +243,10 @@ export interface WallFixture {
   tilt?: number;
 }
 
-/** A burst: the flash it makes and the scorch it leaves on the ground. */
+/** A burst: the flash it makes, and the scorch it leaves on the ground, if any. */
 export interface BurstLook {
   flash: number;
-  scorch: number;
+  scorch?: number;
 }
 
 /** Colours of combat effects and markers. */

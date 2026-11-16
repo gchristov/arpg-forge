@@ -1,9 +1,9 @@
 import { dist } from '../core/math';
 import { chance, int } from '../core/rng';
-import { moveBody } from '../world/collision';
 import { hasLineOfSight } from '../world/line-of-sight';
 import { isSolidAt } from '../world/tile-map';
 import { advanceQuest } from './interaction';
+import { knockBack } from './knockback';
 import { dropEnemyLoot } from './loot';
 import type { BurstDamage } from './content';
 import { currentLevel, type Enemy, type GameState, type SimEvent } from './state';
@@ -47,13 +47,19 @@ export function damageEnemy(
   events: SimEvent[],
 ): void {
   if (e.dead) return;
-  e.hp -= amount;
   events.push({ type: 'EnemyDamaged', enemyId: e.id, amount, crit, x: e.x, y: e.y });
+  hurtEnemy(state, e, amount, kx, ky, knockback, events);
+}
+
+/** Takes `amount` off an enemy without reporting it, for damage the caller reports its own way. */
+export function hurtEnemy(state: GameState, e: Enemy, amount: number, kx: number, ky: number, knockback: number, events: SimEvent[]): void {
+  if (e.dead) return;
+  e.hp -= amount;
   if (e.mode === 'idle' || e.mode === 'return') e.mode = 'chase';
   e.scan = -1;
   if (state.rules.enemies[e.kind]!.calm) provoke(state, e, events);
   const type = state.rules.enemies[e.kind]!;
-  if (!type.boss) moveBody(currentLevel(state).level.map, e, kx * knockback, ky * knockback);
+  if (!type.boss && knockback > 0) knockBack(e, kx, ky, knockback);
   if (e.hp <= 0) killEnemy(state, e, events);
 }
 

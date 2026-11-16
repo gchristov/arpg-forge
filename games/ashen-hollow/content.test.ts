@@ -14,7 +14,8 @@ describe('Ashen Hollow content', () => {
     const kinds = ['hero', ...Object.keys(content.enemies), ...content.levels.flatMap((l) => l.npcs.map((n) => n.kind))];
     const missing = kinds.filter((kind) => {
       const model = ashenHollowLook.actor(kind).model;
-      return !model || !MODEL_URLS[model.name] || (model.weapon !== undefined && !MODEL_URLS[model.weapon]);
+      const weapon = typeof model?.weapon === 'string' ? model.weapon : model?.weapon?.name;
+      return !model || !MODEL_URLS[model.name] || (weapon !== undefined && !MODEL_URLS[weapon]);
     });
     expect(missing).toEqual([]);
   });

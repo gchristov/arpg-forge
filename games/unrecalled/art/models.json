@@ -27,7 +27,11 @@
       "sha256": "298f6732b872e4cf7b30e6e7abf9641c7f6dc6b326df37ac089533ed7e3d58c9",
       "textures": "glTF"
     },
-    "spacebase": "https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Space-Base-Bits-1.0/6dfbcac9927d06283752c4defd4882cfe0d29666/addons/kaykit_space_base_bits"
+    "spacebase": "https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Space-Base-Bits-1.0/6dfbcac9927d06283752c4defd4882cfe0d29666/addons/kaykit_space_base_bits",
+    "chainsaw": {
+      "zip": "https://opengameart.org/sites/default/files/chainsaw_fbx_gltf_blend_textures_0.zip",
+      "sha256": "d3ae1cf5a4977ba35612cf5df2a0187d66efdc9285cd2adaeb4183db1095fec7"
+    }
   },
   "models": [
     {
@@ -35,12 +39,13 @@
       "pack": "characters",
       "path": "Ultimate Animated Character Pack - Nov 2019/FBX/Worker_Male.fbx",
       "animations": [
-        "Idle",
         "Run",
-        "Punch",
         "Shoot_OneHanded",
         "RecieveHit",
-        "Death"
+        "Death",
+        "PistolIdle",
+        "PunchCross",
+        "IdleLoop"
       ],
       "borrow": {
         "pack": "animations",
@@ -48,7 +53,10 @@
         "pose": "A_TPose",
         "animations": {
           "Run": "Sprint_Loop",
-          "Death": "Death01"
+          "Death": "Death01",
+          "PistolIdle": "Pistol_Idle_Loop",
+          "PunchCross": "Punch_Cross",
+          "IdleLoop": "Idle_Loop"
         },
         "bones": {
           "Body": "DEF-hips",
@@ -852,6 +860,15 @@
       "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallWindow_Corner_Square_Outer.gltf",
       "textures": {
         "maxSize": 512,
+        "dropDetailMaps": true
+      }
+    },
+    {
+      "name": "chainsaw",
+      "pack": "chainsaw",
+      "path": "GLTF/Chainsaw.gltf",
+      "textures": {
+        "maxSize": 256,
         "dropDetailMaps": true
       }
     }

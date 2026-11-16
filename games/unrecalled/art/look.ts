@@ -40,6 +40,7 @@ const FLOOR_STYLES: Record<string, { panel: string; plate: string | null; mood: 
   intake: { panel: 'wall', plate: 'floor-plates', mood: { ...foundry(0x343a40, 0xd8e4f0), sightRange: FOUND_AS_YOU_GO } },
   sorting: { panel: 'wall-astra', plate: 'floor-metal', mood: { ...foundry(0x3a3428, 0xf0e0c0), sightRange: FOUND_AS_YOU_GO } },
   gallery: { panel: 'wall-window', plate: 'floor-dark', mood: { ...foundry(0x3a2a2c, 0xf0c8c8), sightRange: FOUND_AS_YOU_GO } },
+  arena: { panel: 'wall', plate: 'floor-plates', mood: foundry(0x343a40, 0xd8e4f0) },
   assembly: { panel: 'wall-divided', plate: 'floor-squares', mood: { ...foundry(0x3a2c22, 0xf0d0b0), sightRange: FOUND_AS_YOU_GO } },
 };
 /** Each wall style's corner pieces, from the same kit, so walls turn in the style they're built in. */
@@ -144,7 +145,8 @@ const robot = (
   tint?: number,
 ): ActorLook => ({
   colour: 0x8a8a8a, height, radius: 0.3 * scale, scale,
-  remains: { radius: 0.32 * scale, colour: 0x1a1c20, opacity: 0.8 },
+  // Machines bleed oil when cut into, and leave a puddle of it where they fall.
+  spatter: { colour: 0x16110b },
   model: { name, animations, matchPace: true, ...(tint === undefined ? {} : { tint }) },
 });
 
@@ -153,7 +155,12 @@ const ACTORS: Record<string, ActorLook> = {
     colour: 0x9a8a70, height: 1.2, radius: 0.24, seenThrough: 0x8ae8ff,
     model: {
       name: 'hero',
-      animations: { idle: 'Idle', move: 'Run', attack: 'Punch', cast: 'Shoot_OneHanded', hit: 'RecieveHit', death: 'Death' },
+      // At rest the chainsaw hangs at the salvager's side; it's held out ahead in both hands while cutting, and revved
+      // with a jab at thin air.
+      animations: {
+        idle: 'IdleLoop', move: 'Run', attack: 'PunchCross', channel: 'PistolIdle', cast: 'Shoot_OneHanded', hit: 'RecieveHit', death: 'Death',
+      },
+      weapon: { name: 'chainsaw', bone: 'Fist.R', length: 0.65, turn: [0, Math.PI / 2, Math.PI / 2] },
       matchPace: true,
     },
   },
@@ -191,7 +198,7 @@ export const unrecalledLook: Look = {
     guide: { arrow: 0xffb050, name: 0xd8e4e8 },
     skillLight: 0x6ad8ff, telegraphLight: 0xff7a3a, bossLight: 0xff9a50, sealedLight: 0xff2a1a, scan: 0xff3a2a, lightning: 0x5ac8ff,
     smoke: 0x5a5e66,
-    explosion: { flash: 0x8ae8ff, scorch: 0x10141a },
+    explosion: { flash: 0x8ae8ff },
     slam: { flash: 0xffa050, scorch: 0x201008 },
   },
   mood: (levelId) => styleOf(levelId).mood,

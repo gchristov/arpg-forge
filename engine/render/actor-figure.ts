@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import type { ActorLook } from './look';
+import type { ActorLook, HeldWeapon } from './look';
+import { modelSize } from './model-instancing';
 import type { ModelLibrary } from './models';
 import { walkPace } from './walk-pace';
 
@@ -7,6 +8,11 @@ import { walkPace } from './walk-pace';
 export type ActorMoment = 'attack' | 'cast' | 'hit';
 
 const BLEND_SECONDS = 0.15;
+/** How far, in tiles, a held weapon shakes each way while it cuts. */
+const BUZZ_TILES = 0.012;
+/** How far, in radians, an actor leans into a continuous attack, and how quickly it leans in and back. */
+const CHANNEL_LEAN = 0.18;
+const LEAN_RATE = 10;
 /** Hovering actors bob this many tiles up and down, this many times a second. */
 const BOB_HEIGHT = 0.07;
 const BOB_RATE = 0.35;
@@ -37,6 +43,11 @@ export class ActorFigure {
   private moment: THREE.AnimationAction | null = null;
   /** Tiles a second the move animation carries the actor at its normal speed, or null if it couldn't be measured. */
   private readonly movePace: number | null = null;
+  /** The weapon in hand, where it rests in the hand, and how many of the hand's own units make a tile. */
+  private held: { weapon: THREE.Object3D; rest: THREE.Vector3; tilesToBone: number } | null = null;
+  /** Whether the actor is keeping up a continuous attack. */
+  private channelling = false;
+  private model: THREE.Object3D | null = null;
 
   constructor(
     private readonly look: ActorLook,
@@ -51,6 +62,7 @@ export class ActorFigure {
       return;
     }
     model.scale.setScalar(look.height / template.height);
+    this.model = model;
     if (look.hover) {
       model.position.y = look.hover;
       // Indoors nothing casts shadows, so without its own a floating actor looks like it stands further back.
@@ -68,18 +80,7 @@ export class ActorFigure {
       o.castShadow = true;
       o.material = this.ownMaterial(o.material as THREE.Material, tint);
     });
-    if (look.model.weapon) {
-      const weapon = library.instantiate(look.model.weapon);
-      const hand = model.getObjectByName('handslot.r');
-      if (weapon && hand) {
-        weapon.traverse((o) => {
-          if (!(o instanceof THREE.Mesh)) return;
-          o.castShadow = true;
-          o.material = this.ownMaterial(o.material as THREE.Material, null);
-        });
-        hand.add(weapon);
-      }
-    }
+    if (look.model.weapon) this.holdWeapon(model, look.model.weapon, library);
     this.root.add(model);
     model.traverse((o) => {
       // Three.js keeps every object's `rotation` angles in step with its quaternion. Animation moves bones by their
@@ -103,21 +104,24 @@ export class ActorFigure {
   }
 
   /**
-   * Sets the ongoing pose: dying wins over moving, which wins over idling. For looks that match their pace, the move
+   * Sets the ongoing pose: dying wins over moving, which wins over keeping up a continuous attack, which wins over
+   * idling. While channelling, the actor leans in and a held weapon buzzes. For looks that match their pace, the move
    * animation plays faster or slower to match `speed`, in tiles a second, so its feet don't slide over the ground.
    */
-  pose(moving: boolean, dead: boolean, speed?: number): void {
-    this.setBase(dead ? 'death' : moving ? 'move' : 'idle');
+  pose(moving: boolean, dead: boolean, speed?: number, channelling = false): void {
+    this.channelling = channelling && !dead && !moving;
+    this.setBase(dead ? 'death' : moving ? 'move' : this.channelling ? 'channel' : 'idle');
     const move = this.action('move');
     if (move && speed && this.movePace) move.timeScale = THREE.MathUtils.clamp(speed / this.movePace, ...PACE_RANGE);
   }
 
   /**
    * Plays a one-off moment, stretched to last `seconds` if given, such as an attack timed to its wind-up. A flinch
-   * stops the legs, so it's skipped while moving rather than sliding along; the hit flash still shows.
+   * stops the legs, so it's skipped while moving rather than sliding along, and while keeping up a continuous attack
+   * rather than breaking it off; the hit flash still shows.
    */
   play(moment: ActorMoment, seconds?: number): void {
-    if (moment === 'hit' && (this.moment || this.base === this.action('move'))) return;
+    if (moment === 'hit' && (this.moment || this.channelling || this.base === this.action('move'))) return;
     const action = this.action(moment);
     if (!action || this.base === this.action('death')) return;
     const from = this.moment ?? this.base;
@@ -143,6 +147,30 @@ export class ActorFigure {
     this.root.scale.set(1, this.mixer ? 1 : 0.3 + 0.7 * fade, 1);
   }
 
+  private holdWeapon(model: THREE.Object3D, held: string | HeldWeapon, library: ModelLibrary): void {
+    const name = typeof held === 'string' ? held : held.name;
+    const weapon = library.instantiate(name);
+    const hand = model.getObjectByName(typeof held === 'string' ? 'handslot.r' : THREE.PropertyBinding.sanitizeNodeName(held.bone));
+    if (!weapon || !hand) return;
+    weapon.traverse((o) => {
+      if (!(o instanceof THREE.Mesh)) return;
+      o.castShadow = true;
+      o.material = this.ownMaterial(o.material as THREE.Material, null);
+    });
+    // Sizes in tiles undo the scale the hand's bones and the model already carry.
+    model.updateMatrixWorld(true);
+    const handScale = hand.getWorldScale(new THREE.Vector3()).x;
+    if (typeof held !== 'string') {
+      const size = modelSize(library.get(name)!);
+      weapon.scale.setScalar(held.length / Math.max(size.x, size.y, size.z) / handScale);
+      weapon.rotation.set(...held.turn);
+      const [ox, oy, oz] = held.offset ?? [0, 0, 0];
+      weapon.position.set(ox / handScale, oy / handScale, oz / handScale);
+    }
+    hand.add(weapon);
+    this.held = { weapon, rest: weapon.position.clone(), tilesToBone: 1 / handScale };
+  }
+
   /** Names of the animations currently showing, for tests and debugging. */
   activeAnimations(): string[] {
     return [...this.actions]
@@ -162,6 +190,20 @@ export class ActorFigure {
 
   update(frameSeconds: number): void {
     this.mixer?.update(frameSeconds);
+    if (this.model) {
+      const lean = this.channelling ? CHANNEL_LEAN : 0;
+      this.model.rotation.x += (lean - this.model.rotation.x) * Math.min(1, frameSeconds * LEAN_RATE);
+    }
+    if (this.held) {
+      const { weapon, rest, tilesToBone } = this.held;
+      weapon.position.copy(rest);
+      if (this.channelling) {
+        const buzz = BUZZ_TILES * tilesToBone;
+        weapon.position.x += (Math.random() * 2 - 1) * buzz;
+        weapon.position.y += (Math.random() * 2 - 1) * buzz;
+        weapon.position.z += (Math.random() * 2 - 1) * buzz;
+      }
+    }
     if (this.hovering) {
       const h = this.hovering;
       h.age += frameSeconds;
@@ -192,7 +234,7 @@ export class ActorFigure {
    * handler) and the old one stops, so no pose is left running underneath. Dying cuts a moment short, and so does
    * moving off during a flinch.
    */
-  private setBase(name: 'idle' | 'move' | 'death'): void {
+  private setBase(name: 'idle' | 'move' | 'channel' | 'death'): void {
     const next = this.action(name) ?? this.action('idle');
     if (!next || next === this.base) return;
     const previous = this.base;

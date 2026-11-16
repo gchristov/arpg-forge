@@ -125,7 +125,7 @@ describe('Unrecalled scenarios', () => {
     play(state, 12, [{ type: 'walk', x: crawler.x, y: crawler.y + 1 }]);
     expect(state.hero.hp).toBe(hp);
     expect(currentLevel(state).enemies.every((e) => e.mode === 'idle')).toBe(true);
-    const events = play(state, 2, [{ type: 'attack', enemyId: crawler.id }]);
+    const events = play(state, 5, [{ type: 'attack', enemyId: crawler.id }]);
     expect(events.map((e) => e.type)).toContain('LevelAlarmed');
     expect(currentLevel(state).enemies.filter((e) => e.mode === 'chase').length).toBeGreaterThan(1);
     expect(currentLevel(state).enemies.filter((e) => e.mode === 'idle').length).toBeGreaterThan(10);
@@ -156,7 +156,7 @@ describe('Unrecalled scenarios', () => {
     const middle = { x: pack.reduce((s, e) => s + e.x, 0) / 3, y: pack.reduce((s, e) => s + e.y, 0) / 3 };
     state.hero.x = state.hero.prevX = middle.x;
     state.hero.y = state.hero.prevY = middle.y + 0.6;
-    const events = play(state, 1 / 60, [{ type: 'useSkill', slot: 1 }]);
+    const events = play(state, 1 / 60, [{ type: 'useSkill', slot: 0 }]);
     const hit = new Set(events.flatMap((e) => (e.type === 'EnemyDamaged' ? [e.enemyId] : [])));
     expect(pack.filter((e) => hit.has(e.id)).length).toBeGreaterThanOrEqual(2);
     expect(events.map((e) => e.type)).toContain('LevelAlarmed');

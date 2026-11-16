@@ -55,7 +55,7 @@ function newHero(rules: HeroRules): Hero {
     hp: rules.health, maxHp: rules.health, resource: rules.resource, maxResource: rules.resource,
     level: 1, xp: 0, xpNext: rules.xpForLevel2, gold: 0, healingItems: rules.healingItems,
     damage: [...rules.damage], bonusDamage: 0,
-    attackCooldown: 0, skillCooldowns: rules.skills.map(() => 0), swing: -1, struck: true,
+    attackCooldown: 0, skillCooldowns: rules.skills.map(() => 0), swing: -1, struck: true, cut: null,
     lastHurtAt: -Infinity, dead: false, targetId: null, repathTimer: 0,
     interact: null, meleeUpgrades: 0,
   };
@@ -70,7 +70,7 @@ export function makeEnemy(state: GameState, kind: string, x: number, y: number):
     homeX: x, homeY: y, hp: type.hp, maxHp: type.hp, mode: 'idle',
     attackCooldown: range(state.rng, 0.4, 1), windUp: -1, swing: -1,
     wanderTimer: range(state.rng, 1, 4), wanderX: x, wanderY: y, repathTimer: 0,
-    dead: false, deadFor: 0, slamTimer: 4, summoned: false, recognised: false, provoked: false, scan: -1,
+    dead: false, deadFor: 0, slamTimer: 4, summoned: false, recognised: false, provoked: false, scan: -1, slideX: 0, slideY: 0,
   };
 }
 

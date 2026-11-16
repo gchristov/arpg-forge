@@ -46,6 +46,8 @@ export interface LevelContent {
   npcs: Array<SpawnPoint & { name: string }>;
   containers?: Container[];
   readables?: Readable[];
+  /** A level for trying mechanics out, such as a combat arena, reached only by its address, so no portal leads to it. */
+  practice?: boolean;
 }
 
 /** What a vendor offers. */
@@ -175,6 +177,11 @@ export interface HeroRules {
     critChance: number;
     critMultiplier: number;
     knockback: number;
+    /**
+     * Cuts rather than swings, like a chainsaw: while the hero is engaged with the target, a tick of damage lands every
+     * `tickSeconds`, without knockback. Over a second it deals `power` times what swinging every `cooldown` would.
+     */
+    continuous?: { tickSeconds: number; power: number };
   };
   /** Skills on top of the melee attack, by slot, each costing resource and with its own cooldown. */
   skills: Skill[];

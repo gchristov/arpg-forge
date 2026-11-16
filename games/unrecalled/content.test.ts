@@ -22,6 +22,11 @@ describe('Unrecalled content', () => {
 
   it('gives every actor kind a model that was built', () => {
     const kinds = ['hero', ...Object.keys(content.enemies)];
-    expect(kinds.filter((kind) => !MODEL_URLS[unrecalledLook.actor(kind).model?.name ?? ''])).toEqual([]);
+    const missing = kinds.filter((kind) => {
+      const model = unrecalledLook.actor(kind).model;
+      const weapon = typeof model?.weapon === 'string' ? model.weapon : model?.weapon?.name;
+      return !model || !MODEL_URLS[model.name] || (weapon !== undefined && !MODEL_URLS[weapon]);
+    });
+    expect(missing).toEqual([]);
   });
 });

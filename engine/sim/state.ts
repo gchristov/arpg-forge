@@ -35,6 +35,8 @@ export interface Hero extends Actor {
   swing: Swing;
   /** Whether the current swing has already struck. */
   struck: boolean;
+  /** The continuous melee attack under way, if the hero is cutting into their target. */
+  cut: Cut | null;
   lastHurtAt: number;
   dead: boolean;
   targetId: number | null;
@@ -43,6 +45,17 @@ export interface Hero extends Actor {
   interact: { type: 'npc'; npcId: number } | { type: 'container' | 'readable'; index: number } | null;
   /** Melee upgrades bought so far; each one costs more than the last. */
   meleeUpgrades: number;
+}
+
+export interface Cut {
+  targetId: number;
+  /** Seconds until the next tick of damage. */
+  untilTick: number;
+  /** Damage dealt since it was last reported, and whether any of it was a critical hit. */
+  unreported: number;
+  crit: boolean;
+  /** Seconds until the damage dealt so far is reported. */
+  untilReport: number;
 }
 
 export interface Npc extends Actor {
@@ -75,6 +88,9 @@ export interface Enemy extends Actor {
   provoked: boolean;
   /** Progress through looking the hero over on recognising them, from 0 to 1, or -1 when not scanning. */
   scan: number;
+  /** How fast it's sliding from a knock-back, in tiles a second. */
+  slideX: number;
+  slideY: number;
 }
 
 export interface Projectile {

@@ -14,13 +14,13 @@ function figure(changes: Partial<ActorLook> = {}): ActorFigure {
   scene.add(bone);
   const template: ModelTemplate = {
     scene,
-    animations: [clip('Idle', 1), clip('Run', 0.8), clip('Attack', 0.5), clip('Hit', 0.6), clip('Death', 1)],
+    animations: [clip('Idle', 1), clip('Run', 0.8), clip('Attack', 0.5), clip('Cut', 0.7), clip('Hit', 0.6), clip('Death', 1)],
     height: 1,
   };
   const library = { get: () => template, instantiate: () => scene.clone() } as unknown as ModelLibrary;
   const look: ActorLook = {
     colour: 0, height: 1, radius: 0.3,
-    model: { name: 'm', animations: { idle: 'Idle', move: 'Run', attack: 'Attack', hit: 'Hit', death: 'Death' } },
+    model: { name: 'm', animations: { idle: 'Idle', move: 'Run', attack: 'Attack', channel: 'Cut', hit: 'Hit', death: 'Death' } },
     ...changes,
   };
   return new ActorFigure(look, library);
@@ -217,5 +217,49 @@ describe('ActorFigure seen through', () => {
 
   it('leaves actors without an outline as they are', () => {
     expect(meshesOf(boxFigure())).toHaveLength(1);
+  });
+});
+
+describe('ActorFigure channelling', () => {
+  it('loops the channel animation while the actor keeps up a continuous attack, through hits, and walks when it moves off', () => {
+    const f = figure();
+    f.pose(false, false, undefined, true);
+    run(f, 1.5);
+    expect(f.activeAnimations()).toContain('Cut');
+    f.play('hit');
+    run(f, 0.3);
+    expect(f.activeAnimations()).toEqual(['Cut']);
+    f.pose(true, false, undefined, true);
+    run(f, 0.5);
+    expect(f.activeAnimations()).toEqual(['Run']);
+    f.pose(false, false);
+    run(f, 0.5);
+    expect(f.activeAnimations()).toEqual(['Idle']);
+  });
+});
+
+describe('ActorFigure weapon', () => {
+  it('fits a weapon made for another hand into the named bone, sized in tiles whatever the bones\' scale', () => {
+    // An actor model twice its height in its own units, with a hand bone scaled up a hundredfold, as converted models are.
+    const scene = new THREE.Group();
+    const hand = new THREE.Object3D();
+    hand.name = 'FistR';
+    hand.scale.setScalar(100);
+    scene.add(hand, new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1).translate(0, 1, 0)));
+    const actor: ModelTemplate = { scene, animations: [new THREE.AnimationClip('Idle', 1, [])], height: 2 };
+    const saw = new THREE.Group().add(new THREE.Mesh(new THREE.BoxGeometry(4, 1, 1)));
+    const weapon: ModelTemplate = { scene: saw, animations: [], height: 1 };
+    const library = {
+      get: (name: string) => (name === 'saw' ? weapon : actor),
+      instantiate: (name: string) => (name === 'saw' ? saw.clone() : scene.clone()),
+    } as unknown as ModelLibrary;
+    const f = new ActorFigure({
+      colour: 0, height: 1, radius: 0.3,
+      model: { name: 'actor', animations: { idle: 'Idle' }, weapon: { name: 'saw', bone: 'Fist.R', length: 0.6, turn: [0, Math.PI, 0] } },
+    }, library);
+    f.root.updateMatrixWorld(true);
+    const held = f.root.getObjectByName('FistR')!.children[0]!;
+    const size = new THREE.Box3().setFromObject(held).getSize(new THREE.Vector3());
+    expect(size.x).toBeCloseTo(0.6);
   });
 });
