@@ -24,7 +24,7 @@ export function cut(state: GameState, e: Enemy, dt: number, events: SimEvent[]):
     c.untilTick += tick;
     const crit = chance(state.rng, melee.critChance);
     const swing = range(state.rng, hero.damage[0], hero.damage[1]) + hero.bonusDamage;
-    const amount = swing * (tick / melee.cooldown) * (crit ? melee.critMultiplier : 1);
+    const amount = swing * (tick / melee.cooldown) * melee.continuous!.power * (crit ? melee.critMultiplier : 1);
     c.unreported += amount;
     c.crit ||= crit;
     // The killing tick is reported first, so its number shows before the machine falls.

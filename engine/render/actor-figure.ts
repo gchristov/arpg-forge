@@ -117,10 +117,11 @@ export class ActorFigure {
 
   /**
    * Plays a one-off moment, stretched to last `seconds` if given, such as an attack timed to its wind-up. A flinch
-   * stops the legs, so it's skipped while moving rather than sliding along; the hit flash still shows.
+   * stops the legs, so it's skipped while moving rather than sliding along, and while keeping up a continuous attack
+   * rather than breaking it off; the hit flash still shows.
    */
   play(moment: ActorMoment, seconds?: number): void {
-    if (moment === 'hit' && (this.moment || this.base === this.action('move'))) return;
+    if (moment === 'hit' && (this.moment || this.channelling || this.base === this.action('move'))) return;
     const action = this.action(moment);
     if (!action || this.base === this.action('death')) return;
     const from = this.moment ?? this.base;

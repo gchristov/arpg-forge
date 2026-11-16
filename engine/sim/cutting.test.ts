@@ -10,7 +10,7 @@ import { arena, ofType, OPEN_ROOM, run } from './testing';
 function cutting(): GameState {
   const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'brute', x: 6.3, y: 5.5 }]);
   const { hero } = state.rules;
-  state.rules.hero = { ...hero, melee: { ...hero.melee, critChance: 0, continuous: { tickSeconds: 0.1 } } };
+  state.rules.hero = { ...hero, melee: { ...hero.melee, critChance: 0, continuous: { tickSeconds: 0.1, power: 1 } } };
   const brute = currentLevel(state).enemies[0]!;
   brute.hp = brute.maxHp = 1000;
   return state;
@@ -25,6 +25,15 @@ describe('continuous melee', () => {
     expect(dummy.maxHp - dummy.hp).toBeGreaterThan(85);
     expect(dummy.maxHp - dummy.hp).toBeLessThan(125);
     expect(ofType(events, 'Swung').filter((s) => s.actorId === state.hero.id)).toHaveLength(0);
+  });
+
+  it('deals `power` times the damage a second of swinging', () => {
+    const state = cutting();
+    state.rules.hero.melee.continuous!.power = 2;
+    const brute = currentLevel(state).enemies[0]!;
+    run(state, 5.5, [{ type: 'attack', enemyId: brute.id }]);
+    expect(brute.maxHp - brute.hp).toBeGreaterThan(170);
+    expect(brute.maxHp - brute.hp).toBeLessThan(250);
   });
 
   it('reports what it cuts a few times a second rather than every tick, adding up to all of it', () => {

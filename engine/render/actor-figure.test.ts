@@ -221,11 +221,14 @@ describe('ActorFigure seen through', () => {
 });
 
 describe('ActorFigure channelling', () => {
-  it('loops the channel animation while the actor keeps up a continuous attack, and walks when it moves off', () => {
+  it('loops the channel animation while the actor keeps up a continuous attack, through hits, and walks when it moves off', () => {
     const f = figure();
     f.pose(false, false, undefined, true);
     run(f, 1.5);
     expect(f.activeAnimations()).toContain('Cut');
+    f.play('hit');
+    run(f, 0.3);
+    expect(f.activeAnimations()).toEqual(['Cut']);
     f.pose(true, false, undefined, true);
     run(f, 0.5);
     expect(f.activeAnimations()).toEqual(['Run']);

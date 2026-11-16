@@ -18,8 +18,8 @@ export const HERO: HeroRules = {
   melee: {
     cooldown: 0.55, swingSeconds: 0.3, reach: 1.35, engageRange: 1.0,
     critChance: 0.12, critMultiplier: 1.8, knockback: 0.18,
-    // The chainsaw keeps cutting for as long as it's in contact.
-    continuous: { tickSeconds: 0.1 },
+    // The chainsaw keeps cutting for as long as it's in contact, at nearly twice the damage a second of punching.
+    continuous: { tickSeconds: 0.1, power: 1.8 },
   },
   skills: [
     {
