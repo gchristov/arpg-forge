@@ -11,7 +11,7 @@ const hsl = (h: number, s: number, l: number): number => colour.setHSL(h / 360, 
 
 // Indoors, wall tops and the cables over them fade into the dark above head height.
 const foundry = (ambient: number, sky: number): Mood => ({
-  background: 0x050505, ambient, ambientIntensity: 0.5, alarmAmbient: 0x5a1c18, heroLightRadius: 4.6, heightFade: { from: 1.4, to: 2.6 },
+  background: 0x050505, ambient, ambientIntensity: 0.5, alarmAmbient: 0x5a1c18, heroLightRadius: 4.6, heightFade: { from: 0.9, to: 2.8 },
   fill: { sky, ground: 0x201810, intensity: 0.55 },
 });
 
@@ -225,8 +225,8 @@ export const unrecalledLook: Look = {
   prop: (kind) => PROPS[kind] ?? null,
   walls: (levelId) => ({
     props: [Prop.Wall, Prop.WallLow, Prop.WallLight, Prop.WallAlarm], panel: styleOf(levelId).panel, span: 3, front: { name: 'wall-front', height: 0.3 },
-    // Cable trays running over the walls, some hanging down into the room: a glimpse of the works past the wall tops.
-    crown: ['top-cables', null, null, 'top-cables', null, null, null, 'top-cables-hanging', null],
+    // Cable trays running over every wall, now and then hanging down into the room: a glimpse of the works past the tops.
+    crown: ['top-cables', 'top-cables', 'top-cables', 'top-cables', 'top-cables', 'top-cables', 'top-cables', 'top-cables', 'top-cables-hanging'],
     // The kit's ceiling strip light, stood up on the wall with its light facing the room.
     fixtures: [
       { props: [Prop.WallLight], name: 'lamp', height: 0.7, turn: Math.PI, tilt: Math.PI / 2 },
