@@ -21,7 +21,8 @@ export class Hud {
     bindCommand($('bPatch'), { type: 'heal' }, send);
   }
 
-  update(state: GameState): void {
+  /** `place` names where the salvager is: their level, or the named part of it they're in. */
+  update(state: GameState, place: string): void {
     const { hero } = state;
     const { shown } = this;
     shown.set('hp', `${Math.ceil(hero.hp)}/${hero.maxHp}`, (v) => {
@@ -46,7 +47,7 @@ export class Hud {
     shown.set('empCharge', Math.round((1 - recharging) * 20), (v) => ($('empCd').style.transform = `scaleX(${v / 20})`));
     shown.set('quest', QUEST[state.quest]?.text ?? '', (v) => ($('quest').textContent = v));
     const ls = currentLevel(state);
-    shown.set('location', ls.level.name, (v) => ($('loc').textContent = v));
+    shown.set('location', place, (v) => ($('loc').textContent = v));
     const running = ls.level.portals.some((p) => p.sealed) ? ls.enemies.filter((e) => !e.dead).length : 0;
     shown.set('stillRunning', running, (v) => {
       $('sealedNote').hidden = v === 0;

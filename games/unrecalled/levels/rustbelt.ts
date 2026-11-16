@@ -7,7 +7,7 @@ import { paintPath, scatterWilds } from './wilds';
 import { addWoods, WOODS_TRAIL_ROW, WOODS_WIDTH, woodsTreeChance } from './woods';
 
 /** The town's own columns; the dead woods carry the map on east of them. */
-const TOWN_WIDTH = 46;
+export const TOWN_WIDTH = 46;
 const WIDTH = TOWN_WIDTH + WOODS_WIDTH;
 const HEIGHT = 36;
 
