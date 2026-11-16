@@ -169,7 +169,7 @@ export class Game {
     if (this.state.transition) return null;
     if (this.state.hero.dead) return { type: 'respawn' };
     this.hooks?.onWorldTap?.();
-    return tapCommand(this.state, this.renderer, (kind) => this.view.scaleOf(kind), x, y);
+    return tapCommand(this.state, this.renderer, (kind) => this.view.scaleOf(kind), x, y, (id) => this.view.sight.of(id) > 0.5);
   }
 
   private heldGroundPoint(): Vec2 | null {

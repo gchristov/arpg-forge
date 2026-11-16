@@ -10,9 +10,10 @@ import { kitBuilding } from './kit-building';
 import { ELEVATION } from './camera-angle';
 import { LightMap } from './light-map';
 import { Mist } from './mist';
-import type { Look, Mood, PropLook, WallFixture } from './look';
+import type { Look, Mood, PropLook, Surroundings, WallFixture } from './look';
 import { fitMatrix, instancedModel, panelFit, panelScale } from './model-instancing';
 import { ModelLibrary, type ModelTemplate } from './models';
+import { playDistances, shadeArea, shadeAt } from './shade-map';
 import { isWallTile, wallFaces, wallPanels } from './wall-panels';
 
 /** On-screen width of one tile at zoom 1. */
@@ -148,8 +149,11 @@ export class SceneRenderer {
     }
 
     this.warmUpPending = true;
+    const surroundings = this.look.surroundings?.(level) ?? null;
+    this.lightMap.setShade(surroundings && this.shadeOf(level, surroundings));
     const walls = this.buildWalls(level);
-    this.levelGroup.add(this.buildGround(level, walls?.kinds));
+    this.levelGroup.add(this.buildGround(level, walls?.kinds, surroundings));
+    for (const mesh of this.buildScenery(level, surroundings)) this.levelGroup.add(mesh);
     for (const mesh of this.buildFloors(level, walls?.kinds)) this.levelGroup.add(mesh);
     for (const mesh of walls?.meshes ?? []) this.levelGroup.add(mesh);
     for (const mesh of this.buildProps(level, walls?.kinds)) this.levelGroup.add(mesh);
@@ -363,28 +367,48 @@ export class SceneRenderer {
     }
   }
 
-  /** Ground tiles, except under walls drawn as panels, where the room ends at the panel. */
-  private buildGround(level: Level, walls: ReadonlySet<number> = new Set()): THREE.Mesh {
+  /** How lit each tile of a level and its surroundings is, by how far it lies from the playable world. */
+  private shadeOf(level: Level, surroundings: Surroundings) {
+    const area = shadeArea(level.map, surroundings.margin);
+    const inside = (tx: number, ty: number) =>
+      level.structures.some((s) => tx >= s.x && ty >= s.y && tx < s.x + s.width && ty < s.y + s.depth);
+    const values = playDistances(level.map, area, inside).map(shadeAt);
+    return { values, ...area };
+  }
+
+  /**
+   * Ground tiles, except under walls drawn as panels, where the room ends at the panel. With surroundings, the ground
+   * carries on under the walls too, and past the map's edges.
+   */
+  private buildGround(level: Level, walls: ReadonlySet<number> = new Set(), surroundings: Surroundings | null = null): THREE.Mesh {
     const { map } = level;
+    const margin = surroundings?.margin ?? 0;
+    const kindAt = (tx: number, ty: number): number => {
+      const i = clamp(ty, 0, map.height - 1) * map.width + clamp(tx, 0, map.width - 1);
+      if (surroundings) return map.ground[i] || surroundings.ground;
+      return walls.has(map.prop[i]!) ? 0 : map.ground[i]!;
+    };
     const grain = this.look.mood(level.id).groundGrain;
     if (grain !== undefined) {
       const colour = new THREE.Color();
-      return blendedGround(map.width, map.height, (tx, ty) => {
-        const kind = map.ground[ty * map.width + tx]!;
-        if (!kind || walls.has(map.prop[ty * map.width + tx]!)) return null;
-        colour.set(this.look.groundColour(kind, tx, ty, level.id));
+      const ground = blendedGround(map.width + margin * 2, map.height + margin * 2, (x, y) => {
+        const kind = kindAt(x - margin, y - margin);
+        if (!kind) return null;
+        colour.set(this.look.groundColour(kind, x - margin, y - margin, level.id));
         return [colour.r, colour.g, colour.b];
       }, grain);
+      ground.position.set(-margin, 0, -margin);
+      return ground;
     }
     const tile = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
-    const mesh = new THREE.InstancedMesh(tile, new THREE.MeshLambertMaterial(), map.width * map.height);
+    const mesh = new THREE.InstancedMesh(tile, new THREE.MeshLambertMaterial(), (map.width + margin * 2) * (map.height + margin * 2));
     const matrix = new THREE.Matrix4();
     const colour = new THREE.Color();
     let n = 0;
-    for (let ty = 0; ty < map.height; ty++) {
-      for (let tx = 0; tx < map.width; tx++) {
-        const kind = map.ground[ty * map.width + tx]!;
-        if (!kind || walls.has(map.prop[ty * map.width + tx]!)) continue;
+    for (let ty = -margin; ty < map.height + margin; ty++) {
+      for (let tx = -margin; tx < map.width + margin; tx++) {
+        const kind = kindAt(tx, ty);
+        if (!kind) continue;
         matrix.makeTranslation(tx + 0.5, 0, ty + 0.5);
         mesh.setMatrixAt(n, matrix);
         mesh.setColorAt(n, colour.set(this.look.groundColour(kind, tx, ty, level.id)));
@@ -461,6 +485,20 @@ export class SceneRenderer {
     return spots;
   }
 
+  /** Scenery standing in the dark round a level, grouped by kind and drawn like props of that kind. */
+  private buildScenery(level: Level, surroundings: Surroundings | null): THREE.InstancedMesh[] {
+    const byKind = new Map<number, Vec2[]>();
+    for (const piece of surroundings?.scenery ?? []) {
+      let list = byKind.get(piece.prop);
+      if (!list) byKind.set(piece.prop, (list = []));
+      list.push(piece);
+    }
+    return [...byKind].flatMap(([kind, points]) => {
+      const model = this.look.prop(kind, level.id)?.model;
+      return (model && this.modelledProps(points, model, kind)) ?? [];
+    });
+  }
+
   private buildProps(level: Level, skip: ReadonlySet<number> = new Set()): THREE.InstancedMesh[] {
     const { map } = level;
     const tilesByKind = new Map<number, number[]>();
@@ -475,7 +513,8 @@ export class SceneRenderer {
     const meshes: THREE.InstancedMesh[] = [];
     for (const [kind, tiles] of tilesByKind) {
       const look = this.look.prop(kind, level.id)!;
-      const fromModels = look.model && this.modelledProps(map.width, tiles, look.model, kind);
+      const points = tiles.map((i) => ({ x: (i % map.width) + 0.5, y: Math.floor(i / map.width) + 0.5 }));
+      const fromModels = look.model && this.modelledProps(points, look.model, kind);
       if (fromModels) {
         meshes.push(...fromModels);
         continue;
@@ -494,25 +533,20 @@ export class SceneRenderer {
   }
 
   /**
-   * Props drawn from models, each tile picking one of the variants and a turn from the map's stable hash, so a
-   * level looks the same on every visit. Null if none of the models loaded.
+   * Props drawn from models at `points`, each picking one of the variants and a turn from the map's stable hash of its
+   * tile, so a level looks the same on every visit. Null if none of the models loaded.
    */
-  private modelledProps(
-    mapWidth: number,
-    tiles: number[],
-    model: NonNullable<PropLook['model']>,
-    salt: number,
-  ): THREE.InstancedMesh[] | null {
+  private modelledProps(points: readonly Vec2[], model: NonNullable<PropLook['model']>, salt: number): THREE.InstancedMesh[] | null {
     const variants = model.names.map((name) => this.models.get(name));
     if (variants.every((v) => !v)) return null;
     const placements = variants.map(() => [] as THREE.Matrix4[]);
-    for (const i of tiles) {
-      const tx = i % mapWidth;
-      const ty = Math.floor(i / mapWidth);
+    for (const p of points) {
+      const tx = Math.floor(p.x);
+      const ty = Math.floor(p.y);
       let v = Math.floor(hash2(tx, ty, 31 + salt) * variants.length);
       if (!variants[v]) v = variants.findIndex(Boolean);
       const turn = model.turn === 'random' ? hash2(tx, ty, 37 + salt) * Math.PI * 2 : (model.turn ?? 0);
-      placements[v]!.push(new THREE.Matrix4().makeTranslation(tx + 0.5, 0, ty + 0.5).multiply(new THREE.Matrix4().makeRotationY(turn)));
+      placements[v]!.push(new THREE.Matrix4().makeTranslation(p.x, 0, p.y).multiply(new THREE.Matrix4().makeRotationY(turn)));
     }
     return variants.flatMap((template, v) =>
       template && placements[v]!.length ? instancedModel(template, fitMatrix(template, model.fit), placements[v]!) : [],

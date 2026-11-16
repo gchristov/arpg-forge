@@ -1,3 +1,4 @@
+import type { Level } from '../world/level';
 import type { Fit } from './model-instancing';
 
 /**
@@ -124,6 +125,11 @@ export interface Mood {
   groundGrain?: number;
   /** Mist drifting low over the ground, for weather outdoors. */
   mist?: MistLook;
+  /**
+   * How far the hero sees enemies, in tiles, when nothing stands between them; enemies out of sight stay hidden until
+   * found. Without it, every enemy on the level shows.
+   */
+  sightRange?: number;
 }
 
 export interface MistLook {
@@ -217,6 +223,21 @@ export interface Look {
   structure(kind: string): StructureLook;
   /** How walls are drawn on a level; without it, or if the models don't load, wall props are drawn as props. */
   walls?(levelId: string): WallLook | null;
+  /** What lies past a level's playable world; without it, the level ends where its map does. */
+  surroundings?(level: Level): Surroundings | null;
   lightColour(name: string): number;
   actor(kind: string): ActorLook;
+}
+
+/**
+ * What lies past a level's playable world, fading into darkness away from it, so the player never sees where the map
+ * stops: ground under its walls and on past its edges, and scenery standing in the dark.
+ */
+export interface Surroundings {
+  /** How many tiles past the map's edges the ground carries on. Past an edge, it's the ground at the nearest edge tile. */
+  margin: number;
+  /** The ground kind drawn where the map has none, such as under its walls. */
+  ground: number;
+  /** Things standing in the dark, drawn like props of their kind at these points; they're only ever seen. */
+  scenery: Array<{ prop: number; x: number; y: number }>;
 }

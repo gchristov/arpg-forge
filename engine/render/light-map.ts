@@ -26,6 +26,9 @@ export interface Glow {
  * top-down texture covering the level, and every lit material adds the light under each of its pixels. A lamp, a
  * hundred torches and a flying fireball all cost the same: one texture lookup per pixel. It suits a game seen from
  * above at a fixed angle, where light pooling on the ground and on what stands on it is what matters.
+ *
+ * It also darkens what lies away from the playable world: a second, fixed texture of how lit each tile is, which every
+ * lit material multiplies by, so a level fades into darkness past its walls and edges instead of stopping.
  */
 export class LightMap {
   private readonly target = new THREE.WebGLRenderTarget(1, 1, { depthBuffer: false });
@@ -39,6 +42,8 @@ export class LightMap {
   readonly uniforms = {
     lightMap: { value: this.target.texture as THREE.Texture },
     lightMapBounds: { value: new THREE.Vector4(0, 0, 1, 1) },
+    shadeMap: { value: fullyLit() as THREE.Texture },
+    shadeBounds: { value: new THREE.Vector4(0, 0, 1, 1) },
   };
 
   constructor() {
@@ -66,6 +71,29 @@ export class LightMap {
     Object.assign(this.camera, { left: 0, right: width, top: 0, bottom: -depth });
     this.camera.updateProjectionMatrix();
     this.uniforms.lightMapBounds.value.set(0, 0, 1 / width, 1 / depth);
+  }
+
+  /**
+   * How lit each tile is, from 0 to 1, over an area of `width` × `depth` tiles whose top-left corner is the tile `x0`,
+   * `y0`; shading blends smoothly between tiles. Null lights everything fully.
+   */
+  setShade(shade: { values: Float32Array; x0: number; y0: number; width: number; depth: number } | null): void {
+    this.uniforms.shadeMap.value.dispose();
+    if (!shade) {
+      this.uniforms.shadeMap.value = fullyLit();
+      this.uniforms.shadeBounds.value.set(0, 0, 1, 1);
+      return;
+    }
+    const { values, x0, y0, width, depth } = shade;
+    const bytes = new Uint8Array(width * depth * 4);
+    values.forEach((v, i) => bytes.fill(Math.round(Math.min(1, Math.max(0, v)) * 255), i * 4, i * 4 + 4));
+    const texture = new THREE.DataTexture(bytes, width, depth);
+    texture.magFilter = THREE.LinearFilter;
+    texture.minFilter = THREE.LinearFilter;
+    texture.needsUpdate = true;
+    this.uniforms.shadeMap.value = texture;
+    // Texel centres sit on tile centres, so a tile's shade is exact at its middle and blends towards its neighbours.
+    this.uniforms.shadeBounds.value.set(x0, y0, 1 / width, 1 / depth);
   }
 
   /** Starts a frame's glows. Call `add` for each light, then `render`. */
@@ -105,7 +133,7 @@ export class LightMap {
     material.onBeforeCompile = (shader) => {
       Object.assign(shader.uniforms, this.uniforms);
       shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', '#include <common>\nvarying vec2 vLightMapUv;\nvarying float vLightMapHeight;\nuniform vec4 lightMapBounds;')
+        .replace('#include <common>', '#include <common>\nvarying vec2 vLightMapUv;\nvarying vec2 vShadeUv;\nvarying float vLightMapHeight;\nuniform vec4 lightMapBounds;\nuniform vec4 shadeBounds;')
         .replace(
           '#include <project_vertex>',
           `#include <project_vertex>
@@ -115,14 +143,16 @@ export class LightMap {
           #endif
           lightMapWorld = modelMatrix * lightMapWorld;
           vLightMapHeight = lightMapWorld.y;
-          vLightMapUv = vec2((lightMapWorld.x - lightMapBounds.x) * lightMapBounds.z, 1.0 - (lightMapWorld.z - lightMapBounds.y) * lightMapBounds.w);`,
+          vLightMapUv = vec2((lightMapWorld.x - lightMapBounds.x) * lightMapBounds.z, 1.0 - (lightMapWorld.z - lightMapBounds.y) * lightMapBounds.w);
+          vShadeUv = vec2((lightMapWorld.x - shadeBounds.x) * shadeBounds.z, (lightMapWorld.z - shadeBounds.y) * shadeBounds.w);`,
         );
       shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\nvarying vec2 vLightMapUv;\nvarying float vLightMapHeight;\nuniform sampler2D lightMap;')
+        .replace('#include <common>', '#include <common>\nvarying vec2 vLightMapUv;\nvarying vec2 vShadeUv;\nvarying float vLightMapHeight;\nuniform sampler2D lightMap;\nuniform sampler2D shadeMap;')
         .replace(
           '#include <opaque_fragment>',
           `float lightMapReach = clamp(1.0 - (vLightMapHeight - ${FULL_HEIGHT.toFixed(2)}) / ${FADE_HEIGHT.toFixed(2)}, 0.0, 1.0);
           outgoingLight += diffuseColor.rgb * texture2D(lightMap, vLightMapUv).rgb * ${HEADROOM.toFixed(1)} * lightMapReach;
+          outgoingLight *= texture2D(shadeMap, vShadeUv).r;
           #include <opaque_fragment>`,
         );
     };
@@ -132,7 +162,15 @@ export class LightMap {
 
   dispose(): void {
     this.target.dispose();
+    this.uniforms.shadeMap.value.dispose();
   }
+}
+
+/** One white texel: everything fully lit. */
+function fullyLit(): THREE.DataTexture {
+  const texture = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
+  texture.needsUpdate = true;
+  return texture;
 }
 
 /** A soft round glow, brightest in the middle and fading smoothly to nothing at the edge. */

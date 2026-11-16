@@ -71,6 +71,8 @@ void main() {
 const FRAGMENT = /* glsl */ `
 uniform sampler2D lightMap;
 uniform vec4 lightMapBounds;
+uniform sampler2D shadeMap;
+uniform vec4 shadeBounds;
 uniform float time;
 uniform vec2 drift;
 uniform float scale;
@@ -86,6 +88,7 @@ void main() {
   vec2 below = world - lift;
   vec2 uv = vec2((below.x - lightMapBounds.x) * lightMapBounds.z, 1.0 - (below.y - lightMapBounds.y) * lightMapBounds.w);
   vec3 lit = colour + texture2D(lightMap, clamp(uv, 0.0, 1.0)).rgb * 0.9;
-  gl_FragColor = vec4(lit, amount);
+  float shade = texture2D(shadeMap, vec2((below.x - shadeBounds.x) * shadeBounds.z, (below.y - shadeBounds.y) * shadeBounds.w)).r;
+  gl_FragColor = vec4(lit * shade, amount * mix(0.4, 1.0, shade));
 }
 `;

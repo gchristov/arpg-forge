@@ -2,14 +2,16 @@ import * as THREE from 'three';
 import { hash2, valueNoise } from '../../../engine/core/math';
 import type { ActorLook, BuildingKit, Look, Mood, PropLook, StructureLook } from '../../../engine/render/look';
 import { Ground, Prop } from '../content/tiles';
+import { surroundingsOf } from './surroundings';
 
 /** Unrecalled's look: Quaternius people and machines, cold workshop light against furnace glow. */
 
 const colour = new THREE.Color();
 const hsl = (h: number, s: number, l: number): number => colour.setHSL(h / 360, s / 100, l / 100).getHex();
 
+// Machines out of the salvager's sight stay hidden, so each room is found as they reach it.
 const foundry = (ambient: number, sky: number): Mood => ({
-  background: 0x050505, ambient, ambientIntensity: 0.5, alarmAmbient: 0x5a1c18, heroLightRadius: 4.6,
+  background: 0x050505, ambient, ambientIntensity: 0.5, alarmAmbient: 0x5a1c18, heroLightRadius: 4.6, sightRange: 9,
   fill: { sky, ground: 0x201810, intensity: 0.55 },
 });
 
@@ -225,6 +227,7 @@ export const unrecalledLook: Look = {
       { props: [Prop.WallAlarm], name: 'beacon', height: 1.6, turn: Math.PI, tilt: Math.PI / 2 },
     ],
   }),
+  surroundings: surroundingsOf,
   structure: (kind) => STRUCTURES[kind] ?? STRUCTURES.workshop!,
   lightColour: (name) => LIGHTS[name] ?? LIGHTS.cyan!,
   actor: (kind) => ACTORS[kind] ?? ACTORS.hero!,
