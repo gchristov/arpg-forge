@@ -15,7 +15,7 @@ import { fitMatrix, instancedModel, modelSize, panelFit, panelScale } from './mo
 import { ModelLibrary, type ModelTemplate } from './models';
 import { playDistances, shadeArea, shadeAt } from './shade-map';
 import { WaterSurface } from './water';
-import { isWallTile, kitPartitions, kitWalls, wallFaces, wallPanels, type KitCorner } from './wall-panels';
+import { isWallTile, kitPartitions, kitWalls, wallFaces, wallPanels, type KitCorner, type KitOpening } from './wall-panels';
 
 /** On-screen width of one tile at zoom 1. */
 const TILE_PIXELS = 64;
@@ -601,11 +601,17 @@ export class SceneRenderer {
     const isPartition = (tx: number, ty: number) => partitionKinds.has(map.prop[tileIndex(map, tx, ty)]!);
     const inner = kitPartitions(map, isPartition, isWall, look.span);
     const doorways = openings.filter((o) => level.portals.some((p) => p.tx === o.tx && p.ty === o.ty));
+    // A doorway in a front wall cuts away with it, rather than standing alone round the hero.
+    const inFront = (o: KitOpening) => o.facing.x < 0 || o.facing.y < 0;
     return [
       ...meshes,
       ...this.buildCrown(look, new THREE.Matrix4(), panels.filter((p) => !p.front).map(straight)),
       ...instancedModel(panel, new THREE.Matrix4(), inner.panels.map(straight)),
-      ...this.kitDoors(kit, [...doorways, ...inner.doorways], k),
+      ...this.kitDoors(kit, [...doorways.filter((d) => !inFront(d)), ...inner.doorways], k),
+      ...this.kitDoors(kit, doorways.filter(inFront), k).map((mesh) => {
+        if (look.cutaway) mesh.userData.cutaway = true;
+        return mesh;
+      }),
       ...(look.fixtures ?? []).flatMap((f) => this.buildFixtures(level, f, isWall, k)),
     ];
   }
