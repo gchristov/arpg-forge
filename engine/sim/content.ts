@@ -29,9 +29,14 @@ export interface Container {
   ty: number;
   gold: number;
   healingItems: number;
+  /** One of the hero's weapons, put in their hand when it's opened. */
+  weapon?: string;
 }
 
-/** Something on a tile the hero can walk up to and read, such as a notice. The game words it by its `id`. */
+/**
+ * Something on a tile the hero can walk up to and read or use, such as a notice or a breaker. The game words it by its
+ * `id`.
+ */
 export interface Readable {
   tx: number;
   ty: number;
@@ -55,7 +60,9 @@ export type Service =
   | { type: 'restore' }
   | { type: 'sellHealingItem'; price: number }
   /** Each purchase adds `bonus` melee damage and costs `priceStep` more than the last. */
-  | { type: 'upgradeMelee'; basePrice: number; priceStep: number; bonus: number };
+  | { type: 'upgradeMelee'; basePrice: number; priceStep: number; bonus: number }
+  /** Puts one of the hero's `weapons` in their hand, once. */
+  | { type: 'sellWeapon'; weapon: string; price: number };
 
 export interface NpcType {
   services: Service[];
@@ -65,7 +72,11 @@ export interface NpcType {
 export type QuestTrigger =
   | { type: 'talk'; npcKind: string }
   | { type: 'enter'; levelId: string }
-  | { type: 'kill'; enemyKind: string };
+  | { type: 'kill'; enemyKind: string }
+  /** Reading or using something in the world, by its readable id. */
+  | { type: 'use'; id: string }
+  /** Getting one of the hero's weapons in hand, however it came. */
+  | { type: 'arm'; weapon: string };
 
 /**
  * A step of the quest line. The quest moves to a step when its trigger fires and the quest is behind it, so a
@@ -151,6 +162,23 @@ export interface AreaSkill extends BurstDamage {
 export type Skill = ProjectileSkill | AreaSkill;
 
 /** The hero's numbers. Neutral names: "resource" is what skills cost, "healing items" are drunk or used to heal. */
+export interface MeleeRules {
+  cooldown: number;
+  swingSeconds: number;
+  /** Reach when the swing lands, on top of the target's radius. */
+  reach: number;
+  /** Distance at which the hero stops chasing and starts swinging, on top of the target's radius. */
+  engageRange: number;
+  critChance: number;
+  critMultiplier: number;
+  knockback: number;
+  /**
+   * Cuts rather than swings, like a chainsaw: while the hero is engaged with the target, a tick of damage lands every
+   * `tickSeconds`, without knockback. Over a second it deals `power` times what swinging every `cooldown` would.
+   */
+  continuous?: { tickSeconds: number; power: number };
+}
+
 export interface HeroRules {
   radius: number;
   speed: number;
@@ -167,22 +195,10 @@ export interface HeroRules {
   healthRegen: number;
   healthRegenDelay: number;
   levelUp: { xpGrowth: number; health: number; resource: number; damage: Range };
-  melee: {
-    cooldown: number;
-    swingSeconds: number;
-    /** Reach when the swing lands, on top of the target's radius. */
-    reach: number;
-    /** Distance at which the hero stops chasing and starts swinging, on top of the target's radius. */
-    engageRange: number;
-    critChance: number;
-    critMultiplier: number;
-    knockback: number;
-    /**
-     * Cuts rather than swings, like a chainsaw: while the hero is engaged with the target, a tick of damage lands every
-     * `tickSeconds`, without knockback. Over a second it deals `power` times what swinging every `cooldown` would.
-     */
-    continuous?: { tickSeconds: number; power: number };
-  };
+  /** The bare-handed melee attack. */
+  melee: MeleeRules;
+  /** Weapons the hero can come to hold, by id, each changing parts of the bare-handed melee attack. */
+  weapons?: Record<string, Partial<MeleeRules>>;
   /** Skills on top of the melee attack, by slot, each costing resource and with its own cooldown. */
   skills: Skill[];
   heal: { amount: number; maxItems: number };

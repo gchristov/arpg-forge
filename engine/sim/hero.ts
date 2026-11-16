@@ -5,6 +5,7 @@ import { planRoute } from '../world/pathfinding';
 import { tileIndex } from '../world/tile-map';
 import { burst, damageEnemy, findEnemy, nearestEnemy } from './combat';
 import { cut, stopCutting } from './cutting';
+import { meleeOf } from './weapons';
 import { updateInteraction, useService, walkToContainer, walkToNpc, walkToReadable } from './interaction';
 import { placeAt } from './setup';
 import type { ProjectileSkill } from './content';
@@ -108,13 +109,13 @@ function startSwing(state: GameState, events: SimEvent[]): void {
   const { hero } = state;
   hero.swing = 0;
   hero.struck = false;
-  hero.attackCooldown = state.rules.hero.melee.cooldown;
+  hero.attackCooldown = meleeOf(state).cooldown;
   events.push({ type: 'Swung', actorId: hero.id });
 }
 
 function strike(state: GameState, events: SimEvent[]): void {
   const { hero } = state;
-  const melee = state.rules.hero.melee;
+  const melee = meleeOf(state);
   const e = findEnemy(state, hero.targetId);
   if (!e) return;
   const d = dist(hero.x, hero.y, e.x, e.y);
@@ -228,7 +229,7 @@ export function updateHeroTimers(state: GameState, dt: number, events: SimEvent[
     if (state.time - hero.lastHurtAt > rules.healthRegenDelay) hero.hp = Math.min(hero.maxHp, hero.hp + dt * rules.healthRegen);
   }
   if (hero.swing >= 0) {
-    hero.swing += dt / rules.melee.swingSeconds;
+    hero.swing += dt / meleeOf(state).swingSeconds;
     if (!hero.struck && hero.swing >= SWING_STRIKE_POINT) {
       hero.struck = true;
       strike(state, events);
@@ -266,12 +267,13 @@ export function updateHeroMovement(state: GameState, held: { x: number; y: numbe
     return;
   }
   const d = dist(hero.x, hero.y, e.x, e.y);
-  if (d <= state.rules.hero.melee.engageRange + e.r) {
+  const melee = meleeOf(state);
+  if (d <= melee.engageRange + e.r) {
     hero.path = null;
     hero.moving = false;
     hero.facingX = lerp(hero.facingX, (e.x - hero.x) / d, 0.4);
     hero.facingY = lerp(hero.facingY, (e.y - hero.y) / d, 0.4);
-    if (state.rules.hero.melee.continuous) cut(state, e, dt, events);
+    if (melee.continuous) cut(state, e, dt, events);
     else if (hero.attackCooldown <= 0 && hero.swing < 0) startSwing(state, events);
     return;
   }

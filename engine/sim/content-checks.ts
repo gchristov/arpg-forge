@@ -21,6 +21,23 @@ export function checkContent(content: GameContent): string[] {
   for (const [kind, type] of Object.entries(content.enemies)) {
     if (type.summon && !content.enemies[type.summon.kind]) problems.push(`enemy "${kind}" summons unknown kind "${type.summon.kind}"`);
   }
+  for (const lc of content.levels) {
+    for (const c of lc.containers ?? []) {
+      if (c.weapon && !content.hero.weapons?.[c.weapon]) problems.push(`${lc.level.id}: a container holds unknown weapon "${c.weapon}"`);
+    }
+    for (const p of lc.level.portals) {
+      if (p.lockedUntilStep !== undefined && p.lockedUntilStep >= content.quest.length) {
+        problems.push(`${lc.level.id}: the portal to "${p.to}" waits for quest step ${p.lockedUntilStep}, which doesn't exist`);
+      }
+    }
+  }
+  for (const [kind, npc] of Object.entries(content.npcs)) {
+    for (const service of npc.services) {
+      if (service.type === 'sellWeapon' && !content.hero.weapons?.[service.weapon]) {
+        problems.push(`NPC kind "${kind}" sells unknown weapon "${service.weapon}"`);
+      }
+    }
+  }
   return problems;
 }
 
@@ -140,12 +157,19 @@ function checkQuest(content: GameContent, levels: Map<string, LevelContent>): st
     ...l.spawns.map((s) => s.kind), ...l.camps.map((c) => c.kind), ...(l.campRespawns?.kinds ?? []),
   ]));
   for (const type of Object.values(content.enemies)) if (type.summon) enemyKinds.add(type.summon.kind);
+  const readableIds = new Set(content.levels.flatMap((l) => (l.readables ?? []).map((r) => r.id)));
+  const weaponSources = new Set([
+    ...content.levels.flatMap((l) => (l.containers ?? []).flatMap((c) => (c.weapon ? [c.weapon] : []))),
+    ...Object.values(content.npcs).flatMap((n) => n.services.flatMap((s) => (s.type === 'sellWeapon' ? [s.weapon] : []))),
+  ]);
   return content.quest.flatMap((step, i) => {
     const trigger = step.reachedBy;
     if (!trigger) return [];
     if (trigger.type === 'talk' && !npcKinds.has(trigger.npcKind)) return [`quest step ${i} needs talking to "${trigger.npcKind}", who isn't in any level`];
     if (trigger.type === 'enter' && !levels.has(trigger.levelId)) return [`quest step ${i} needs entering "${trigger.levelId}", which doesn't exist`];
     if (trigger.type === 'kill' && !enemyKinds.has(trigger.enemyKind)) return [`quest step ${i} needs killing a "${trigger.enemyKind}", which never appears`];
+    if (trigger.type === 'use' && !readableIds.has(trigger.id)) return [`quest step ${i} needs using "${trigger.id}", which isn't in any level`];
+    if (trigger.type === 'arm' && !weaponSources.has(trigger.weapon)) return [`quest step ${i} needs the "${trigger.weapon}" in hand, which nothing gives`];
     return [];
   });
 }

@@ -1,6 +1,9 @@
 import type { HeroRules } from '../../../engine/sim/content';
 
-/** The salvager's numbers. The resource is charge, healing items are patch kits, and the skill is an EMP. */
+/**
+ * The salvager's numbers. They fight with their fists until Pell builds them a chainsaw; the resource is charge,
+ * healing items are patch kits, and the skill is an EMP.
+ */
 export const HERO: HeroRules = {
   radius: 0.28,
   speed: 3.7,
@@ -8,7 +11,7 @@ export const HERO: HeroRules = {
   facingY: -0.8,
   health: 100,
   resource: 50,
-  damage: [8, 13],
+  damage: [5, 9],
   xpForLevel2: 60,
   healingItems: 3,
   resourceRegen: 2.2,
@@ -18,8 +21,10 @@ export const HERO: HeroRules = {
   melee: {
     cooldown: 0.55, swingSeconds: 0.3, reach: 1.35, engageRange: 1.0,
     critChance: 0.12, critMultiplier: 1.8, knockback: 0.18,
-    // The chainsaw keeps cutting for as long as it's in contact, at two and a half times the damage a second of punching.
-    continuous: { tickSeconds: 0.1, power: 2.5 },
+  },
+  weapons: {
+    // Keeps cutting for as long as it's in contact, at nearly four times the damage a second of punching.
+    chainsaw: { continuous: { tickSeconds: 0.1, power: 3.7 } },
   },
   skills: [
     // Hits every machine around the salvager at once and throws them back, for when a floor's alarm brings a crowd.

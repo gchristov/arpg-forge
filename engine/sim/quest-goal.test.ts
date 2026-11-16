@@ -87,4 +87,19 @@ describe('questGoal', () => {
     expect(questGoal(state)).toBeNull();
     expect(questGoal(game([{}, {}]))).toBeNull();
   });
+
+  it('points at the thing to use, and at the container holding the weapon to get', () => {
+    const state = game([{}, { reachedBy: { type: 'use', id: 'lever' } }]);
+    state.levels.town!.readables.push({ tx: 2, ty: 3, id: 'lever' });
+    expect(questGoal(state)).toEqual({ x: 2.5, y: 3.5 });
+    const armed = game([{}, { reachedBy: { type: 'arm', weapon: 'saw' } }]);
+    armed.levels.town!.containers.push({ tx: 4, ty: 3, gold: 0, healingItems: 0, weapon: 'saw', opened: false });
+    expect(questGoal(armed)).toEqual({ x: 4.5, y: 3.5 });
+  });
+
+  it('never leads through a door the story keeps locked', () => {
+    const state = game([{}, { reachedBy: { type: 'enter', levelId: 'crypt' } }]);
+    state.levels.town!.level.portals[1]!.lockedUntilStep = 1;
+    expect(questGoal(state)).toEqual({ x: 1.5, y: 0.5 });
+  });
 });

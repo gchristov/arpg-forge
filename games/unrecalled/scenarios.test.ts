@@ -253,4 +253,30 @@ describe('Unrecalled scenarios', () => {
     const engine = currentLevel(state).enemies.find((e) => e.kind === 'orderEngine')!;
     expect(questGoal(state)?.actorId).toBe(engine.id);
   });
+
+  it('fights with fists until Pell builds the chainsaw for scrap, then cuts with it', () => {
+    const state = untouchable(createGameState(content, 1));
+    expect(state.hero.weapon).toBeNull();
+    const workshop = currentLevel(state).level.structures.findIndex((s) => s.kind === 'workshop');
+    play(state, 25, [{ type: 'enterStructure', index: workshop }]);
+    play(state, 1);
+    expect(state.levelId).toBe('workshop');
+    talkTo(state, 'tinker');
+    const pell = currentLevel(state).npcs.find((n) => n.kind === 'tinker')!;
+    play(state, 0.1, [{ type: 'useService', npcId: pell.id, service: 0 }]);
+    expect(state.hero.weapon).toBeNull();
+    state.hero.gold = 70;
+    play(state, 0.1, [{ type: 'useService', npcId: pell.id, service: 0 }]);
+    expect([state.hero.weapon, state.hero.gold]).toEqual(['chainsaw', 10]);
+
+    takeDoor(state, 'rustbelt');
+    intoFoundry(state);
+    const { hero } = state;
+    const crawler = currentLevel(state).enemies
+      .filter((e) => e.kind === 'crawler')
+      .sort((a, b) => Math.hypot(a.x - hero.x, a.y - hero.y) - Math.hypot(b.x - hero.x, b.y - hero.y))[0]!;
+    const events = play(state, 10, [{ type: 'attack', enemyId: crawler.id }]);
+    expect(crawler.dead).toBe(true);
+    expect(events.some((e) => e.type === 'Swung' && e.actorId === hero.id)).toBe(false);
+  });
 });

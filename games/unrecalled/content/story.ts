@@ -25,7 +25,8 @@ export const ENDING_STEP = 6;
 export const NPCS: Record<string, NpcType> = {
   foreman: { services: [] },
   trader: { services: [{ type: 'restore' }, { type: 'sellHealingItem', price: 20 }] },
-  tinker: { services: [{ type: 'upgradeMelee', basePrice: 40, priceStep: 30, bonus: 3 }] },
+  // Pell builds the chainsaw, then keeps whatever the salvager fights with sharp.
+  tinker: { services: [{ type: 'sellWeapon', weapon: 'chainsaw', price: 60 }, { type: 'upgradeMelee', basePrice: 40, priceStep: 30, bonus: 3 }] },
 };
 
 export interface DialogueOption {
@@ -43,10 +44,10 @@ export interface Dialogue {
 }
 
 /**
- * What each townsperson says, given the quest step before and after talking and how often the salvager has gone down.
- * The foreman's last line starts the ending.
+ * What each townsperson says, given the quest step before and after talking, how often the salvager has gone down and
+ * the weapon in their hand. The foreman's last line starts the ending.
  */
-export function dialogueFor(kind: string, questBefore: number, quest: number, deaths: number): Dialogue | null {
+export function dialogueFor(kind: string, questBefore: number, quest: number, deaths: number, weapon: string | null): Dialogue | null {
   switch (kind) {
     case 'foreman': {
       if (quest >= ENDING_STEP && questBefore < ENDING_STEP) {
@@ -59,8 +60,10 @@ export function dialogueFor(kind: string, questBefore: number, quest: number, de
       const text = quest >= ENDING_STEP
         ? 'Whatever it wants, it’ll ask you first. It always did.'
         : questBefore === 0
-          ? 'Found you in the river after the flood. Never asked. Not asking now. The Foundry’s taking the town apart a crate at a time; the chapel bell went last night. Mags’s depot backs onto it; go through her loading door and find what’s giving the orders.'
-          : 'Through Mags’s loading door. Whatever’s running that place, switch it off.';
+          ? 'Found you in the river after the flood. Never asked. Not asking now. The Foundry’s taking the town apart a crate at a time; the chapel bell went last night. Mags’s depot backs onto it; go through her loading door and find what’s giving the orders. And if your fists won’t do, Pell will build you something, for scrap.'
+          : weapon === null
+            ? 'Through Mags’s loading door. Bring back scrap, and Pell will build you something better than your fists.'
+            : 'Through Mags’s loading door. Whatever’s running that place, switch it off.';
       return { title: 'Foreman Odell', text, options: [{ label: quest >= ENDING_STEP ? 'Leave' : 'On my way' }] };
     }
     case 'trader':
@@ -76,15 +79,31 @@ export function dialogueFor(kind: string, questBefore: number, quest: number, de
         ],
       };
     case 'tinker':
-      return {
-        title: 'Pell the Tinker',
-        text: 'Your arm’s making that noise again. Hold still. Bring scrap and I’ll put more kick in that wrench.',
-        options: [{ label: 'Upgrade the wrench (+3 damage)', service: 0, tag: (price) => `${price} scrap` }, { label: 'Leave' }],
-      };
+      return weapon === null
+        ? {
+          title: 'Pell the Tinker',
+          text: 'You’re going down there with your fists? Those machines are built to lift crates. There’s a saw in the back that only wants an engine. Bring me scrap and I’ll give it teeth.',
+          options: [
+            { label: 'Build the chainsaw', service: 0, tag: (price) => `${price} scrap` },
+            { label: 'Harden your knuckles (+3 damage)', service: 1, tag: (price) => `${price} scrap` },
+            { label: 'Leave' },
+          ],
+        }
+        : {
+          title: 'Pell the Tinker',
+          text: 'Mind the chain. It doesn’t care what it’s cutting. Bring scrap and I’ll keep it biting.',
+          options: [{ label: 'Sharpen the chain (+3 damage)', service: 1, tag: (price) => `${price} scrap` }, { label: 'Leave' }],
+        };
     default:
       return null;
   }
 }
+
+/** The banner once the chainsaw is in the salvager's hands. */
+export const CHAINSAW_FOUND = { title: 'The chainsaw', subtitle: 'It keeps cutting for as long as you hold it on them.' };
+
+/** Said over a door the story hasn't opened yet. */
+export const LOCKED = 'No power';
 
 /** The last thing the player sees: the main question closed, the twist landed, and the next question opened. */
 export const ENDING = {

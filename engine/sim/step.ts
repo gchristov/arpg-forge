@@ -65,6 +65,11 @@ function enterPortalUnderHero(state: GameState, events: SimEvent[]): void {
   if (!portal) return;
   const destination = state.levels[portal.to];
   if (!destination) return;
+  if (portal.lockedUntilStep !== undefined && state.quest < portal.lockedUntilStep) {
+    state.portalCooldown = SEALED_REMINDER_SECONDS;
+    events.push({ type: 'PortalLocked', to: portal.to, x: portal.tx + 0.5, y: portal.ty + 0.5 });
+    return;
+  }
   if (portal.sealed && currentLevel(state).enemies.some((e) => !e.dead)) {
     state.portalCooldown = SEALED_REMINDER_SECONDS;
     events.push({ type: 'PortalSealed', x: portal.tx + 0.5, y: portal.ty + 0.5 });

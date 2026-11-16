@@ -155,12 +155,15 @@ const ACTORS: Record<string, ActorLook> = {
     colour: 0x9a8a70, height: 1.2, radius: 0.24, seenThrough: 0x8ae8ff,
     model: {
       name: 'hero',
-      // At rest the chainsaw hangs at the salvager's side; it's held out ahead in both hands while cutting, and revved
-      // with a jab at thin air.
-      animations: {
-        idle: 'IdleLoop', move: 'Run', attack: 'PunchCross', channel: 'PistolIdle', cast: 'Shoot_OneHanded', hit: 'RecieveHit', death: 'Death',
+      animations: { idle: 'Idle', move: 'Run', attack: 'Punch', cast: 'Shoot_OneHanded', hit: 'RecieveHit', death: 'Death' },
+      armed: {
+        // At rest the chainsaw hangs at the salvager's side; it's held out ahead in both hands while cutting, and
+        // revved with a jab at thin air.
+        chainsaw: {
+          weapon: { name: 'chainsaw', bone: 'Fist.R', length: 0.65, turn: [0, Math.PI / 2, Math.PI / 2] },
+          animations: { idle: 'IdleLoop', attack: 'PunchCross', channel: 'PistolIdle' },
+        },
       },
-      weapon: { name: 'chainsaw', bone: 'Fist.R', length: 0.65, turn: [0, Math.PI / 2, Math.PI / 2] },
       matchPace: true,
     },
   },

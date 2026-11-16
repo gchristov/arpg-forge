@@ -3,6 +3,7 @@ import { planRoute } from '../world/pathfinding';
 import type { QuestTrigger, Service } from './content';
 import { dropItem } from './loot';
 import { currentLevel, type GameState, type Hero, type SimEvent } from './state';
+import { arm } from './weapons';
 
 /** The hero talks or opens once this close. */
 const INTERACT_REACH = 1.45;
@@ -65,7 +66,11 @@ export function updateInteraction(state: GameState, events: SimEvent[]): void {
       advanceQuest(state, { type: 'talk', npcKind: npc.kind }, events);
       events.push({ type: 'Talked', npcId: npc.id, kind: npc.kind, name: npc.name, questBefore });
     } else if (it.type === 'container') openContainer(state, it.index, events);
-    else if (it.type === 'readable') events.push({ type: 'Read', id: ls.readables[it.index]!.id, x: tx, y: ty });
+    else if (it.type === 'readable') {
+      const { id } = ls.readables[it.index]!;
+      advanceQuest(state, { type: 'use', id }, events);
+      events.push({ type: 'Read', id, x: tx, y: ty });
+    }
   } else if (!hero.path) hero.interact = null;
 }
 
@@ -79,6 +84,7 @@ function openContainer(state: GameState, index: number, events: SimEvent[]): voi
   if (c.gold) dropItem(state, ls, x, y + 0.6, 'gold', c.gold);
   for (let i = 0; i < c.healingItems; i++) dropItem(state, ls, x, y + 0.6, 'healingItem', 1);
   events.push({ type: 'ContainerOpened', index, x, y });
+  if (c.weapon) arm(state, c.weapon, x, y, events);
 }
 
 /** The price of a service right now, or 0 if it's free. */
@@ -90,6 +96,8 @@ export function servicePrice(hero: Hero, service: Service): number {
       return service.price;
     case 'upgradeMelee':
       return service.basePrice + hero.meleeUpgrades * service.priceStep;
+    case 'sellWeapon':
+      return service.price;
   }
 }
 
@@ -98,6 +106,7 @@ export function useService(state: GameState, npcId: number, index: number, event
   const npc = currentLevel(state).npcs.find((n) => n.id === npcId);
   const service = npc && state.rules.npcs[npc.kind]?.services[index];
   if (!service || hero.dead) return;
+  if (service.type === 'sellWeapon' && hero.weapon === service.weapon) return;
   const price = servicePrice(hero, service);
   if (hero.gold < price) return;
   hero.gold -= price;
@@ -113,8 +122,11 @@ export function useService(state: GameState, npcId: number, index: number, event
       hero.bonusDamage += service.bonus;
       hero.meleeUpgrades++;
       break;
+    case 'sellWeapon':
+      break;
   }
   events.push({ type: 'ServiceUsed', npcId, service: index, x: hero.x, y: hero.y });
+  if (service.type === 'sellWeapon') arm(state, service.weapon, hero.x, hero.y, events);
 }
 
 /** Moves the quest to the step this trigger reaches, if the quest is behind it. */
@@ -156,5 +168,9 @@ function sameTrigger(a: QuestTrigger, b: QuestTrigger): boolean {
       return b.type === 'enter' && a.levelId === b.levelId;
     case 'kill':
       return b.type === 'kill' && a.enemyKind === b.enemyKind;
+    case 'use':
+      return b.type === 'use' && a.id === b.id;
+    case 'arm':
+      return b.type === 'arm' && a.weapon === b.weapon;
   }
 }
