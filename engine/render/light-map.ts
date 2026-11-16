@@ -214,8 +214,8 @@ export type SurfaceFade = 'none' | 'height' | 'cutaway';
 /** Walls cut away round the hero are as see-through as they get within this share of the cutaway's radius. */
 const CUTAWAY_CLEAR_SHARE = 0.55;
 /**
- * See-through round the hero, down to the cutaway's opacity, but only on the camera's side of them, turning solid over a tile behind it: a corner piece
- * carries a wall behind the hero as well as one in front, and the one behind must stay.
+ * See-through round the hero, down to the cutaway's opacity, but only on the camera's side of them, turning solid over a
+ * tile behind it, so nothing behind the hero ever turns see-through.
  */
 const CUTAWAY_GLSL = `if (cutaway.y > 0.0) {
             float nearer = smoothstep(-1.0, 0.0, dot(vWorldXZ - heroAt, cutawayToward));
