@@ -18,22 +18,25 @@ const INTERIORS = {
       '#####V######',
     ],
   },
-  // The old depot: the shop floor, a storeroom with the stairs up and the loading door into the Foundry (G), a back
-  // room, and the office upstairs.
+  // The old depot: an open shop floor, a storeroom with the stairs up and the loading door into the Foundry (G), a
+  // back room through a doorway from the storeroom, and the office upstairs.
   tradingPost: {
     name: 'Mags’s Trading Post', subtitle: 'Everything here was somebody’s once',
     rows: [
-      '#####L######LG##',
-      '#hh.dd..#cc...U#',
-      '#.......#......#',
-      '#..2...........#',
-      '#c......#....b.#',
-      'L.......##.#####',
-      '#.......#......#',
-      '#..b..b.#..h.hh#',
-      '#............S.#',
-      '#.......#......#',
-      '#######V########',
+      '#######L#######L##G#####',
+      '#hh.dd...k..#cc.....U..#',
+      '#...........#..........#',
+      '#..2...................#',
+      '#c...................b.#',
+      '#...........#..........#',
+      'L...........#####..#####',
+      '#...........#..........#',
+      '#..b...b....#..h...hh..#',
+      '#......................#',
+      '#......................#',
+      '#........c..#.......S..#',
+      '#...........#..........#',
+      '#######V################',
     ],
   },
   depotOffice: {
