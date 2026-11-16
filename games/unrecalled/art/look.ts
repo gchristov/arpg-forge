@@ -11,7 +11,7 @@ const hsl = (h: number, s: number, l: number): number => colour.setHSL(h / 360, 
 
 // Indoors, wall tops and the cables over them fade into the dark above head height.
 const foundry = (ambient: number, sky: number): Mood => ({
-  background: 0x050505, ambient, ambientIntensity: 0.5, alarmAmbient: 0x5a1c18, heroLightRadius: 4.6, heightFade: { from: 2, to: 3.4 },
+  background: 0x050505, ambient, ambientIntensity: 0.5, alarmAmbient: 0x5a1c18, heroLightRadius: 4.6, heightFade: { from: 1.4, to: 2.6 },
   fill: { sky, ground: 0x201810, intensity: 0.55 },
 });
 
