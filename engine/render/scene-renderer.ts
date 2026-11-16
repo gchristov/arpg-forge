@@ -3,6 +3,7 @@ import { clamp, hash2, type Vec2 } from '../core/math';
 import type { Level, LevelLight } from '../world/level';
 import { inBounds, tileIndex } from '../world/tile-map';
 import { ActorFigure, type ActorMoment } from './actor-figure';
+import { cornerArms } from './corner-arms';
 import { Effects } from './effects';
 import { Flames, type FlameSpot } from './flames';
 import { blendedGround } from './ground-blend';
@@ -15,7 +16,7 @@ import { fitMatrix, instancedModel, modelSize, panelFit, panelScale } from './mo
 import { ModelLibrary, type ModelTemplate } from './models';
 import { playDistances, shadeArea, shadeAt } from './shade-map';
 import { WaterSurface } from './water';
-import { isWallTile, kitPartitions, kitWalls, wallFaces, wallPanels, type KitCorner } from './wall-panels';
+import { isWallTile, kitPartitions, kitWalls, wallFaces, wallPanels, type KitCorner, type KitOpening } from './wall-panels';
 
 /** On-screen width of one tile at zoom 1. */
 const TILE_PIXELS = 64;
@@ -56,6 +57,8 @@ export class SceneRenderer {
   private readonly heroLight = new THREE.PointLight(0xfff1dd, 1.4, 6, 1);
   private readonly lightMap = new LightMap();
   private readonly glowColour = new THREE.Color();
+  /** Kit corner pieces split into their arms, by model name, split once and kept for every level. */
+  private readonly cornerArmsByModel = new Map<string, ReturnType<typeof cornerArms>>();
   /** Glows added for this frame only, such as a flying fireball. */
   private readonly extraGlows: Array<{ x: number; y: number; radius: number; colour: number; intensity: number }> = [];
   private readonly raycaster = new THREE.Raycaster();
@@ -504,7 +507,7 @@ export class SceneRenderer {
     if (look.kit) return { meshes: this.buildKitWalls(level, look, look.kit, panel, kinds), kinds };
     // Cut away round the hero, front walls stand full height like back walls; otherwise they're drawn low.
     const front = look.cutaway ? panel : look.front && this.models.get(look.front.name);
-    this.lightMap.setCutaway(look.cutaway?.radius ?? null);
+    this.lightMap.setCutaway(look.cutaway?.radius ?? null, { x: VIEW_DIRECTION.x, y: VIEW_DIRECTION.z }, look.cutaway?.opacity);
     const backs: THREE.Matrix4[] = [];
     const fronts: THREE.Matrix4[] = [];
     // A panel stands just behind its edge, on the wall's side; turned to face the camera, it's moved back over by its
@@ -577,20 +580,32 @@ export class SceneRenderer {
       .multiply(new THREE.Matrix4().makeTranslation(KIT_CELL / 2, 0, 0));
     // Both kinds of corner piece have their corner a cell back from the origin and arms running along +x and +z; an inner
     // piece's walls face in between its arms, an outer one's out. Moved a cell over, they're turned to run along `arms`.
+    const turnOf = (c: KitCorner) => KIT_CORNER_TURN[`${c.arms.x},${c.arms.y}`]!;
+    // Whether the arm along the piece's own x (or else its z) lies on a front wall, once the piece is turned into place.
+    const armIsFront = (c: KitCorner, pieceX: boolean) => {
+      const runsAlongMapX = Math.abs(Math.cos(turnOf(c))) > 0.5 === pieceX;
+      return runsAlongMapX ? c.front.alongX : c.front.alongY;
+    };
     const cornerAt = (c: KitCorner) => new THREE.Matrix4()
       .makeTranslation(c.x, 0, c.y)
-      .multiply(new THREE.Matrix4().makeRotationY(KIT_CORNER_TURN[`${c.arms.x},${c.arms.y}`]!))
+      .multiply(new THREE.Matrix4().makeRotationY(turnOf(c)))
       .multiply(scale)
       .multiply(new THREE.Matrix4().makeTranslation(KIT_CELL, 0, KIT_CELL));
     const pieces: Array<{ template: ModelTemplate | undefined; placements: THREE.Matrix4[]; front: boolean }> = [];
     for (const front of [false, true]) {
       pieces.push({ template: panel, placements: panels.filter((p) => p.front === front).map(straight), front });
-      for (const inner of [true, false]) {
-        const template = this.models.get(inner ? kit.inner : kit.outer);
-        pieces.push({ template, placements: corners.filter((c) => c.front === front && c.inner === inner).map(cornerAt), front });
+    }
+    // A corner's two arms are placed apart, so the one along a front wall cuts away and the one along a back wall doesn't.
+    for (const inner of [true, false]) {
+      const arms = this.cornerArmsOf(inner ? kit.inner : kit.outer);
+      for (const alongX of [true, false]) {
+        for (const front of [false, true]) {
+          const placements = corners.filter((c) => c.inner === inner && armIsFront(c, alongX) === front).map(cornerAt);
+          pieces.push({ template: arms && (alongX ? arms.alongX : arms.alongZ), placements, front });
+        }
       }
     }
-    this.lightMap.setCutaway(look.cutaway?.radius ?? null);
+    this.lightMap.setCutaway(look.cutaway?.radius ?? null, { x: VIEW_DIRECTION.x, y: VIEW_DIRECTION.z }, look.cutaway?.opacity);
     const meshes = pieces.flatMap(({ template, placements, front }) => {
       if (!template || !placements.length) return [];
       const made = instancedModel(template, new THREE.Matrix4(), placements);
@@ -601,12 +616,27 @@ export class SceneRenderer {
     const isPartition = (tx: number, ty: number) => partitionKinds.has(map.prop[tileIndex(map, tx, ty)]!);
     const inner = kitPartitions(map, isPartition, isWall, look.span);
     const doorways = openings.filter((o) => level.portals.some((p) => p.tx === o.tx && p.ty === o.ty));
+    // A doorway in a front wall cuts away with it, rather than standing alone round the hero.
+    const inFront = (o: KitOpening) => o.facing.x < 0 || o.facing.y < 0;
     return [
       ...meshes,
+      ...this.buildCrown(look, new THREE.Matrix4(), panels.filter((p) => !p.front).map(straight)),
       ...instancedModel(panel, new THREE.Matrix4(), inner.panels.map(straight)),
-      ...this.kitDoors(kit, [...doorways, ...inner.doorways], k),
+      ...this.kitDoors(kit, [...doorways.filter((d) => !inFront(d)), ...inner.doorways], k),
+      ...this.kitDoors(kit, doorways.filter(inFront), k).map((mesh) => {
+        if (look.cutaway) mesh.userData.cutaway = true;
+        return mesh;
+      }),
       ...(look.fixtures ?? []).flatMap((f) => this.buildFixtures(level, f, isWall, k)),
     ];
+  }
+
+  private cornerArmsOf(name: string): ReturnType<typeof cornerArms> | undefined {
+    const template = this.models.get(name);
+    if (!template) return undefined;
+    let arms = this.cornerArmsByModel.get(name);
+    if (!arms) this.cornerArmsByModel.set(name, (arms = cornerArms(template)));
+    return arms;
   }
 
   /**

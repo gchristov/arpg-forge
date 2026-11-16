@@ -107,15 +107,15 @@ export const isWallTile = (map: TileMap, kinds: ReadonlySet<number>) => (tx: num
 
 /**
  * A corner piece of a modular wall kit, at a tile corner: `inner` where a room turns, outer where a wall juts into one.
- * `arms` point along the two walls it joins, away from the corner, each one kit cell long. It's `front` when both
- * those walls stand between the room and the camera.
+ * `arms` point along the two walls it joins, away from the corner, each one kit cell long. `front` says which of those
+ * walls, the one running along x or along y, stands between the room and the camera.
  */
 export interface KitCorner {
   x: number;
   y: number;
   inner: boolean;
   arms: { x: number; y: number };
-  front: boolean;
+  front: { alongX: boolean; alongY: boolean };
 }
 
 /**
@@ -146,7 +146,7 @@ export function kitWalls(
       const inner = walls.length === 3;
       // An inner corner's walls face along its arms, into the room; an outer one's face the other way, out from the wall.
       const faces = inner ? arms : { x: -arms.x, y: -arms.y };
-      corners.push({ x, y, inner, arms, front: faces.x < 0 && faces.y < 0 });
+      corners.push({ x, y, inner, arms, front: { alongX: faces.y < 0, alongY: faces.x < 0 } });
       covered.add(`h${y}:${arms.x > 0 ? x : x - span}`);
       covered.add(`v${x}:${arms.y > 0 ? y : y - span}`);
     }
