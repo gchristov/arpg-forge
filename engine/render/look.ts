@@ -182,7 +182,11 @@ export interface WallLook {
    * Walls between the room and the camera stand full height, like back walls, and turn see-through round the hero
    * within `radius` tiles, instead of being drawn low; the hero is never hidden behind one.
    */
-  cutaway?: { radius: number };
+  cutaway?: {
+    radius: number;
+    /** How solid walls stay where they're cut away most, from 0 to 1, so what's set in them, like doorways, still shows. */
+    opacity?: number;
+  };
   /**
    * The corner pieces of the modular kit the panel comes from: walls are then laid on the kit's own grid of `span`-tile
    * cells, with an inner piece wherever a room turns and an outer one wherever a wall juts into a room, all in the
