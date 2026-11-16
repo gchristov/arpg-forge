@@ -1,8 +1,9 @@
-import { clamp, hash2, valueNoise } from '../../../engine/core/math';
+import { clamp, hash2 } from '../../../engine/core/math';
 import type { Surroundings } from '../../../engine/render/look';
 import { playDistances, shadeArea } from '../../../engine/render/shade-map';
 import type { Level } from '../../../engine/world/level';
 import { Ground, Prop } from '../content/tiles';
+import { FOUNDRY_SIDE } from '../levels/rustbelt';
 
 /** Ground carries on this far past a level's edges: past the edge of a phone's screen from the hero. */
 const MARGIN = 14;
@@ -15,12 +16,14 @@ const FOUNDRY_CLUTTER = [Prop.Crate, Prop.Crate, Prop.Barrel, Prop.Shelves, Prop
 const CLUTTER_BAND = [1.9, 4.5] as const;
 const CLUTTER_SHARE = 0.12;
 
-/** The Foundry itself looms behind the outer wall along Rustbelt's top edge. */
+/** The Foundry itself looms past the middle of Rustbelt's top edge: tanks, scaffolds and cranes in the dark. */
 const FOUNDRY_BEYOND = [Prop.Tank, Prop.Scaffold, Prop.Crane, Prop.Tank];
+const FOUNDRY_SHARE = 0.22;
+const FOUNDRY_EDGE_SHARE = 0.7;
 
 /**
  * Past every level's walls and edges, so the player never sees where the map stops: in the Foundry, more of the works
- * in the dark between rooms; round Rustbelt, the dead woods carrying on, and the Foundry's bulk behind its wall.
+ * in the dark between rooms; round Rustbelt, the dead woods carrying on, and the Foundry's bulk past its top edge.
  */
 export function surroundingsOf(level: Level): Surroundings {
   if (level.building === 'foundry') return { margin: MARGIN, ground: Ground.Plate, scenery: foundryClutter(level) };
@@ -54,8 +57,9 @@ function woodsBeyond(level: Level): Surroundings['scenery'] {
       const edge = map.ground[clamp(ty, 0, map.height - 1) * map.width + clamp(tx, 0, map.width - 1)];
       if (edge === Ground.Water || edge === Ground.Mud) continue;
       const h = hash2(tx, ty, 71);
-      if (ty < -1 && valueNoise(tx * 0.3, ty * 0.3) > 0.55 && h < 0.18) {
-        scenery.push({ prop: FOUNDRY_BEYOND[Math.floor(hash2(tx, ty, 73) * FOUNDRY_BEYOND.length)]!, x: tx + 0.5, y: ty + 0.5 });
+      if (ty < 0 && tx >= FOUNDRY_SIDE.from && tx <= FOUNDRY_SIDE.to) {
+        // Packed close along the edge itself, so the yard is what stops the salvager, not an unseen line.
+        if (h < (ty === -1 ? FOUNDRY_EDGE_SHARE : FOUNDRY_SHARE)) scenery.push({ prop: FOUNDRY_BEYOND[Math.floor(hash2(tx, ty, 73) * FOUNDRY_BEYOND.length)]!, x: tx + 0.5, y: ty + 0.5 });
       } else if (h < 0.1) scenery.push({ prop: Prop.DeadTree, x: tx + 0.5, y: ty + 0.5 });
       else if (h > 0.97) scenery.push({ prop: Prop.Rock, x: tx + 0.5, y: ty + 0.5 });
     }
