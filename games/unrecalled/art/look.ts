@@ -9,9 +9,9 @@ import { surroundingsOf } from './surroundings';
 const colour = new THREE.Color();
 const hsl = (h: number, s: number, l: number): number => colour.setHSL(h / 360, s / 100, l / 100).getHex();
 
-// Machines out of the salvager's sight stay hidden, so each room is found as they reach it.
+// Indoors, wall tops and the cables over them fade into the dark above head height.
 const foundry = (ambient: number, sky: number): Mood => ({
-  background: 0x050505, ambient, ambientIntensity: 0.5, alarmAmbient: 0x5a1c18, heroLightRadius: 4.6, sightRange: 9,
+  background: 0x050505, ambient, ambientIntensity: 0.5, alarmAmbient: 0x5a1c18, heroLightRadius: 4.6, heightFade: { from: 2, to: 3.4 },
   fill: { sky, ground: 0x201810, intensity: 0.55 },
 });
 
@@ -27,6 +27,9 @@ const NIGHT: Mood = {
   water: { ground: Ground.Water, flow: { x: 0.5, y: 0 }, deep: 0x0c1c2c, shallow: 0x23506a, glint: 0xa8c8e0 },
 };
 
+/** On the Foundry's floors, the dark hides all the salvager hasn't found yet, machines included. */
+const FOUND_AS_YOU_GO = 9;
+
 /** Each level's own walls, floor plates and air, so the player always knows where they are. */
 const FLOOR_STYLES: Record<string, { panel: string; plate: string | null; mood: Mood }> = {
   rustbelt: { panel: 'wall', plate: null, mood: NIGHT },
@@ -34,10 +37,10 @@ const FLOOR_STYLES: Record<string, { panel: string; plate: string | null; mood: 
   tradingPost: { panel: 'wall-astra', plate: 'floor-plates', mood: foundry(0x3e382e, 0xf0e0c8) },
   pumphouse: { panel: 'wall-divided', plate: 'floor-dark', mood: foundry(0x262c30, 0xc8d4e0) },
   depotOffice: { panel: 'wall-window', plate: 'floor-metal', mood: foundry(0x3e3a32, 0xf0e4cc) },
-  intake: { panel: 'wall', plate: 'floor-plates', mood: foundry(0x343a40, 0xd8e4f0) },
-  sorting: { panel: 'wall-astra', plate: 'floor-metal', mood: foundry(0x3a3428, 0xf0e0c0) },
-  gallery: { panel: 'wall-window', plate: 'floor-dark', mood: foundry(0x3a2a2c, 0xf0c8c8) },
-  assembly: { panel: 'wall-divided', plate: 'floor-squares', mood: foundry(0x3a2c22, 0xf0d0b0) },
+  intake: { panel: 'wall', plate: 'floor-plates', mood: { ...foundry(0x343a40, 0xd8e4f0), sightRange: FOUND_AS_YOU_GO } },
+  sorting: { panel: 'wall-astra', plate: 'floor-metal', mood: { ...foundry(0x3a3428, 0xf0e0c0), sightRange: FOUND_AS_YOU_GO } },
+  gallery: { panel: 'wall-window', plate: 'floor-dark', mood: { ...foundry(0x3a2a2c, 0xf0c8c8), sightRange: FOUND_AS_YOU_GO } },
+  assembly: { panel: 'wall-divided', plate: 'floor-squares', mood: { ...foundry(0x3a2c22, 0xf0d0b0), sightRange: FOUND_AS_YOU_GO } },
 };
 const styleOf = (levelId: string) => FLOOR_STYLES[levelId] ?? FLOOR_STYLES.intake!;
 
@@ -223,7 +226,7 @@ export const unrecalledLook: Look = {
   walls: (levelId) => ({
     props: [Prop.Wall, Prop.WallLow, Prop.WallLight, Prop.WallAlarm], panel: styleOf(levelId).panel, span: 3, front: { name: 'wall-front', height: 0.3 },
     // Cable trays running over the walls, some hanging down into the room: a glimpse of the works past the wall tops.
-    crown: ['top-cables', 'top-cables', 'top-cables-hanging'],
+    crown: ['top-cables', null, null, 'top-cables', null, null, null, 'top-cables-hanging', null],
     // The kit's ceiling strip light, stood up on the wall with its light facing the room.
     fixtures: [
       { props: [Prop.WallLight], name: 'lamp', height: 0.7, turn: Math.PI, tilt: Math.PI / 2 },

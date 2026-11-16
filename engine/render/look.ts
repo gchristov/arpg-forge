@@ -126,12 +126,17 @@ export interface Mood {
   /** Mist drifting low over the ground, for weather outdoors. */
   mist?: MistLook;
   /**
-   * How far the hero sees enemies, in tiles, when nothing stands between them; enemies out of sight stay hidden until
-   * found. Without it, every enemy on the level shows.
+   * How far the hero sees, in tiles, when nothing stands between them. With it, the level stays dark until the hero
+   * finds it, and an enemy shows only while it stands on ground the hero has found. Without it, everything shows.
    */
   sightRange?: number;
   /** Moving water drawn over the ground of one kind, such as a river. */
   water?: WaterLook;
+  /**
+   * Surfaces fade into darkness from `from` to `to` tiles up, so the tops of walls and what runs over them melt into
+   * the dark instead of ending in a hard edge.
+   */
+  heightFade?: { from: number; to: number };
 }
 
 export interface WaterLook {
@@ -175,9 +180,10 @@ export interface WallLook {
   fixtures?: WallFixture[];
   /**
    * Models laid along the top of every full-height wall, in the panel's own frame and fitted as it is, such as cables
-   * running over the wall: what the player glimpses past the top of a wall. Each piece of wall picks one.
+   * running over the wall: what the player glimpses past the top of a wall. Each piece of wall picks one; null leaves it
+   * bare.
    */
-  crown?: string[];
+  crown?: Array<string | null>;
 }
 
 export interface WallFixture {

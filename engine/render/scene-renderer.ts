@@ -73,6 +73,10 @@ export class SceneRenderer {
   private mood: Mood | null = null;
   private mist: Mist | null = null;
   private water: WaterSurface | null = null;
+  /** The level's darkness: by distance from the playable world (`base`), times what the hero has found. */
+  private shade: {
+    values: Float32Array; base: Float32Array | null; x0: number; y0: number; width: number; depth: number; mapWidth: number; mapHeight: number;
+  } | null = null;
   private flames: Flames | null = null;
   private width = 1;
   private height = 1;
@@ -152,7 +156,9 @@ export class SceneRenderer {
 
     this.warmUpPending = true;
     const surroundings = this.look.surroundings?.(level) ?? null;
-    this.lightMap.setShade(surroundings && this.shadeOf(level, surroundings));
+    this.shade = this.shadeOf(level, surroundings);
+    this.lightMap.setShade(surroundings && this.shade);
+    this.lightMap.setHeightFade(mood.heightFade ?? null);
     const walls = this.buildWalls(level);
     this.levelGroup.add(this.buildGround(level, walls?.kinds, surroundings));
     for (const mesh of this.buildScenery(level, surroundings)) this.levelGroup.add(mesh);
@@ -372,13 +378,36 @@ export class SceneRenderer {
     }
   }
 
-  /** How lit each tile of a level and its surroundings is, by how far it lies from the playable world. */
-  private shadeOf(level: Level, surroundings: Surroundings) {
-    const area = shadeArea(level.map, surroundings.margin);
+  /**
+   * How lit each tile of a level and its surroundings is, by how far it lies from the playable world; fully lit
+   * everywhere without surroundings.
+   */
+  private shadeOf(level: Level, surroundings: Surroundings | null) {
+    const area = shadeArea(level.map, surroundings?.margin ?? 0);
+    if (!surroundings) return { values: new Float32Array(area.width * area.depth).fill(1), base: null, ...area, mapWidth: level.map.width, mapHeight: level.map.height };
     const inside = (tx: number, ty: number) =>
       level.structures.some((s) => tx >= s.x && ty >= s.y && tx < s.x + s.width && ty < s.y + s.depth);
     const values = playDistances(level.map, area, inside).map((d) => shadeAt(d, surroundings.fade));
-    return { values, ...area };
+    return { values, base: values.slice(), ...area, mapWidth: level.map.width, mapHeight: level.map.height };
+  }
+
+  /**
+   * Darkens what the hero hasn't found yet: `shown` says how far each of the level's tiles has been revealed, from 0
+   * to 1. Past the map's edges, the surroundings' own darkness holds.
+   */
+  setExplored(shown: Float32Array): void {
+    const shade = this.shade;
+    if (!shade) return;
+    const { values, base, x0, y0, width, depth, mapWidth, mapHeight } = shade;
+    for (let y = 0; y < depth; y++) {
+      for (let x = 0; x < width; x++) {
+        const tx = x + x0;
+        const ty = y + y0;
+        const onMap = tx >= 0 && ty >= 0 && tx < mapWidth && ty < mapHeight;
+        values[y * width + x] = (base?.[y * width + x] ?? 1) * (onMap ? shown[ty * mapWidth + tx]! : 1);
+      }
+    }
+    this.lightMap.setShade(shade);
   }
 
   /**
@@ -459,7 +488,7 @@ export class SceneRenderer {
 
   /** The crown along the top of the back walls: each piece picks a model and shares its wall panel's placement and fit. */
   private buildCrown(look: WallLook, fit: THREE.Matrix4, backs: readonly THREE.Matrix4[]): THREE.InstancedMesh[] {
-    const crowns = (look.crown ?? []).map((name) => this.models.get(name));
+    const crowns = (look.crown ?? []).map((name) => (name === null ? undefined : this.models.get(name)));
     const placements = crowns.map(() => [] as THREE.Matrix4[]);
     const at = new THREE.Vector3();
     for (const placement of backs) {

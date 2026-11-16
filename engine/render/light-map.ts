@@ -44,6 +44,8 @@ export class LightMap {
     lightMapBounds: { value: new THREE.Vector4(0, 0, 1, 1) },
     shadeMap: { value: fullyLit() as THREE.Texture },
     shadeBounds: { value: new THREE.Vector4(0, 0, 1, 1) },
+    /** Surfaces fade into darkness between these heights; equal heights turn the fade off. */
+    heightFade: { value: new THREE.Vector2(1e4, 1e4) },
   };
 
   constructor() {
@@ -78,22 +80,33 @@ export class LightMap {
    * `y0`; shading blends smoothly between tiles. Null lights everything fully.
    */
   setShade(shade: { values: Float32Array; x0: number; y0: number; width: number; depth: number } | null): void {
-    this.uniforms.shadeMap.value.dispose();
+    const current = this.uniforms.shadeMap.value as THREE.DataTexture;
     if (!shade) {
+      current.dispose();
       this.uniforms.shadeMap.value = fullyLit();
       this.uniforms.shadeBounds.value.set(0, 0, 1, 1);
       return;
     }
     const { values, x0, y0, width, depth } = shade;
-    const bytes = new Uint8Array(width * depth * 4);
+    // Changes to the same area, such as ground being revealed, rewrite the texture rather than making a new one.
+    const same = current.image.width === width && current.image.height === depth;
+    const texture = same ? current : new THREE.DataTexture(new Uint8Array(width * depth * 4), width, depth);
+    const bytes = texture.image.data as Uint8Array;
     values.forEach((v, i) => bytes.fill(Math.round(Math.min(1, Math.max(0, v)) * 255), i * 4, i * 4 + 4));
-    const texture = new THREE.DataTexture(bytes, width, depth);
-    texture.magFilter = THREE.LinearFilter;
-    texture.minFilter = THREE.LinearFilter;
     texture.needsUpdate = true;
-    this.uniforms.shadeMap.value = texture;
+    if (!same) {
+      current.dispose();
+      texture.magFilter = THREE.LinearFilter;
+      texture.minFilter = THREE.LinearFilter;
+      this.uniforms.shadeMap.value = texture;
+    }
     // Texel centres sit on tile centres, so a tile's shade is exact at its middle and blends towards its neighbours.
     this.uniforms.shadeBounds.value.set(x0, y0, 1 / width, 1 / depth);
+  }
+
+  /** Fades surfaces into darkness from `from` to `to` tiles up, or nothing with null. */
+  setHeightFade(fade: { from: number; to: number } | null): void {
+    this.uniforms.heightFade.value.set(fade?.from ?? 1e4, fade?.to ?? 1e4);
   }
 
   /** Starts a frame's glows. Call `add` for each light, then `render`. */
@@ -147,12 +160,13 @@ export class LightMap {
           vShadeUv = vec2((lightMapWorld.x - shadeBounds.x) * shadeBounds.z, (lightMapWorld.z - shadeBounds.y) * shadeBounds.w);`,
         );
       shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\nvarying vec2 vLightMapUv;\nvarying vec2 vShadeUv;\nvarying float vLightMapHeight;\nuniform sampler2D lightMap;\nuniform sampler2D shadeMap;')
+        .replace('#include <common>', '#include <common>\nvarying vec2 vLightMapUv;\nvarying vec2 vShadeUv;\nvarying float vLightMapHeight;\nuniform sampler2D lightMap;\nuniform sampler2D shadeMap;\nuniform vec2 heightFade;')
         .replace(
           '#include <opaque_fragment>',
           `float lightMapReach = clamp(1.0 - (vLightMapHeight - ${FULL_HEIGHT.toFixed(2)}) / ${FADE_HEIGHT.toFixed(2)}, 0.0, 1.0);
           outgoingLight += diffuseColor.rgb * texture2D(lightMap, vLightMapUv).rgb * ${HEADROOM.toFixed(1)} * lightMapReach;
           outgoingLight *= texture2D(shadeMap, vShadeUv).r;
+          if (heightFade.y > heightFade.x) outgoingLight *= 1.0 - smoothstep(heightFade.x, heightFade.y, vLightMapHeight);
           #include <opaque_fragment>`,
         );
     };

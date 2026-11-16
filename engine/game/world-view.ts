@@ -7,6 +7,7 @@ import { currentLevel, type Actor, type GameState, type SimEvent } from '../sim/
 import type { ScreenFade } from '../ui/fade';
 import type { Project, WorldLabels } from '../ui/world-labels';
 import { EnemySight } from './enemy-sight';
+import { Exploration } from './exploration';
 import { GoalGuide } from './goal-guide';
 
 /** One screen pixel at zoom 1, in tiles. Heights of labels and taps are measured in these. */
@@ -52,7 +53,9 @@ export class WorldView {
   private stepSeconds = 1 / 60;
   private guideSeconds = 0;
   private readonly guide = new GoalGuide();
-  /** Which enemies the hero can see; the rest stay hidden until found. */
+  /** What the hero has found of each level, and so which enemies show; the rest stays dark until found. */
+  private readonly exploration = new Exploration();
+  private exploredLevel = '';
   readonly sight = new EnemySight();
   private readonly aim = { x: 0, y: 0 };
   private readonly goalPoint = { x: 0, y: 0 };
@@ -169,7 +172,14 @@ export class WorldView {
     this.drawActor(state.hero, alpha);
     for (const n of ls.npcs) this.drawActor(n, alpha);
     labels.beginBars();
-    this.sight.update(state, frameSeconds, look.mood(state.levelId).sightRange);
+    const sightRange = look.mood(state.levelId).sightRange;
+    if (sightRange !== undefined) {
+      // A level drawn afresh shows everything until told what's been found, so it's told on arrival too.
+      const arrived = this.exploredLevel !== state.levelId;
+      this.exploredLevel = state.levelId;
+      if (this.exploration.update(state, frameSeconds, sightRange) || arrived) renderer.setExplored(this.exploration.shown(state.levelId)!);
+    }
+    this.sight.update(state, frameSeconds, sightRange === undefined ? null : this.exploration);
     for (const e of ls.enemies) {
       const seen = this.sight.of(e.id);
       this.drawActor(e, alpha, seen * (e.dead ? Math.max(0, 1 - e.deadFor) : 1));
