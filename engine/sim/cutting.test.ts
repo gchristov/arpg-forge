@@ -59,6 +59,19 @@ describe('continuous melee', () => {
     expect(dummy.hp).toBe(hp);
   });
 
+  it('holds a ranged machine it\'s cutting into, so it can\'t back away', () => {
+    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'shooter', x: 7.5, y: 5.5 }]);
+    const { hero } = state.rules;
+    state.rules.hero = { ...hero, melee: { ...hero.melee, critChance: 0, continuous: { tickSeconds: 0.1, power: 0.01 } } };
+    const shooter = currentLevel(state).enemies[0]!;
+    shooter.mode = 'chase';
+    run(state, 2, [{ type: 'attack', enemyId: shooter.id }]);
+    expect(state.hero.cut?.targetId).toBe(shooter.id);
+    const at = { x: shooter.x, y: shooter.y };
+    run(state, 1);
+    expect(Math.hypot(shooter.x - at.x, shooter.y - at.y)).toBeLessThan(0.05);
+  });
+
   it('reports the killing cut before the kill', () => {
     const state = cutting();
     const dummy = currentLevel(state).enemies[0]!;

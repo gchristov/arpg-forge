@@ -39,13 +39,13 @@
       "pack": "characters",
       "path": "Ultimate Animated Character Pack - Nov 2019/FBX/Worker_Male.fbx",
       "animations": [
-        "Idle",
         "Run",
         "Shoot_OneHanded",
         "RecieveHit",
         "Death",
         "PistolIdle",
-        "PunchCross"
+        "PunchCross",
+        "IdleLoop"
       ],
       "borrow": {
         "pack": "animations",
@@ -55,7 +55,8 @@
           "Run": "Sprint_Loop",
           "Death": "Death01",
           "PistolIdle": "Pistol_Idle_Loop",
-          "PunchCross": "Punch_Cross"
+          "PunchCross": "Punch_Cross",
+          "IdleLoop": "Idle_Loop"
         },
         "bones": {
           "Body": "DEF-hips",

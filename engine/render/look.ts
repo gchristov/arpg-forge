@@ -104,6 +104,11 @@ export interface ActorLook {
   scanner?: { eyeHeight: number };
   /** A light the actor carries, such as a lantern or a glowing eye, which fades as it dies. */
   light?: { colour: number; radius: number; intensity: number };
+  /**
+   * What spurts out of it while it's cut into, and gushes and puddles under it when it's killed: oil from a machine,
+   * blood from a beast.
+   */
+  spatter?: { colour: number };
   /** The mark a killed enemy leaves on the ground, such as blood or bone dust. */
   remains?: { radius: number; colour: number; opacity: number };
   /** A model from the game's model library, scaled to `height`. */
@@ -238,10 +243,10 @@ export interface WallFixture {
   tilt?: number;
 }
 
-/** A burst: the flash it makes and the scorch it leaves on the ground. */
+/** A burst: the flash it makes, and the scorch it leaves on the ground, if any. */
 export interface BurstLook {
   flash: number;
-  scorch: number;
+  scorch?: number;
 }
 
 /** Colours of combat effects and markers. */

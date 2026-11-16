@@ -1,6 +1,6 @@
 import type { HeroRules } from '../../../engine/sim/content';
 
-/** The salvager's numbers. The resource is charge, healing items are patch kits, and the skills are an arc bolt and an EMP. */
+/** The salvager's numbers. The resource is charge, healing items are patch kits, and the skill is an EMP. */
 export const HERO: HeroRules = {
   radius: 0.28,
   speed: 3.7,
@@ -18,19 +18,14 @@ export const HERO: HeroRules = {
   melee: {
     cooldown: 0.55, swingSeconds: 0.3, reach: 1.35, engageRange: 1.0,
     critChance: 0.12, critMultiplier: 1.8, knockback: 0.18,
-    // The chainsaw keeps cutting for as long as it's in contact, at nearly twice the damage a second of punching.
-    continuous: { tickSeconds: 0.1, power: 1.8 },
+    // The chainsaw keeps cutting for as long as it's in contact, at two and a half times the damage a second of punching.
+    continuous: { tickSeconds: 0.1, power: 2.5 },
   },
   skills: [
-    {
-      type: 'projectile', id: 'arc-bolt',
-      cost: 12, cooldown: 0.6, speed: 10, lifetime: 1.0, radius: 1.5, damage: [22, 32], damagePerLevel: 3,
-      critChance: 0.1, critMultiplier: 1.6, autoAimRange: 9,
-    },
-    // Hits every machine around the salvager at once, for when a floor's alarm brings a crowd.
+    // Hits every machine around the salvager at once and throws them back, for when a floor's alarm brings a crowd.
     {
       type: 'area', id: 'emp',
-      cost: 20, cooldown: 7, radius: 2.6, damage: [16, 24], damagePerLevel: 3, critChance: 0.1, critMultiplier: 1.5, knockback: 0.7,
+      cost: 20, cooldown: 12, radius: 2.6, damage: [16, 24], damagePerLevel: 3, critChance: 0.1, critMultiplier: 1.5, knockback: 1.6,
     },
   ],
   heal: { amount: 60, maxItems: 9 },

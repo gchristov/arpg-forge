@@ -28,6 +28,16 @@ const DOME_SPARKS = [2, 4] as const;
 /** Skill projectiles fly at this height, and throw off an arc on about this share of frames. */
 const PROJECTILE_HEIGHT = 0.52;
 const CRACKLE_CHANCE = 0.75;
+/** The screen rumbles this strongly while the hero cuts, under the jolt of being hit. */
+const CUT_RUMBLE = 0.1;
+/**
+ * While the hero cuts into something that spatters, droplets spurt off about this often, from this share of its height,
+ * a burst on this share of spurts; a kill throws this many at once.
+ */
+const SPRAY_SECONDS = 0.065;
+const SPRAY_HEIGHT = 0.45;
+const SPRAY_BURST = 0.16;
+const GUSH_DROPLETS = 13;
 /** Each chimney puffs this often. */
 const SMOKE_SECONDS = 1.6;
 /** Townspeople's names show within this many tiles of the hero. */
@@ -57,6 +67,8 @@ export class WorldView {
   /** What the hero has found of each level, and so which enemies show; the rest stays dark until found. */
   private readonly exploration = new Exploration();
   private exploredLevel = '';
+  /** Seconds until the next droplets fly off what the hero is cutting. */
+  private untilSpray = 0;
   readonly sight = new EnemySight();
   private readonly aim = { x: 0, y: 0 };
   private readonly goalPoint = { x: 0, y: 0 };
@@ -93,6 +105,8 @@ export class WorldView {
     renderer.showLevel(currentLevel(state).level);
     renderer.clearActors();
     renderer.effects.clearDecals();
+    const walls = this.blocksSight();
+    renderer.spatter.clear((tx, ty) => !walls(tx, ty));
     renderer.follow(state.hero.x, state.hero.y, 0, true);
   }
 
@@ -131,12 +145,16 @@ export class WorldView {
           renderer.shake(0.25);
           break;
         case 'EnemyKilled': {
-          const remains = look.actor(e.kind).remains;
+          const { remains, spatter, height, radius } = look.actor(e.kind);
           if (remains) renderer.effects.decal(e.x, e.y, remains.radius, remains.colour, remains.opacity, 40);
+          if (spatter) {
+            renderer.spatter.spray(e.x, e.y, height * SPRAY_HEIGHT, 1, 0, spatter.colour, GUSH_DROPLETS, Math.PI);
+            renderer.spatter.puddle(e.x, e.y, radius * 2.2, spatter.colour);
+          }
           break;
         }
         case 'Exploded':
-          renderer.effects.decal(e.x, e.y, 0.8, effects.explosion.scorch, 0.7, 12);
+          if (effects.explosion.scorch !== undefined) renderer.effects.decal(e.x, e.y, 0.8, effects.explosion.scorch, 0.7, 12);
           renderer.shake(0.22);
           if (effects.lightning === undefined) renderer.effects.flash(e.x, e.y, e.radius, effects.explosion.flash, 0.35);
           else {
@@ -148,7 +166,7 @@ export class WorldView {
           renderer.playActor(String(e.enemyId), 'cast', 1.0);
           break;
         case 'SlamLanded':
-          renderer.effects.decal(e.x, e.y, e.radius, effects.slam.scorch, 0.7, 8);
+          if (effects.slam.scorch !== undefined) renderer.effects.decal(e.x, e.y, e.radius, effects.slam.scorch, 0.7, 8);
           renderer.effects.flash(e.x, e.y, e.radius, effects.slam.flash, 0.5);
           renderer.shake(0.45);
           break;
@@ -164,6 +182,7 @@ export class WorldView {
     const { renderer, state, labels, look } = this;
     this.puffChimneys();
     this.animateWindUps();
+    this.showCut(frameSeconds);
     for (const [id, left] of this.flashes) {
       if (left - frameSeconds <= 0) this.flashes.delete(id);
       else this.flashes.set(id, left - frameSeconds);
@@ -421,6 +440,32 @@ export class WorldView {
           PROJECTILE_HEIGHT + (Math.random() - 0.5) * 0.6, colour, 0.05 + Math.random() * 0.07,
         );
       }
+    }
+  }
+
+  /**
+   * While the hero cuts, the screen rumbles, and droplets fly off what's being cut if it spatters: out of the cut,
+   * back past the blade and to the sides.
+   */
+  private showCut(frameSeconds: number): void {
+    const { hero } = this.state;
+    if (hero.cut) this.renderer.shake(CUT_RUMBLE);
+    const e = hero.cut && currentLevel(this.state).enemies.find((en) => en.id === hero.cut!.targetId);
+    const look = e && this.look.actor(e.kind);
+    if (!e || !look?.spatter) {
+      this.untilSpray = 0;
+      return;
+    }
+    this.untilSpray -= frameSeconds;
+    const d = Math.hypot(e.x - hero.x, e.y - hero.y) || 1;
+    while (this.untilSpray <= 0) {
+      // Spurts come unevenly: often one drop, sometimes none, now and then a burst.
+      this.untilSpray += SPRAY_SECONDS * (0.4 + Math.random() * 1.2);
+      const count = Math.random() < SPRAY_BURST ? 3 + Math.floor(Math.random() * 3) : Math.floor(Math.random() * 2.2);
+      // Thrown back out of the cut rather than on through the body, which would hide it.
+      const x = e.x - ((e.x - hero.x) / d) * e.r;
+      const y = e.y - ((e.y - hero.y) / d) * e.r;
+      this.renderer.spatter.spray(x, y, look.height * SPRAY_HEIGHT, (hero.x - e.x) / d, (hero.y - e.y) / d, look.spatter.colour, count, 1.6);
     }
   }
 

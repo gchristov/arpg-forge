@@ -1,9 +1,9 @@
 import { dist } from '../core/math';
 import { chance, int } from '../core/rng';
-import { moveBody } from '../world/collision';
 import { hasLineOfSight } from '../world/line-of-sight';
 import { isSolidAt } from '../world/tile-map';
 import { advanceQuest } from './interaction';
+import { knockBack } from './knockback';
 import { dropEnemyLoot } from './loot';
 import type { BurstDamage } from './content';
 import { currentLevel, type Enemy, type GameState, type SimEvent } from './state';
@@ -59,7 +59,7 @@ export function hurtEnemy(state: GameState, e: Enemy, amount: number, kx: number
   e.scan = -1;
   if (state.rules.enemies[e.kind]!.calm) provoke(state, e, events);
   const type = state.rules.enemies[e.kind]!;
-  if (!type.boss) moveBody(currentLevel(state).level.map, e, kx * knockback, ky * knockback);
+  if (!type.boss && knockback > 0) knockBack(e, kx, ky, knockback);
   if (e.hp <= 0) killEnemy(state, e, events);
 }
 

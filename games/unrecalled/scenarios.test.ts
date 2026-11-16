@@ -156,7 +156,7 @@ describe('Unrecalled scenarios', () => {
     const middle = { x: pack.reduce((s, e) => s + e.x, 0) / 3, y: pack.reduce((s, e) => s + e.y, 0) / 3 };
     state.hero.x = state.hero.prevX = middle.x;
     state.hero.y = state.hero.prevY = middle.y + 0.6;
-    const events = play(state, 1 / 60, [{ type: 'useSkill', slot: 1 }]);
+    const events = play(state, 1 / 60, [{ type: 'useSkill', slot: 0 }]);
     const hit = new Set(events.flatMap((e) => (e.type === 'EnemyDamaged' ? [e.enemyId] : [])));
     expect(pack.filter((e) => hit.has(e.id)).length).toBeGreaterThanOrEqual(2);
     expect(events.map((e) => e.type)).toContain('LevelAlarmed');

@@ -5,9 +5,8 @@ import { ShownValues } from '../../../engine/ui/shown-values';
 import { ENEMIES } from '../content/enemies';
 import { QUEST, stillRunning } from '../content/story';
 
-/** Skill slots: the arc bolt and the EMP. */
-const ARC_BOLT = 0;
-const EMP = 1;
+/** The EMP's skill slot. */
+const EMP = 0;
 
 const $ = (id: string): HTMLElement => document.getElementById(id)!;
 
@@ -18,7 +17,6 @@ export class Hud {
 
   constructor(send: (command: Command) => void) {
     bindCommand($('bAttack'), { type: 'attackNearest' }, send);
-    bindCommand($('bBolt'), { type: 'useSkill', slot: ARC_BOLT }, send);
     bindCommand($('bEmp'), { type: 'useSkill', slot: EMP }, send);
     bindCommand($('bPatch'), { type: 'heal' }, send);
   }
@@ -26,7 +24,6 @@ export class Hud {
   update(state: GameState): void {
     const { hero } = state;
     const { shown } = this;
-    const bolt = state.rules.hero.skills[ARC_BOLT]!;
     shown.set('hp', `${Math.ceil(hero.hp)}/${hero.maxHp}`, (v) => {
       $('hpFill').style.transform = `scaleX(${hero.hp / hero.maxHp})`;
       $('hpTxt').textContent = v.replace('/', ' / ');
@@ -42,7 +39,6 @@ export class Hud {
       $('patchN').textContent = String(v);
       $('bPatch').classList.toggle('off', v <= 0);
     });
-    shown.set('boltOff', hero.resource < bolt.cost, (v) => $('bBolt').classList.toggle('off', v));
     const emp = state.rules.hero.skills[EMP]!;
     const recharging = hero.skillCooldowns[EMP]! / emp.cooldown;
     shown.set('empOff', recharging > 0 || hero.resource < emp.cost, (v) => $('bEmp').classList.toggle('off', v));

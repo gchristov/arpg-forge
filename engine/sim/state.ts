@@ -88,6 +88,9 @@ export interface Enemy extends Actor {
   provoked: boolean;
   /** Progress through looking the hero over on recognising them, from 0 to 1, or -1 when not scanning. */
   scan: number;
+  /** How fast it's sliding from a knock-back, in tiles a second. */
+  slideX: number;
+  slideY: number;
 }
 
 export interface Projectile {

@@ -22,7 +22,7 @@ export function unrecalledSounds(s: Synth) {
       s.tone(200, 0.45, 'sawtooth', 0.05, 6);
       s.noise(0.5, 0.18, 4200, 1.5, 0.05);
     },
-    /** Sparks where a bolt or the EMP goes off. */
+    /** Sparks where the EMP goes off. */
     crackle: () => {
       s.noise(0.3, 0.2, 3000, 1.2);
       s.tone(110, 0.25, 'square', 0.04, 0.5);

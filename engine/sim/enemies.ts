@@ -5,6 +5,7 @@ import { hasLineOfSight } from '../world/line-of-sight';
 import { planRoute } from '../world/pathfinding';
 import type { EnemyType } from './content';
 import { hurtHero } from './combat';
+import { slide } from './knockback';
 import { makeEnemy, spawnCamp } from './setup';
 import { currentLevel, type Enemy, type GameState, type LevelState, type SimEvent } from './state';
 import { followPath, steerTowards } from './walking';
@@ -68,6 +69,7 @@ function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, eve
   const { hero } = state;
   const { map } = ls.level;
   e.attackCooldown -= dt;
+  slide(map, e, dt);
   if (e.swing >= 0) {
     e.swing += dt / SWING_SECONDS;
     if (e.swing >= 1) e.swing = -1;
@@ -154,7 +156,9 @@ function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, eve
   if (inRange) {
     e.facingX = lerp(e.facingX, fx, 0.3);
     e.facingY = lerp(e.facingY, fy, 0.3);
-    if (type.ranged && d < KITE_DISTANCE) steerTowards(map, e, e.x - fx, e.y - fy, type.speed * KITE_SPEED_SHARE, dt);
+    // A machine the hero is cutting into is held by the blade, so it can't back away.
+    const held = hero.cut?.targetId === e.id;
+    if (type.ranged && d < KITE_DISTANCE && !held) steerTowards(map, e, e.x - fx, e.y - fy, type.speed * KITE_SPEED_SHARE, dt);
     if (e.attackCooldown <= 0) e.windUp = 0;
     return;
   }

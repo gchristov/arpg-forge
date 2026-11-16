@@ -43,7 +43,7 @@ export function buildArena(): LevelContent {
   const arena = roomFromRows({ id: 'arena', name: 'Practice Arena', subtitle: 'Machines keep coming', floor: Ground.Plate, rows: ROWS, key: KEY });
   const camps = ROWS.flatMap((row, ty) => [...row].flatMap((ch, tx) => (ch === 'C' ? [{ tx, ty }] : [])));
   arena.camps = camps.map((c, i) => ({ ...c, kind: KINDS[i % KINDS.length]! }));
-  arena.campRespawns = { everySeconds: 5, maxAlive: 8, minHeroDistance: 5, kinds: KINDS };
+  arena.campRespawns = { everySeconds: 2, maxAlive: 10, minHeroDistance: 5, kinds: KINDS };
   arena.practice = true;
   return arena;
 }

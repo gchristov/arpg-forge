@@ -6,7 +6,7 @@ Every asset that ships with the game, where it comes from and its licence. All o
 | --- | --- | --- |
 | Alegreya Sans font | Juan Pablo del Peral (Huerta Tipográfica), via `@fontsource/alegreya-sans` | SIL Open Font License 1.1 |
 | The salvager (hero), and Rustbelt's foreman, trader and tinker | Quaternius, [Ultimate Animated Character Pack](https://opengameart.org/content/animated-characters-pack) | CC0 1.0 |
-| The salvager's run, and their idle and swing with the chainsaw | Quaternius, [Universal Animation Library, Standard](https://opengameart.org/content/universal-animation-library) | CC0 1.0 |
+| The salvager's run, rest and death, and how they hold, cut and rev with the chainsaw | Quaternius, [Universal Animation Library, Standard](https://opengameart.org/content/universal-animation-library) | CC0 1.0 |
 | The salvager's chainsaw | loafbrr_1, [Chainsaw](https://opengameart.org/content/chainsaw-1) | CC0 1.0 |
 | The Order Engine | Quaternius, [Animated Mech Pack](https://opengameart.org/content/animated-mech-pack) | CC0 1.0 |
 | Crawlers, loaders and sentries; chairs, salvage caches, the fire barrel, crates, barrels, lockers, shelves and desks | Quaternius, [Sci-Fi Essentials Kit](https://opengameart.org/content/sci-fi-essentials-kit) | CC0 1.0 |

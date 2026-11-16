@@ -15,6 +15,7 @@ import type { Look, Mood, PropLook, Surroundings, WallFixture, WallLook, WaterLo
 import { fitMatrix, instancedModel, modelSize, panelFit, panelScale } from './model-instancing';
 import { ModelLibrary, type ModelTemplate } from './models';
 import { playDistances, shadeArea, shadeAt } from './shade-map';
+import { Spatter } from './spatter';
 import { WaterSurface } from './water';
 import { isWallTile, kitPartitions, kitWalls, wallFaces, wallPanels, type KitCorner, type KitOpening } from './wall-panels';
 
@@ -72,6 +73,7 @@ export class SceneRenderer {
   private shakeAmount = 0;
   private frame = 0;
   readonly effects: Effects;
+  readonly spatter: Spatter;
   private readonly marker: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>;
   private markerAge = Infinity;
   /** Set when a level is shown; the next render compiles every shader the level can need. */
@@ -118,6 +120,7 @@ export class SceneRenderer {
     this.marker.visible = false;
     this.scene.add(this.marker);
     this.effects = new Effects(this.scene, look.effects);
+    this.spatter = new Spatter(this.scene);
   }
 
   /** How much the view is zoomed, 1 when a tile is 64 pixels wide. */
@@ -321,6 +324,7 @@ export class SceneRenderer {
     this.updateLightMap(seconds);
     this.updateMarker(frameSeconds);
     this.effects.update(frameSeconds);
+    this.spatter.update(frameSeconds);
     this.flames?.update(seconds, frameSeconds);
     this.mist?.update(seconds);
     this.water?.update(seconds);
@@ -338,11 +342,13 @@ export class SceneRenderer {
   private warmUp(): void {
     this.warmUpPending = false;
     this.effects.setAllVisible(true);
+    this.spatter.setAllVisible(true);
     for (const figure of this.actors.values()) figure.setLookOf(0, 0.5);
     this.renderer.compile(this.scene, this.camera);
     for (const figure of this.actors.values()) figure.setLookOf(0, 1);
     this.renderer.compile(this.scene, this.camera);
     this.effects.setAllVisible(false);
+    this.spatter.setAllVisible(false);
   }
 
   private applyShake(frameSeconds: number): void {
