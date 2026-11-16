@@ -45,11 +45,14 @@ export function updateEnemies(state: GameState, dt: number, events: SimEvent[]):
   }
 }
 
-/** The alarm sounds while any provoked enemy hunts the hero, and falls silent once they're destroyed or give up. */
+/**
+ * The alarm sounds once a provoked enemy first hunts the hero, and then stays on: from then on every calm enemy on the
+ * level comes for the hero as soon as it sees them. Only the story calming everything puts it out.
+ */
 function soundAlarm(state: GameState, ls: LevelState, events: SimEvent[]): void {
-  const alarmed = ls.enemies.some((e) => !e.dead && e.provoked && e.mode === 'chase');
-  if (alarmed && !ls.alarmed) events.push({ type: 'LevelAlarmed', levelId: state.levelId });
-  ls.alarmed = alarmed;
+  if (ls.alarmed || !ls.enemies.some((e) => !e.dead && e.provoked && e.mode === 'chase')) return;
+  ls.alarmed = true;
+  events.push({ type: 'LevelAlarmed', levelId: state.levelId });
 }
 
 function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, events: SimEvent[]): void {
@@ -70,7 +73,7 @@ function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, eve
   e.moving = false;
 
   if (e.mode === 'idle') {
-    if (sees && type.calm && !e.provoked) {
+    if (sees && type.calm && !e.provoked && !ls.alarmed) {
       if (!e.recognised) {
         events.push({ type: 'EnemyRecognised', enemyId: e.id, x: e.x, y: e.y });
         e.scan = 0;
@@ -79,6 +82,7 @@ function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, eve
     } else if (sees) {
       e.scan = -1;
       e.mode = 'chase';
+      if (type.calm) e.provoked = true;
       events.push({ type: 'EnemyAlerted', enemyId: e.id, boss: Boolean(type.boss) });
       return;
     }

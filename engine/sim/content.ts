@@ -98,7 +98,7 @@ export interface EnemyType {
   boss?: boolean;
   /**
    * Starts calm, going about its work: it ignores the hero, however close, until it's hit or one of its kind is hit
-   * nearby, in its sight. A room's fight doesn't carry into the next.
+   * nearby, in its sight. That sounds the level's alarm, and from then on it comes for the hero as soon as it sees them.
    */
   calm?: boolean;
   /** How many spawn together at a camp. */
