@@ -603,6 +603,7 @@ export class SceneRenderer {
     const doorways = openings.filter((o) => level.portals.some((p) => p.tx === o.tx && p.ty === o.ty));
     return [
       ...meshes,
+      ...this.buildCrown(look, new THREE.Matrix4(), panels.filter((p) => !p.front).map(straight)),
       ...instancedModel(panel, new THREE.Matrix4(), inner.panels.map(straight)),
       ...this.kitDoors(kit, [...doorways, ...inner.doorways], k),
       ...(look.fixtures ?? []).flatMap((f) => this.buildFixtures(level, f, isWall, k)),
