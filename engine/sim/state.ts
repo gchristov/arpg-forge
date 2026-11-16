@@ -1,7 +1,7 @@
 import type { Vec2 } from '../core/math';
 import type { Rng } from '../core/rng';
 import type { Level } from '../world/level';
-import type { Camp, CampRespawns, EnemyType, HeroRules, NpcType, QuestStep, Readable } from './content';
+import type { Camp, CampRespawns, Container, EnemyType, HeroRules, NpcType, QuestStep, Readable } from './content';
 import type { Walker } from './walking';
 
 export interface Actor extends Walker {
@@ -37,6 +37,8 @@ export interface Hero extends Actor {
   struck: boolean;
   /** The continuous melee attack under way, if the hero is cutting into their target. */
   cut: Cut | null;
+  /** The weapon in hand, by its id in the hero's rules, or null for bare hands. */
+  weapon: string | null;
   lastHurtAt: number;
   dead: boolean;
   targetId: number | null;
@@ -127,11 +129,7 @@ export interface GroundItem {
   vz: number;
 }
 
-export interface ContainerState {
-  tx: number;
-  ty: number;
-  gold: number;
-  healingItems: number;
+export interface ContainerState extends Container {
   opened: boolean;
 }
 
@@ -224,6 +222,10 @@ export type SimEvent =
   /** The last enemy on the level fell. */
   | { type: 'LevelCleared'; levelId: string }
   | { type: 'PortalSealed'; x: number; y: number }
+  /** The hero stepped onto a door the story hasn't opened yet. */
+  | { type: 'PortalLocked'; to: string; x: number; y: number }
+  /** A weapon came into the hero's hand, bought or found. */
+  | { type: 'Armed'; weapon: string; x: number; y: number }
   | { type: 'EnemyGaveUp'; enemyId: number; boss: boolean }
   | { type: 'HeroHurt'; amount: number; x: number; y: number }
   | { type: 'HeroDied' }

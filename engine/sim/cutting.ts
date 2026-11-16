@@ -1,5 +1,6 @@
 import { chance, range } from '../core/rng';
 import { findEnemy, hurtEnemy } from './combat';
+import { meleeOf } from './weapons';
 import type { Enemy, GameState, SimEvent } from './state';
 
 /**
@@ -11,7 +12,7 @@ export const CUT_REPORT_SECONDS = 0.4;
 /** Keeps cutting into `e` for `dt` seconds, with the hero's continuous melee attack, starting the cut if needed. */
 export function cut(state: GameState, e: Enemy, dt: number, events: SimEvent[]): void {
   const { hero } = state;
-  const melee = state.rules.hero.melee;
+  const melee = meleeOf(state);
   const tick = melee.continuous!.tickSeconds;
   if (hero.cut?.targetId !== e.id) {
     stopCutting(state, events);

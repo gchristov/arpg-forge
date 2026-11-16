@@ -4,7 +4,8 @@ import { Ground, Prop } from '../content/tiles';
 
 /**
  * A practice arena for trying combat out, reached only at `#arena`: an open hall on the wall kit's grid, the salvager
- * in the middle, and a camp of each kind of machine (C) that refills while the salvager keeps their distance.
+ * in the middle on their fists, with the chainsaw in a crate (W), Pell (3) and a cache of scrap (S) for her upgrades,
+ * and a camp of each kind of machine (C) that refills while the salvager keeps their distance.
  */
 const ROWS = [
   '#################################',
@@ -15,7 +16,7 @@ const ROWS = [
   '###...........................###',
   '##L...........................L##',
   '###...........................###',
-  '###...........................###',
+  '###.........W..3...S..........###',
   '###.............@.............###',
   '###...........................###',
   '###...........................###',
@@ -33,6 +34,9 @@ const KEY: Record<string, RoomKey> = {
   '.': {},
   C: {},
   '@': { heroStart: true },
+  '3': { npc: { kind: 'tinker', name: 'Pell' } },
+  S: { prop: Prop.Cache, solid: true, container: { gold: 200, healingItems: 3 } },
+  W: { prop: Prop.Crate, solid: true, container: { gold: 0, healingItems: 0, weapon: 'chainsaw' } },
   '#': { prop: Prop.Wall, frontProp: Prop.WallLow, solid: true },
   L: { prop: Prop.WallLight, solid: true, light: { radius: 3.6, intensity: 0.9, colour: 'cyan', flicker: 0.3, lean: 0.7 } },
 };

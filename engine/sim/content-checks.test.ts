@@ -93,6 +93,27 @@ describe('checkContent', () => {
     ]));
   });
 
+  it('finds a vendor selling a weapon the hero can\'t hold', () => {
+    const c = rooms();
+    c.hero = { ...c.hero, weapons: { saw: { knockback: 0 } } };
+    c.npcs = { smith: { services: [{ type: 'sellWeapon', weapon: 'saw', price: 10 }, { type: 'sellWeapon', weapon: 'axe', price: 10 }] } };
+    expect(checkContent(c)).toEqual(['NPC kind "smith" sells unknown weapon "axe"']);
+  });
+
+  it('finds a container holding an unknown weapon, a door waiting for a step that doesn\'t exist, and quest steps nothing gives', () => {
+    const c = rooms();
+    c.hero = { ...c.hero, weapons: { saw: { knockback: 0 } } };
+    c.levels[1]!.containers = [{ tx: 1, ty: 1, gold: 0, healingItems: 0, weapon: 'axe' }];
+    home(c).level.portals[0]!.lockedUntilStep = 5;
+    c.quest = [{}, { reachedBy: { type: 'use', id: 'lever' } }, { reachedBy: { type: 'arm', weapon: 'saw' } }];
+    expect(checkContent(c)).toEqual(expect.arrayContaining([
+      'cellar: a container holds unknown weapon "axe"',
+      'home: the portal to "cellar" waits for quest step 5, which doesn\'t exist',
+      'quest step 1 needs using "lever", which isn\'t in any level',
+      'quest step 2 needs the "saw" in hand, which nothing gives',
+    ]));
+  });
+
   it('finds quest steps nothing can reach', () => {
     const c = rooms();
     c.quest = [{}, { reachedBy: { type: 'talk', npcKind: 'elder' } }, { reachedBy: { type: 'kill', enemyKind: 'lord' } }];

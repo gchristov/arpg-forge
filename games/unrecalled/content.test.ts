@@ -14,7 +14,7 @@ describe('Unrecalled content', () => {
   it('words every quest step, everything there is to read, and everyone there is to talk to', () => {
     expect(QUEST.every((step) => step.text)).toBe(true);
     const kinds = content.levels.flatMap((l) => l.npcs.map((n) => n.kind));
-    expect(kinds.filter((kind) => !dialogueFor(kind, 0, 0, 0))).toEqual([]);
+    expect(kinds.filter((kind) => !dialogueFor(kind, 0, 0, 0, null))).toEqual([]);
     const ids = content.levels.flatMap((l) => (l.readables ?? []).map((r) => r.id));
     expect(ids.filter((id) => !READINGS[id])).toEqual([]);
     expect(Object.keys(READINGS).filter((id) => !ids.includes(id))).toEqual([]);
@@ -26,6 +26,16 @@ describe('Unrecalled content', () => {
       const model = unrecalledLook.actor(kind).model;
       const weapon = typeof model?.weapon === 'string' ? model.weapon : model?.weapon?.name;
       return !model || !MODEL_URLS[model.name] || (weapon !== undefined && !MODEL_URLS[weapon]);
+    });
+    expect(missing).toEqual([]);
+  });
+
+  it('draws the salvager holding every weapon they can come to hold, with a model that was built', () => {
+    const armed = unrecalledLook.actor('hero').model?.armed ?? {};
+    const missing = Object.keys(content.hero.weapons ?? {}).filter((id) => {
+      const held = armed[id]?.weapon;
+      const name = typeof held === 'string' ? held : held?.name;
+      return !name || !MODEL_URLS[name];
     });
     expect(missing).toEqual([]);
   });

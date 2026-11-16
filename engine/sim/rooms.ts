@@ -17,15 +17,15 @@ export interface RoomKey {
    */
   light?: Omit<LevelLight, 'x' | 'y' | 'seed'> & { offset?: Vec2; lean?: number };
   /** A way out to another level. The hero starts the room at the tile's centre plus `start`. */
-  /** `sealed` keeps it shut while any enemy in the room still stands. */
-  portal?: { to: string; stepOut: Vec2; start: Vec2; sealed?: boolean };
+  /** `sealed` keeps it shut while any enemy in the room still stands; `lockedUntilStep` until the quest reaches it. */
+  portal?: { to: string; stepOut: Vec2; start: Vec2; sealed?: boolean; lockedUntilStep?: number };
   /** The hero starts here, for a room that's the first level rather than one entered through a portal. */
   heroStart?: boolean;
   /** An enemy of this kind spawns here. */
   spawn?: string;
   npc?: { kind: string; name: string };
-  /** A container, such as a chest, holding this much. */
-  container?: Pick<Container, 'gold' | 'healingItems'>;
+  /** A container, such as a chest, holding this much, and perhaps a weapon. */
+  container?: Pick<Container, 'gold' | 'healingItems' | 'weapon'>;
   /** Something to read here, which the game words by this id. */
   readable?: string;
 }
@@ -72,8 +72,10 @@ export function roomFromRows(spec: RoomSpec): LevelContent {
         level.lights.push({ ...light, x: x + 0.5 + (offset?.x ?? 0) + leanX, y: y + 0.5 + (offset?.y ?? 0) + leanY, seed: i });
       }
       if (key.portal) {
-        const { to, stepOut, sealed } = key.portal;
-        level.portals.push({ tx: x, ty: y, to, stepOut, ...(sealed ? { sealed } : {}) });
+        const { to, stepOut, sealed, lockedUntilStep } = key.portal;
+        level.portals.push({
+          tx: x, ty: y, to, stepOut, ...(sealed ? { sealed } : {}), ...(lockedUntilStep === undefined ? {} : { lockedUntilStep }),
+        });
         level.start = { x: x + 0.5 + key.portal.start.x, y: y + 0.5 + key.portal.start.y };
       }
       if (key.heroStart) level.start = { x: x + 0.5, y: y + 0.5 };

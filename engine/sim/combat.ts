@@ -5,6 +5,7 @@ import { isSolidAt } from '../world/tile-map';
 import { advanceQuest } from './interaction';
 import { knockBack } from './knockback';
 import { dropEnemyLoot } from './loot';
+import { meleeOf } from './weapons';
 import type { BurstDamage } from './content';
 import { currentLevel, type Enemy, type GameState, type SimEvent } from './state';
 
@@ -155,7 +156,7 @@ export function updateProjectiles(state: GameState, dt: number, events: SimEvent
         if (!e.dead && dist(p.x, p.y, e.x, e.y) < PROJECTILE_HIT_RADIUS + e.r) hit = true;
       }
       const skill = state.rules.hero.skills[p.slot];
-      if (hit && skill?.type === 'projectile') burst(state, skill, p.x, p.y, state.rules.hero.melee.knockback, events);
+      if (hit && skill?.type === 'projectile') burst(state, skill, p.x, p.y, meleeOf(state).knockback, events);
     } else if (!hero.dead && dist(p.x, p.y, hero.x, hero.y) < PROJECTILE_HIT_RADIUS) {
       hurtHero(state, p.damage, events);
       hit = true;

@@ -123,6 +123,11 @@ export interface ActorLook {
      */
     weapon?: string | HeldWeapon;
     /**
+     * How it looks holding each weapon the rules can give it, by weapon id: the model in hand, in place of `weapon`,
+     * and the animations that change.
+     */
+    armed?: Record<string, { weapon?: string | HeldWeapon; animations?: Partial<ActorAnimations> }>;
+    /**
      * Plays the move animation faster or slower to match how fast the actor moves, so its feet stay planted. Leave
      * it off for animations meant to play at their own pace whatever the speed.
      */

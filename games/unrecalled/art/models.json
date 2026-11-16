@@ -39,7 +39,9 @@
       "pack": "characters",
       "path": "Ultimate Animated Character Pack - Nov 2019/FBX/Worker_Male.fbx",
       "animations": [
+        "Idle",
         "Run",
+        "Punch",
         "Shoot_OneHanded",
         "RecieveHit",
         "Death",

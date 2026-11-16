@@ -4,6 +4,7 @@ import type { Look } from '../render/look';
 import type { SceneRenderer } from '../render/scene-renderer';
 import { questGoal, type QuestGoal } from '../sim/quest-goal';
 import { currentLevel, type Actor, type GameState, type SimEvent } from '../sim/state';
+import { meleeOf } from '../sim/weapons';
 import { inBounds, tileIndex } from '../world/tile-map';
 import type { ScreenFade } from '../ui/fade';
 import type { Project, WorldLabels } from '../ui/world-labels';
@@ -129,7 +130,7 @@ export class WorldView {
           this.fade.fromBlack();
           break;
         case 'Swung':
-          if (e.actorId === state.hero.id) renderer.playActor(String(e.actorId), 'attack', state.rules.hero.melee.swingSeconds * 1.6);
+          if (e.actorId === state.hero.id) renderer.playActor(String(e.actorId), 'attack', meleeOf(state).swingSeconds * 1.6);
           break;
         case 'SkillUsed':
           renderer.playActor(String(state.hero.id), 'cast', 0.45);
@@ -315,6 +316,7 @@ export class WorldView {
       {
         moving: actor.moving, dead: Boolean(actor.dead), flash: (this.flashes.get(actor.id) ?? 0) > 0 ? 1 : 0, fade, speed,
         channelling: actor === this.state.hero && this.state.hero.cut !== null,
+        armed: actor === this.state.hero ? this.state.hero.weapon : null,
       },
     );
     const light = this.look.actor(actor.kind).light;

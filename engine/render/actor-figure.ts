@@ -6,6 +6,7 @@ import { walkPace } from './walk-pace';
 
 /** One-off animations that play over the actor's idle, moving or dying pose. */
 export type ActorMoment = 'attack' | 'cast' | 'hit';
+type BaseName = 'idle' | 'move' | 'channel' | 'death';
 
 const BLEND_SECONDS = 0.15;
 /** How far, in tiles, a held weapon shakes each way while it cuts. */
@@ -47,11 +48,14 @@ export class ActorFigure {
   private held: { weapon: THREE.Object3D; rest: THREE.Vector3; tilesToBone: number } | null = null;
   /** Whether the actor is keeping up a continuous attack. */
   private channelling = false;
+  /** The weapon it's drawn holding, by the rules' weapon id, or null for its own hands. */
+  private armedWith: string | null = null;
+  private baseName: BaseName = 'idle';
   private model: THREE.Object3D | null = null;
 
   constructor(
     private readonly look: ActorLook,
-    library: ModelLibrary,
+    private readonly library: ModelLibrary,
   ) {
     const model = look.model && library.instantiate(look.model.name);
     const template = look.model && library.get(look.model.name);
@@ -171,6 +175,20 @@ export class ActorFigure {
     this.held = { weapon, rest: weapon.position.clone(), tilesToBone: 1 / handScale };
   }
 
+  /**
+   * Draws it holding a weapon the rules gave it, by id, or with its own hands or weapon for null: the look's model in
+   * hand, and its animations for that weapon, blending in from the ones before.
+   */
+  arm(weapon: string | null): void {
+    if (weapon === this.armedWith || !this.model || !this.look.model) return;
+    this.armedWith = weapon;
+    this.held?.weapon.removeFromParent();
+    this.held = null;
+    const held = (weapon === null ? undefined : this.look.model.armed?.[weapon]?.weapon) ?? this.look.model.weapon;
+    if (held) this.holdWeapon(this.model, held, this.library);
+    this.setBase(this.baseName);
+  }
+
   /** Names of the animations currently showing, for tests and debugging. */
   activeAnimations(): string[] {
     return [...this.actions]
@@ -225,7 +243,8 @@ export class ActorFigure {
   }
 
   private action(name: keyof NonNullable<ActorLook['model']>['animations']): THREE.AnimationAction | undefined {
-    const clip = this.look.model?.animations[name];
+    const armed = this.armedWith === null ? undefined : this.look.model?.armed?.[this.armedWith]?.animations;
+    const clip = armed?.[name] ?? this.look.model?.animations[name];
     return clip ? this.actions.get(clip) : undefined;
   }
 
@@ -234,7 +253,8 @@ export class ActorFigure {
    * handler) and the old one stops, so no pose is left running underneath. Dying cuts a moment short, and so does
    * moving off during a flinch.
    */
-  private setBase(name: 'idle' | 'move' | 'channel' | 'death'): void {
+  private setBase(name: BaseName): void {
+    this.baseName = name;
     const next = this.action(name) ?? this.action('idle');
     if (!next || next === this.base) return;
     const previous = this.base;

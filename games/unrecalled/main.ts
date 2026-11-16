@@ -10,7 +10,7 @@ import { MODEL_URLS, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import {
-  dialogueFor, ENDING, ENDING_STEP, ENGINE_CALLS, ENGINE_DOWN_STEP, ENGINE_FALLS, LINE_ALERT, MACHINE_SCANS, NPCS, READINGS,
+  CHAINSAW_FOUND, dialogueFor, LOCKED, ENDING, ENDING_STEP, ENGINE_CALLS, ENGINE_DOWN_STEP, ENGINE_FALLS, LINE_ALERT, MACHINE_SCANS, NPCS, READINGS,
   stillRunning, UNSEALED,
 } from './content/story';
 import { unrecalledContent } from './content/world';
@@ -76,7 +76,7 @@ let deaths = 0;
 /** Opens a townsperson's dialogue, with each service's price and whether the salvager can afford it. */
 function showDialogue(npcId: number, questBefore: number): void {
   const npc = currentLevel(state).npcs.find((n) => n.id === npcId);
-  const d = npc && dialogueFor(npc.kind, questBefore, state.quest, deaths);
+  const d = npc && dialogueFor(npc.kind, questBefore, state.quest, deaths, state.hero.weapon);
   if (!npc || !d) return;
   const services = NPCS[npc.kind]?.services ?? [];
   const ending = npc.kind === 'foreman' && questBefore < ENDING_STEP && state.quest >= ENDING_STEP;
@@ -114,7 +114,11 @@ function reactToService(npcId: number, index: number, x: number, y: number): voi
     dialog.close();
     return;
   }
-  if (service.type === 'upgradeMelee') labels.text(x, y, 46 * PX, 'Wrench upgraded', '#e8c870', 15);
+  if (service.type === 'sellWeapon') {
+    dialog.close();
+    return;
+  }
+  if (service.type === 'upgradeMelee') labels.text(x, y, 46 * PX, 'Upgraded', '#e8c870', 15);
   if (dialog.npcId === npcId) showDialogue(npcId, state.quest);
 }
 
@@ -191,6 +195,7 @@ function playSounds(events: SimEvent[]): void {
         sfx.read();
         break;
       case 'PortalSealed':
+      case 'PortalLocked':
         sfx.sealed();
         break;
       case 'LevelCleared':
@@ -234,6 +239,12 @@ function react(events: SimEvent[]): void {
         labels.text(e.x, e.y, 60 * PX, stillRunning(running), '#ff7a62', 14);
         break;
       }
+      case 'PortalLocked':
+        labels.text(e.x, e.y, 60 * PX, LOCKED, '#ff7a62', 14);
+        break;
+      case 'Armed':
+        hud.banner(CHAINSAW_FOUND.title, CHAINSAW_FOUND.subtitle, 2.6);
+        break;
       case 'LevelCleared':
         if (currentLevel(state).level.portals.some((p) => p.sealed)) hud.banner(UNSEALED.title, UNSEALED.subtitle, 2.6);
         break;

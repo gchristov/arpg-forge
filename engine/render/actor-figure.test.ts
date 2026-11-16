@@ -238,6 +238,27 @@ describe('ActorFigure channelling', () => {
   });
 });
 
+describe('ActorFigure armed', () => {
+  it('swaps to a weapon\'s own animations when armed with it, and back when disarmed', () => {
+    const f = figure({
+      colour: 0, height: 1, radius: 0.3,
+      model: {
+        name: 'm', animations: { idle: 'Idle', move: 'Run', attack: 'Attack', hit: 'Hit', death: 'Death' },
+        armed: { saw: { animations: { idle: 'Cut' } } },
+      },
+    });
+    f.pose(false, false);
+    run(f, 0.5);
+    expect(f.activeAnimations()).toEqual(['Idle']);
+    f.arm('saw');
+    run(f, 0.5);
+    expect(f.activeAnimations()).toEqual(['Cut']);
+    f.arm(null);
+    run(f, 0.5);
+    expect(f.activeAnimations()).toEqual(['Idle']);
+  });
+});
+
 describe('ActorFigure weapon', () => {
   it('fits a weapon made for another hand into the named bone, sized in tiles whatever the bones\' scale', () => {
     // An actor model twice its height in its own units, with a hand bone scaled up a hundredfold, as converted models are.
