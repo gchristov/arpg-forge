@@ -3,6 +3,7 @@ import { questGoal } from '../../engine/sim/quest-goal';
 import { createGameState } from '../../engine/sim/setup';
 import { currentLevel, type Command, type GameState, type SimEvent } from '../../engine/sim/state';
 import { step } from '../../engine/sim/step';
+import { EMP } from './content/hero';
 import { unrecalledContent } from './content/world';
 import { ENDING_STEP, ENGINE_DOWN_STEP, POWER_ON_STEP } from './content/story';
 import { FLOOR_ORDER } from './levels/foundry';
@@ -186,8 +187,16 @@ describe('Unrecalled scenarios', () => {
     expect(events.filter((e) => e.type === 'EnemyRecognised')).toHaveLength(0);
   });
 
-  it('sets off an EMP among a pack of crawlers, hitting them all and sounding the alarm', () => {
-    const state = inIntake();
+  it('starts the salvager without the EMP, since it\'s to be earned', () => {
+    const state = createGameState(content, 1);
+    expect(state.rules.hero.skills).toEqual([]);
+    const events = play(state, 1 / 60, [{ type: 'useSkill', slot: 0 }]);
+    expect(events.map((e) => e.type)).not.toContain('SkillUsed');
+  });
+
+  it('sets off an EMP, once the salvager has it, among a pack of crawlers, hitting them all and sounding the alarm', () => {
+    const state = untouchable(createGameState({ ...content, hero: { ...content.hero, skills: [EMP] } }, 1));
+    intoFoundry(state);
     const pack = currentLevel(state).enemies.filter((e) => e.kind === 'crawler').slice(0, 3);
     const middle = { x: pack.reduce((s, e) => s + e.x, 0) / 3, y: pack.reduce((s, e) => s + e.y, 0) / 3 };
     state.hero.x = state.hero.prevX = middle.x;
