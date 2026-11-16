@@ -4,8 +4,11 @@ import type { BuildingPart, Level, Structure } from '../../../engine/world/level
 import { createTileMap, inBounds, setProp, setSolid, tileIndex } from '../../../engine/world/tile-map';
 import { Ground, Prop } from '../content/tiles';
 import { paintPath, scatterWilds } from './wilds';
+import { addWoods, WOODS_TRAIL_ROW, WOODS_WIDTH, woodsTreeChance } from './woods';
 
-const WIDTH = 46;
+/** The town's own columns; the dead woods carry the map on east of them. */
+const TOWN_WIDTH = 46;
+const WIDTH = TOWN_WIDTH + WOODS_WIDTH;
 const HEIGHT = 36;
 
 interface BuildingSpec {
@@ -62,16 +65,13 @@ const BUILDINGS: BuildingSpec[] = [
   },
 ];
 
-/** Where the trail into the dead woods leaves the west edge. */
-const TO_WOODS = { tx: 0, ty: 15 };
-
 /** Worn paths between the camp, each door, the jetty and the woods, as points to walk between. */
 const PATHS: Array<Array<[number, number]>> = [
   [[20, 13], [14, 13], [9, 13], [9, 12]],
   [[24, 13], [30, 13], [34, 13], [34, 12]],
   [[23, 16], [27, 20], [33, 24], [38, 25]],
   [[20, 16], [16, 22], [13, 26]],
-  [[14, 14], [7, 15], [0, TO_WOODS.ty]],
+  [[34, 14], [40, WOODS_TRAIL_ROW], [TOWN_WIDTH, WOODS_TRAIL_ROW]],
 ];
 
 /** The camp sits on an old concrete pad around the dead turbine. */
@@ -87,7 +87,8 @@ const riverRow = (x: number): number => 30.5 + Math.sin(x * 0.21) * 1.6 + Math.s
  * Rustbelt, the salvage camp in the Foundry's shadow, as a map built from fixed features and `hash2` and
  * `valueNoise`, so it comes out the same every time. The camp's concrete pad and its dead wind turbine sit in the
  * middle, with paths out to Pell's workshop, Mags's trading post (the way into the Foundry), the old pumphouse and
- * the jetty where the flood left the salvager. Dead trees thicken towards the edges.
+ * the jetty where the flood left the salvager, and a trail east into the dead woods. Dead trees thicken towards the
+ * town's edges.
  */
 export function buildRustbelt(): LevelContent {
   const map = createTileMap(WIDTH, HEIGHT);
@@ -143,10 +144,6 @@ export function buildRustbelt(): LevelContent {
   reserve(CAMP.x - 8, CAMP.y - 6, 17, 13);
   for (const path of PATHS) paintPath(map, path, reserve);
 
-  level.portals.push({ ...TO_WOODS, to: 'woods', stepOut: { x: 1, y: 0 } });
-  setProp(map, TO_WOODS.tx + 2, TO_WOODS.ty - 1, Prop.Post, true);
-  level.lights.push({ x: TO_WOODS.tx + 2.5, y: TO_WOODS.ty - 0.5, radius: 3.2, intensity: 0.8, colour: 'amber', flicker: 0.6, seed: 5 });
-
   BUILDINGS.forEach((b, i) => {
     const s = addBuilding(level, b, i);
     reserve(s.x - 1, s.y - 1, s.width + 2, s.depth + 3);
@@ -171,7 +168,8 @@ export function buildRustbelt(): LevelContent {
   room.containers!.push({ tx: 3, ty: 4, gold: 40, healingItems: 1 });
   reserve(2, 3, 3, 4);
 
-  scatterWilds(map, reserved, treeChance);
+  addWoods(room, reserve, TOWN_WIDTH);
+  scatterWilds(map, reserved, (x, y) => (x < TOWN_WIDTH ? treeChance(x, y) : woodsTreeChance(x - TOWN_WIDTH, y)));
   return room;
 }
 
@@ -200,9 +198,9 @@ function addBuilding(level: Level, b: BuildingSpec, seed: number): Structure {
   return structure;
 }
 
-/** Dead trees thicken towards the map's edges, except the river's, and gather in a few thickets. */
+/** Dead trees thicken towards the town's edges, except the river's, and gather in a few thickets. */
 function treeChance(x: number, y: number): number {
-  const edge = Math.min(x, y, WIDTH - 1 - x);
+  const edge = Math.min(x, y, TOWN_WIDTH - 1 - x);
   const thicket = valueNoise(x * 0.18 + 5, y * 0.18) > 0.6;
   return Math.max(edge < 2 ? 0.4 : 0, edge < 4 ? 0.12 : 0, thicket ? 0.07 : 0);
 }

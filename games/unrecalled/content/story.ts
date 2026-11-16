@@ -8,7 +8,7 @@ import type { NpcType, QuestStep } from '../../../engine/sim/content';
 /** The quest: what the HUD says at each step, and what moves the quest to it. */
 export const QUEST: Array<QuestStep & { text: string }> = [
   { text: 'Talk to the foreman by the fire.' },
-  { text: 'Find Pell’s old saw at the logging camp, west through the woods.', reachedBy: { type: 'talk', npcKind: 'foreman' } },
+  { text: 'Find Pell’s old saw at the logging camp, east through the woods.', reachedBy: { type: 'talk', npcKind: 'foreman' } },
   { text: 'Throw the breaker on the camp’s turbine.', reachedBy: { type: 'arm', weapon: 'chainsaw' } },
   // Throwing the breaker first skips the saw: it stays in its crate for whoever goes back for it.
   { text: 'Get into the Foundry through Mags’s loading door.', reachedBy: { type: 'use', id: 'breaker' } },
@@ -65,11 +65,11 @@ export function dialogueFor(kind: string, questBefore: number, quest: number, de
       const text = quest >= ENDING_STEP
         ? 'Whatever it wants, it’ll ask you first. It always did.'
         : questBefore === 0
-          ? 'Found you in the river after the flood. Never asked. Not asking now. The Foundry’s taking the town apart a crate at a time; the chapel bell went last night. Mags’s depot backs onto it, but her loading door’s been dead since the machines threw the breaker at the logging camp, west through the woods. Throw it back. Pell left her old saw out there, too. Your fists won’t get you far.'
+          ? 'Found you in the river after the flood. Never asked. Not asking now. The Foundry’s taking the town apart a crate at a time; the chapel bell went last night. Mags’s depot backs onto it, but her loading door’s been dead since the machines threw the breaker at the logging camp, east through the woods past the pumphouse. Throw it back. Pell left her old saw out there, too. Your fists won’t get you far.'
           : quest >= POWER_ON_STEP
             ? 'Heard the turbine from here. Mags’s door is open; go through and find what’s giving the orders, and switch it off.'
             : weapon === null
-              ? 'West through the woods to the logging camp. Pell’s saw is in a crate by the bench, and the breaker’s on the turbine.'
+              ? 'East through the woods to the logging camp. Pell’s saw is in a crate by the bench, and the breaker’s on the turbine.'
               : 'Found Pell’s saw, then. Now the breaker on the turbine, and Mags’s door will open.';
       return { title: 'Foreman Odell', text, options: [{ label: quest >= ENDING_STEP ? 'Leave' : 'On my way' }] };
     }

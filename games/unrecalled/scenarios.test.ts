@@ -47,21 +47,19 @@ function talkTo(state: GameState, kind: string): SimEvent[] {
 /** Opens the current level's container holding `weapon`, walking up to it first. */
 function openCrateWith(state: GameState, weapon: string): SimEvent[] {
   const index = currentLevel(state).containers.findIndex((c) => c.weapon === weapon);
-  return play(state, 20, [{ type: 'open', index }]);
+  return play(state, 30, [{ type: 'open', index }]);
 }
 
 /** Uses the current level's readable `id`, walking up to it first. */
 function use(state: GameState, id: string): SimEvent[] {
   const index = currentLevel(state).readables.findIndex((r) => r.id === id);
-  return play(state, 20, [{ type: 'read', index }]);
+  return play(state, 30, [{ type: 'read', index }]);
 }
 
-/** From Rustbelt out to the logging camp, for Pell's saw and the breaker, and back. */
+/** Out through the woods to the logging camp, for Pell's saw and the breaker. */
 function throughWoods(state: GameState): void {
-  takeDoor(state, 'woods');
   openCrateWith(state, 'chainsaw');
   use(state, 'breaker');
-  takeDoor(state, 'rustbelt');
 }
 
 /**
@@ -87,7 +85,7 @@ function inIntake(): GameState {
 }
 
 describe('Unrecalled scenarios', () => {
-  it('starts in Rustbelt, where the foreman sends the salvager to the woods, since the depot\'s door has no power', () => {
+  it('starts in Rustbelt, where the foreman sends the salvager into the woods, since the depot\'s door has no power', () => {
     const state = untouchable(createGameState(content, 1));
     expect(state.levelId).toBe('rustbelt');
     expect(currentLevel(state).npcs.map((n) => n.kind)).toEqual(['foreman']);
@@ -268,7 +266,7 @@ describe('Unrecalled scenarios', () => {
     expect(state.hero.dead).toBe(false);
   });
 
-  it('points the way from the foreman out to the logging camp, and back down to the Order Engine, one door at a time', () => {
+  it('points the way from the foreman out to the logging camp, then down to the Order Engine, one door at a time', () => {
     const state = untouchable(createGameState(content, 1));
     const foreman = currentLevel(state).npcs.find((n) => n.kind === 'foreman')!;
     expect(questGoal(state)?.actorId).toBe(foreman.id);
@@ -302,7 +300,7 @@ describe('Unrecalled scenarios', () => {
       takeDoor(state, door.to);
       route.push(state.levelId);
     }
-    expect(route).toEqual(['woods', 'rustbelt', 'tradingPost', ...FLOOR_ORDER]);
+    expect(route).toEqual(['tradingPost', ...FLOOR_ORDER]);
     expect(used).toEqual(['chainsaw', 'breaker']);
     expect(keepersOn).toEqual(['gallery']);
     const engine = currentLevel(state).enemies.find((e) => e.kind === 'orderEngine')!;
@@ -313,8 +311,6 @@ describe('Unrecalled scenarios', () => {
     const state = untouchable(createGameState(content, 1));
     expect(state.hero.weapon).toBeNull();
     talkTo(state, 'foreman');
-    takeDoor(state, 'woods');
-    expect(state.levelId).toBe('woods');
     const events = openCrateWith(state, 'chainsaw');
     expect(events.map((e) => e.type)).toContain('Armed');
     expect(state.hero.weapon).toBe('chainsaw');
@@ -332,7 +328,6 @@ describe('Unrecalled scenarios', () => {
   it('opens the depot\'s door for a breaker thrown before the saw is found, and leaves the saw for later', () => {
     const state = untouchable(createGameState(content, 1));
     talkTo(state, 'foreman');
-    takeDoor(state, 'woods');
     use(state, 'breaker');
     expect(state.quest).toBe(POWER_ON_STEP);
     expect(state.hero.weapon).toBeNull();
