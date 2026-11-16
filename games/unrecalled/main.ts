@@ -7,6 +7,7 @@ import { servicePrice } from '../../engine/sim/interaction';
 import { currentLevel, type RefusalReason, type SimEvent } from '../../engine/sim/state';
 import { DialogBox } from '../../engine/ui/dialog-box';
 import { MODEL_URLS, unrecalledLook } from './art/look';
+import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import {
   dialogueFor, ENDING, ENDING_STEP, ENGINE_CALLS, ENGINE_DOWN_STEP, ENGINE_FALLS, LINE_ALERT, MACHINE_SCANS, NPCS, READINGS,
@@ -31,8 +32,11 @@ const hud = new Hud((command) => {
 });
 
 const synth = new Synth();
-synth.muted = platform.load('muted') === 'true';
+// Sound starts off until the player turns it on.
+synth.muted = platform.load('muted') !== 'false';
 const sfx = unrecalledSounds(synth);
+const chainsaw = chainsawEngine(synth);
+let playing = false;
 const showMuted = (): void => {
   $('mute').classList.toggle('off', synth.muted);
   $('mute').setAttribute('aria-pressed', String(!synth.muted));
@@ -134,7 +138,7 @@ function playSounds(events: SimEvent[]): void {
   for (const e of events) {
     switch (e.type) {
       case 'Swung':
-        if (e.actorId === state.hero.id) sfx.swing();
+        if (e.actorId === state.hero.id) sfx.rev();
         break;
       case 'EnemyDamaged':
         sfx.clank();
@@ -280,9 +284,13 @@ function react(events: SimEvent[]): void {
 
 game.run({
   react,
-  update: (s) => hud.update(s),
+  update: (s) => {
+    hud.update(s);
+    chainsaw.update(s, playing);
+  },
   onStart() {
     synth.unlock();
+    playing = true;
     $('title').hidden = true;
     const { level } = currentLevel(state);
     hud.banner(level.name, level.subtitle, 3);
