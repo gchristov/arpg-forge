@@ -43,6 +43,10 @@ const GUSH_DROPLETS = 13;
 const SMOKE_SECONDS = 1.6;
 /** Townspeople's names show within this many tiles of the hero. */
 const NAME_RANGE = 5;
+/** A quiet "!" marks everything the hero can tap within this many tiles: townspeople, unopened containers, things to read. */
+const TAPPABLE_RANGE = 7;
+/** How far over a prop's top its "!" floats, in tiles. */
+const MARK_ABOVE = 0.6;
 /** A scan lights the ground round the body it looks over this far, this brightly at its height. */
 const SCAN_GLOW = { radius: 1.4, intensity: 0.9 };
 /**
@@ -237,8 +241,9 @@ export class WorldView {
   }
 
   /**
-   * Guidance to the quest's next goal: the arrow by the hero along the way there, a "!" over the townsperson to talk
-   * to, and the names of townspeople nearby.
+   * Guidance to the quest's next goal: the arrow by the hero along the way there, and a bright, bobbing "!" over the
+   * townsperson, container or thing to use it names. A quieter "!" over everything else nearby the hero can tap, and the
+   * names of townspeople nearby.
    */
   private showGuide(alpha: number, frameSeconds: number): void {
     const { state, labels, renderer, look, guideColours: colours } = this;
@@ -253,6 +258,11 @@ export class WorldView {
     let goalY = goal?.y ?? 0;
 
     labels.beginTags();
+    const bob = Math.sin(this.guideSeconds * 4) * 0.06;
+    const mark = (x: number, y: number, height: number, isGoal: boolean) => {
+      if (isGoal) labels.tag(this.project, x, y, height + bob, '!', colours.arrow, 24);
+      else if (Math.hypot(x - hx, y - hy) < TAPPABLE_RANGE) labels.tag(this.project, x, y, height, '!', colours.name, 20);
+    };
     for (const n of ls.npcs) {
       const x = lerp(n.prevX, n.x, alpha);
       const y = lerp(n.prevY, n.y, alpha);
@@ -260,11 +270,14 @@ export class WorldView {
       if (n.id === goal?.actorId) {
         goalX = x;
         goalY = y;
-        const bob = Math.sin(this.guideSeconds * 4) * 0.06;
-        labels.tag(this.project, x, y, height + 0.8 + bob, '!', colours.arrow, 24);
       }
+      mark(x, y, height + 0.8, n.id === goal?.actorId);
       if (Math.hypot(x - hx, y - hy) < NAME_RANGE) labels.tag(this.project, x, y, height + 0.3, n.name, colours.name, 13);
     }
+    const isGoalTile = (tx: number, ty: number) => goal?.actorId === undefined && goal?.x === tx + 0.5 && goal?.y === ty + 0.5;
+    const propTop = (tx: number, ty: number) => (look.prop(ls.level.map.prop[tileIndex(ls.level.map, tx, ty)]!, state.levelId)?.height ?? 0.5) + MARK_ABOVE;
+    for (const c of ls.containers) if (!c.opened) mark(c.tx + 0.5, c.ty + 0.5, propTop(c.tx, c.ty), isGoalTile(c.tx, c.ty));
+    for (const r of ls.readables) mark(r.tx + 0.5, r.ty + 0.5, propTop(r.tx, r.ty), isGoalTile(r.tx, r.ty));
     labels.endTags();
     const enemy = goal?.actorId === undefined ? undefined : ls.enemies.find((e) => e.id === goal.actorId);
     if (enemy) {

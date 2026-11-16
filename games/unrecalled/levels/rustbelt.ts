@@ -158,9 +158,10 @@ export function buildRustbelt(): LevelContent {
     setProp(map, x, y, Prop.Containers, true);
   }
   for (const [x, y] of [[25, 11], [18, 15], [28, 7]] as const) setProp(map, x, y, Prop.Cargo, true);
+  // Braziers at the camp's edges. Posts are kept for things to read, so they don't look like something to tap.
   for (const [x, y] of [[15, 12], [29, 14]] as const) {
-    setProp(map, x, y, Prop.Post, true);
-    level.lights.push({ x: x + 0.5, y: y + 0.5, radius: 3.2, intensity: 0.8, colour: 'amber', flicker: 0.6, seed: x * 3 });
+    setProp(map, x, y, Prop.FireBarrel, true);
+    level.lights.push({ x: x + 0.5, y: y + 0.5, radius: 3.2, intensity: 0.9, colour: 'molten', flicker: 1.2, seed: x * 3 });
   }
 
   // A stash someone forgot, out in the dead trees to the north-west.

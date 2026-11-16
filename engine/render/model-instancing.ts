@@ -64,7 +64,8 @@ export function instancedModel(template: ModelTemplate, fit: THREE.Matrix4, plac
   const meshes: THREE.InstancedMesh[] = [];
   const matrix = new THREE.Matrix4();
   template.scene.traverse((o) => {
-    if (!(o instanceof THREE.Mesh) || o instanceof THREE.SkinnedMesh) return;
+    // A rigged part, such as a chest's lid, is drawn as it was bound to its rig: at rest.
+    if (!(o instanceof THREE.Mesh)) return;
     const material = Array.isArray(o.material) ? o.material.map(nonMetallic) : nonMetallic(o.material);
     const mesh = new THREE.InstancedMesh(o.geometry, material, placements.length);
     placements.forEach((placement, i) => {
