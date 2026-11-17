@@ -11,7 +11,6 @@ import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import {
   CHAINSAW_FOUND, dialogueFor, LOCKED, ENDING, ENDING_STEP, ENGINE_CALLS, ENGINE_DOWN_STEP, ENGINE_FALLS, LINE_ALERT, MACHINE_SCANS, NPCS, READINGS,
-  stillRunning, UNSEALED,
 } from './content/story';
 import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
@@ -205,12 +204,8 @@ function playSounds(events: SimEvent[]): void {
       case 'Read':
         sfx.read();
         break;
-      case 'PortalSealed':
       case 'PortalLocked':
         sfx.sealed();
-        break;
-      case 'LevelCleared':
-        if (currentLevel(state).level.portals.some((p) => p.sealed)) sfx.unsealed();
         break;
       case 'Refused':
         if (e.reason !== 'fullHealth') sfx.deny();
@@ -245,19 +240,11 @@ function react(events: SimEvent[]): void {
       case 'LevelAlarmed':
         hud.banner(LINE_ALERT.title, LINE_ALERT.subtitle, 2.2);
         break;
-      case 'PortalSealed': {
-        const running = currentLevel(state).enemies.filter((en) => !en.dead).length;
-        labels.text(e.x, e.y, 60 * PX, stillRunning(running), '#ff7a62', 14);
-        break;
-      }
       case 'PortalLocked':
         labels.text(e.x, e.y, 60 * PX, LOCKED, '#ff7a62', 14);
         break;
       case 'Armed':
         hud.banner(CHAINSAW_FOUND.title, CHAINSAW_FOUND.subtitle, 2.6);
-        break;
-      case 'LevelCleared':
-        if (currentLevel(state).level.portals.some((p) => p.sealed)) hud.banner(UNSEALED.title, UNSEALED.subtitle, 2.6);
         break;
       case 'HeroHurt':
         labels.text(e.x, e.y, 46 * PX, `-${e.amount}`, '#ff7a5a', 15);

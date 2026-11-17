@@ -2,6 +2,7 @@ import { dist } from '../core/math';
 import { createRng, range } from '../core/rng';
 import { isSolidAt } from '../world/tile-map';
 import type { Camp, GameContent, HeroRules } from './content';
+import { areaStrength, enemyMaxHp } from './enemy-strength';
 import type { Enemy, GameState, Hero, LevelState, Npc } from './state';
 
 /**
@@ -15,6 +16,7 @@ export function createGameState(content: GameContent, seed: number, startLevel =
     nextId: 1,
     rules: {
       hero: content.hero, enemies: content.enemies, npcRadius: content.npcRadius, npcs: content.npcs, quest: content.quest,
+      ...(content.enemyGrowthPerHeroLevel === undefined ? {} : { enemyGrowthPerHeroLevel: content.enemyGrowthPerHeroLevel }),
     },
     quest: 0,
     levels: {},
@@ -35,8 +37,9 @@ export function createGameState(content: GameContent, seed: number, startLevel =
       alarmed: false,
       ...(lc.campRespawns ? { campRespawns: lc.campRespawns } : {}),
       campTimer: lc.campRespawns?.everySeconds ?? 0,
+      enemyStrength: lc.enemyStrength ?? 1,
     };
-    for (const s of lc.spawns) ls.enemies.push(makeEnemy(state, s.kind, s.x, s.y));
+    for (const s of lc.spawns) ls.enemies.push(makeEnemy(state, s.kind, s.x, s.y, ls.enemyStrength));
     for (const camp of lc.camps) spawnCamp(state, ls, camp.kind, camp);
     for (const n of lc.npcs) ls.npcs.push(makeNpc(state, n.kind, n.name, n.x, n.y));
     state.levels[lc.level.id] = ls;
@@ -61,16 +64,20 @@ function newHero(rules: HeroRules): Hero {
   };
 }
 
-export function makeEnemy(state: GameState, kind: string, x: number, y: number): Enemy {
+/** A new enemy of `kind` at `x`, `y`, as tough as `strength` (see `enemy-strength.ts`) makes it there. */
+export function makeEnemy(state: GameState, kind: string, x: number, y: number, strength: number): Enemy {
   const type = state.rules.enemies[kind];
   if (!type) throw new Error(`unknown enemy kind: ${kind}`);
+  const own = areaStrength(state, kind, strength);
+  const hp = enemyMaxHp(state, { kind, strength: own });
   return {
     id: state.nextId++, kind, x, y, prevX: x, prevY: y, r: type.radius,
     facingX: range(state.rng, -1, 1), facingY: 1, moving: false, path: null,
-    homeX: x, homeY: y, hp: type.hp, maxHp: type.hp, mode: 'idle',
+    homeX: x, homeY: y, hp, maxHp: hp, mode: 'idle',
     attackCooldown: range(state.rng, 0.4, 1), windUp: -1, swing: -1,
     wanderTimer: range(state.rng, 1, 4), wanderX: x, wanderY: y, repathTimer: 0,
     dead: false, deadFor: 0, slamTimer: 4, summoned: false, recognised: false, provoked: false, scan: -1, slideX: 0, slideY: 0,
+    strength: own,
   };
 }
 
@@ -91,7 +98,7 @@ export function spawnCamp(state: GameState, ls: LevelState, kind: string, camp: 
       const x = cx + range(state.rng, -2.6, 2.6);
       const y = cy + range(state.rng, -2.6, 2.6);
       if (!isSolidAt(ls.level.map, x, y) && dist(x, y, cx, cy) > 1.1) {
-        ls.enemies.push(makeEnemy(state, kind, x, y));
+        ls.enemies.push(makeEnemy(state, kind, x, y, camp.strength ?? ls.enemyStrength));
         break;
       }
     }

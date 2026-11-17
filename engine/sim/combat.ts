@@ -2,6 +2,7 @@ import { dist } from '../core/math';
 import { chance, int } from '../core/rng';
 import { hasLineOfSight } from '../world/line-of-sight';
 import { isSolidAt } from '../world/tile-map';
+import { regrowEnemies } from './enemy-strength';
 import { advanceQuest } from './interaction';
 import { knockBack } from './knockback';
 import { dropEnemyLoot } from './loot';
@@ -106,6 +107,7 @@ export function gainXp(state: GameState, amount: number, events: SimEvent[]): vo
     hero.hp = hero.maxHp;
     hero.resource = hero.maxResource;
     events.push({ type: 'LevelUp', level: hero.level });
+    regrowEnemies(state);
   }
 }
 

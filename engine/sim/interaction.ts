@@ -146,7 +146,8 @@ export function advanceQuest(state: GameState, trigger: QuestTrigger, events: Si
   }
 }
 
-function calmEverything(state: GameState): void {
+/** Ends every level's alarm and sends calm enemies everywhere back to their work. */
+export function calmEverything(state: GameState): void {
   for (const ls of Object.values(state.levels)) {
     ls.alarmed = false;
     for (const e of ls.enemies) {

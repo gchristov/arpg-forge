@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { gainXp } from '../../engine/sim/combat';
 import { questGoal } from '../../engine/sim/quest-goal';
 import { createGameState } from '../../engine/sim/setup';
 import { currentLevel, type Command, type GameState, type SimEvent } from '../../engine/sim/state';
@@ -154,36 +155,32 @@ describe('Unrecalled scenarios', () => {
     }
   });
 
-  it('lets the salvager walk among the working machines until one is hit, then turns its pack but not the next room', () => {
-    const state = createGameState(content, 1);
-    intoFoundry(state);
+  it('lets the salvager walk among the working machines until one is hit, then turns them all', () => {
+    const state = inIntake();
+    takeDoor(state, 'sorting');
     const hp = state.hero.hp;
     const crawler = currentLevel(state).enemies.find((e) => e.kind === 'crawler')!;
     play(state, 12, [{ type: 'walk', x: crawler.x, y: crawler.y + 1 }]);
     expect(state.hero.hp).toBe(hp);
     expect(currentLevel(state).enemies.every((e) => e.mode === 'idle')).toBe(true);
-    const events = play(state, 5, [{ type: 'attack', enemyId: crawler.id }]);
+    const events = play(state, 2, [{ type: 'attack', enemyId: crawler.id }]);
     expect(events.map((e) => e.type)).toContain('LevelAlarmed');
-    expect(currentLevel(state).enemies.filter((e) => e.mode === 'chase').length).toBeGreaterThan(1);
-    expect(currentLevel(state).enemies.filter((e) => e.mode === 'idle').length).toBeGreaterThan(10);
+    expect(currentLevel(state).enemies.filter((e) => !e.dead).every((e) => e.mode === 'chase')).toBe(true);
   });
 
   it('puts the whole Foundry on alert after a fight on one floor, so the next floor\'s machines attack on sight', () => {
     const state = inIntake();
-    const { hero } = state;
-    const crawler = currentLevel(state).enemies
-      .filter((e) => e.kind === 'crawler')
-      .sort((a, b) => Math.hypot(a.x - hero.x, a.y - hero.y) - Math.hypot(b.x - hero.x, b.y - hero.y))[0]!;
-    play(state, 10, [{ type: 'attack', enemyId: crawler.id }]);
+    const loader = currentLevel(state).enemies.find((e) => e.kind === 'loader')!;
+    play(state, 15, [{ type: 'attack', enemyId: loader.id }]);
     expect(FLOOR_ORDER.every((id) => state.levels[id]!.alarmed)).toBe(true);
     expect(state.levels.rustbelt!.alarmed).toBe(false);
 
     takeDoor(state, 'sorting');
-    const loader = currentLevel(state).enemies.find((e) => e.kind === 'loader')!;
-    state.hero.x = state.hero.prevX = loader.x + 2;
-    state.hero.y = state.hero.prevY = loader.y;
+    const crawler = currentLevel(state).enemies.find((e) => e.kind === 'crawler')!;
+    state.hero.x = state.hero.prevX = crawler.x + 2;
+    state.hero.y = state.hero.prevY = crawler.y;
     const events = play(state, 1);
-    expect(loader.mode).toBe('chase');
+    expect(crawler.mode).toBe('chase');
     expect(events.filter((e) => e.type === 'EnemyRecognised')).toHaveLength(0);
   });
 
@@ -197,6 +194,7 @@ describe('Unrecalled scenarios', () => {
   it('sets off an EMP, once the salvager has it, among a pack of crawlers, hitting them all and sounding the alarm', () => {
     const state = untouchable(createGameState({ ...content, hero: { ...content.hero, skills: [EMP] } }, 1));
     intoFoundry(state);
+    takeDoor(state, 'sorting');
     const pack = currentLevel(state).enemies.filter((e) => e.kind === 'crawler').slice(0, 3);
     const middle = { x: pack.reduce((s, e) => s + e.x, 0) / 3, y: pack.reduce((s, e) => s + e.y, 0) / 3 };
     state.hero.x = state.hero.prevX = middle.x;
@@ -205,18 +203,6 @@ describe('Unrecalled scenarios', () => {
     const hit = new Set(events.flatMap((e) => (e.type === 'EnemyDamaged' ? [e.enemyId] : [])));
     expect(pack.filter((e) => hit.has(e.id)).length).toBeGreaterThanOrEqual(2);
     expect(events.map((e) => e.type)).toContain('LevelAlarmed');
-  });
-
-  it('keeps the door to the Assembly Hall sealed until the Control Gallery is silenced', () => {
-    const state = inIntake();
-    takeDoor(state, 'sorting');
-    takeDoor(state, 'gallery');
-    const door = currentLevel(state).level.portals.find((p) => p.to === 'assembly')!;
-    const events = play(state, 25, [{ type: 'walkInto', tx: door.tx, ty: door.ty }]);
-    expect(state.levelId).toBe('gallery');
-    expect(events.map((e) => e.type)).toContain('PortalSealed');
-    takeDoor(state, 'assembly');
-    expect(state.levelId).toBe('assembly');
   });
 
   it('hides a salvage cache on every floor that pays out scrap and a patch kit', () => {
@@ -311,7 +297,7 @@ describe('Unrecalled scenarios', () => {
     }
     expect(route).toEqual(['tradingPost', ...FLOOR_ORDER]);
     expect(used).toEqual(['chainsaw', 'breaker']);
-    expect(keepersOn).toEqual(['gallery']);
+    expect(keepersOn).toEqual([]);
     const engine = currentLevel(state).enemies.find((e) => e.kind === 'orderEngine')!;
     expect(questGoal(state)?.actorId).toBe(engine.id);
   });
@@ -325,13 +311,12 @@ describe('Unrecalled scenarios', () => {
     expect(state.hero.weapon).toBe('chainsaw');
     expect(state.quest).toBe(POWER_ON_STEP - 1);
 
-    const { hero } = state;
-    const crawler = currentLevel(state).enemies
-      .filter((e) => e.kind === 'crawler' && !e.dead)
-      .sort((a, b) => Math.hypot(a.x - hero.x, a.y - hero.y) - Math.hypot(b.x - hero.x, b.y - hero.y))[0]!;
+    intoFoundry(state);
+    takeDoor(state, 'sorting');
+    const crawler = currentLevel(state).enemies.find((e) => e.kind === 'crawler')!;
     const cut = play(state, 10, [{ type: 'attack', enemyId: crawler.id }]);
     expect(crawler.dead).toBe(true);
-    expect(cut.some((e) => e.type === 'Swung' && e.actorId === hero.id)).toBe(false);
+    expect(cut.some((e) => e.type === 'Swung' && e.actorId === state.hero.id)).toBe(false);
   });
 
   it('opens the depot\'s door for a breaker thrown before the saw is found, and leaves the saw for later', () => {
@@ -354,5 +339,19 @@ describe('Unrecalled scenarios', () => {
     state.hero.gold = 50;
     play(state, 0.1, [{ type: 'useService', npcId: pell.id, service: 0 }]);
     expect([state.hero.bonusDamage, state.hero.gold, state.hero.weapon]).toEqual([3, 10, null]);
+  });
+
+  it('makes the machines tougher on every floor down, and keeps pace as the salvager levels up', () => {
+    const state = createGameState(content, 1);
+    const strengths = FLOOR_ORDER.map((id) => state.levels[id]!.enemyStrength);
+    expect(strengths).toEqual([...strengths].sort((a, b) => a - b));
+    expect(new Set(strengths).size).toBe(strengths.length);
+
+    const loader = state.levels.intake!.enemies.find((e) => e.kind === 'loader')!;
+    const before = loader.maxHp;
+    gainXp(state, state.hero.xpNext, []);
+    expect(state.hero.level).toBe(2);
+    // Five percent stronger, give or take rounding.
+    expect(Math.abs(loader.maxHp - before * 1.05)).toBeLessThanOrEqual(1);
   });
 });

@@ -38,9 +38,9 @@ const POND: Ellipse = { x: 24, y: 7, rx: 4.5, ry: 2.6 };
 const reach = (e: Ellipse, x: number, y: number) => ((x + 0.5 - e.x) / e.rx) ** 2 + ((y + 0.5 - e.y) / e.ry) ** 2;
 
 /**
- * The dead woods east of the town, laid into Rustbelt's map from column `x0`. A trail winds past packs of machines to
+ * The dead woods east of the town, laid into Rustbelt's map from column `x0`. A trail winds to
  * the logging camp: the turbine whose breaker the machines threw to cut the town's power and, in a crate by the cutting
- * bench, Pell's old chainsaw. Off the trail lie a pond with sentries on its bank, a stash past it, and the sawmill yard
+ * bench, Pell's old chainsaw. Off the trail lie a pond, a stash past it, and the sawmill yard
  * by the river with a cache of its own.
  */
 export function addWoods(room: LevelContent, reserve: (x: number, y: number, w: number, h: number) => void, x0: number): void {
@@ -96,14 +96,6 @@ export function addWoods(room: LevelContent, reserve: (x: number, y: number, w: 
   cache(35, 22, 25);
 
   cache(7, 5, 30);
-
-  // Crawlers along the trail, at the yard and working the camp, and sentries on the pond's bank.
-  const camp = (x: number, y: number, kind: string) => room.camps.push({ tx: x0 + x, ty: y, kind });
-  camp(9, 17, 'crawler');
-  camp(18, 21, 'crawler');
-  camp(24, 11, 'sentry');
-  camp(31, 23, 'crawler');
-  camp(41, 13, 'crawler');
 }
 
 /** In the woods' own columns: trees everywhere, thickest in clumps and along the far edges, so the trails are the way through. */
