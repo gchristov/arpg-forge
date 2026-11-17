@@ -100,6 +100,8 @@ export interface NpcType {
 /** What moves the quest to a step. */
 export type QuestTrigger =
   | { type: 'talk'; npcKind: string }
+  /** Choosing a reply, by its id, in a conversation with someone of `npcKind`. */
+  | { type: 'reply'; npcKind: string; id: string }
   | { type: 'enter'; levelId: string }
   | { type: 'kill'; enemyKind: string }
   /** Defeating one particular enemy, by its spawn's tag. */

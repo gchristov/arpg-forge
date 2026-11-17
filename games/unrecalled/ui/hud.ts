@@ -21,6 +21,17 @@ export class Hud {
   private readonly feed = new MessageFeed($('feed'));
 
   constructor(send: (command: Command) => void) {
+    // The log lists every line and page so far, for one missed or closed too soon.
+    $('logOpen').addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.showLog();
+    });
+    // Taps on the list itself scroll it; anywhere else closes the log.
+    $('log').addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      if (!(e.target as HTMLElement).closest('#logLines')) $('log').hidden = true;
+    });
     bindCommand($('bAttack'), { type: 'attackNearest' }, send);
     bindCommand($('bEmp'), { type: 'useSkill', slot: EMP }, send);
     bindCommand($('bPatch'), { type: 'heal' }, send);
@@ -87,6 +98,28 @@ export class Hud {
   /** A line in the message feed: what someone says, or with no speaker, what the salvager notices. */
   say(text: string, from?: Speaker): void {
     this.feed.add(text, from);
+  }
+
+  /** Keeps something read elsewhere, such as a page of dialogue, in the log without showing it in the feed. */
+  remember(text: string, from?: Speaker): void {
+    this.feed.remember(text, from);
+  }
+
+  private showLog(): void {
+    const lines = this.feed.history().map(({ text, from }) => {
+      const line = document.createElement('div');
+      line.className = from ? `line ${from.voice}` : 'line';
+      if (from) {
+        const name = document.createElement('b');
+        name.textContent = from.name;
+        line.append(name, ' ');
+      }
+      line.append(text);
+      return line;
+    });
+    $('logLines').replaceChildren(...lines);
+    $('log').hidden = false;
+    $('logLines').scrollTop = $('logLines').scrollHeight;
   }
 
   hideBanner(): void {

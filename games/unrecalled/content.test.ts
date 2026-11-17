@@ -14,7 +14,7 @@ describe('Unrecalled content', () => {
   it('words every quest step, everything there is to read, and everyone there is to talk to', () => {
     expect(QUEST.every((step) => step.text)).toBe(true);
     const kinds = content.levels.flatMap((l) => l.npcs.map((n) => n.kind));
-    expect(kinds.filter((kind) => !dialogueFor(kind, 0, 0, 0, null))).toEqual([]);
+    expect(kinds.filter((kind) => !dialogueFor(kind, 0, 0, null))).toEqual([]);
     const ids = content.levels.flatMap((l) => (l.readables ?? []).map((r) => r.id));
     expect(ids.filter((id) => !READINGS[id])).toEqual([]);
     expect(Object.keys(READINGS).filter((id) => !ids.includes(id))).toEqual([]);

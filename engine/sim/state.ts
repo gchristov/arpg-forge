@@ -210,7 +210,9 @@ export type Command =
   | { type: 'talk'; npcId: number }
   | { type: 'open'; index: number }
   | { type: 'read'; index: number }
-  | { type: 'useService'; npcId: number; service: number };
+  | { type: 'useService'; npcId: number; service: number }
+  /** The player chose a reply, by its id, in a conversation with this NPC. */
+  | { type: 'reply'; npcId: number; id: string };
 
 export interface StepInput {
   commands: Command[];

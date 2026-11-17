@@ -130,14 +130,20 @@ export function useService(state: GameState, npcId: number, index: number, event
   if (service.type === 'sellWeapon') arm(state, service.weapon, hero.x, hero.y, events);
 }
 
+/** A reply chosen in a conversation with an NPC on the current level, which can move the quest on. */
+export function reply(state: GameState, npcId: number, id: string, events: SimEvent[]): void {
+  const npc = currentLevel(state).npcs.find((n) => n.id === npcId);
+  if (npc && !state.hero.dead) advanceQuest(state, { type: 'reply', npcKind: npc.kind, id }, events);
+}
+
 /** Moves the quest to the step this trigger reaches, if the quest is behind it. */
 export function advanceQuest(state: GameState, trigger: QuestTrigger, events: SimEvent[]): void {
   const steps = state.rules.quest;
   for (let step = state.quest + 1; step < steps.length; step++) {
     const t = steps[step]!.reachedBy;
-    // Entering a place or killing something can skip ahead, but talking only moves on by one step, so someone met
-    // twice never skips what lies between.
-    if ((t?.type === 'talk' || steps[step]!.inOrder) && step > state.quest + 1) continue;
+    // Entering a place or killing something can skip ahead, but talking and replying only move on by one step, so
+    // someone met twice never skips what lies between.
+    if ((t?.type === 'talk' || t?.type === 'reply' || steps[step]!.inOrder) && step > state.quest + 1) continue;
     if (t && sameTrigger(t, trigger)) {
       state.quest = step;
       if (steps[step]!.calmsEverything) calmEverything(state);
@@ -171,6 +177,8 @@ function sameTrigger(a: QuestTrigger, b: QuestTrigger): boolean {
       return b.type === 'enter' && a.levelId === b.levelId;
     case 'kill':
       return b.type === 'kill' && a.enemyKind === b.enemyKind;
+    case 'reply':
+      return b.type === 'reply' && a.npcKind === b.npcKind && a.id === b.id;
     case 'defeat':
       return b.type === 'defeat' && a.tag === b.tag;
     case 'use':

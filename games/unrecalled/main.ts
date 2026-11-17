@@ -11,7 +11,7 @@ import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import {
   ALARM, CHAINSAW_FOUND, CHARGING, dialogueFor, ENDING, ENGINE_CALLS, ENGINE_FALLS, levelUp, LOCKED, MACHINE_SCANS, NPCS, ON_ENTERING,
-  ORDER_CLOSED, RAID_STOPPED, READINGS, scrapDropped, STEP, STEP_LINES, VOICES, type Dialogue, type Line,
+  OPENING, ORDER_CLOSED, READINGS, scrapDropped, STEP, STEP_LINES, VOICES, type Dialogue, type Line,
 } from './content/story';
 import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
@@ -71,18 +71,16 @@ const REFUSALS: Record<RefusalReason, string> = {
 
 const kindOf = (enemyId: number): string | undefined => currentLevel(state).enemies.find((e) => e.id === enemyId)?.kind;
 
+/** The floors whose speakers have already greeted the salvager. */
+const greeted = new Set<string>();
+
 /** Times the salvager has gone down, for the trader to remark on. */
 let deaths = 0;
 
-/**
- * Opens a townsperson's dialogue, by their kind: talking can move the story on and take them away, as freeing the
- * foreman does. The foreman's last words end the game.
- */
-function showDialogue(npcId: number, kind: string, questBefore: number): void {
-  const d = dialogueFor(kind, questBefore, state.quest, deaths, state.hero.weapon);
-  if (!d) return;
-  const ending = kind === 'foreman' && questBefore < STEP.ending && state.quest >= STEP.ending;
-  present(d, { npcId, kind }, ending ? playEnding : undefined);
+/** Opens a townsperson's dialogue, by their kind. */
+function showDialogue(npcId: number, kind: string): void {
+  const d = dialogueFor(kind, state.quest, deaths, state.hero.weapon);
+  if (d) present(d, { npcId, kind });
 }
 
 /**
@@ -91,6 +89,7 @@ function showDialogue(npcId: number, kind: string, questBefore: number): void {
  */
 function present(d: Dialogue, npc?: { npcId: number; kind: string }, then?: () => void): void {
   const services = npc ? NPCS[npc.kind]?.services ?? [] : [];
+  hud.remember(d.text, { name: d.title, voice: 'page' });
   dialog.open(
     d.title,
     d.text,
@@ -102,6 +101,7 @@ function present(d: Dialogue, npc?: { npcId: number; kind: string }, then?: () =
         ...(o.tag ? { tag: o.tag(price) } : {}),
         disabled: state.hero.gold < price,
         onChoose: () => {
+          if (o.reply && npc) game.send({ type: 'reply', npcId: npc.npcId, id: o.reply });
           if (o.service !== undefined && npc) game.send({ type: 'useService', npcId: npc.npcId, service: o.service });
           else if (o.next) present(o.next, npc, then);
           else {
@@ -138,7 +138,7 @@ function showReading(id: string, events: SimEvent[]): void {
 
 /** What happens in the world as the story moves on. */
 function reachStep(step: number): void {
-  if (step === STEP.raidStopped) present(RAID_STOPPED);
+  if (step === STEP.ending) playEnding();
   else if (step === STEP.engineDown) present(ENGINE_FALLS, undefined, () => say([ORDER_CLOSED]));
   // The charging station's lines follow its scene.
   else if (step !== STEP.charged) say(STEP_LINES[step]);
@@ -156,7 +156,7 @@ function reactToService(npcId: number, index: number, x: number, y: number): voi
     return;
   }
   if (service.type === 'upgradeMelee') labels.text(x, y, 46 * PX, 'Upgraded', '#e8c870', 15);
-  if (dialog.npcId === npcId) showDialogue(npcId, npc.kind, state.quest);
+  if (dialog.npcId === npcId) showDialogue(npcId, npc.kind);
 }
 
 /** Where the salvager was last frame: the place, which level it's on, and how far east. */
@@ -267,7 +267,9 @@ function react(events: SimEvent[]): void {
         const { level } = currentLevel(state);
         if (!state.hero.dead && events.every((other) => other.type !== 'HeroRespawned')) {
           hud.banner(level.name, level.subtitle, 2);
-          say(ON_ENTERING[e.levelId] && [ON_ENTERING[e.levelId]!]);
+          // The speakers greet each floor once, on the way down.
+          if (!greeted.has(e.levelId)) say(ON_ENTERING[e.levelId] && [ON_ENTERING[e.levelId]!]);
+          greeted.add(e.levelId);
         }
         break;
       }
@@ -323,7 +325,7 @@ function react(events: SimEvent[]): void {
         hud.hideBanner();
         break;
       case 'Talked':
-        showDialogue(e.npcId, e.kind, e.questBefore);
+        showDialogue(e.npcId, e.kind);
         break;
       case 'ServiceUsed':
         reactToService(e.npcId, e.service, e.x, e.y);
@@ -348,6 +350,7 @@ game.run({
     $('title').hidden = true;
     const { level } = currentLevel(state);
     hud.banner(level.name, level.subtitle, 3);
+    if (state.quest === 0) say(OPENING);
   },
   onWorldTap: () => dialog.close(),
 });

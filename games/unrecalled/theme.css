@@ -45,6 +45,15 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 #lvl{color:var(--muted);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
 #mute{pointer-events:auto;width:32px;height:32px;margin-top:4px;border-radius:50%;background:var(--panel);border:1px solid #3a4a58;color:var(--muted);display:grid;place-items:center;padding:0}
 #mute svg{width:17px;height:17px}
+#logOpen{pointer-events:auto;font:600 12px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--panel);border:1px solid #3a4a58;border-radius:16px;padding:8px 12px;margin-top:4px}
+#log{position:fixed;inset:0;z-index:7;background:rgba(4,6,8,.92);display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 20px) 16px calc(env(safe-area-inset-bottom,0px) + 16px);box-sizing:border-box}
+#log .t{font:700 12px/1 var(--body);letter-spacing:.16em;text-transform:uppercase;color:var(--signal);margin-bottom:12px}
+#logLines{flex:1;overflow-y:auto;display:grid;align-content:start;gap:10px;max-width:560px;width:100%;margin:0 auto;touch-action:pan-y}
+#logLines .line{font:500 15px/1.4 var(--body)}
+#logLines .line b{display:block;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:11px;color:var(--signal);margin-bottom:2px}
+#logLines .line.foundry{font-family:ui-monospace,Menlo,monospace;font-size:14px;color:#ffb088}
+#logLines .line.foundry b{color:#ff7a5a}
+#log .close{align-self:center;font:600 14px/1 var(--body);color:var(--ink);background:var(--panel);border:1px solid #3a4a58;border-radius:6px;padding:12px 24px;margin-top:12px}
 #mute.off .waves{display:none}
 .xp{height:4px;background:var(--panel);border-radius:2px;overflow:hidden}
 .xp i{display:block;height:100%;width:0;background:#e8c870;transition:width .3s}
