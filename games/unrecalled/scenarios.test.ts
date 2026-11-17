@@ -303,6 +303,21 @@ describe('Unrecalled scenarios', () => {
     expect(Object.values(state.levels).some((ls) => ls.alarmed)).toBe(false);
   });
 
+  it('never skips to the ending for walking back into Rustbelt early, such as out of Pell\'s workshop or away from the Order Engine', () => {
+    const state = untouchable(createGameState(content, 1));
+    jumpToStep(state, STEP.raidStopped + 1);
+    const workshop = currentLevel(state).level.structures.findIndex((s) => s.kind === 'workshop');
+    play(state, 25, [{ type: 'enterStructure', index: workshop }]);
+    play(state, 1);
+    takeDoor(state, 'rustbelt');
+    expect(state.quest).toBe(STEP.raidStopped + 1);
+
+    intoFoundry(state);
+    for (const next of FLOOR_ORDER.slice(1)) takeDoor(state, next);
+    for (const previous of WAY_BACK) takeDoor(state, previous);
+    expect([state.levelId, state.quest]).toEqual(['rustbelt', STEP.charged + 1]);
+  });
+
   it('never skips ahead for chatting with the foreman again on the way', () => {
     const state = unstoppable(createGameState(content, 1));
     defeat(state, TAG.raider);

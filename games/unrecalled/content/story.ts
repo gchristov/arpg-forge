@@ -44,7 +44,8 @@ export const QUEST: Array<QuestStep & { text: string }> = [
   // The machines stop where they stand and wait for orders.
   { text: 'Free the foreman.', reachedBy: { type: 'kill', enemyKind: 'orderEngine' }, calmsEverything: true },
   { text: 'Take him home.', reachedBy: { type: 'talk', npcKind: 'foreman' } },
-  { text: 'Ring the bell.', reachedBy: { type: 'enter', levelId: 'rustbelt' } },
+  // Rustbelt is entered all through the story, so only coming home with the foreman reaches this.
+  { text: 'Ring the bell.', reachedBy: { type: 'enter', levelId: 'rustbelt' }, inOrder: true },
   { text: 'Talk to the foreman by the fire.', reachedBy: { type: 'use', id: 'bell' } },
   { text: 'The order was passed on to you.', reachedBy: { type: 'talk', npcKind: 'foreman' } },
 ];

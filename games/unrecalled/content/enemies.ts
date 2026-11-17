@@ -22,7 +22,7 @@ export const ENEMIES: Record<string, UnrecalledEnemy> = {
     aggro: 8, xp: 20, drops: { gold: [5, 12], healingChance: 0.2 }, radius: 0.3, groupSize: 2, calm: true,
   },
   orderEngine: {
-    name: 'The Order Engine', hp: 2000, damage: [13, 21], speed: 1.4, range: 1.3, cooldown: 1.5, windUp: 0.55, aggro: 8,
+    name: 'The Order Engine', hp: 1100, damage: [13, 21], speed: 1.4, range: 1.3, cooldown: 1.5, windUp: 0.55, aggro: 8,
     xp: 250, drops: { gold: [120, 160], healingChance: 1, extraHealingItems: 1 }, radius: 0.62, boss: true, groupSize: 1, calm: true,
     slam: { everySeconds: [5, 7], reach: 6, radius: 1.8, delay: 1.0, damage: [18, 26] },
     summon: { belowHealthShare: 0.5, kind: 'crawler', count: 4, distance: 1.8 },

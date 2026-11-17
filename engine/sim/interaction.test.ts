@@ -148,6 +148,21 @@ describe('quest', () => {
     advanceQuest(state, { type: 'talk', npcKind: 'elder' }, events);
     expect(state.quest).toBe(3);
   });
+
+  it('never skips to a step kept in order, such as coming home, however early its trigger is met', () => {
+    const state = arena(OPEN_ROOM, { x: 2.5, y: 2.5 });
+    state.rules.quest = [
+      {},
+      { reachedBy: { type: 'kill', enemyKind: 'lord' } },
+      { reachedBy: { type: 'enter', levelId: 'home' }, inOrder: true },
+    ];
+    const events: SimEvent[] = [];
+    advanceQuest(state, { type: 'enter', levelId: 'home' }, events);
+    expect(state.quest).toBe(0);
+    advanceQuest(state, { type: 'kill', enemyKind: 'lord' }, events);
+    advanceQuest(state, { type: 'enter', levelId: 'home' }, events);
+    expect(state.quest).toBe(2);
+  });
 });
 
 describe('quest steps that calm everything', () => {
