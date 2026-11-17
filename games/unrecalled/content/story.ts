@@ -359,7 +359,12 @@ export const GIVING_THE_ORDER: Dialogue[] = [
 ];
 
 /** The last thing the player sees, once Foundry 2 has come to life. */
-export const ENDING = { title: 'The order was never cancelled.', subtitle: 'It was passed on to you.', thanks: 'Thank you for playing.' };
+export const ENDING = {
+  online: { title: 'FOUNDRY 2 ONLINE', subtitle: 'AWAITING ORDERS.' },
+  title: 'The order was never cancelled.',
+  subtitle: 'It was passed on to you.',
+  thanks: 'Thank you for playing.',
+};
 
 /** What the hero reads or uses, by readable id; some read differently as the story goes on. */
 export function readingFor(id: string, quest: number): { title: string; text: string } | undefined {

@@ -199,8 +199,23 @@ function showPlace(): void {
 
 /** Foundry 2 waking upriver, then the card that closes the demo on its question. */
 const ending = new Ending(game, {
-  lightsOn: () => sfx.siren(),
-  online: () => say(STEP_LINES[STEP.ending]),
+  begin: () => {
+    dialog.close();
+    document.body.classList.add('cinematic');
+    // Up from black: shut at once, then let the curtain's own transition lift it.
+    $('curtain').classList.add('shut');
+    requestAnimationFrame(() => requestAnimationFrame(() => $('curtain').classList.remove('shut')));
+  },
+  light: () => sfx.clank(),
+  awake: () => {
+    game.renderer.shake(0.8);
+    sfx.slam();
+    sfx.siren();
+  },
+  online: () => {
+    hud.banner(ENDING.online.title, ENDING.online.subtitle, 4);
+    say(STEP_LINES[STEP.ending]);
+  },
   card: () => {
     $('endT').textContent = ENDING.title;
     $('endS').textContent = ENDING.subtitle;

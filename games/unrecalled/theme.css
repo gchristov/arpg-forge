@@ -91,3 +91,14 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .world-text{font-family:var(--body)}
 .world-bar{background:rgba(0,0,0,.7);border:1px solid rgba(0,0,0,.8);border-radius:2px;overflow:hidden}
 .world-bar i{background:linear-gradient(#ffb070,#a04a1a)}
+
+/* The ending plays as a scene: the HUD steps away, letterbox bars close in, and the picture comes up from black. */
+#cinema i{position:fixed;left:0;right:0;height:0;background:#000;pointer-events:none;transition:height 1.4s ease}
+#cinema i:first-child{top:0}
+#cinema i:last-child{bottom:0}
+body.cinematic #cinema i{height:12vh}
+#curtain{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity 3.2s ease}
+#curtain.shut{opacity:1;transition:none}
+body.cinematic #top,body.cinematic #hud,body.cinematic #bossbar{opacity:0;transition:opacity .6s;pointer-events:none}
+#end{animation:endIn 2.6s ease both}
+@keyframes endIn{from{opacity:0}}
