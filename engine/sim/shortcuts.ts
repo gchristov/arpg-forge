@@ -1,5 +1,6 @@
 import { calmEverything } from './interaction';
 import type { GameState } from './state';
+import { castForStep } from './story-cast';
 
 /**
  * Moves the story straight to `step`, as if every step before it had been reached: a weapon that reached one is in the
@@ -12,6 +13,7 @@ export function jumpToStep(state: GameState, step: number): void {
     if (reached.reachedBy?.type === 'arm') state.hero.weapon = reached.reachedBy.weapon;
     if (reached.calmsEverything) calmEverything(state);
   }
+  castForStep(state);
 }
 
 /** Takes every enemy out of the game and stops camps refilling, for walking a place without being attacked. */

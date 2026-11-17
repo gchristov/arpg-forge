@@ -162,6 +162,7 @@ function checkQuest(content: GameContent, levels: Map<string, LevelContent>): st
     ...l.spawns.map((s) => s.kind), ...l.camps.map((c) => c.kind), ...(l.campRespawns?.kinds ?? []),
   ]));
   for (const type of Object.values(content.enemies)) if (type.summon) enemyKinds.add(type.summon.kind);
+  const tags = new Set(content.levels.flatMap((l) => l.spawns.flatMap((s) => (s.tag ? [s.tag] : []))));
   const readableIds = new Set(content.levels.flatMap((l) => (l.readables ?? []).map((r) => r.id)));
   const weaponSources = new Set([
     ...content.levels.flatMap((l) => (l.containers ?? []).flatMap((c) => (c.weapon ? [c.weapon] : []))),
@@ -173,6 +174,7 @@ function checkQuest(content: GameContent, levels: Map<string, LevelContent>): st
     if (trigger.type === 'talk' && !npcKinds.has(trigger.npcKind)) return [`quest step ${i} needs talking to "${trigger.npcKind}", who isn't in any level`];
     if (trigger.type === 'enter' && !levels.has(trigger.levelId)) return [`quest step ${i} needs entering "${trigger.levelId}", which doesn't exist`];
     if (trigger.type === 'kill' && !enemyKinds.has(trigger.enemyKind)) return [`quest step ${i} needs killing a "${trigger.enemyKind}", which never appears`];
+    if (trigger.type === 'defeat' && !tags.has(trigger.tag)) return [`quest step ${i} needs defeating "${trigger.tag}", which never appears`];
     if (trigger.type === 'use' && !readableIds.has(trigger.id)) return [`quest step ${i} needs using "${trigger.id}", which isn't in any level`];
     if (trigger.type === 'arm' && !weaponSources.has(trigger.weapon)) return [`quest step ${i} needs the "${trigger.weapon}" in hand, which nothing gives`];
     return [];

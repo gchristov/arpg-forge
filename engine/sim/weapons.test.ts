@@ -25,7 +25,7 @@ describe('weapons', () => {
     state.rules.hero = { ...state.rules.hero, weapons: { saw: { knockback: 0 } } };
     state.rules.npcs = { smith: { services: [{ type: 'sellWeapon', weapon: 'saw', price: 60 }] } };
     const ls = currentLevel(state);
-    ls.npcs.push({ id: 99, kind: 'smith', name: 'Smith', x: 6, y: 5.5, prevX: 6, prevY: 5.5, r: 0.3, facingX: 0, facingY: 1, moving: false, path: null });
+    ls.npcs.push({ id: 99, kind: 'smith', name: 'Smith', x: 6, y: 5.5, prevX: 6, prevY: 5.5, r: 0.3, facingX: 0, facingY: 1, moving: false, path: null, placement: 0 });
     state.hero.gold = 50;
     useService(state, 99, 0, []);
     expect(state.hero.weapon).toBeNull();

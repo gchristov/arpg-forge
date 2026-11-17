@@ -1,7 +1,7 @@
 import type { Vec2 } from '../core/math';
 import type { Rng } from '../core/rng';
 import type { Level } from '../world/level';
-import type { Camp, CampRespawns, Container, EnemyType, HeroRules, NpcType, QuestStep, Readable } from './content';
+import type { Camp, CampRespawns, Container, EnemyType, HeroRules, NpcPlacement, NpcType, QuestStep, Readable } from './content';
 import type { Walker } from './walking';
 
 export interface Actor extends Walker {
@@ -62,6 +62,8 @@ export interface Cut {
 
 export interface Npc extends Actor {
   name: string;
+  /** Which of its level's placements put it there. */
+  placement: number;
 }
 
 export type EnemyMode = 'idle' | 'chase' | 'return';
@@ -95,6 +97,8 @@ export interface Enemy extends Actor {
   slideY: number;
   /** How much tougher than its kind it is, from where it stands; see `enemy-strength.ts`. */
   strength: number;
+  /** Names this one enemy, for a quest step reached by defeating it. */
+  tag?: string;
 }
 
 export interface Projectile {
@@ -138,10 +142,14 @@ export interface ContainerState extends Container {
 export interface LevelState {
   level: Level;
   enemies: Enemy[];
+  /** The townspeople here at the story's current step, from `npcPlacements`. */
   npcs: Npc[];
+  npcPlacements: NpcPlacement[];
   items: GroundItem[];
   containers: ContainerState[];
+  /** What there is to read or use here at the story's current step, from `readablePlacements`. */
   readables: Readable[];
+  readablePlacements: Readable[];
   /** Whether the level's alarm is sounding: from the first fight with its calm enemies until the story calms everything. */
   alarmed: boolean;
   camps: Camp[];

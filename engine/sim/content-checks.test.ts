@@ -128,10 +128,14 @@ describe('checkContent', () => {
 
   it('finds quest steps nothing can reach', () => {
     const c = rooms();
-    c.quest = [{}, { reachedBy: { type: 'talk', npcKind: 'elder' } }, { reachedBy: { type: 'kill', enemyKind: 'lord' } }];
+    c.quest = [
+      {}, { reachedBy: { type: 'talk', npcKind: 'elder' } }, { reachedBy: { type: 'kill', enemyKind: 'lord' } },
+      { reachedBy: { type: 'defeat', tag: 'bandit' } },
+    ];
     expect(checkContent(c)).toEqual([
       `quest step 1 needs talking to "elder", who isn't in any level`,
       `quest step 2 needs killing a "lord", which never appears`,
+      `quest step 3 needs defeating "bandit", which never appears`,
     ]);
   });
 });

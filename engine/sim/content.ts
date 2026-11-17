@@ -6,6 +6,28 @@ export interface SpawnPoint {
   y: number;
 }
 
+/** Where one enemy starts. */
+export interface EnemySpawn extends SpawnPoint {
+  /** Names this one enemy, for a quest step reached by defeating it. */
+  tag?: string;
+  /** Its own strength, in place of its level's `enemyStrength`. */
+  strength?: number;
+}
+
+/**
+ * The quest steps something is in the world for: from `fromStep` until just before `untilStep`. Always there if
+ * neither is given.
+ */
+export interface StorySpan {
+  fromStep?: number;
+  untilStep?: number;
+}
+
+/** A townsperson, where they stand while the story has them there. */
+export interface NpcPlacement extends SpawnPoint, StorySpan {
+  name: string;
+}
+
 /** A spot where a group of enemies spawns around a tile. */
 export interface Camp {
   tx: number;
@@ -39,7 +61,7 @@ export interface Container {
  * Something on a tile the hero can walk up to and read or use, such as a notice or a breaker. The game words it by its
  * `id`.
  */
-export interface Readable {
+export interface Readable extends StorySpan {
   tx: number;
   ty: number;
   id: string;
@@ -47,10 +69,10 @@ export interface Readable {
 
 export interface LevelContent {
   level: Level;
-  spawns: SpawnPoint[];
+  spawns: EnemySpawn[];
   camps: Camp[];
   campRespawns?: CampRespawns;
-  npcs: Array<SpawnPoint & { name: string }>;
+  npcs: NpcPlacement[];
   containers?: Container[];
   readables?: Readable[];
   /**
@@ -80,6 +102,8 @@ export type QuestTrigger =
   | { type: 'talk'; npcKind: string }
   | { type: 'enter'; levelId: string }
   | { type: 'kill'; enemyKind: string }
+  /** Defeating one particular enemy, by its spawn's tag. */
+  | { type: 'defeat'; tag: string }
   /** Reading or using something in the world, by its readable id. */
   | { type: 'use'; id: string }
   /** Getting one of the hero's weapons in hand, however it came. */

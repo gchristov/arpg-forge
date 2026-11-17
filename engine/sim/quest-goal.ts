@@ -53,7 +53,8 @@ function goalIn(trigger: QuestTrigger, levelId: string, state: GameState): Quest
   const ls = state.levels[levelId]!;
   const actor = trigger.type === 'talk'
     ? ls.npcs.find((n) => n.kind === trigger.npcKind)
-    : trigger.type === 'kill' ? ls.enemies.find((e) => e.kind === trigger.enemyKind && !e.dead) : undefined;
+    : trigger.type === 'kill' ? ls.enemies.find((e) => e.kind === trigger.enemyKind && !e.dead)
+      : trigger.type === 'defeat' ? ls.enemies.find((e) => e.tag === trigger.tag && !e.dead) : undefined;
   if (actor) return { x: actor.x, y: actor.y, actorId: actor.id };
   const tile = trigger.type === 'use'
     ? ls.readables.find((r) => r.id === trigger.id)

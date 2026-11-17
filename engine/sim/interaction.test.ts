@@ -7,7 +7,7 @@ import { arena, ofType, OPEN_ROOM, run } from './testing';
 function withNpc(state: GameState, kind: string, x: number, y: number): number {
   const ls = currentLevel(state);
   const id = state.nextId++;
-  ls.npcs.push({ id, kind, name: kind, x, y, prevX: x, prevY: y, r: 0.32, facingX: 0, facingY: 1, moving: false, path: null });
+  ls.npcs.push({ id, kind, name: kind, x, y, prevX: x, prevY: y, r: 0.32, facingX: 0, facingY: 1, moving: false, path: null, placement: 0 });
   return id;
 }
 
