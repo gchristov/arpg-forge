@@ -126,12 +126,13 @@ const say = (lines: Line[] | undefined): void => {
   for (const line of lines ?? []) hud.say(line.text, line.from);
 };
 
-/** What reading something says, and for the charging station, the scene that follows. */
-function showReading(id: string): void {
+/** What reading something says, and the first time the charging station is used, the scene that follows. */
+function showReading(id: string, events: SimEvent[]): void {
   const reading = READINGS[id];
   if (!reading) return;
-  const page: Dialogue = { title: reading.title, text: reading.text, options: [{ label: id === 'charging-station' ? 'Plug in' : 'Close' }] };
-  if (id === 'charging-station') playScene([page, ...CHARGING], () => say(STEP_LINES[STEP.charged]));
+  const charging = events.some((e) => e.type === 'QuestAdvanced' && e.step === STEP.charged);
+  const page: Dialogue = { title: reading.title, text: reading.text, options: [{ label: charging ? 'Plug in' : 'Close' }] };
+  if (charging) playScene([page, ...CHARGING], () => say(STEP_LINES[STEP.charged]));
   else present(page);
 }
 
@@ -311,7 +312,7 @@ function react(events: SimEvent[]): void {
         else labels.text(e.x, e.y, 30 * PX, '+1 patch kit', '#7ae08a', 13);
         break;
       case 'Read':
-        showReading(e.id);
+        showReading(e.id, events);
         break;
       case 'QuestAdvanced':
         reachStep(e.step);
