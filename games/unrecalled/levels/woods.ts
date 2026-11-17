@@ -80,7 +80,7 @@ export function addWoods(room: LevelContent, reserve: (x: number, y: number, w: 
   // the crate by the cutting bench, a truck, stacked salvage and a brazier.
   prop(42, 8, Prop.Pylon);
   prop(44, 8, Prop.Computer);
-  room.readables!.push({ tx: x0 + 44, ty: 8, id: 'switch', fromStep: STEP.switchFreed });
+  room.readables!.push({ tx: x0 + 44, ty: 8, id: 'switch', fromStep: STEP.switchFreed, untilStep: STEP.powerOn });
   room.spawns.push({ kind: 'loader', x: x0 + 43.5, y: 10.5, tag: TAG.switchLoader, strength: WOODS_STRENGTH });
   light(44, 8, 'cyan', 4);
   prop(45, 13, Prop.Crate);

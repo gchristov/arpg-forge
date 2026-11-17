@@ -74,13 +74,15 @@ const kindOf = (enemyId: number): string | undefined => currentLevel(state).enem
 /** Times the salvager has gone down, for the trader to remark on. */
 let deaths = 0;
 
-/** Opens a townsperson's dialogue; when they're done talking, `then` runs, for a step of the story that follows. */
-function showDialogue(npcId: number, questBefore: number): void {
-  const npc = currentLevel(state).npcs.find((n) => n.id === npcId);
-  const d = npc && dialogueFor(npc.kind, questBefore, state.quest, deaths, state.hero.weapon);
-  if (!npc || !d) return;
-  const ending = npc.kind === 'foreman' && questBefore < STEP.ending && state.quest >= STEP.ending;
-  present(d, { npcId, kind: npc.kind }, ending ? playEnding : undefined);
+/**
+ * Opens a townsperson's dialogue, by their kind: talking can move the story on and take them away, as freeing the
+ * foreman does. The foreman's last words end the game.
+ */
+function showDialogue(npcId: number, kind: string, questBefore: number): void {
+  const d = dialogueFor(kind, questBefore, state.quest, deaths, state.hero.weapon);
+  if (!d) return;
+  const ending = kind === 'foreman' && questBefore < STEP.ending && state.quest >= STEP.ending;
+  present(d, { npcId, kind }, ending ? playEnding : undefined);
 }
 
 /**
@@ -153,7 +155,7 @@ function reactToService(npcId: number, index: number, x: number, y: number): voi
     return;
   }
   if (service.type === 'upgradeMelee') labels.text(x, y, 46 * PX, 'Upgraded', '#e8c870', 15);
-  if (dialog.npcId === npcId) showDialogue(npcId, state.quest);
+  if (dialog.npcId === npcId) showDialogue(npcId, npc.kind, state.quest);
 }
 
 /** Where the salvager was last frame: the place, which level it's on, and how far east. */
@@ -320,7 +322,7 @@ function react(events: SimEvent[]): void {
         hud.hideBanner();
         break;
       case 'Talked':
-        showDialogue(e.npcId, e.questBefore);
+        showDialogue(e.npcId, e.kind, e.questBefore);
         break;
       case 'ServiceUsed':
         reactToService(e.npcId, e.service, e.x, e.y);
