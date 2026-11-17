@@ -10,7 +10,7 @@ import { MODEL_URLS, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import {
-  ALARM, CHAINSAW_FOUND, CHARGING, dialogueFor, ENDING, ENGINE_GREETING, GIVING_THE_ORDER, levelUp, lockedSays, MACHINE_SCANS, NPCS,
+  ALARM, CHAINSAW_FOUND, CHARGING, dialogueFor, ENDING, ENGINE_SAYS, GIVING_THE_ORDER, levelUp, lockedSays, MACHINE_SCANS, NPCS,
   ON_ENTERING, OPENING, readingFor, scrapDropped, stashOpened, STEP, STEP_LINES, VOICES, type Dialogue, type Line,
 } from './content/story';
 import { placeOf, type Place } from './content/places';
@@ -138,19 +138,28 @@ function showReading(id: string, events: SimEvent[]): void {
     return;
   }
   const page: Dialogue = { title: reading.title, text: reading.text, options: [{ label: 'Close' }] };
-  if (reached.includes(STEP.charged)) playScene([{ ...page, options: [{ label: 'Plug in' }] }, ...CHARGING], () => say(STEP_LINES[STEP.charged]));
-  else if (reached.includes(STEP.orderClosed)) playScene(GIVING_THE_ORDER, () => say(STEP_LINES[STEP.orderClosed]));
+  if (reached.includes(STEP.charged)) {
+    // The EMP is the charge's gift, so it shows once the scene is over.
+    hud.empWithheld = true;
+    playScene([{ ...page, options: [{ label: 'Plug in' }] }, ...CHARGING], () => {
+      hud.empWithheld = false;
+      say(STEP_LINES[STEP.charged]);
+    });
+  } else if (reached.includes(STEP.orderClosed)) playScene(GIVING_THE_ORDER, () => say(STEP_LINES[STEP.orderClosed]));
+  else if (reached.includes(STEP.ending)) present(page, undefined, playEnding);
   else present(page);
 }
 
 /** Steps whose lines wait for the scene that reaches them. */
-const AFTER_SCENE: number[] = [STEP.charged, STEP.orderClosed];
+const AFTER_SCENE: number[] = [STEP.charged, STEP.orderClosed, STEP.ending];
 
 /** What happens in the world as the story moves on. */
 function reachStep(step: number): void {
-  if (step === STEP.ending) playEnding();
-  else if (!AFTER_SCENE.includes(step)) say(STEP_LINES[step]);
+  if (!AFTER_SCENE.includes(step)) say(STEP_LINES[step]);
 }
+
+/** Whether the Order Engine has greeted the salvager yet. */
+let engineSpoke = false;
 
 /** After a purchase: getting patched up closes the dialogue, other services refresh it with the new prices. */
 function reactToService(npcId: number, index: number, x: number, y: number): void {
@@ -183,12 +192,9 @@ function showPlace(): void {
 
 /** The light upriver, then the card that closes the demo on its question. */
 function playEnding(): void {
-  hud.banner(ENDING.upriver.title, ENDING.upriver.subtitle, 4);
-  setTimeout(() => {
-    $('endT').textContent = ENDING.card.title;
-    $('endS').textContent = ENDING.card.subtitle;
-    $('end').hidden = false;
-  }, 4200);
+  $('endT').textContent = ENDING.title;
+  $('endS').textContent = ENDING.subtitle;
+  $('end').hidden = false;
 }
 
 $('endGo').addEventListener('click', (e) => {
@@ -274,11 +280,9 @@ function react(events: SimEvent[]): void {
       case 'EnteredLevel': {
         const { level } = currentLevel(state);
         if (!state.hero.dead && events.every((other) => other.type !== 'HeroRespawned')) {
-          const first = !greeted.has(e.levelId);
-          if (first && e.levelId === ENGINE_GREETING.levelId) hud.banner(ENGINE_GREETING.title, ENGINE_GREETING.subtitle, 3.5);
-          else hud.banner(level.name, level.subtitle, 2);
+          hud.banner(level.name, level.subtitle, 2);
           // The speakers greet each floor once, on the way down.
-          if (first) say(ON_ENTERING[e.levelId] && [ON_ENTERING[e.levelId]!]);
+          if (!greeted.has(e.levelId)) say(ON_ENTERING[e.levelId] && [ON_ENTERING[e.levelId]!]);
           greeted.add(e.levelId);
         }
         break;
@@ -299,6 +303,10 @@ function react(events: SimEvent[]): void {
         break;
       case 'PortalLocked':
         labels.text(e.x, e.y, 60 * PX, lockedSays(e.to, state.quest), '#ff7a62', 14);
+        break;
+      case 'EnemyAlerted':
+        if (e.boss && !engineSpoke) say([ENGINE_SAYS]);
+        engineSpoke ||= e.boss;
         break;
       case 'Armed':
         hud.say(CHAINSAW_FOUND);

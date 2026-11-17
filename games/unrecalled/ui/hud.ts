@@ -19,6 +19,8 @@ export class Hud {
   private readonly shown = new ShownValues();
   private readonly bannerBox = new Banner({ root: $('banner'), title: $('bannerT'), subtitle: $('bannerS') });
   private readonly feed = new MessageFeed($('feed'));
+  /** Keeps the EMP's button hidden even once the salvager has it, while the scene that gives it plays. */
+  empWithheld = false;
 
   constructor(send: (command: Command) => void) {
     // The log lists every line and page so far, for one missed or closed too soon.
@@ -57,7 +59,7 @@ export class Hud {
       $('bPatch').classList.toggle('off', v <= 0);
     });
     const skill = state.rules.hero.skills[EMP];
-    const emp = skill && state.quest >= (skill.fromStep ?? 0) ? skill : undefined;
+    const emp = skill && state.quest >= (skill.fromStep ?? 0) && !this.empWithheld ? skill : undefined;
     // Charge only powers the EMP, so neither shows until the salvager has it.
     shown.set('hasEmp', Boolean(emp), (v) => {
       $('bEmp').hidden = !v;

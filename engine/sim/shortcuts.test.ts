@@ -16,17 +16,20 @@ describe('shortcuts', () => {
     expect([state.quest, state.hero.weapon]).toEqual([2, 'saw']);
   });
 
-  it('takes away an enemy defeated on the way, whether it has turned up yet or not, leaving what it carried on the ground', () => {
-    const state = withQuest([
-      {}, { reachedBy: { type: 'defeat', tag: 'guard' } }, { reachedBy: { type: 'defeat', tag: 'thief' } }, { reachedBy: { type: 'arm', weapon: 'saw' } },
-    ]);
+  it('takes away an enemy defeated on the way, whether it has turned up yet or not, with what it carried in hand', () => {
+    const state = withQuest([{}, { reachedBy: { type: 'defeat', tag: 'guard' } }, { reachedBy: { type: 'defeat', tag: 'thief' } }]);
     const ls = state.levels.arena!;
     ls.enemies[0]!.tag = 'guard';
     ls.storySpawns.push({ kind: 'brute', x: 4, y: 4, tag: 'thief', fromStep: 1, carries: 'saw' });
     jumpToStep(state, 2);
-    expect([ls.enemies.length, ls.storySpawns.length, ls.items.map((i) => i.weapon), state.hero.weapon]).toEqual([0, 0, ['saw'], null]);
-    jumpToStep(state, 3);
-    expect([ls.items.length, state.hero.weapon]).toEqual([0, 'saw']);
+    expect([ls.enemies.length, ls.storySpawns.length, ls.items.length, state.hero.weapon]).toEqual([0, 0, 0, 'saw']);
+  });
+
+  it('takes a weapon off the ground when a step on the way was reached by picking it up', () => {
+    const state = withQuest([{}, { reachedBy: { type: 'arm', weapon: 'saw' } }]);
+    state.levels.arena!.items.push({ kind: 'weapon', amount: 1, weapon: 'saw', x: 4, y: 4, z: 0, vz: 0 });
+    jumpToStep(state, 1);
+    expect([state.levels.arena!.items.length, state.hero.weapon]).toEqual([0, 'saw']);
   });
 
   it('takes away the enemy whose kill reached a step on the way', () => {

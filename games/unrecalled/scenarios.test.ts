@@ -146,11 +146,11 @@ describe('Unrecalled scenarios', () => {
       }
     }
     expect(done).toEqual([
-      'foreman in rustbelt', TAG.raider, 'foreman in rustbelt', 'tinker in workshop', TAG.switchLoader, 'chainsaw', 'switch',
-      'trader in rustbelt', TAG.tagsLoader, 'charging-station', 'orderEngine', 'crate', 'foreman in assembly', 'order-terminal',
-      'foreman in assembly', 'bell', 'foreman in rustbelt',
+      'foreman in rustbelt', TAG.raider, 'foreman in rustbelt', 'tinker in workshop', TAG.switchLoader, 'switch',
+      'trader in rustbelt', TAG.tagsLoader, 'access-terminal', 'charging-station', 'orderEngine', 'crate', 'foreman in assembly',
+      'order-terminal', 'foreman in assembly', 'bell', 'foreman in rustbelt', 'awaiting-board',
     ]);
-    expect(state.quest).toBe(STEP.ending);
+    expect([state.levelId, state.quest]).toEqual(['upriver', STEP.ending]);
   });
 
   it('takes the foreman from the fire once the turbine is switched back, with Mags there from then on, keeps him in a crate until the salvager opens it, and brings him home to Mags and Pell', () => {
@@ -344,7 +344,7 @@ describe('Unrecalled scenarios', () => {
     expect(state.hero.dead).toBe(false);
   });
 
-  it('keeps the turbine\'s terminal asking for the code until the loader that Pell sends the salvager after drops it with her saw', () => {
+  it('keeps the turbine\'s terminal asking for the code until the loader that Pell sends the salvager after is beaten, which drops her saw too', () => {
     const state = untouchable(createGameState(content, 1));
     const loader = () => currentLevel(state).enemies.find((e) => e.tag === TAG.switchLoader);
     use(state, 'switch');
@@ -358,13 +358,20 @@ describe('Unrecalled scenarios', () => {
     defeat(state, TAG.switchLoader);
     expect([state.quest, state.hero.weapon]).toEqual([STEP.loaderDown, null]);
     use(state, 'switch');
-    expect(state.quest).toBe(STEP.loaderDown);
-    expect(questGoal(state)).toMatchObject({ x: currentLevel(state).items.find((i) => i.weapon === 'chainsaw')!.x });
+    expect([state.quest, state.hero.weapon]).toEqual([STEP.powerOn, null]);
     const picked = pickUp(state, 'chainsaw');
     expect(picked.map((e) => e.type)).toContain('Armed');
-    expect([state.quest, state.hero.weapon]).toEqual([STEP.armed, 'chainsaw']);
-    use(state, 'switch');
-    expect(state.quest).toBe(STEP.powerOn);
+    expect([state.quest, state.hero.weapon]).toEqual([STEP.powerOn, 'chainsaw']);
+  });
+
+  it('fades from the foreman\'s last question to Foundry 2 upriver, where reading its board ends the story', () => {
+    const state = untouchable(createGameState(content, 1));
+    jumpToStep(state, STEP.bellRung);
+    answer(state, 'foreman', REPLY.dontKnow);
+    play(state, 2);
+    expect([state.levelId, state.quest]).toEqual(['upriver', STEP.upriver]);
+    use(state, 'awaiting-board');
+    expect(state.quest).toBe(STEP.ending);
   });
 
   it('cuts with Pell\'s chainsaw rather than swinging', () => {

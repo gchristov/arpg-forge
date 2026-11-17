@@ -3,7 +3,7 @@ import type { Vec2 } from '../core/math';
 import { ELEVATION } from './camera-angle';
 
 /** How far the arrow lies from the middle of the hero's body on screen, in tiles at zoom 1; and its length. */
-const RING = 0.85;
+const RING = 1.3;
 const LENGTH = 0.6;
 /** Drawn after the level, so floor models laid over the ground don't hide it. */
 const DRAW_ORDER = 5;

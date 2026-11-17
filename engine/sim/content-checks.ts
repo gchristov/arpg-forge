@@ -142,10 +142,11 @@ function reachableFrom(map: TileMap, start: Vec2): Uint8Array {
   return reached;
 }
 
-/** Levels no chain of portals leads to from the start level. */
+/** Levels no chain of portals leads to from the start level, or from where a quest step takes the hero. */
 function unreachableLevels(content: GameContent, levels: Map<string, LevelContent>): string[] {
-  const seen = new Set([content.startLevel]);
-  const queue = [content.startLevel];
+  const starts = [content.startLevel, ...content.quest.flatMap((s) => (s.takesHeroTo ? [s.takesHeroTo.levelId] : []))];
+  const seen = new Set(starts);
+  const queue = [...seen];
   while (queue.length) {
     const level: Level | undefined = levels.get(queue.pop()!)?.level;
     for (const p of level?.portals ?? []) {

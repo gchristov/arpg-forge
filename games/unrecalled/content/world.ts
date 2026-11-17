@@ -3,17 +3,18 @@ import { buildArena } from '../levels/arena';
 import { buildFloor, FLOOR_ORDER } from '../levels/foundry';
 import { buildInterior, INTERIOR_IDS } from '../levels/interiors';
 import { buildRustbelt } from '../levels/rustbelt';
+import { buildUpriver } from '../levels/upriver';
 import { ENEMIES } from './enemies';
 import { HERO } from './hero';
 import { NPCS, QUEST } from './story';
 
 /**
  * Unrecalled as the rules see it: Rustbelt, its buildings and the dead woods to its east, and the Foundry's four floors
- * down to the Order Engine, plus a practice arena off the map.
+ * down to the Order Engine, Foundry 2 upriver where the story ends, plus a practice arena off the map.
  */
 export function unrecalledContent(): GameContent {
   return {
-    levels: [buildRustbelt(), ...INTERIOR_IDS.map(buildInterior), ...FLOOR_ORDER.map(buildFloor), buildArena()],
+    levels: [buildRustbelt(), ...INTERIOR_IDS.map(buildInterior), ...FLOOR_ORDER.map(buildFloor), buildUpriver(), buildArena()],
     startLevel: 'rustbelt',
     hero: HERO,
     enemies: ENEMIES,
