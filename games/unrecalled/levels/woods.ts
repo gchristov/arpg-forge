@@ -32,7 +32,7 @@ interface Ellipse {
 const CAMP: Ellipse = { x: 41, y: 11, rx: 7.5, ry: 6.5 };
 /** The sawmill yard by the river, where the logs were cut. */
 const YARD: Ellipse = { x: 31, y: 23, rx: 4.5, ry: 2.6 };
-/** How much tougher than its kind the loader at the switch is, for a salvager who may still be on their fists. */
+/** How much tougher than its kind the loader at the switch is, for a salvager still on their fists. */
 const WOODS_STRENGTH = 0.5;
 
 /** A still pond in the trees north of the trail. */
@@ -43,7 +43,7 @@ const reach = (e: Ellipse, x: number, y: number) => ((x + 0.5 - e.x) / e.rx) ** 
 
 /**
  * The dead woods east of the town, laid into Rustbelt's map from column `x0`. A trail winds to the logging camp: the
- * turbine whose switch a loader holds over to the Foundry and, in a crate by the cutting bench, Pell's chainsaw. Off the
+ * turbine, guarded by the loader that took Pell's chainsaw and holds the codes to the turbine's terminal. Off the
  * trail lie a pond, a stash past it, and the sawmill yard by the river with a cache of its own and U-4 on the bank below.
  */
 export function addWoods(room: LevelContent, reserve: (x: number, y: number, w: number, h: number) => void, x0: number): void {
@@ -76,15 +76,16 @@ export function addWoods(room: LevelContent, reserve: (x: number, y: number, w: 
   }
   for (const trail of TRAILS) paintPath(map, trail.map(([x, y]) => [x0 + x, y]), reserve);
 
-  // The logging camp: the turbine and its switch at its foot, held over to the Foundry by a loader until it's broken,
-  // the crate by the cutting bench, a truck, stacked salvage and a brazier.
+  // The logging camp: the turbine and its terminal at its foot, which wants the access code of the loader that turns up
+  // to guard it once Pell asks for her saw back, a crate by the cutting bench, a truck, stacked salvage and a brazier.
   prop(42, 8, Prop.Pylon);
   prop(44, 8, Prop.Computer);
-  room.readables!.push({ tx: x0 + 44, ty: 8, id: 'switch', fromStep: STEP.switchFreed });
-  room.spawns.push({ kind: 'loader', x: x0 + 43.5, y: 10.5, tag: TAG.switchLoader, strength: WOODS_STRENGTH });
+  room.readables!.push({ tx: x0 + 44, ty: 8, id: 'switch' });
+  room.spawns.push({
+    kind: 'loader', x: x0 + 43.5, y: 10.5, tag: TAG.switchLoader, strength: WOODS_STRENGTH, fromStep: STEP.sawAsked, carries: 'chainsaw',
+  });
   light(44, 8, 'cyan', 4);
   prop(45, 13, Prop.Crate);
-  room.containers!.push({ tx: x0 + 45, ty: 13, gold: 0, healingItems: 0, weapon: 'chainsaw' });
   prop(37, 9, Prop.Truck);
   prop(37, 8, Prop.Building);
   prop(37, 10, Prop.Building);

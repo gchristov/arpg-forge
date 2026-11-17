@@ -72,6 +72,14 @@ describe('checkContent', () => {
     expect(checkContent(c).filter((p) => p.includes('no portal leads'))).toEqual([]);
   });
 
+  it('lets a level go without a portal when a quest step takes the hero there', () => {
+    const c = rooms();
+    c.levels[1]!.level.portals = [];
+    home(c).level.portals = [];
+    c.quest = [{}, { takesHeroTo: { levelId: 'cellar', x: 1.5, y: 1.5 } }];
+    expect(checkContent(c).filter((p) => p.includes('no portal leads'))).toEqual([]);
+  });
+
   it('finds spawns inside walls, out of reach or of unknown kinds', () => {
     const c = rooms();
     home(c).spawns.push({ kind: 'brute', x: 4.5, y: 1.5 }, { kind: 'brute', x: 5.5, y: 1.5 }, { kind: 'dragon', x: 2.5, y: 1.5 });
@@ -110,6 +118,14 @@ describe('checkContent', () => {
     c.hero = { ...c.hero, weapons: { saw: { knockback: 0 } } };
     c.npcs = { smith: { services: [{ type: 'sellWeapon', weapon: 'saw', price: 10 }, { type: 'sellWeapon', weapon: 'axe', price: 10 }] } };
     expect(checkContent(c)).toEqual(['NPC kind "smith" sells unknown weapon "axe"']);
+  });
+
+  it('finds an enemy carrying a weapon the hero can\'t hold, and counts one it can as a way to get it', () => {
+    const c = rooms();
+    c.hero = { ...c.hero, weapons: { saw: { knockback: 0 } } };
+    c.levels[1]!.spawns.push({ kind: 'brute', x: 2.5, y: 1.5, carries: 'axe' }, { kind: 'brute', x: 2.5, y: 0.5, carries: 'saw' });
+    c.quest = [{}, { reachedBy: { type: 'arm', weapon: 'saw' } }];
+    expect(checkContent(c)).toEqual(['cellar: a "brute" carries unknown weapon "axe"']);
   });
 
   it('finds a container holding an unknown weapon, a door waiting for a step that doesn\'t exist, and quest steps nothing gives', () => {

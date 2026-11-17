@@ -12,6 +12,12 @@ export interface EnemySpawn extends SpawnPoint {
   tag?: string;
   /** Its own strength, in place of its level's `enemyStrength`. */
   strength?: number;
+  /** The quest step it turns up at; there from the start if not given. */
+  fromStep?: number;
+  /** One of the hero's weapons, dropped on the ground when it's defeated, for the hero to pick up. */
+  carries?: string;
+  /** Fighting it doesn't sound the level's alarm, so the calm enemies around it keep taking the hero for one of their own. */
+  quiet?: boolean;
 }
 
 /**
@@ -199,7 +205,8 @@ export interface AreaSkill extends BurstDamage {
 }
 
 /** A skill the hero can use, by engine type. Games pick and tune these; new types are added here as games need them. */
-export type Skill = ProjectileSkill | AreaSkill;
+/** A skill the hero only has from a quest step on, such as one the story gives them; from the start if not given. */
+export type Skill = (ProjectileSkill | AreaSkill) & { fromStep?: number };
 
 /** The hero's numbers. Neutral names: "resource" is what skills cost, "healing items" are drunk or used to heal. */
 export interface MeleeRules {

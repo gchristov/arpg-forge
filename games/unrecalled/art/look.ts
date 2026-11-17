@@ -41,6 +41,7 @@ const FLOOR_STYLES: Record<string, { panel: string; plate: string | null; mood: 
   sorting: { panel: 'wall-astra', plate: 'floor-metal', mood: { ...foundry(0x3a3428, 0xf0e0c0), sightRange: FOUND_AS_YOU_GO } },
   gallery: { panel: 'wall-window', plate: 'floor-dark', mood: { ...foundry(0x3a2a2c, 0xf0c8c8), sightRange: FOUND_AS_YOU_GO } },
   arena: { panel: 'wall', plate: 'floor-plates', mood: foundry(0x343a40, 0xd8e4f0) },
+  upriver: { panel: 'wall', plate: null, mood: { ...NIGHT, water: undefined } },
   assembly: { panel: 'wall-divided', plate: 'floor-squares', mood: { ...foundry(0x3a2c22, 0xf0d0b0), sightRange: FOUND_AS_YOU_GO } },
 };
 /** Each wall style's corner pieces, from the same kit, so walls turn in the style they're built in. */
@@ -133,6 +134,12 @@ const STRUCTURES: Record<string, StructureLook> = {
     glass: { material: 'M_Glass', colour: 0x7ab8c8, light: 'cyan' },
     sign: undefined,
   }),
+  // Foundry 2, upriver: dark windows and no sign, since its lights only come on as the story ends.
+  foundry: building(0x34383e, {
+    tint: 0x8a909a, wall: ['town-wall-band', 'town-wall-astra'], window: 'town-window-astra',
+    roofProps: [{ name: 'tank', width: 1.1 }, { name: 'cargo-roof', width: 1.8 }, 'roof-fan'],
+    inside: 0x050608, glass: undefined, sign: undefined,
+  }),
 };
 
 const LIGHTS: Record<string, number> = { cyan: 0x6ad8ff, amber: 0xffa040, molten: 0xff6a20, alarm: 0xff3a2a, hazard: 0xffc840 };
@@ -194,9 +201,11 @@ export const MODEL_URLS: Record<string, string> = Object.fromEntries(
   ),
 );
 
+const WEAPON_NAMES: Record<string, string> = { chainsaw: 'Pell’s chainsaw' };
+
 export const unrecalledLook: Look = {
   effects: {
-    skill: 0x8ae8ff, shot: 0xffd070, telegraph: 0xff7a3a, items: { gold: 0xd8c070, healingItem: 0x50d070 },
+    skill: 0x8ae8ff, shot: 0xffd070, telegraph: 0xff7a3a, items: { gold: 0xd8c070, healingItem: 0x50d070, weapon: 0xe0782a },
     walkMarker: 0x9ad8e8, targetMarker: 0xff7a3a,
     guide: { arrow: 0xffb050, name: 0xd8e4e8 },
     skillLight: 0x6ad8ff, telegraphLight: 0xff7a3a, bossLight: 0xff9a50, scan: 0xff3a2a, lightning: 0x5ac8ff,
@@ -239,6 +248,7 @@ export const unrecalledLook: Look = {
   },
   floorModel: (kind, levelId) => (kind === Ground.Plate ? styleOf(levelId).plate : null),
   prop: (kind) => PROPS[kind] ?? null,
+  weaponName: (weapon) => WEAPON_NAMES[weapon] ?? weapon,
   walls: (levelId) => ({
     props: [Prop.Wall, Prop.WallLow, Prop.WallLight, Prop.WallAlarm], panel: styleOf(levelId).panel, span: 3, front: { name: 'wall-front', height: 0.3 },
     // Every doorway gets the kit's frame, so the ways in and out are clear.

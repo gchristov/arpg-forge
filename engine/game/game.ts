@@ -69,6 +69,8 @@ export class Game {
   private started = false;
   /** Holding the pointer keeps walking only when the press started a walk. */
   private holdWalks = false;
+  /** Where the camera looks instead of at the hero, such as for a moment the game shows; null follows the hero. */
+  cameraFocus: { x: number; y: number } | null = null;
 
   constructor(setup: GameSetup) {
     const params = new URLSearchParams(location.search);
@@ -152,7 +154,10 @@ export class Game {
       : 1;
     const t1 = performance.now();
     this.view.draw(alpha, frameSeconds, loop.stepSeconds);
-    renderer.follow(lerp(state.hero.prevX, state.hero.x, alpha), lerp(state.hero.prevY, state.hero.y, alpha), frameSeconds);
+    const heroX = lerp(state.hero.prevX, state.hero.x, alpha);
+    const heroY = lerp(state.hero.prevY, state.hero.y, alpha);
+    renderer.follow(this.cameraFocus?.x ?? heroX, this.cameraFocus?.y ?? heroY, frameSeconds);
+    renderer.lightHero(heroX, heroY);
     renderer.render(now / 1000, frameSeconds);
     this.labels.update(this.project, frameSeconds);
     this.hooks?.update(state);

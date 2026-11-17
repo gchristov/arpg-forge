@@ -48,7 +48,7 @@ function nearestStanding(state: GameState): Enemy | null {
   return nearest;
 }
 
-/** Where on a level the trigger is met: the townsperson or enemy, the thing to use, or the container holding the weapon. */
+/** Where on a level the trigger is met: the townsperson or enemy, the thing to use, or the weapon on the ground or the container holding it. */
 function goalIn(trigger: QuestTrigger, levelId: string, state: GameState): QuestGoal | null {
   const ls = state.levels[levelId]!;
   const actor = trigger.type === 'talk' || trigger.type === 'reply'
@@ -56,6 +56,8 @@ function goalIn(trigger: QuestTrigger, levelId: string, state: GameState): Quest
     : trigger.type === 'kill' ? ls.enemies.find((e) => e.kind === trigger.enemyKind && !e.dead)
       : trigger.type === 'defeat' ? ls.enemies.find((e) => e.tag === trigger.tag && !e.dead) : undefined;
   if (actor) return { x: actor.x, y: actor.y, actorId: actor.id };
+  const dropped = trigger.type === 'arm' ? ls.items.find((i) => i.kind === 'weapon' && i.weapon === trigger.weapon) : undefined;
+  if (dropped) return { x: dropped.x, y: dropped.y };
   const tile = trigger.type === 'use'
     ? ls.readables.find((r) => r.id === trigger.id)
     : trigger.type === 'arm' ? ls.containers.find((c) => c.weapon === trigger.weapon && !c.opened) : undefined;

@@ -28,11 +28,10 @@ function untouchable(state: GameState): GameState {
   return state;
 }
 
-/** Walks onto the current level's portal to `to`. */
-function takeDoor(state: GameState, to: string): void {
+/** Walks onto the current level's portal to `to`, and returns every event on the way. */
+function takeDoor(state: GameState, to: string): SimEvent[] {
   const door = currentLevel(state).level.portals.find((p) => p.to === to)!;
-  play(state, 25, [{ type: 'walkInto', tx: door.tx, ty: door.ty }]);
-  play(state, 1);
+  return [...play(state, 25, [{ type: 'walkInto', tx: door.tx, ty: door.ty }]), ...play(state, 1)];
 }
 
 /** Talks to someone in the current level by kind, walking up to them first. */
@@ -47,16 +46,16 @@ function answer(state: GameState, kind: string, id: string): SimEvent[] {
   return play(state, 1, [{ type: 'reply', npcId: npc.id, id }]);
 }
 
-/** Opens the current level's container holding `weapon`, walking up to it first. */
-function openCrateWith(state: GameState, weapon: string): SimEvent[] {
-  const index = currentLevel(state).containers.findIndex((c) => c.weapon === weapon);
-  return play(state, 30, [{ type: 'open', index }]);
-}
-
 /** Uses the current level's readable `id`, walking up to it first. */
 function use(state: GameState, id: string): SimEvent[] {
   const index = currentLevel(state).readables.findIndex((r) => r.id === id);
   return play(state, 30, [{ type: 'read', index }]);
+}
+
+/** Walks over to a weapon lying on the current level's ground, which picks it up. */
+function pickUp(state: GameState, weapon: string): SimEvent[] {
+  const item = currentLevel(state).items.find((i) => i.weapon === weapon)!;
+  return play(state, 15, [{ type: 'walk', x: item.x, y: item.y }]);
 }
 
 /** Beats the enemy with `tag` on the current level, walking up to it first, with whatever the salvager has in hand. */
@@ -73,19 +72,12 @@ function unstoppable(state: GameState): GameState {
   return state;
 }
 
-/** Out through the woods to the logging camp: Pell's saw, the loader at the switch, and the switch. */
-function throughWoods(state: GameState): void {
-  openCrateWith(state, 'chainsaw');
-  defeat(state, TAG.switchLoader);
-  use(state, 'switch');
-}
-
 /**
- * Goes from Rustbelt into the Foundry, through Mags's depot and its back door; with the story moved on to where every
- * door down is open first, if it isn't yet, for tests about what lies beyond.
+ * Goes from Rustbelt into the Foundry, through Mags's depot and its back door; with the story moved on to `step` first
+ * if it isn't there yet, by default to where every door down is open, for tests about what lies beyond.
  */
-function intoFoundry(state: GameState): void {
-  if (state.quest < STEP.charged) jumpToStep(state, STEP.charged);
+function intoFoundry(state: GameState, step: number = STEP.charged): void {
+  if (state.quest < step) jumpToStep(state, step);
   const depot = currentLevel(state).level.structures.findIndex((s) => s.kind === 'tradingPost');
   play(state, 25, [{ type: 'enterStructure', index: depot }]);
   play(state, 1);
@@ -95,17 +87,18 @@ function intoFoundry(state: GameState): void {
 /** The way back up from the deepest floor to Rustbelt, through every floor and the depot. */
 const WAY_BACK = [...[...FLOOR_ORDER].reverse().slice(1), 'tradingPost', 'rustbelt'];
 
-/** A new game, already through the depot into Intake. */
-function inIntake(): GameState {
+/** A new game, already through the depot into Intake, by default with every door down open. */
+function inIntake(step: number = STEP.charged): GameState {
   const state = untouchable(createGameState(content, 1));
-  intoFoundry(state);
+  intoFoundry(state, step);
   return state;
 }
 
 describe('Unrecalled scenarios', () => {
-  it('opens on the foreman, who points the salvager at the crawler making off with the tools, then gives them the job', () => {
+  it('opens on the foreman, whose crawler turns up as he points it out, then sends the salvager to Pell', () => {
     const state = untouchable(createGameState(content, 1));
     expect(state.levelId).toBe('rustbelt');
+    expect(currentLevel(state).enemies).toEqual([]);
     const foreman = currentLevel(state).npcs.find((n) => n.kind === 'foreman')!;
     expect(questGoal(state)?.actorId).toBe(foreman.id);
     talkTo(state, 'foreman');
@@ -115,11 +108,12 @@ describe('Unrecalled scenarios', () => {
     expect(questGoal(state)?.actorId).toBe(raider.id);
     defeat(state, TAG.raider);
     expect(state.quest).toBe(STEP.raidStopped);
+    expect(state.levels.rustbelt!.alarmed).toBe(false);
     expect(questGoal(state)?.actorId).toBe(foreman.id);
     talkTo(state, 'foreman');
     expect(state.quest).toBe(STEP.raidStopped);
-    answer(state, 'foreman', REPLY.howIn);
-    expect(state.quest).toBe(STEP.raidStopped + 1);
+    answer(state, 'foreman', REPLY.seePell);
+    expect(state.quest).toBe(STEP.sentToPell);
   });
 
   it('plays the whole story by following where the guide points, from the raid to the bell and the foreman at dawn', () => {
@@ -130,8 +124,8 @@ describe('Unrecalled scenarios', () => {
       const ls = currentLevel(state);
       const enemy = ls.enemies.find((e) => e.id === goal!.actorId);
       const npc = ls.npcs.find((n) => n.id === goal!.actorId);
-      const crate = ls.containers.find(at);
       const readable = ls.readables.find(at);
+      const dropped = ls.items.find((i) => i.x === goal!.x && i.y === goal!.y);
       if (enemy) {
         done.push(enemy.tag ?? enemy.kind);
         for (let i = 0; i < 60 && !enemy.dead; i++) play(state, 1, [{ type: 'attack', enemyId: enemy.id }]);
@@ -140,9 +134,9 @@ describe('Unrecalled scenarios', () => {
         talkTo(state, npc.kind);
         const waitsFor = state.rules.quest[state.quest + 1]?.reachedBy;
         if (waitsFor?.type === 'reply') answer(state, npc.kind, waitsFor.id);
-      } else if (crate?.weapon) {
-        done.push(crate.weapon);
-        openCrateWith(state, crate.weapon);
+      } else if (dropped?.weapon) {
+        done.push(dropped.weapon);
+        pickUp(state, dropped.weapon);
       } else if (readable) {
         done.push(readable.id);
         use(state, readable.id);
@@ -152,31 +146,46 @@ describe('Unrecalled scenarios', () => {
       }
     }
     expect(done).toEqual([
-      'foreman in rustbelt', TAG.raider, 'foreman in rustbelt', 'chainsaw', TAG.switchLoader, 'switch', 'drag-marks',
-      'trader in tradingPost', TAG.tagsLoader, 'charging-station', 'orderEngine', 'foreman in assembly', 'foreman in assembly',
-      'bell', 'foreman in rustbelt',
+      'foreman in rustbelt', TAG.raider, 'foreman in rustbelt', 'tinker in workshop', TAG.switchLoader, 'switch',
+      'trader in rustbelt', TAG.tagsLoader, 'access-terminal', 'charging-station', 'orderEngine', 'crate', 'foreman in assembly',
+      'order-terminal', 'foreman in assembly', 'bell', 'foreman in rustbelt',
     ]);
-    expect(state.quest).toBe(STEP.ending);
+    expect([state.levelId, state.quest]).toEqual(['upriver', STEP.ending]);
   });
 
-  it('takes the foreman from the fire once the turbine is switched back, shows him in the Assembly Hall once the Order Engine is down, and brings him home', () => {
-    const state = createGameState(content, 1);
-    const foremen = () => Object.entries(state.levels).flatMap(([id, ls]) => ls.npcs.filter((n) => n.kind === 'foreman').map(() => id));
-    expect(foremen()).toEqual(['rustbelt']);
+  it('takes the foreman from the fire once the turbine is switched back, with Mags there from then on, keeps him in a crate until the salvager opens it, and brings him home to Mags and Pell', () => {
+    const state = untouchable(createGameState(content, 1));
+    const where = (kind: string) => Object.entries(state.levels).filter(([id]) => id !== 'arena').flatMap(([id, ls]) => ls.npcs.filter((n) => n.kind === kind).map(() => id));
+    const cast = () => ({ foreman: where('foreman'), mags: where('trader'), pell: where('tinker') });
+    expect(cast()).toEqual({ foreman: ['rustbelt'], mags: ['tradingPost'], pell: ['workshop'] });
     jumpToStep(state, STEP.powerOn);
-    expect(foremen()).toEqual([]);
-    expect(currentLevel(state).readables.map((r) => r.id)).toContain('drag-marks');
-    jumpToStep(state, STEP.charged);
-    expect(foremen()).toEqual([]);
-    jumpToStep(state, STEP.engineDown);
-    expect(foremen()).toEqual(['assembly']);
-    expect(currentLevel(state).readables.map((r) => r.id)).not.toContain('bell');
+    expect(cast()).toEqual({ foreman: [], mags: ['rustbelt'], pell: ['workshop'] });
+    jumpToStep(state, STEP.toldByMags);
+    expect(cast()).toEqual({ foreman: [], mags: ['rustbelt'], pell: ['workshop'] });
+    intoFoundry(state, STEP.engineDown);
+    for (const next of FLOOR_ORDER.slice(1)) takeDoor(state, next);
+    expect(where('foreman')).toEqual([]);
+    use(state, 'crate');
+    expect([where('foreman'), state.quest]).toEqual([['assembly'], STEP.crateOpened]);
+    expect(currentLevel(state).readables.map((r) => r.id)).not.toContain('crate');
     jumpToStep(state, STEP.freed);
-    expect(foremen()).toEqual(['rustbelt']);
-    expect(currentLevel(state).readables.map((r) => r.id)).toContain('bell');
+    expect(cast()).toEqual({ foreman: ['rustbelt'], mags: ['rustbelt'], pell: ['rustbelt'] });
+    expect(state.levels.rustbelt!.readables.map((r) => r.id)).toContain('bell');
   });
 
-  it('keeps each door shut until the story opens it: Mags\'s for the power, Intake\'s for the stock tags, the Gallery\'s for the charging station', () => {
+  it('gives the Foundry its order only once the foreman has asked, at the order terminal', () => {
+    const state = untouchable(createGameState(content, 1));
+    intoFoundry(state, STEP.engineDown);
+    for (const next of FLOOR_ORDER.slice(1)) takeDoor(state, next);
+    use(state, 'order-terminal');
+    expect(state.quest).toBe(STEP.engineDown);
+    use(state, 'crate');
+    answer(state, 'foreman', REPLY.giveOrder);
+    use(state, 'order-terminal');
+    expect(state.quest).toBe(STEP.orderClosed);
+  });
+
+  it('keeps each door shut until the story opens it: Mags\'s until she shows the way, Intake\'s for the stock tags, the Gallery\'s for the charging station', () => {
     const state = untouchable(createGameState(content, 1));
     const depot = currentLevel(state).level.structures.findIndex((s) => s.kind === 'tradingPost');
     play(state, 25, [{ type: 'enterStructure', index: depot }]);
@@ -186,7 +195,9 @@ describe('Unrecalled scenarios', () => {
       return play(state, 25, [{ type: 'walkInto', tx: door.tx, ty: door.ty }]).filter((e) => e.type === 'PortalLocked').length;
     };
     expect(tryDoor('intake')).toBeGreaterThan(0);
-    jumpToStep(state, STEP.taken);
+    jumpToStep(state, STEP.powerOn);
+    expect(tryDoor('intake')).toBeGreaterThan(0);
+    jumpToStep(state, STEP.toldByMags);
     takeDoor(state, 'intake');
     expect(state.levelId).toBe('intake');
     expect(tryDoor('sorting')).toBeGreaterThan(0);
@@ -243,7 +254,7 @@ describe('Unrecalled scenarios', () => {
   });
 
   it('lets the salvager walk up to a working machine until it\'s hit, which puts the whole Foundry on alert', () => {
-    const state = inIntake();
+    const state = inIntake(STEP.toldByMags);
     const hp = state.hero.hp;
     const loader = currentLevel(state).enemies.find((e) => e.tag === TAG.tagsLoader)!;
     play(state, 15, [{ type: 'walk', x: loader.x, y: loader.y + 1.2 }]);
@@ -259,19 +270,21 @@ describe('Unrecalled scenarios', () => {
     const state = createGameState(content, 1);
     const machines = Object.entries(state.levels)
       .filter(([id]) => id !== 'arena')
-      .flatMap(([, ls]) => ls.enemies.map((e) => e.tag ?? e.kind));
+      .flatMap(([, ls]) => [...ls.enemies, ...ls.storySpawns].map((e) => e.tag ?? e.kind));
     expect(machines.sort()).toEqual(['orderEngine', TAG.raider, TAG.switchLoader, TAG.tagsLoader].sort());
   });
 
-  it('starts the salvager without the EMP, since it\'s to be earned', () => {
-    const state = createGameState(content, 1);
-    expect(state.rules.hero.skills).toEqual([]);
-    const events = play(state, 1 / 60, [{ type: 'useSkill', slot: 0 }]);
-    expect(events.map((e) => e.type)).not.toContain('SkillUsed');
+  it('gives the salvager the EMP at the charging station, and not before', () => {
+    const state = untouchable(createGameState(content, 1));
+    expect(play(state, 1 / 60, [{ type: 'useSkill', slot: 0 }]).map((e) => e.type)).not.toContain('SkillUsed');
+    jumpToStep(state, STEP.charged);
+    expect(play(state, 1 / 60, [{ type: 'useSkill', slot: 0 }]).map((e) => e.type)).toContain('SkillUsed');
   });
 
   it('sets off an EMP, once the salvager has it, among a pack of crawlers, hitting them all and sounding the alarm', () => {
-    const state = untouchable(createGameState({ ...content, hero: { ...content.hero, skills: [EMP] } }, 1, 'arena'));
+    const state = untouchable(createGameState(content, 1, 'arena'));
+    jumpToStep(state, STEP.charged);
+    expect(state.rules.hero.skills[0]?.id).toBe(EMP.id);
     const pack = currentLevel(state).enemies.filter((e) => e.kind === 'crawler').slice(0, 3);
     const middle = { x: pack.reduce((s, e) => s + e.x, 0) / 3, y: pack.reduce((s, e) => s + e.y, 0) / 3 };
     state.hero.x = state.hero.prevX = middle.x;
@@ -280,22 +293,6 @@ describe('Unrecalled scenarios', () => {
     const hit = new Set(events.flatMap((e) => (e.type === 'EnemyDamaged' ? [e.enemyId] : [])));
     expect(pack.filter((e) => hit.has(e.id)).length).toBeGreaterThanOrEqual(2);
     expect(events.map((e) => e.type)).toContain('LevelAlarmed');
-  });
-
-  it('hides a salvage cache on every floor that pays out scrap and a patch kit', () => {
-    const state = inIntake();
-    for (const [i, floor] of FLOOR_ORDER.entries()) {
-      if (i > 0) takeDoor(state, floor);
-      // Whatever the hero hasn't picked up yet is still on the floor.
-      const held = (kind: 'gold' | 'healingItem') =>
-        (kind === 'gold' ? state.hero.gold : state.hero.healingItems) +
-        currentLevel(state).items.filter((item) => item.kind === kind).reduce((sum, item) => sum + item.amount, 0);
-      const before = { gold: held('gold'), kits: held('healingItem') };
-      const events = play(state, 25, [{ type: 'open', index: 0 }]);
-      expect(events.map((e) => e.type)).toContain('ContainerOpened');
-      expect(held('gold') - before.gold).toBeGreaterThanOrEqual(30);
-      expect(held('healingItem') - before.kits).toBeGreaterThanOrEqual(1);
-    }
   });
 
   it('calms every machine once the Order Engine falls', () => {
@@ -327,12 +324,13 @@ describe('Unrecalled scenarios', () => {
 
   it('waits for the salvager\'s reply, so walking away from the foreman before it doesn\'t move the story on', () => {
     const state = unstoppable(createGameState(content, 1));
+    answer(state, 'foreman', REPLY.onIt);
     defeat(state, TAG.raider);
     talkTo(state, 'foreman');
     talkTo(state, 'foreman');
     expect(state.quest).toBe(STEP.raidStopped);
-    answer(state, 'foreman', REPLY.howIn);
-    answer(state, 'foreman', REPLY.howIn);
+    answer(state, 'foreman', REPLY.seePell);
+    answer(state, 'foreman', REPLY.seePell);
     expect(state.quest).toBe(STEP.raidStopped + 1);
   });
 
@@ -346,28 +344,48 @@ describe('Unrecalled scenarios', () => {
     expect(state.hero.dead).toBe(false);
   });
 
-  it('fights with fists, then finds Pell\'s chainsaw in the woods and cuts with it', () => {
+  it('keeps the turbine\'s terminal asking for the code until the loader that Pell sends the salvager after is beaten, which drops her saw too', () => {
     const state = untouchable(createGameState(content, 1));
-    expect(state.hero.weapon).toBeNull();
-    jumpToStep(state, STEP.raidStopped + 1);
-    const events = openCrateWith(state, 'chainsaw');
-    expect(events.map((e) => e.type)).toContain('Armed');
-    expect([state.hero.weapon, state.quest]).toEqual(['chainsaw', STEP.armed]);
+    const loader = () => currentLevel(state).enemies.find((e) => e.tag === TAG.switchLoader);
+    use(state, 'switch');
+    expect(state.quest).toBe(0);
+    jumpToStep(state, STEP.sentToPell);
+    expect(loader()).toBeUndefined();
+    jumpToStep(state, STEP.sawAsked);
+    expect([loader()?.mode, state.hero.weapon]).toEqual(['idle', null]);
+    use(state, 'switch');
+    expect(state.quest).toBe(STEP.sawAsked);
+    defeat(state, TAG.switchLoader);
+    expect([state.quest, state.hero.weapon]).toEqual([STEP.loaderDown, null]);
+    use(state, 'switch');
+    expect([state.quest, state.hero.weapon]).toEqual([STEP.powerOn, null]);
+    const picked = pickUp(state, 'chainsaw');
+    expect(picked.map((e) => e.type)).toContain('Armed');
+    expect([state.quest, state.hero.weapon]).toEqual([STEP.powerOn, 'chainsaw']);
+  });
 
-    const cut = defeat(state, TAG.switchLoader);
-    expect(state.quest).toBe(STEP.switchFreed);
+  it('ends the story outside Foundry 2 upriver, once the salvager answers the foreman\'s last question', () => {
+    const state = untouchable(createGameState(content, 1));
+    jumpToStep(state, STEP.bellRung);
+    answer(state, 'foreman', REPLY.dontKnow);
+    play(state, 2);
+    expect([state.levelId, state.quest]).toEqual(['upriver', STEP.ending]);
+  });
+
+  it('cuts with Pell\'s chainsaw rather than swinging', () => {
+    const state = inIntake(STEP.toldByMags);
+    expect(state.hero.weapon).toBe('chainsaw');
+    const cut = defeat(state, TAG.tagsLoader);
+    expect(state.quest).toBe(STEP.tagsTaken);
     expect(cut.some((e) => e.type === 'Swung' && e.actorId === state.hero.id)).toBe(false);
   });
 
-  it('lets the loader at the switch be broken on fists, and leaves the saw in its crate for later', () => {
-    const state = unstoppable(createGameState(content, 1));
-    jumpToStep(state, STEP.raidStopped + 1);
-    defeat(state, TAG.switchLoader);
-    expect([state.quest, state.hero.weapon]).toEqual([STEP.switchFreed, null]);
-    use(state, 'switch');
-    expect(state.quest).toBe(STEP.powerOn);
-    openCrateWith(state, 'chainsaw');
-    expect([state.hero.weapon, state.quest]).toEqual(['chainsaw', STEP.powerOn]);
+  it('has the Order Engine come for the salvager as soon as it sees them', () => {
+    const state = untouchable(createGameState(content, 1));
+    intoFoundry(state);
+    const events = FLOOR_ORDER.slice(1).flatMap((next) => takeDoor(state, next));
+    expect(state.levelId).toBe('assembly');
+    expect(events.some((e) => e.type === 'EnemyAlerted' && e.boss)).toBe(true);
   });
 
   it('lets Pell toughen the salvager\'s fists for scrap before they find a weapon', () => {

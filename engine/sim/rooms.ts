@@ -1,7 +1,7 @@
 import type { Vec2 } from '../core/math';
 import type { Level, LevelLight } from '../world/level';
 import { createTileMap, setProp, tileIndex } from '../world/tile-map';
-import type { Container, LevelContent } from './content';
+import type { Container, LevelContent, NpcPlacement } from './content';
 
 /** What one character in a room's rows puts on its tile. Characters missing from the key are an error. */
 export interface RoomKey {
@@ -23,7 +23,7 @@ export interface RoomKey {
   heroStart?: boolean;
   /** An enemy of this kind spawns here. */
   spawn?: string;
-  npc?: { kind: string; name: string };
+  npc?: Omit<NpcPlacement, 'x' | 'y'>;
   /** A container, such as a chest, holding this much, and perhaps a weapon. */
   container?: Pick<Container, 'gold' | 'healingItems' | 'weapon'>;
   /** Something to read here, which the game words by this id. */

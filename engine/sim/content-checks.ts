@@ -25,6 +25,9 @@ export function checkContent(content: GameContent): string[] {
     for (const c of lc.containers ?? []) {
       if (c.weapon && !content.hero.weapons?.[c.weapon]) problems.push(`${lc.level.id}: a container holds unknown weapon "${c.weapon}"`);
     }
+    for (const s of lc.spawns) {
+      if (s.carries && !content.hero.weapons?.[s.carries]) problems.push(`${lc.level.id}: a "${s.kind}" carries unknown weapon "${s.carries}"`);
+    }
     for (const p of lc.level.portals) {
       if (p.lockedUntilStep !== undefined && p.lockedUntilStep >= content.quest.length) {
         problems.push(`${lc.level.id}: the portal to "${p.to}" waits for quest step ${p.lockedUntilStep}, which doesn't exist`);
@@ -139,10 +142,11 @@ function reachableFrom(map: TileMap, start: Vec2): Uint8Array {
   return reached;
 }
 
-/** Levels no chain of portals leads to from the start level. */
+/** Levels no chain of portals leads to from the start level, or from where a quest step takes the hero. */
 function unreachableLevels(content: GameContent, levels: Map<string, LevelContent>): string[] {
-  const seen = new Set([content.startLevel]);
-  const queue = [content.startLevel];
+  const starts = [content.startLevel, ...content.quest.flatMap((s) => (s.takesHeroTo ? [s.takesHeroTo.levelId] : []))];
+  const seen = new Set(starts);
+  const queue = [...seen];
   while (queue.length) {
     const level: Level | undefined = levels.get(queue.pop()!)?.level;
     for (const p of level?.portals ?? []) {
@@ -167,6 +171,7 @@ function checkQuest(content: GameContent, levels: Map<string, LevelContent>): st
   const weaponSources = new Set([
     ...content.levels.flatMap((l) => (l.containers ?? []).flatMap((c) => (c.weapon ? [c.weapon] : []))),
     ...Object.values(content.npcs).flatMap((n) => n.services.flatMap((s) => (s.type === 'sellWeapon' ? [s.weapon] : []))),
+    ...content.levels.flatMap((l) => l.spawns.flatMap((s) => (s.carries ? [s.carries] : []))),
   ]);
   return content.quest.flatMap((step, i) => {
     const trigger = step.reachedBy;

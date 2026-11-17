@@ -43,6 +43,9 @@ const GUSH_DROPLETS = 13;
 const SMOKE_SECONDS = 1.6;
 /** Townspeople's names show within this many tiles of the hero. */
 const NAME_RANGE = 5;
+/** Over a weapon lying on the ground: its "!" and its name, in tiles above the ground. */
+const WEAPON_MARK_HEIGHT = 0.9;
+const WEAPON_NAME_HEIGHT = 0.45;
 /** A quiet "!" marks everything the hero can tap within this many tiles: townspeople, unopened containers, things to read. */
 const TAPPABLE_RANGE = 7;
 /** How far over a prop's top its "!" floats, in tiles. */
@@ -113,6 +116,7 @@ export class WorldView {
     const walls = this.blocksSight();
     renderer.spatter.clear((tx, ty) => !walls(tx, ty));
     renderer.follow(state.hero.x, state.hero.y, 0, true);
+    renderer.lightHero(state.hero.x, state.hero.y);
   }
 
   react(events: SimEvent[]): void {
@@ -278,6 +282,11 @@ export class WorldView {
     const propTop = (tx: number, ty: number) => (look.prop(ls.level.map.prop[tileIndex(ls.level.map, tx, ty)]!, state.levelId)?.height ?? 0.5) + MARK_ABOVE;
     for (const c of ls.containers) if (!c.opened) mark(c.tx + 0.5, c.ty + 0.5, propTop(c.tx, c.ty), isGoalTile(c.tx, c.ty));
     for (const r of ls.readables) mark(r.tx + 0.5, r.ty + 0.5, propTop(r.tx, r.ty), isGoalTile(r.tx, r.ty));
+    for (const item of ls.items) {
+      if (item.kind !== 'weapon') continue;
+      mark(item.x, item.y, WEAPON_MARK_HEIGHT, goal?.actorId === undefined && goal?.x === item.x && goal?.y === item.y);
+      labels.tag(this.project, item.x, item.y, WEAPON_NAME_HEIGHT, look.weaponName?.(item.weapon!) ?? item.weapon!, colours.name, 13);
+    }
     labels.endTags();
     const enemy = goal?.actorId === undefined ? undefined : ls.enemies.find((e) => e.id === goal.actorId);
     if (enemy) {

@@ -10,11 +10,12 @@ import { MODEL_URLS, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import {
-  ALARM, CHAINSAW_FOUND, CHARGING, dialogueFor, ENDING, ENGINE_CALLS, levelUp, LOCKED, MACHINE_SCANS, NPCS, ON_ENTERING, OPENING,
-  READINGS, scrapDropped, stashOpened, STEP, STEP_LINES, VOICES, type Dialogue, type Line,
+  ALARM, CHAINSAW_FOUND, CHARGING, dialogueFor, ENDING, ENGINE_SAYS, GIVING_THE_ORDER, levelUp, lockedSays, MACHINE_SCANS, NPCS,
+  ON_ENTERING, OPENING, readingFor, UPRIVER, scrapDropped, stashOpened, STEP, STEP_LINES, VOICES, type Dialogue, type Line,
 } from './content/story';
 import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
+import { Ending } from './ui/ending';
 import { Hud } from './ui/hud';
 
 const game = new Game({
@@ -126,21 +127,45 @@ const say = (lines: Line[] | undefined): void => {
   for (const line of lines ?? []) hud.say(line.text, line.from);
 };
 
-/** What reading something says, and the first time the charging station is used, the scene that follows. */
+/** What reading something says, or the scene it starts: the charging station, the crate and the order terminal. */
 function showReading(id: string, events: SimEvent[]): void {
-  const reading = READINGS[id];
+  const reached = events.flatMap((e) => (e.type === 'QuestAdvanced' ? [e.step] : []));
+  // Worded as it was when it was used, before using it moved the story on.
+  const reading = readingFor(id, Math.min(state.quest, ...reached.map((step) => step - 1)));
   if (!reading) return;
-  const charging = events.some((e) => e.type === 'QuestAdvanced' && e.step === STEP.charged);
-  const page: Dialogue = { title: reading.title, text: reading.text, options: [{ label: charging ? 'Plug in' : 'Close' }] };
-  if (charging) playScene([page, ...CHARGING], () => say(STEP_LINES[STEP.charged]));
+  if (reached.includes(STEP.crateOpened)) {
+    const foreman = currentLevel(state).npcs.find((n) => n.kind === 'foreman');
+    if (foreman) showDialogue(foreman.id, foreman.kind);
+    return;
+  }
+  const page: Dialogue = { title: reading.title, text: reading.text, options: [{ label: 'Close' }] };
+  if (reached.includes(STEP.charged)) {
+    // The EMP is the charge's gift, so it shows once the scene is over.
+    hud.empWithheld = true;
+    playScene([{ ...page, options: [{ label: 'Plug in' }] }, ...CHARGING], () => {
+      hud.empWithheld = false;
+      say(STEP_LINES[STEP.charged]);
+    });
+  } else if (reached.includes(STEP.orderClosed)) playScene(GIVING_THE_ORDER, () => say(STEP_LINES[STEP.orderClosed]));
   else present(page);
 }
 
+/** Steps whose lines wait for the scene that reaches them. */
+const AFTER_SCENE: number[] = [STEP.charged, STEP.orderClosed, STEP.ending];
+
 /** What happens in the world as the story moves on. */
 function reachStep(step: number): void {
-  if (step === STEP.ending) playEnding();
-  // The charging station's lines follow its scene.
-  else if (step !== STEP.charged) say(STEP_LINES[step]);
+  if (!AFTER_SCENE.includes(step)) say(STEP_LINES[step]);
+}
+
+/** Whether the Order Engine has greeted the salvager yet. */
+let engineSpoke = false;
+
+/** The Order Engine speaks the moment the salvager walks into its hall, if it's still standing. */
+function greetFromEngine(): void {
+  if (engineSpoke || !currentLevel(state).enemies.some((e) => e.kind === 'orderEngine' && !e.dead)) return;
+  engineSpoke = true;
+  say([ENGINE_SAYS]);
 }
 
 /** After a purchase: getting patched up closes the dialogue, other services refresh it with the new prices. */
@@ -172,19 +197,38 @@ function showPlace(): void {
   place = { at, levelId: state.levelId, x: state.hero.x };
 }
 
-/** The light upriver, then the card that closes the demo on its question. */
-function playEnding(): void {
-  hud.banner(ENDING.upriver.title, ENDING.upriver.subtitle, 4);
-  setTimeout(() => {
-    $('endT').textContent = ENDING.card.title;
-    $('endS').textContent = ENDING.card.subtitle;
+/** Foundry 2 waking upriver, then the card that closes the demo on its question. */
+const ending = new Ending(game, {
+  begin: () => {
+    dialog.close();
+    document.body.classList.add('cinematic');
+    // Up from black: shut at once, then let the curtain's own transition lift it.
+    $('curtain').classList.add('shut');
+    requestAnimationFrame(() => requestAnimationFrame(() => $('curtain').classList.remove('shut')));
+  },
+  light: () => sfx.clank(),
+  awake: () => {
+    game.renderer.shake(0.8);
+    sfx.slam();
+    sfx.siren();
+  },
+  online: () => {
+    hud.banner(ENDING.online.title, ENDING.online.subtitle, 4);
+    say(STEP_LINES[STEP.ending]);
+  },
+  card: () => {
+    $('endT').textContent = ENDING.title;
+    $('endS').textContent = ENDING.subtitle;
+    $('endThanks').textContent = ENDING.thanks;
     $('end').hidden = false;
-  }, 4200);
-}
+  },
+});
 
-$('endGo').addEventListener('click', (e) => {
+// Tapping the closing card starts the game again from the beginning.
+$('end').addEventListener('pointerdown', (e) => {
+  e.preventDefault();
   e.stopPropagation();
-  $('end').hidden = true;
+  location.assign(location.pathname);
 });
 
 /** Unrecalled's sounds for the rules' events. */
@@ -209,7 +253,7 @@ function playSounds(events: SimEvent[]): void {
         break;
       case 'PickedUp':
         if (e.kind === 'gold') sfx.scrap();
-        else sfx.patch();
+        else if (e.kind === 'healingItem') sfx.patch();
         break;
       case 'Healed':
         sfx.patch();
@@ -264,8 +308,10 @@ function react(events: SimEvent[]): void {
     switch (e.type) {
       case 'EnteredLevel': {
         const { level } = currentLevel(state);
-        if (!state.hero.dead && events.every((other) => other.type !== 'HeroRespawned')) {
+        if (e.levelId === UPRIVER.levelId) ending.play(performance.now());
+        else if (!state.hero.dead && events.every((other) => other.type !== 'HeroRespawned')) {
           hud.banner(level.name, level.subtitle, 2);
+          greetFromEngine();
           // The speakers greet each floor once, on the way down.
           if (!greeted.has(e.levelId)) say(ON_ENTERING[e.levelId] && [ON_ENTERING[e.levelId]!]);
           greeted.add(e.levelId);
@@ -287,7 +333,7 @@ function react(events: SimEvent[]): void {
         hud.say(ALARM.turns);
         break;
       case 'PortalLocked':
-        labels.text(e.x, e.y, 60 * PX, LOCKED[e.to] ?? 'Locked', '#ff7a62', 14);
+        labels.text(e.x, e.y, 60 * PX, lockedSays(e.to, state.quest), '#ff7a62', 14);
         break;
       case 'Armed':
         hud.say(CHAINSAW_FOUND);
@@ -301,16 +347,12 @@ function react(events: SimEvent[]): void {
       case 'Refused':
         labels.text(e.x, e.y, 50 * PX, REFUSALS[e.reason], '#8a98a6', 13);
         break;
-      case 'Summoned':
-        hud.say(ENGINE_CALLS.says, VOICES.orderEngine);
-        hud.say(ENGINE_CALLS.then);
-        break;
       case 'LevelUp':
         hud.say(levelUp(e.level));
         break;
       case 'PickedUp':
         if (e.kind === 'gold') labels.text(e.x, e.y, 30 * PX, `+${e.amount} scrap`, '#e8c870', 13);
-        else labels.text(e.x, e.y, 30 * PX, '+1 patch kit', '#7ae08a', 13);
+        else if (e.kind === 'healingItem') labels.text(e.x, e.y, 30 * PX, '+1 patch kit', '#7ae08a', 13);
         break;
       case 'Read':
         showReading(e.id, events);
@@ -347,6 +389,7 @@ game.run({
     showPlace();
     hud.update(s, place!.at.name);
     chainsaw.update(s, playing);
+    ending.update(performance.now());
   },
   onStart() {
     synth.unlock();
@@ -359,6 +402,7 @@ game.run({
   // Tapping the world walks away from a conversation, which can be picked up again by talking. Things read and scenes
   // stay until their own button closes them, and the tap is dropped, so a line can't be lost to a stray tap.
   onWorldTap: () => {
+    if (ending.playing) return false;
     if ($('dialog').hidden) return true;
     if (dialog.npcId === null) return false;
     dialog.close();
