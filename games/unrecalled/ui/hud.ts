@@ -12,8 +12,9 @@ const EMP = 0;
 const $ = (id: string): HTMLElement => document.getElementById(id)!;
 
 /**
- * Unrecalled's HUD: the objective and the message feed under it at the top left, scrap, level and sound at the top
- * right, health, charge and XP with the buttons along the bottom, the boss bar, and banners for places.
+ * Unrecalled's HUD: the objective at the top left, scrap, level and sound at the top right, the story's lines one at a
+ * time above the buttons (where dialogue opens too, so the lines wait for it), health, charge and XP with the buttons
+ * along the bottom, the boss bar, and banners for places.
  */
 export class Hud {
   private readonly shown = new ShownValues();
@@ -91,6 +92,8 @@ export class Hud {
       shown.set('boss', Math.round((boss.hp / boss.maxHp) * 100), (v) => ($('bossFill').style.transform = `scaleX(${v / 100})`));
     }
     shown.set('fallen', hero.dead, (v) => ($('fallen').hidden = !v));
+    this.feed.hold(!$('dialog').hidden || !$('log').hidden);
+    this.feed.update(performance.now());
   }
 
   /** A title and subtitle across the screen. Shown until replaced when `seconds` is Infinity. */
@@ -98,7 +101,7 @@ export class Hud {
     this.bannerBox.show(title, subtitle, seconds);
   }
 
-  /** A line in the message feed: what someone says, or with no speaker, what the salvager notices. */
+  /** A line of the story, shown in its turn: what someone says, or with no speaker, the salvager's own thought. */
   say(text: string, from?: Speaker): void {
     this.feed.add(text, from);
   }
@@ -111,7 +114,7 @@ export class Hud {
   private showLog(): void {
     const lines = this.feed.history().map(({ text, from }) => {
       const line = document.createElement('div');
-      line.className = from ? `line ${from.voice}` : 'line';
+      line.className = from ? `line ${from.voice}` : 'line own';
       if (from) {
         const name = document.createElement('b');
         name.textContent = from.name;

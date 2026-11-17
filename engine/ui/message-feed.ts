@@ -1,28 +1,42 @@
+import { LineQueue } from './line-queue';
+
 /** Who a line in the feed comes from: a name shown before it, and a voice the game's style sheet can colour. */
 export interface Speaker {
   name: string;
   voice: string;
 }
 
+/** How long a line stays up: long enough to read at an easy pace, within these bounds, in seconds. */
+const READING = { base: 2, perCharacter: 0.05, min: 3, max: 9 };
+const FADE_SECONDS = 0.4;
+
+interface Line {
+  text: string;
+  from?: Speaker;
+}
+
 /**
- * What just happened, in words, so nothing depends on sound: a few lines with the newest last, each fading out after
- * a while. Each line can say who it's from. The game's page and style sheet decide how it looks: a line is a `div`
- * with the class `line` and its speaker's voice, and gets `gone` as it fades.
+ * What happens, in words, so nothing depends on sound: one line at a time in one place, each waiting its turn, so a
+ * line never lands on top of another or goes unread. While something else is being read (`hold`), lines wait, and one
+ * cut short shows again afterwards. The game's page and style sheet decide how it looks: a line is a `div` with the
+ * class `line` and its speaker's voice, or `own` when it has no speaker (such as the hero's own thoughts), with the
+ * speaker's name in a `b`; it gets `gone` as it fades.
  */
 export class MessageFeed {
   /** Every line so far, oldest first, up to `keep`, so a line missed can be read again. */
-  private readonly said: Array<{ text: string; from?: Speaker }> = [];
+  private readonly said: Line[] = [];
+  private readonly lines = new LineQueue<Line>(({ text }) =>
+    Math.min(READING.max, Math.max(READING.min, READING.base + text.length * READING.perCharacter)));
+  private el: HTMLElement | null = null;
+  private lastUpdate: number | null = null;
 
   constructor(
     private readonly root: HTMLElement,
-    private readonly maxLines = 4,
-    private readonly seconds = 9,
-    private readonly fadeSeconds = 0.6,
-    private readonly keep = 60,
+    private readonly keep = 80,
   ) {}
 
   /** The lines said so far, oldest first. */
-  history(): ReadonlyArray<{ text: string; from?: Speaker }> {
+  history(): readonly Line[] {
     return this.said;
   }
 
@@ -32,25 +46,50 @@ export class MessageFeed {
     if (this.said.length > this.keep) this.said.shift();
   }
 
+  /** Queues a line to show once those before it have had their turn. */
   add(text: string, from?: Speaker): void {
     this.remember(text, from);
-    const line = document.createElement('div');
-    line.className = from ? `line ${from.voice}` : 'line';
-    if (from) {
-      const name = document.createElement('b');
-      name.textContent = from.name;
-      line.append(name, ' ');
+    this.lines.push(from ? { text, from } : { text });
+  }
+
+  /** While held, nothing shows; a line cut short shows again afterwards. */
+  hold(held: boolean): void {
+    if (this.lines.hold(held)) {
+      this.el?.remove();
+      this.el = null;
     }
-    line.append(text);
-    this.root.append(line);
-    while (this.root.children.length > this.maxLines) this.root.firstElementChild!.remove();
-    window.setTimeout(() => {
-      line.classList.add('gone');
-      window.setTimeout(() => line.remove(), this.fadeSeconds * 1000);
-    }, this.seconds * 1000);
+  }
+
+  /** Called every frame with the time in milliseconds: retires the line showing once it's been read, and shows the next. */
+  update(now: number): void {
+    const seconds = this.lastUpdate === null ? 0 : (now - this.lastUpdate) / 1000;
+    this.lastUpdate = now;
+    const { retired, shown } = this.lines.tick(seconds);
+    if (retired && this.el) {
+      const el = this.el;
+      el.classList.add('gone');
+      window.setTimeout(() => el.remove(), FADE_SECONDS * 1000);
+      this.el = null;
+    }
+    if (shown) this.show(shown);
   }
 
   clear(): void {
+    this.lines.clear();
+    this.el = null;
     this.root.replaceChildren();
+  }
+
+  private show(line: Line): void {
+    const el = document.createElement('div');
+    el.className = line.from ? `line ${line.from.voice}` : 'line own';
+    if (line.from) {
+      const name = document.createElement('b');
+      name.textContent = line.from.name;
+      el.append(name);
+    }
+    el.append(line.text);
+    this.root.append(el);
+    this.el = el;
   }
 }

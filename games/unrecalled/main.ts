@@ -10,8 +10,8 @@ import { MODEL_URLS, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import {
-  ALARM, CHAINSAW_FOUND, CHARGING, dialogueFor, ENDING, ENGINE_SAYS, GIVING_THE_ORDER, levelUp, lockedSays, MACHINE_SCANS, NPCS,
-  ON_ENTERING, OPENING, readingFor, UPRIVER, scrapDropped, stashOpened, STEP, STEP_LINES, VOICES, type Dialogue, type Line,
+  AFTER_READING, ALARM, CHAINSAW_FOUND, CHARGING, dialogueFor, ENDING, ENGINE_SAYS, GIVING_THE_ORDER, levelUp, LOCKED, MACHINE_SCANS,
+  NPCS, ON_ENTERING, OPENING, readingFor, UPRIVER, scrapDropped, STEP, STEP_LINES, VOICES, type Dialogue, type Line,
 } from './content/story';
 import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
@@ -148,7 +148,13 @@ function showReading(id: string, events: SimEvent[]): void {
     });
   } else if (reached.includes(STEP.orderClosed)) playScene(GIVING_THE_ORDER, () => say(STEP_LINES[STEP.orderClosed]));
   else present(page);
+  const thought = AFTER_READING[id];
+  if (thought && !thoughtsHad.has(id)) say([{ text: thought }]);
+  thoughtsHad.add(id);
 }
+
+/** Things the salvager has already had their thought about. */
+const thoughtsHad = new Set<string>();
 
 /** Steps whose lines wait for the scene that reaches them. */
 const AFTER_SCENE: number[] = [STEP.charged, STEP.orderClosed, STEP.ending];
@@ -214,7 +220,8 @@ const ending = new Ending(game, {
   },
   online: () => {
     hud.banner(ENDING.online.title, ENDING.online.subtitle, 4);
-    say(STEP_LINES[STEP.ending]);
+    // Shown across the screen, so kept for the log without also queuing it below.
+    for (const line of STEP_LINES[STEP.ending] ?? []) hud.remember(line.text, line.from);
   },
   card: () => {
     $('endT').textContent = ENDING.title;
@@ -329,11 +336,10 @@ function react(events: SimEvent[]): void {
         break;
       }
       case 'LevelAlarmed':
-        if (currentLevel(state).level.building) hud.say(ALARM.foundry, VOICES.foundry);
-        hud.say(ALARM.turns);
+        if (currentLevel(state).level.building) hud.say(ALARM, VOICES.foundry);
         break;
       case 'PortalLocked':
-        labels.text(e.x, e.y, 60 * PX, lockedSays(e.to, state.quest), '#ff7a62', 14);
+        labels.text(e.x, e.y, 60 * PX, LOCKED, '#ff7a62', 14);
         break;
       case 'Armed':
         hud.say(CHAINSAW_FOUND);
@@ -348,7 +354,7 @@ function react(events: SimEvent[]): void {
         labels.text(e.x, e.y, 50 * PX, REFUSALS[e.reason], '#8a98a6', 13);
         break;
       case 'LevelUp':
-        hud.say(levelUp(e.level));
+        labels.text(state.hero.x, state.hero.y, 70 * PX, levelUp(e.level), '#e8c870', 18);
         break;
       case 'PickedUp':
         if (e.kind === 'gold') labels.text(e.x, e.y, 30 * PX, `+${e.amount} scrap`, '#e8c870', 13);
@@ -357,11 +363,6 @@ function react(events: SimEvent[]): void {
       case 'Read':
         showReading(e.id, events);
         break;
-      case 'ContainerOpened': {
-        const stash = currentLevel(state).containers[e.index];
-        if (stash && !stash.weapon) hud.say(stashOpened(stash.gold, stash.healingItems));
-        break;
-      }
       case 'QuestAdvanced':
         reachStep(e.step);
         break;
