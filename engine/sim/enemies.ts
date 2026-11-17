@@ -7,7 +7,7 @@ import type { EnemyType } from './content';
 import { hurtHero } from './combat';
 import { enemyDamage } from './enemy-strength';
 import { slide } from './knockback';
-import { makeEnemy, spawnCamp } from './setup';
+import { makeEnemy, spawnCamp } from './spawning';
 import { currentLevel, type Enemy, type GameState, type LevelState, type SimEvent } from './state';
 import { followPath, steerTowards } from './walking';
 
@@ -53,7 +53,7 @@ export function updateEnemies(state: GameState, dt: number, events: SimEvent[]):
  * calming everything puts it out.
  */
 function soundAlarm(state: GameState, ls: LevelState, events: SimEvent[]): void {
-  if (ls.alarmed || !ls.enemies.some((e) => !e.dead && e.provoked && e.mode === 'chase')) return;
+  if (ls.alarmed || !ls.enemies.some((e) => !e.dead && !e.quiet && e.provoked && e.mode === 'chase')) return;
   const { building } = ls.level;
   for (const other of Object.values(state.levels)) {
     if (other === ls || (building !== undefined && other.level.building === building)) other.alarmed = true;

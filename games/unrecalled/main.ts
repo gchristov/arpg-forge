@@ -10,7 +10,7 @@ import { MODEL_URLS, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import {
-  ALARM, CHAINSAW_FOUND, CHARGING, dialogueFor, ENDING, ENGINE_CALLS, levelUp, LOCKED, MACHINE_SCANS, NPCS, ON_ENTERING, OPENING,
+  ALARM, CHAINSAW_FOUND, CHARGING, dialogueFor, ENDING, ENGINE_SAYS, levelUp, lockedSays, MACHINE_SCANS, NPCS, ON_ENTERING, OPENING,
   READINGS, scrapDropped, stashOpened, STEP, STEP_LINES, VOICES, type Dialogue, type Line,
 } from './content/story';
 import { placeOf, type Place } from './content/places';
@@ -287,7 +287,10 @@ function react(events: SimEvent[]): void {
         hud.say(ALARM.turns);
         break;
       case 'PortalLocked':
-        labels.text(e.x, e.y, 60 * PX, LOCKED[e.to] ?? 'Locked', '#ff7a62', 14);
+        labels.text(e.x, e.y, 60 * PX, lockedSays(e.to, state.quest), '#ff7a62', 14);
+        break;
+      case 'EnemyAlerted':
+        if (e.boss) hud.say(ENGINE_SAYS, VOICES.orderEngine);
         break;
       case 'Armed':
         hud.say(CHAINSAW_FOUND);
@@ -300,10 +303,6 @@ function react(events: SimEvent[]): void {
         break;
       case 'Refused':
         labels.text(e.x, e.y, 50 * PX, REFUSALS[e.reason], '#8a98a6', 13);
-        break;
-      case 'Summoned':
-        hud.say(ENGINE_CALLS.says, VOICES.orderEngine);
-        hud.say(ENGINE_CALLS.then);
         break;
       case 'LevelUp':
         hud.say(levelUp(e.level));

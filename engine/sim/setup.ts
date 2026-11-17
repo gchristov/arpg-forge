@@ -1,9 +1,7 @@
-import { dist } from '../core/math';
-import { createRng, range } from '../core/rng';
-import { isSolidAt } from '../world/tile-map';
-import type { Camp, GameContent, HeroRules } from './content';
-import { areaStrength, enemyMaxHp } from './enemy-strength';
-import type { Enemy, GameState, Hero, LevelState } from './state';
+import { createRng } from '../core/rng';
+import type { GameContent, HeroRules } from './content';
+import { spawnCamp, spawnEnemy } from './spawning';
+import type { GameState, Hero, LevelState } from './state';
 import { castForStep } from './story-cast';
 
 /**
@@ -35,16 +33,13 @@ export function createGameState(content: GameContent, seed: number, startLevel =
       level: lc.level, enemies: [], npcs: [], npcPlacements: lc.npcs, camps: lc.camps, items: [],
       containers: (lc.containers ?? []).map((c) => ({ ...c, opened: false })),
       readables: [], readablePlacements: lc.readables ?? [],
+      storySpawns: lc.spawns.filter((s) => s.fromStep),
       alarmed: false,
       ...(lc.campRespawns ? { campRespawns: lc.campRespawns } : {}),
       campTimer: lc.campRespawns?.everySeconds ?? 0,
       enemyStrength: lc.enemyStrength ?? 1,
     };
-    for (const s of lc.spawns) {
-      const enemy = makeEnemy(state, s.kind, s.x, s.y, s.strength ?? ls.enemyStrength);
-      if (s.tag) enemy.tag = s.tag;
-      ls.enemies.push(enemy);
-    }
+    for (const s of lc.spawns) if (!s.fromStep) spawnEnemy(state, ls, s);
     for (const camp of lc.camps) spawnCamp(state, ls, camp.kind, camp);
     state.levels[lc.level.id] = ls;
   }
@@ -67,40 +62,6 @@ function newHero(rules: HeroRules): Hero {
     lastHurtAt: -Infinity, dead: false, targetId: null, repathTimer: 0,
     interact: null, meleeUpgrades: 0,
   };
-}
-
-/** A new enemy of `kind` at `x`, `y`, as tough as `strength` (see `enemy-strength.ts`) makes it there. */
-export function makeEnemy(state: GameState, kind: string, x: number, y: number, strength: number): Enemy {
-  const type = state.rules.enemies[kind];
-  if (!type) throw new Error(`unknown enemy kind: ${kind}`);
-  const own = areaStrength(state, kind, strength);
-  const hp = enemyMaxHp(state, { kind, strength: own });
-  return {
-    id: state.nextId++, kind, x, y, prevX: x, prevY: y, r: type.radius,
-    facingX: range(state.rng, -1, 1), facingY: 1, moving: false, path: null,
-    homeX: x, homeY: y, hp, maxHp: hp, mode: 'idle',
-    attackCooldown: range(state.rng, 0.4, 1), windUp: -1, swing: -1,
-    wanderTimer: range(state.rng, 1, 4), wanderX: x, wanderY: y, repathTimer: 0,
-    dead: false, deadFor: 0, slamTimer: 4, summoned: false, recognised: false, provoked: false, scan: -1, slideX: 0, slideY: 0,
-    strength: own,
-  };
-}
-
-/** Scatters a group of `kind` within 2.6 tiles of the camp's centre, on free ground and not on top of the fire. */
-export function spawnCamp(state: GameState, ls: LevelState, kind: string, camp: Camp): void {
-  const count = state.rules.enemies[kind]?.groupSize ?? 1;
-  const cx = camp.tx + 0.5;
-  const cy = camp.ty + 0.5;
-  for (let k = 0; k < count; k++) {
-    for (let tries = 0; tries < 20; tries++) {
-      const x = cx + range(state.rng, -2.6, 2.6);
-      const y = cy + range(state.rng, -2.6, 2.6);
-      if (!isSolidAt(ls.level.map, x, y) && dist(x, y, cx, cy) > 1.1) {
-        ls.enemies.push(makeEnemy(state, kind, x, y, camp.strength ?? ls.enemyStrength));
-        break;
-      }
-    }
-  }
 }
 
 export function placeAt(actor: { x: number; y: number; prevX: number; prevY: number }, x: number, y: number): void {

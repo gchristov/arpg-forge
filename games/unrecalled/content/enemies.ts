@@ -5,8 +5,8 @@ export interface UnrecalledEnemy extends EnemyType {
 }
 
 /**
- * The Foundry's machines: crawlers in packs, slow heavy loaders, sentries that shoot from range, and its boss. They're
- * all calm: they recognise the salvager as one of their own and keep working, until something on their floor is hit.
+ * The Foundry's machines: crawlers in packs, slow heavy loaders, sentries that shoot from range, and its boss. All but
+ * the boss are calm: they recognise the salvager as one of their own and keep working, until something on their floor is hit.
  */
 export const ENEMIES: Record<string, UnrecalledEnemy> = {
   crawler: {
@@ -21,10 +21,10 @@ export const ENEMIES: Record<string, UnrecalledEnemy> = {
     name: 'Sentry', hp: 55, damage: [7, 12], speed: 1.8, range: 6.5, ranged: true, cooldown: 2.0, windUp: 0.5,
     aggro: 8, xp: 20, drops: { gold: [5, 12], healingChance: 0.2 }, radius: 0.3, groupSize: 2, calm: true,
   },
+  // For now a short fight with one attack, so the story is what's tried: it comes for the salvager on sight, and
+  // neither slams nor calls in help.
   orderEngine: {
-    name: 'The Order Engine', hp: 1100, damage: [13, 21], speed: 1.4, range: 1.3, cooldown: 1.5, windUp: 0.55, aggro: 8,
-    xp: 250, drops: { gold: [120, 160], healingChance: 1, extraHealingItems: 1 }, radius: 0.62, boss: true, groupSize: 1, calm: true,
-    slam: { everySeconds: [5, 7], reach: 6, radius: 1.8, delay: 1.0, damage: [18, 26] },
-    summon: { belowHealthShare: 0.5, kind: 'crawler', count: 4, distance: 1.8 },
+    name: 'The Order Engine', hp: 300, damage: [13, 21], speed: 1.4, range: 1.3, cooldown: 1.5, windUp: 0.55, aggro: 8,
+    xp: 250, drops: { gold: [120, 160], healingChance: 1, extraHealingItems: 1 }, radius: 0.62, boss: true, groupSize: 1,
   },
 };

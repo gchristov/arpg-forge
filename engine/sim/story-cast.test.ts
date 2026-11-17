@@ -62,6 +62,25 @@ describe('story cast', () => {
     expect(where(state)).toEqual({ village: 0, cellar: 1, tracks: 1 });
   });
 
+  it('brings an enemy in once the story reaches its step, and puts what it carried in the hero\'s hand when it\'s defeated', () => {
+    const content: GameContent = {
+      levels: [room('village', { spawns: [{ kind: 'brute', x: 4.5, y: 2.5, tag: 'thief', fromStep: 1, carries: 'saw', strength: 0.2 }] })],
+      startLevel: 'village', hero: { ...TEST_HERO, weapons: { saw: {} } }, enemies: TEST_ENEMIES, npcRadius: 0.32, npcs: {},
+      quest: [{}, { reachedBy: { type: 'talk', npcKind: 'elder' } }, { reachedBy: { type: 'defeat', tag: 'thief' } }],
+    };
+    const state = createGameState(content, 1);
+    expect(currentLevel(state).enemies).toEqual([]);
+    jumpToStep(state, 1);
+    const [thief] = currentLevel(state).enemies;
+    expect(thief?.tag).toBe('thief');
+    jumpToStep(state, 1);
+    expect(currentLevel(state).enemies.length).toBe(1);
+    state.hero.hp = state.hero.maxHp = 1e6;
+    const events = run(state, 10, [{ type: 'attack', enemyId: thief!.id }]);
+    expect(events.some((e) => e.type === 'Armed' && e.weapon === 'saw')).toBe(true);
+    expect([state.hero.weapon, state.quest]).toEqual(['saw', 2]);
+  });
+
   it('stops the hero walking up to someone the story has taken away', () => {
     const state = story();
     const elder = currentLevel(state).npcs[0]!;

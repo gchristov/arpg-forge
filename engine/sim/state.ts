@@ -1,7 +1,7 @@
 import type { Vec2 } from '../core/math';
 import type { Rng } from '../core/rng';
 import type { Level } from '../world/level';
-import type { Camp, CampRespawns, Container, EnemyType, HeroRules, NpcPlacement, NpcType, QuestStep, Readable } from './content';
+import type { Camp, CampRespawns, Container, EnemySpawn, EnemyType, HeroRules, NpcPlacement, NpcType, QuestStep, Readable } from './content';
 import type { Walker } from './walking';
 
 export interface Actor extends Walker {
@@ -99,6 +99,10 @@ export interface Enemy extends Actor {
   strength: number;
   /** Names this one enemy, for a quest step reached by defeating it. */
   tag?: string;
+  /** A weapon of the hero's it gives up when defeated. */
+  carries?: string;
+  /** Fighting it doesn't sound the alarm. */
+  quiet?: boolean;
 }
 
 export interface Projectile {
@@ -150,6 +154,8 @@ export interface LevelState {
   /** What there is to read or use here at the story's current step, from `readablePlacements`. */
   readables: Readable[];
   readablePlacements: Readable[];
+  /** Enemies the story hasn't brought in yet, each turning up once the quest reaches its `fromStep`. */
+  storySpawns: EnemySpawn[];
   /** Whether the level's alarm is sounding: from the first fight with its calm enemies until the story calms everything. */
   alarmed: boolean;
   camps: Camp[];

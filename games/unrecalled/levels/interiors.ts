@@ -111,7 +111,7 @@ const KEY: Record<string, RoomKey> = {
   k: { ...solid(Prop.Computer), light: { radius: 2.2, intensity: 0.6, colour: 'cyan', flicker: 0.6 } },
   S: { ...solid(Prop.Cache), container: { gold: 35, healingItems: 1 } },
   G: {
-    portal: { to: 'intake', stepOut: { x: 0, y: 0.9 }, start: { x: 0, y: 0.9 }, lockedUntilStep: STEP.powerOn },
+    portal: { to: 'intake', stepOut: { x: 0, y: 0.9 }, start: { x: 0, y: 0.9 }, lockedUntilStep: STEP.toldByMags },
     light: { radius: 2.2, intensity: 0.8, colour: 'amber', flicker: 0.2, offset: { x: 0, y: 0.7 } },
   },
   U: { prop: Prop.Stairs, portal: { to: 'depotOffice', stepOut: { x: 0, y: 0.9 }, start: { x: 0, y: 0.9 } } },
@@ -119,8 +119,9 @@ const KEY: Record<string, RoomKey> = {
     portal: { to: 'tradingPost', stepOut: { x: 0, y: -0.9 }, start: { x: 0, y: -0.9 } },
     light: { radius: 1.8, intensity: 0.5, colour: 'amber', flicker: 0, offset: { x: 0, y: -0.7 } },
   },
-  '2': { npc: { kind: 'trader', name: 'Mags' } },
-  '3': { npc: { kind: 'tinker', name: 'Pell' } },
+  // Mags and Pell are at work until the story calls them out to the fire; see `buildInterior`.
+  '2': { npc: { kind: 'trader', name: 'Mags', untilStep: STEP.powerOn } },
+  '3': { npc: { kind: 'tinker', name: 'Pell', untilStep: STEP.freed } },
 };
 
 /** What each room's terminal holds: the pump log from the night of the flood, and the depot's delivery ledger. */
@@ -131,5 +132,9 @@ export function buildInterior(id: InteriorId): LevelContent {
   const readable = READABLE_BY_ROOM[id];
   // Lit terminals are kept for things to read, so a desk stands where an empty one would.
   const key = readable ? { ...KEY, k: { ...KEY.k!, readable } } : { ...KEY, k: solid(Prop.Desk) };
-  return roomFromRows({ id, name, subtitle, floor: Ground.Plate, rows, key });
+  const room = roomFromRows({ id, name, subtitle, floor: Ground.Plate, rows, key });
+  // Mags is back in her shop from showing the salvager the way until she goes out to welcome the foreman home.
+  const mags = room.npcs.find((n) => n.kind === 'trader');
+  if (mags) room.npcs.push({ ...mags, fromStep: STEP.toldByMags, untilStep: STEP.freed });
+  return room;
 }

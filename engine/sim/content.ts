@@ -12,6 +12,12 @@ export interface EnemySpawn extends SpawnPoint {
   tag?: string;
   /** Its own strength, in place of its level's `enemyStrength`. */
   strength?: number;
+  /** The quest step it turns up at; there from the start if not given. */
+  fromStep?: number;
+  /** One of the hero's weapons, put in their hand when it's defeated. */
+  carries?: string;
+  /** Fighting it doesn't sound the level's alarm, so the calm enemies around it keep taking the hero for one of their own. */
+  quiet?: boolean;
 }
 
 /**

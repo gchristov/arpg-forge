@@ -166,6 +166,21 @@ describe('calm enemies', () => {
     expect(ofType(later, 'LevelAlarmed')).toHaveLength(0);
   });
 
+  it('keep taking the hero for one of their own while they fight a quiet one, which sounds no alarm', () => {
+    const state = arena(Array.from({ length: 6 }, () => '.'.repeat(40)), { x: 3.5, y: 2.5 }, [
+      { kind: 'worker', x: 4.5, y: 2.5 }, { kind: 'worker', x: 36.5, y: 2.5 },
+    ]);
+    const [quiet, far] = enemiesOf(state);
+    quiet!.quiet = true;
+    const events = run(state, 1, [{ type: 'attack', enemyId: quiet!.id }]);
+    expect(quiet!.mode).toBe('chase');
+    expect(ofType(events, 'LevelAlarmed')).toHaveLength(0);
+    quiet!.dead = true;
+    state.hero.x = state.hero.prevX = 33.5;
+    run(state, 1);
+    expect(far!.mode).toBe('idle');
+  });
+
   it('keep working behind a wall while the room next door fights, then come for the hero once they see them', () => {
     const rows = ['.....#.....', '.....#.....', '...........'];
     const state = arena(rows, { x: 1.5, y: 1.5 }, [{ kind: 'worker', x: 2.5, y: 1.5 }, { kind: 'worker', x: 7.5, y: 1.5 }]);

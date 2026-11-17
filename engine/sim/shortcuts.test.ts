@@ -16,6 +16,21 @@ describe('shortcuts', () => {
     expect([state.quest, state.hero.weapon]).toEqual([2, 'saw']);
   });
 
+  it('takes away an enemy defeated on the way, whether it has turned up yet or not, with what it carried in hand', () => {
+    const state = withQuest([{}, { reachedBy: { type: 'defeat', tag: 'guard' } }, { reachedBy: { type: 'defeat', tag: 'thief' } }]);
+    const ls = state.levels.arena!;
+    ls.enemies[0]!.tag = 'guard';
+    ls.storySpawns.push({ kind: 'brute', x: 4, y: 4, tag: 'thief', fromStep: 1, carries: 'saw' });
+    jumpToStep(state, 2);
+    expect([ls.enemies.length, ls.storySpawns.length, state.hero.weapon]).toEqual([0, 0, 'saw']);
+  });
+
+  it('takes away the enemy whose kill reached a step on the way', () => {
+    const state = withQuest([{}, { reachedBy: { type: 'kill', enemyKind: 'worker' } }]);
+    jumpToStep(state, 1);
+    expect(state.levels.arena!.enemies).toEqual([]);
+  });
+
   it('keeps a jump within the story', () => {
     const state = withQuest([{}, { reachedBy: { type: 'talk', npcKind: 'smith' } }]);
     jumpToStep(state, 9);

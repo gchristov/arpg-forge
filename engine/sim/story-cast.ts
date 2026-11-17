@@ -1,4 +1,5 @@
 import type { StorySpan } from './content';
+import { spawnEnemy } from './spawning';
 import type { GameState, LevelState, Npc } from './state';
 
 /** Whether the story is at a step where something with this span is in the world. */
@@ -7,11 +8,15 @@ export const inStory = (state: GameState, span: StorySpan): boolean =>
 
 /**
  * Puts the townspeople and the things to read where the story has them at its current step, and takes away those it
- * has moved on from, on every level. Someone staying where they were is left as they are.
+ * has moved on from, on every level, and brings in the enemies it has reached. Someone staying where they were is left
+ * as they are.
  */
 export function castForStep(state: GameState): void {
   for (const ls of Object.values(state.levels)) {
     castNpcs(state, ls);
+    const due = ls.storySpawns.filter((s) => state.quest >= s.fromStep!);
+    for (const spawn of due) spawnEnemy(state, ls, spawn);
+    if (due.length) ls.storySpawns = ls.storySpawns.filter((s) => !due.includes(s));
     const readables = ls.readablePlacements.filter((r) => inStory(state, r));
     if (readables.length !== ls.readables.length || readables.some((r, i) => r !== ls.readables[i])) {
       ls.readables = readables;
