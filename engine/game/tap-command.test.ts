@@ -43,7 +43,7 @@ describe('tapCommand', () => {
 
   it('talks to an NPC tapped near its body', () => {
     const state = room();
-    currentLevel(state).npcs.push({ ...state.hero, id: 99, kind: 'elder', name: 'Elder', x: 8.5, y: 2.5 } as Npc);
+    currentLevel(state).npcs.push({ ...state.hero, id: 99, kind: 'elder', name: 'Elder', x: 8.5, y: 2.5, placement: 0 } as Npc);
     expect(tapTile(state, 8.5, 2.7)).toEqual({ type: 'talk', npcId: 99 });
   });
 

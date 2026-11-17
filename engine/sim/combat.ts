@@ -90,6 +90,7 @@ function killEnemy(state: GameState, e: Enemy, events: SimEvent[]): void {
   dropEnemyLoot(state, e.kind, e.x, e.y);
   events.push({ type: 'EnemyKilled', enemyId: e.id, kind: e.kind, x: e.x, y: e.y, boss: Boolean(type.boss) });
   advanceQuest(state, { type: 'kill', enemyKind: e.kind }, events);
+  if (e.tag) advanceQuest(state, { type: 'defeat', tag: e.tag }, events);
   if (currentLevel(state).enemies.every((other) => other.dead)) events.push({ type: 'LevelCleared', levelId: state.levelId });
 }
 

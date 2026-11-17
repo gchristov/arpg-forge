@@ -3,6 +3,7 @@ import { planRoute } from '../world/pathfinding';
 import type { QuestTrigger, Service } from './content';
 import { dropItem } from './loot';
 import { currentLevel, type GameState, type Hero, type SimEvent } from './state';
+import { castForStep } from './story-cast';
 import { arm } from './weapons';
 
 /** The hero talks or opens once this close. */
@@ -140,6 +141,7 @@ export function advanceQuest(state: GameState, trigger: QuestTrigger, events: Si
     if (t && sameTrigger(t, trigger)) {
       state.quest = step;
       if (steps[step]!.calmsEverything) calmEverything(state);
+      castForStep(state);
       events.push({ type: 'QuestAdvanced', step });
       return;
     }
@@ -169,6 +171,8 @@ function sameTrigger(a: QuestTrigger, b: QuestTrigger): boolean {
       return b.type === 'enter' && a.levelId === b.levelId;
     case 'kill':
       return b.type === 'kill' && a.enemyKind === b.enemyKind;
+    case 'defeat':
+      return b.type === 'defeat' && a.tag === b.tag;
     case 'use':
       return b.type === 'use' && a.id === b.id;
     case 'arm':

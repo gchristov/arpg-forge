@@ -3,7 +3,8 @@ import { createRng, range } from '../core/rng';
 import { isSolidAt } from '../world/tile-map';
 import type { Camp, GameContent, HeroRules } from './content';
 import { areaStrength, enemyMaxHp } from './enemy-strength';
-import type { Enemy, GameState, Hero, LevelState, Npc } from './state';
+import type { Enemy, GameState, Hero, LevelState } from './state';
+import { castForStep } from './story-cast';
 
 /**
  * A new game from the game's content: every level populated, the hero at the start of `startLevel` (by default
@@ -31,19 +32,23 @@ export function createGameState(content: GameContent, seed: number, startLevel =
   };
   for (const lc of content.levels) {
     const ls: LevelState = {
-      level: lc.level, enemies: [], npcs: [], camps: lc.camps, items: [],
+      level: lc.level, enemies: [], npcs: [], npcPlacements: lc.npcs, camps: lc.camps, items: [],
       containers: (lc.containers ?? []).map((c) => ({ ...c, opened: false })),
-      readables: lc.readables ?? [],
+      readables: [], readablePlacements: lc.readables ?? [],
       alarmed: false,
       ...(lc.campRespawns ? { campRespawns: lc.campRespawns } : {}),
       campTimer: lc.campRespawns?.everySeconds ?? 0,
       enemyStrength: lc.enemyStrength ?? 1,
     };
-    for (const s of lc.spawns) ls.enemies.push(makeEnemy(state, s.kind, s.x, s.y, ls.enemyStrength));
+    for (const s of lc.spawns) {
+      const enemy = makeEnemy(state, s.kind, s.x, s.y, s.strength ?? ls.enemyStrength);
+      if (s.tag) enemy.tag = s.tag;
+      ls.enemies.push(enemy);
+    }
     for (const camp of lc.camps) spawnCamp(state, ls, camp.kind, camp);
-    for (const n of lc.npcs) ls.npcs.push(makeNpc(state, n.kind, n.name, n.x, n.y));
     state.levels[lc.level.id] = ls;
   }
+  castForStep(state);
   const start = state.levels[startLevel]?.level.start;
   if (!start) throw new Error(`unknown level: ${startLevel}`);
   placeAt(state.hero, start.x, start.y);
@@ -78,13 +83,6 @@ export function makeEnemy(state: GameState, kind: string, x: number, y: number, 
     wanderTimer: range(state.rng, 1, 4), wanderX: x, wanderY: y, repathTimer: 0,
     dead: false, deadFor: 0, slamTimer: 4, summoned: false, recognised: false, provoked: false, scan: -1, slideX: 0, slideY: 0,
     strength: own,
-  };
-}
-
-function makeNpc(state: GameState, kind: string, name: string, x: number, y: number): Npc {
-  return {
-    id: state.nextId++, kind, name, x, y, prevX: x, prevY: y, r: state.rules.npcRadius,
-    facingX: 0, facingY: 1, moving: false, path: null,
   };
 }
 
