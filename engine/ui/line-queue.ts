@@ -13,6 +13,11 @@ export class LineQueue<T> {
     return this.current?.line ?? null;
   }
 
+  /** Nothing showing and nothing waiting. */
+  get idle(): boolean {
+    return !this.current && this.waiting.length === 0;
+  }
+
   push(line: T): void {
     this.waiting.push(line);
   }

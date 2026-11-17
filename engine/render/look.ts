@@ -55,8 +55,12 @@ export interface BuildingKit {
   roofProps?: Array<string | { name: string; width: number }>;
   /** The light inside, seen through the door. */
   inside: number;
-  /** Lit windows: the window piece's glass, by material name, glows `colour` and casts the light `light` outside. */
-  glass?: { material: string; colour: number; light: string };
+  /**
+   * Lit windows: the window piece's glass, by material name, glows `colour` and casts the light `light` outside. With
+   * `dark`, the windows start unlit and cast no light, for the game to light a storey at a time with
+   * `SceneRenderer.lightWindows`.
+   */
+  glass?: { material: string; colour: number; light: string; dark?: boolean };
   /** A lit sign over the door. */
   sign?: number;
   /** A colour the walls, columns, bands and door are multiplied by, so buildings from one kit can each have their own paint. */

@@ -134,11 +134,11 @@ const STRUCTURES: Record<string, StructureLook> = {
     glass: { material: 'M_Glass', colour: 0x7ab8c8, light: 'cyan' },
     sign: undefined,
   }),
-  // Foundry 2, upriver: dark windows and no sign, since its lights only come on as the story ends.
+  // Foundry 2, upriver: dark windows and no sign, since its lights only come on, storey by storey, as the story ends.
   foundry: building(0x34383e, {
     tint: 0x8a909a, wall: ['town-wall-band', 'town-wall-astra'], window: 'town-window-astra',
     roofProps: [{ name: 'tank', width: 1.1 }, { name: 'cargo-roof', width: 1.8 }, 'roof-fan'],
-    inside: 0x050608, glass: undefined, sign: undefined,
+    inside: 0x050608, glass: { material: 'M_Glass', colour: 0xffc070, light: 'amber', dark: true }, sign: undefined,
   }),
 };
 

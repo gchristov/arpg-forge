@@ -107,6 +107,11 @@ export class Hud {
     this.feed.add(text, from);
   }
 
+  /** Every line said has had its turn in the feed. */
+  get quiet(): boolean {
+    return this.feed.idle;
+  }
+
   /** Keeps something read elsewhere, such as a page of dialogue, in the log without showing it in the feed. */
   remember(text: string, from?: Speaker): void {
     this.feed.remember(text, from);

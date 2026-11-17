@@ -40,6 +40,11 @@ export class MessageFeed {
     private readonly keep = 80,
   ) {}
 
+  /** Every line has had its turn: nothing showing and nothing waiting. */
+  get idle(): boolean {
+    return this.lines.idle;
+  }
+
   /** The lines said so far, oldest first. */
   history(): readonly Line[] {
     return this.said;

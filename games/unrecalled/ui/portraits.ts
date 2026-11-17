@@ -16,6 +16,7 @@ const BY_NAME: Record<string, string> = {
   [SPEAKERS.foreman]: 'foreman',
   [SPEAKERS.mags]: 'trader',
   [SPEAKERS.pell]: 'tinker',
+  [VOICES.odell.name]: 'foreman',
   [VOICES.mags.name]: 'trader',
   [VOICES.pell.name]: 'tinker',
   [VOICES.orderEngine.name]: 'orderEngine',

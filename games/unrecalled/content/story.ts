@@ -45,7 +45,7 @@ export const STEP = {
 /** Back in Rustbelt by the fire, where the salvager arrives with the foreman. */
 const BY_THE_FIRE = { levelId: 'rustbelt', x: 22.5, y: 15.5 };
 /** Upriver, outside the second Foundry, where the story ends. */
-export const UPRIVER = { levelId: 'upriver', x: 22.5, y: 24.5 };
+export const UPRIVER = { levelId: 'upriver', x: 79.5, y: 63.5 };
 
 /** The quest: what the HUD says at each step, and what moves the quest to it. */
 export const QUEST: Array<QuestStep & { text: string }> = [
@@ -86,8 +86,10 @@ export const VOICES = {
   foundry: { name: 'Foundry', voice: 'foundry' },
   orderEngine: { name: 'The Order Engine', voice: 'foundry' },
   foundry2: { name: 'Foundry 2', voice: 'foundry' },
+  odell: { name: 'Odell', voice: 'person' },
   mags: { name: 'Mags', voice: 'person' },
   pell: { name: 'Pell', voice: 'person' },
+  bell: { name: 'The bell', voice: 'sound' },
 } satisfies Record<string, Speaker>;
 
 /** A line in the message feed. */
@@ -298,11 +300,29 @@ export const STEP_LINES: Partial<Record<number, Line[]>> = {
   ],
   [STEP.engineDown]: [{ text: 'It’s down, and every machine in here stopped with it. Odell must be in that crate.' }],
   [STEP.orderClosed]: [{ text: 'Behind me the machines are turning round, carrying our things back up the line.' }],
-  [STEP.freed]: [{ text: 'Rustbelt, at dawn. The machines brought everything home, and the bell is by the fire.' }],
   [STEP.ending]: [{ text: 'FOUNDRY 2 ONLINE. AWAITING ORDERS.', from: VOICES.foundry2 }],
   [STEP.bellRung]: [
     { text: '…That’s our bell.', from: VOICES.mags },
     { text: 'I could use a couple of these machines in the workshop, you know.', from: VOICES.pell },
+  ],
+};
+
+/**
+ * Home at dawn, played as a scene once the salvager brings the foreman back: the town welcomes him, the salvager rings
+ * the bell, and he says what he has known all along.
+ */
+export const HOMECOMING: { welcome: Line[]; bell: Line; confession: Line[] } = {
+  welcome: [
+    { text: 'Odell! You stubborn old goat. You’re alive!', from: VOICES.mags },
+    { text: 'Takes more than a Foundry to keep me in a box.', from: VOICES.odell },
+    { text: 'And they brought it all back. Even my good spanner.', from: VOICES.pell },
+    { text: 'Go on, ring the bell. It’s been too quiet round here.', from: VOICES.odell },
+  ],
+  bell: { text: 'DONG… … DONG… … DONG…', from: VOICES.bell },
+  confession: [
+    { text: 'I carved that post on the jetty. I knew what you were the morning you woke up.', from: VOICES.odell },
+    { text: 'It didn’t matter then, and it doesn’t now. So, what happens now?', from: VOICES.odell },
+    { text: '“I don’t know yet.”' },
   ],
 };
 
