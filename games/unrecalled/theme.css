@@ -44,6 +44,11 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 #feed .line.own{font-style:italic;color:#c8d4dc;border-left-color:var(--muted)}
 #feed .line.foundry{font-family:ui-monospace,Menlo,monospace;font-size:14px;color:#ffb088;border-left-color:#ff7a5a}
 #feed .line.foundry b{color:#ff7a5a;font-style:normal}
+/* Whoever is speaking looks out from the box's left. */
+#feed .line.pictured,#dialog.pictured{display:grid;grid-template-columns:64px 1fr;column-gap:14px;align-items:start}
+#feed .line.pictured img,#dialog img{width:64px;height:64px;border-radius:6px;background:radial-gradient(circle at 50% 35%,#2a3a48,#0c1116 75%);border:1px solid #3a4a58;object-fit:cover}
+#dialog.pictured .choices{grid-column:1/-1}
+@media (max-width:440px){#feed .line.pictured,#dialog.pictured{grid-template-columns:52px 1fr;column-gap:12px}#feed .line.pictured img,#dialog img{width:52px;height:52px}}
 @keyframes feedIn{from{opacity:0;transform:translateY(-4px)}}
 @media (prefers-reduced-motion:reduce){#quest.new,#feed .line{animation:none}}
 .stats{display:grid;justify-items:end;gap:4px;font:600 14px/1 var(--body);text-shadow:0 1px 3px #000}

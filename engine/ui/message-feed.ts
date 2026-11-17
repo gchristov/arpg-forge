@@ -17,11 +17,12 @@ interface Line {
 }
 
 /**
- * What happens, in words, so nothing depends on sound: one line at a time in one place, typed out as if spoken, each waiting its turn, so a
- * line never lands on top of another or goes unread. While something else is being read (`hold`), lines wait, and one
- * cut short shows again afterwards. The game's page and style sheet decide how it looks: a line is a `div` with the
- * class `line` and its speaker's voice, or `own` when it has no speaker (such as the hero's own thoughts), with the
- * speaker's name in a `b`; it gets `gone` as it fades.
+ * What happens, in words, so nothing depends on sound: one line at a time in one place, typed out as if spoken, each
+ * waiting its turn, so a line never lands on top of another or goes unread. While something else is being read
+ * (`hold`), lines wait, and one cut short shows again afterwards. The game's page and style sheet decide how it looks: a
+ * line is a `div` with the class `line` and its speaker's voice, or `own` when it has no speaker (such as the hero's own
+ * thoughts), with the speaker's name in a `b`; it gets `gone` as it fades. With a portrait it's also `pictured`, with
+ * the `img` first and the words in a `div` after it.
  */
 export class MessageFeed {
   /** Every line so far, oldest first, up to `keep`, so a line missed can be read again. */
@@ -34,6 +35,8 @@ export class MessageFeed {
 
   constructor(
     private readonly root: HTMLElement,
+    /** A picture of whoever says a line, or of the hero for their own thoughts, as an image URL, if there is one. */
+    private readonly portraitOf: (from?: Speaker) => string | undefined = () => undefined,
     private readonly keep = 80,
   ) {}
 
@@ -89,13 +92,23 @@ export class MessageFeed {
   private show(line: Line): void {
     const el = document.createElement('div');
     el.className = line.from ? `line ${line.from.voice}` : 'line own';
+    const portrait = this.portraitOf(line.from);
+    let words: HTMLElement = el;
+    if (portrait) {
+      const picture = document.createElement('img');
+      picture.src = portrait;
+      picture.alt = '';
+      words = document.createElement('div');
+      el.classList.add('pictured');
+      el.append(picture, words);
+    }
     if (line.from) {
       const name = document.createElement('b');
       name.textContent = line.from.name;
-      el.append(name);
+      words.append(name);
     }
     const text = document.createElement('span');
-    el.append(text);
+    words.append(text);
     const typewriter = new Typewriter(text);
     typewriter.start(line.text);
     this.typing = { typewriter, seconds: 0 };

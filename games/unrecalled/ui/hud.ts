@@ -19,11 +19,12 @@ const $ = (id: string): HTMLElement => document.getElementById(id)!;
 export class Hud {
   private readonly shown = new ShownValues();
   private readonly bannerBox = new Banner({ root: $('banner'), title: $('bannerT'), subtitle: $('bannerS') });
-  private readonly feed = new MessageFeed($('feed'));
+  private readonly feed: MessageFeed;
   /** Keeps the EMP's button hidden even once the salvager has it, while the scene that gives it plays. */
   empWithheld = false;
 
-  constructor(send: (command: Command) => void) {
+  constructor(send: (command: Command) => void, portraitOf: (from?: Speaker) => string | undefined) {
+    this.feed = new MessageFeed($('feed'), portraitOf);
     // The log lists every line and page so far, for one missed or closed too soon.
     $('logOpen').addEventListener('pointerdown', (e) => {
       e.preventDefault();

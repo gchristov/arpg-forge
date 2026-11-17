@@ -116,9 +116,11 @@ export interface Dialogue {
   written?: boolean;
 }
 
-const FOREMAN = 'Foreman Odell';
-const MAGS = 'Mags the Trader';
-const PELL = 'Pell the Tinker';
+/** The names the townspeople's dialogue is said under. */
+export const SPEAKERS = { foreman: 'Foreman Odell', mags: 'Mags the Trader', pell: 'Pell the Tinker' };
+const FOREMAN = SPEAKERS.foreman;
+const MAGS = SPEAKERS.mags;
+const PELL = SPEAKERS.pell;
 const FOUNDRY = 'Foundry';
 
 /** What each townsperson says, given the quest step, how often the salvager has gone down and the weapon in their hand. */

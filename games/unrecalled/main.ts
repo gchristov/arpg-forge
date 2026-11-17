@@ -6,6 +6,7 @@ import { PX } from '../../engine/game/world-view';
 import { servicePrice } from '../../engine/sim/interaction';
 import { currentLevel, type RefusalReason, type SimEvent } from '../../engine/sim/state';
 import { DialogBox } from '../../engine/ui/dialog-box';
+import { Portraits } from './ui/portraits';
 import { SPEAKING } from '../../engine/ui/typewriter';
 import { MODEL_URLS, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
@@ -29,10 +30,14 @@ const game = new Game({
 const { state, labels, view, platform } = game;
 const $ = (id: string): HTMLElement => document.getElementById(id)!;
 const dialog = new DialogBox({ root: $('dialog'), title: $('dlgT'), text: $('dlgP'), choices: $('dlgO') }, SPEAKING);
-const hud = new Hud((command) => {
-  if (command.type === 'attackNearest') dialog.close();
-  game.send(command);
-});
+const portraits = new Portraits((sitters) => game.portraits(sitters));
+const hud = new Hud(
+  (command) => {
+    if (command.type === 'attackNearest') dialog.close();
+    game.send(command);
+  },
+  (from) => portraits.of(from),
+);
 
 const synth = new Synth();
 // Sound starts off until the player turns it on.
@@ -92,6 +97,7 @@ function showDialogue(npcId: number, kind: string): void {
 function present(d: Dialogue, npc?: { npcId: number; kind: string }, then?: () => void): void {
   const services = npc ? NPCS[npc.kind]?.services ?? [] : [];
   hud.remember(d.text, { name: d.title, voice: 'page' });
+  showPortrait(d.written ? undefined : portraits.ofName(d.title));
   dialog.open(
     d.title,
     d.text,
@@ -116,6 +122,14 @@ function present(d: Dialogue, npc?: { npcId: number; kind: string }, then?: () =
     npc?.npcId ?? null,
     !d.written,
   );
+}
+
+/** The speaker's face beside a page of dialogue; signs and screens have none. */
+function showPortrait(url: string | undefined): void {
+  const picture = $('dlgPic') as HTMLImageElement;
+  picture.hidden = !url;
+  $('dialog').classList.toggle('pictured', Boolean(url));
+  if (url) picture.src = url;
 }
 
 /** Pages of dialogue one after another, then `then`. */

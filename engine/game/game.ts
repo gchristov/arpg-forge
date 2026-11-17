@@ -6,6 +6,7 @@ import type { Platform } from '../platform/platform';
 import { webPlatform } from '../platform/web';
 import { DebugOverlay } from '../render/debug-overlay';
 import type { Look } from '../render/look';
+import { drawPortraits, type Sitter } from '../render/portraits';
 import { ModelLibrary } from '../render/models';
 import { SceneRenderer } from '../render/scene-renderer';
 import type { GameContent } from '../sim/content';
@@ -71,13 +72,13 @@ export class Game {
   private holdWalks = false;
   /** Where the camera looks instead of at the hero, such as for a moment the game shows; null follows the hero. */
   cameraFocus: { x: number; y: number } | null = null;
+  private readonly models = new ModelLibrary();
 
   constructor(setup: GameSetup) {
     const params = new URLSearchParams(location.search);
     const debugMode = params.has('debug');
-    const models = new ModelLibrary();
-    this.renderer = new SceneRenderer(setup.canvas, setup.look, models);
-    this.modelsLoaded = models.load(setup.models);
+    this.renderer = new SceneRenderer(setup.canvas, setup.look, this.models);
+    this.modelsLoaded = this.models.load(setup.models);
     this.pointer = new PointerInput(setup.canvas);
     this.labels = new WorldLabels(document.body);
     this.platform = webPlatform(setup.saveKey);
@@ -94,7 +95,7 @@ export class Game {
     const fade = new ScreenFade(document.body, FADE_SECONDS);
     this.view = new WorldView(this.state, this.renderer, setup.look, this.labels, fade, this.project);
 
-    if (debugMode) Object.assign(window, { game: { state: this.state, send: (c: Command) => this.send(c), start: () => this.start() } });
+    if (debugMode) Object.assign(window, { game: { state: this.state, send: (c: Command) => this.send(c), start: () => this.start(), portraits: (s: Record<string, Sitter>) => this.portraits(s) } });
     // 1 heals, 2 and space attack, and 3 onwards use the skills in order.
     bindKeys({
       '1': () => this.send({ type: 'heal' }),
@@ -128,6 +129,12 @@ export class Game {
       requestAnimationFrame(frame);
     };
     requestAnimationFrame(frame);
+  }
+
+  /** Head-and-shoulders pictures of the sitters, as image URLs by name, once the models have loaded. */
+  async portraits(sitters: Record<string, Sitter>): Promise<Record<string, string>> {
+    await this.modelsLoaded;
+    return drawPortraits(this.models, sitters);
   }
 
   /** Starts play once the models have loaded. */
