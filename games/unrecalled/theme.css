@@ -63,7 +63,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 #dialog .choices{display:flex;gap:8px;justify-content:flex-end}
 #dialog .choices button{font:600 14px/1 var(--body);color:var(--ink);background:transparent;border:1px solid #3a4a58;border-radius:6px;padding:10px 14px}
 #dialog .choices em{font-style:normal;color:var(--muted);margin-left:8px}
-#end{position:fixed;inset:0;display:grid;place-items:center;text-align:center;padding:24px 16px;background:radial-gradient(ellipse at 50% 40%,rgba(20,40,52,.6),rgba(4,6,8,.96) 70%);z-index:5}
+#end{position:fixed;inset:0;display:grid;place-items:center;text-align:center;padding:24px 16px;background:radial-gradient(ellipse at 50% 40%,rgba(20,40,52,.6),rgba(4,6,8,.96) 70%);z-index:6}
 #end .t{font:800 clamp(26px,7vw,44px)/1.15 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
 #end .s{font:800 clamp(26px,7vw,44px)/1.15 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--signal);margin-top:6px;text-shadow:0 0 28px rgba(106,216,255,.35)}
 #end .thanks{font:500 16px/1.4 var(--body);color:var(--muted);margin:28px 0 20px}
