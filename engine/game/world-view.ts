@@ -116,6 +116,7 @@ export class WorldView {
     const walls = this.blocksSight();
     renderer.spatter.clear((tx, ty) => !walls(tx, ty));
     renderer.follow(state.hero.x, state.hero.y, 0, true);
+    renderer.lightHero(state.hero.x, state.hero.y);
   }
 
   react(events: SimEvent[]): void {

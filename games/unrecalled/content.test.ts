@@ -20,6 +20,14 @@ describe('Unrecalled content', () => {
     expect(READABLE_IDS.filter((id) => !ids.includes(id))).toEqual([]);
   });
 
+  it('puts a panel beside every door the story keeps locked, saying what opens it', () => {
+    const unexplained = content.levels.flatMap((l) => l.level.portals
+      .filter((p) => p.lockedUntilStep !== undefined)
+      .filter((p) => !(l.readables ?? []).some((r) => Math.abs(r.tx - p.tx) <= 2 && Math.abs(r.ty - p.ty) <= 2))
+      .map((p) => `${l.level.id} → ${p.to}`));
+    expect(unexplained).toEqual([]);
+  });
+
   it('gives every actor kind a model that was built', () => {
     const kinds = ['hero', ...Object.keys(content.enemies)];
     const missing = kinds.filter((kind) => {

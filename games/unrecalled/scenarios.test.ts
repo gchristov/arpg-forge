@@ -148,7 +148,7 @@ describe('Unrecalled scenarios', () => {
     expect(done).toEqual([
       'foreman in rustbelt', TAG.raider, 'foreman in rustbelt', 'tinker in workshop', TAG.switchLoader, 'switch',
       'trader in rustbelt', TAG.tagsLoader, 'access-terminal', 'charging-station', 'orderEngine', 'crate', 'foreman in assembly',
-      'order-terminal', 'foreman in assembly', 'bell', 'foreman in rustbelt', 'awaiting-board',
+      'order-terminal', 'foreman in assembly', 'bell', 'foreman in rustbelt',
     ]);
     expect([state.levelId, state.quest]).toEqual(['upriver', STEP.ending]);
   });
@@ -364,14 +364,12 @@ describe('Unrecalled scenarios', () => {
     expect([state.quest, state.hero.weapon]).toEqual([STEP.powerOn, 'chainsaw']);
   });
 
-  it('fades from the foreman\'s last question to Foundry 2 upriver, where reading its board ends the story', () => {
+  it('ends the story outside Foundry 2 upriver, once the salvager answers the foreman\'s last question', () => {
     const state = untouchable(createGameState(content, 1));
     jumpToStep(state, STEP.bellRung);
     answer(state, 'foreman', REPLY.dontKnow);
     play(state, 2);
-    expect([state.levelId, state.quest]).toEqual(['upriver', STEP.upriver]);
-    use(state, 'awaiting-board');
-    expect(state.quest).toBe(STEP.ending);
+    expect([state.levelId, state.quest]).toEqual(['upriver', STEP.ending]);
   });
 
   it('cuts with Pell\'s chainsaw rather than swinging', () => {

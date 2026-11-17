@@ -41,6 +41,7 @@ const FLOOR_STYLES: Record<string, { panel: string; plate: string | null; mood: 
   sorting: { panel: 'wall-astra', plate: 'floor-metal', mood: { ...foundry(0x3a3428, 0xf0e0c0), sightRange: FOUND_AS_YOU_GO } },
   gallery: { panel: 'wall-window', plate: 'floor-dark', mood: { ...foundry(0x3a2a2c, 0xf0c8c8), sightRange: FOUND_AS_YOU_GO } },
   arena: { panel: 'wall', plate: 'floor-plates', mood: foundry(0x343a40, 0xd8e4f0) },
+  upriver: { panel: 'wall', plate: null, mood: { ...NIGHT, water: undefined } },
   assembly: { panel: 'wall-divided', plate: 'floor-squares', mood: { ...foundry(0x3a2c22, 0xf0d0b0), sightRange: FOUND_AS_YOU_GO } },
 };
 /** Each wall style's corner pieces, from the same kit, so walls turn in the style they're built in. */
@@ -132,6 +133,12 @@ const STRUCTURES: Record<string, StructureLook> = {
     inside: 0x2a3a40,
     glass: { material: 'M_Glass', colour: 0x7ab8c8, light: 'cyan' },
     sign: undefined,
+  }),
+  // Foundry 2, upriver: dark windows and no sign, since its lights only come on as the story ends.
+  foundry: building(0x34383e, {
+    tint: 0x8a909a, wall: ['town-wall-band', 'town-wall-astra'], window: 'town-window-astra',
+    roofProps: [{ name: 'tank', width: 1.1 }, { name: 'cargo-roof', width: 1.8 }, 'roof-fan'],
+    inside: 0x050608, glass: undefined, sign: undefined,
   }),
 };
 

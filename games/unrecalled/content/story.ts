@@ -31,22 +31,21 @@ export const STEP = {
   powerOn: 6,
   toldByMags: 7,
   tagsTaken: 9,
-  toldToCharge: 12,
-  charged: 13,
-  engineDown: 15,
-  crateOpened: 16,
-  orderAsked: 17,
-  orderClosed: 18,
-  freed: 19,
-  bellRung: 20,
-  upriver: 21,
-  ending: 22,
+  toldToCharge: 11,
+  charged: 12,
+  engineDown: 14,
+  crateOpened: 15,
+  orderAsked: 16,
+  orderClosed: 17,
+  freed: 18,
+  bellRung: 19,
+  ending: 20,
 } as const;
 
 /** Back in Rustbelt by the fire, where the salvager arrives with the foreman. */
 const BY_THE_FIRE = { levelId: 'rustbelt', x: 22.5, y: 15.5 };
-/** Upriver, in the second Foundry as it comes to life. */
-export const UPRIVER = { levelId: 'upriver', x: 16.5, y: 13.5 };
+/** Upriver, outside the second Foundry, where the story ends. */
+export const UPRIVER = { levelId: 'upriver', x: 22.5, y: 24.5 };
 
 /** The quest: what the HUD says at each step, and what moves the quest to it. */
 export const QUEST: Array<QuestStep & { text: string }> = [
@@ -60,21 +59,19 @@ export const QUEST: Array<QuestStep & { text: string }> = [
   { text: 'Go back to the foreman by the fire.', reachedBy: { type: 'use', id: 'switch' }, inOrder: true },
   { text: 'Go through Mags’s back door into the Foundry.', reachedBy: { type: 'reply', npcKind: 'trader', id: REPLY.showWay } },
   { text: 'Take the stock tags from the loader.', reachedBy: { type: 'enter', levelId: 'intake' } },
-  { text: 'Take the door down to the Sorting Line.', reachedBy: { type: 'defeat', tag: TAG.tagsLoader } },
-  { text: 'Find the door down to the Control Gallery.', reachedBy: { type: 'enter', levelId: 'sorting' } },
+  { text: 'Make your way to the Control Gallery.', reachedBy: { type: 'defeat', tag: TAG.tagsLoader } },
   { text: 'Find your way to the Assembly Hall.', reachedBy: { type: 'enter', levelId: 'gallery' } },
   { text: 'Get charged up at the charging station, to get through the door.', reachedBy: { type: 'use', id: 'access-terminal' }, inOrder: true },
   { text: 'Go down to the Assembly Hall and free the foreman.', reachedBy: { type: 'use', id: 'charging-station' } },
   { text: 'Beat the Order Engine.', reachedBy: { type: 'enter', levelId: 'assembly' } },
   // The machines stop where they stand and wait for orders.
-  { text: 'Open the crate the foreman is locked in.', reachedBy: { type: 'kill', enemyKind: 'orderEngine' }, calmsEverything: true },
+  { text: 'Find Odell the foreman.', reachedBy: { type: 'kill', enemyKind: 'orderEngine' }, calmsEverything: true },
   { text: 'Talk to the foreman.', reachedBy: { type: 'use', id: 'crate' } },
   { text: 'Give the Foundry its order at the order terminal.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.giveOrder } },
   { text: 'Take the foreman home.', reachedBy: { type: 'use', id: 'order-terminal' }, inOrder: true },
   { text: 'Ring the bell by the fire.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.goHome }, takesHeroTo: BY_THE_FIRE },
   { text: 'Talk to the foreman.', reachedBy: { type: 'use', id: 'bell' } },
-  { text: 'Read the board.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.dontKnow }, takesHeroTo: UPRIVER },
-  { text: 'The order was passed on to you.', reachedBy: { type: 'use', id: 'awaiting-board' } },
+  { text: 'The order was passed on to you.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.dontKnow }, takesHeroTo: UPRIVER },
 ];
 
 export const NPCS: Record<string, NpcType> = {
@@ -307,7 +304,7 @@ export const STEP_LINES: Partial<Record<number, Line[]>> = {
     { text: 'UNIT U-7 LOCATED.', from: VOICES.sentry },
     { text: 'Then it flew off upriver, towards the Foundry.' },
   ],
-  [STEP.tagsTaken]: [{ text: 'You took the stock tags from the loader. The door down to the Sorting Line is open.' }],
+  [STEP.tagsTaken]: [{ text: 'You took the stock tags from the loader. The door down is open.' }],
   [STEP.charged]: [
     { text: 'U-7 CHARGED. UNIT AUTHORISED. ASSEMBLY ACCESS GRANTED.', from: VOICES.foundry },
     { text: 'The door down to the Assembly Hall opened for you. The charge left something in your hands: you can set off an EMP.' },
@@ -316,7 +313,7 @@ export const STEP_LINES: Partial<Record<number, Line[]>> = {
   [STEP.crateOpened]: [{ text: 'You broke the crate open, and the foreman climbed out.' }],
   [STEP.orderClosed]: [{ text: 'ORDER FOR RUSTBELT: CLOSED. RETURNING ALL ITEMS.', from: VOICES.foundry }],
   [STEP.freed]: [{ text: 'Back in Rustbelt at dawn. The machines carried the town’s things home and set them down in the camp, with the chapel bell by the fire.' }],
-  [STEP.upriver]: [{ text: 'FOUNDRY 2 ONLINE. AWAITING INSTRUCTIONS.', from: VOICES.foundry2 }],
+  [STEP.ending]: [{ text: 'FOUNDRY 2 ONLINE. AWAITING ORDERS.', from: VOICES.foundry2 }],
   [STEP.bellRung]: [
     { text: '…That’s our bell.', from: VOICES.mags },
     { text: 'I could use a couple of these machines in the workshop, you know.', from: VOICES.pell },
@@ -361,8 +358,8 @@ export const GIVING_THE_ORDER: Dialogue[] = [
   },
 ];
 
-/** The last thing the player sees, after reading the board upriver. */
-export const ENDING = { title: 'The order was never cancelled.', subtitle: 'It was passed on to you.' };
+/** The last thing the player sees, once Foundry 2 has come to life. */
+export const ENDING = { title: 'The order was never cancelled.', subtitle: 'It was passed on to you.', thanks: 'Thank you for playing.' };
 
 /** What the hero reads or uses, by readable id; some read differently as the story goes on. */
 export function readingFor(id: string, quest: number): { title: string; text: string } | undefined {
@@ -375,6 +372,22 @@ export function readingFor(id: string, quest: number): { title: string; text: st
           : quest === STEP.loaderDown
             ? 'You entered the loader’s code. TURBINE CODE ACCEPTED. TURBINE STATUS: ACTIVE. The turbine is turning for the town again, and Mags’s back door has power. Go back and tell the foreman.'
             : `TURBINE TERMINAL. ACCESS CODE REQUIRED.${quest >= STEP.sawAsked ? ' The loader guarding the turbine carries it.' : ''}`,
+      };
+    case 'back-door-panel':
+      return {
+        title: 'A panel by the loading door',
+        text: quest < STEP.powerOn
+          ? 'LOADING DOOR: NO POWER. Power comes from the wind turbine at the logging camp, east through the woods. It has been switched over to the Foundry.'
+          : quest < STEP.toldByMags
+            ? 'LOADING DOOR: POWER ON. LOCKED FROM THE SHOP. Mags has the key.'
+            : 'LOADING DOOR: OPEN. Through here, into the Foundry.',
+      };
+    case 'tags-panel':
+      return {
+        title: 'A panel by the door',
+        text: quest < STEP.tagsTaken
+          ? 'STOCK ONLY. STOCK TAGS REQUIRED. The loader on this floor carries the tags.'
+          : 'STOCK TAGS ACCEPTED. THIS WAY DOWN.',
       };
     case 'access-terminal':
       return {
@@ -436,14 +449,10 @@ const READINGS: Record<string, { title: string; text: string }> = {
     title: 'The chapel bell',
     text: 'DONG… … DONG… … DONG…',
   },
-  'awaiting-board': {
-    title: 'Foundry 2',
-    text: 'FOUNDRY 2 ONLINE. ORDERS ON FILE: NONE. NEXT IN LINE: U-7. AWAITING INSTRUCTIONS.',
-  },
 };
 
 /** Every readable id the game words. */
-export const READABLE_IDS = [...Object.keys(READINGS), 'switch', 'access-terminal', 'order-terminal'];
+export const READABLE_IDS = [...Object.keys(READINGS), 'switch', 'back-door-panel', 'tags-panel', 'access-terminal', 'order-terminal'];
 
 /** What a machine with a scanner says on looking the salvager over. */
 export const MACHINE_SCANS = 'SCANNING… ONE OF OURS';

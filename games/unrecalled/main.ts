@@ -11,10 +11,11 @@ import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import {
   ALARM, CHAINSAW_FOUND, CHARGING, dialogueFor, ENDING, ENGINE_SAYS, GIVING_THE_ORDER, levelUp, lockedSays, MACHINE_SCANS, NPCS,
-  ON_ENTERING, OPENING, readingFor, scrapDropped, stashOpened, STEP, STEP_LINES, VOICES, type Dialogue, type Line,
+  ON_ENTERING, OPENING, readingFor, UPRIVER, scrapDropped, stashOpened, STEP, STEP_LINES, VOICES, type Dialogue, type Line,
 } from './content/story';
 import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
+import { Ending } from './ui/ending';
 import { Hud } from './ui/hud';
 
 const game = new Game({
@@ -146,7 +147,6 @@ function showReading(id: string, events: SimEvent[]): void {
       say(STEP_LINES[STEP.charged]);
     });
   } else if (reached.includes(STEP.orderClosed)) playScene(GIVING_THE_ORDER, () => say(STEP_LINES[STEP.orderClosed]));
-  else if (reached.includes(STEP.ending)) present(page, undefined, playEnding);
   else present(page);
 }
 
@@ -160,6 +160,13 @@ function reachStep(step: number): void {
 
 /** Whether the Order Engine has greeted the salvager yet. */
 let engineSpoke = false;
+
+/** The Order Engine speaks the moment the salvager walks into its hall, if it's still standing. */
+function greetFromEngine(): void {
+  if (engineSpoke || !currentLevel(state).enemies.some((e) => e.kind === 'orderEngine' && !e.dead)) return;
+  engineSpoke = true;
+  say([ENGINE_SAYS]);
+}
 
 /** After a purchase: getting patched up closes the dialogue, other services refresh it with the new prices. */
 function reactToService(npcId: number, index: number, x: number, y: number): void {
@@ -190,16 +197,23 @@ function showPlace(): void {
   place = { at, levelId: state.levelId, x: state.hero.x };
 }
 
-/** The light upriver, then the card that closes the demo on its question. */
-function playEnding(): void {
-  $('endT').textContent = ENDING.title;
-  $('endS').textContent = ENDING.subtitle;
-  $('end').hidden = false;
-}
+/** Foundry 2 waking upriver, then the card that closes the demo on its question. */
+const ending = new Ending(game, {
+  lightsOn: () => sfx.siren(),
+  online: () => say(STEP_LINES[STEP.ending]),
+  card: () => {
+    $('endT').textContent = ENDING.title;
+    $('endS').textContent = ENDING.subtitle;
+    $('endThanks').textContent = ENDING.thanks;
+    $('end').hidden = false;
+  },
+});
 
-$('endGo').addEventListener('click', (e) => {
+// Tapping the closing card starts the game again from the beginning.
+$('end').addEventListener('pointerdown', (e) => {
+  e.preventDefault();
   e.stopPropagation();
-  $('end').hidden = true;
+  location.assign(location.pathname);
 });
 
 /** Unrecalled's sounds for the rules' events. */
@@ -279,8 +293,10 @@ function react(events: SimEvent[]): void {
     switch (e.type) {
       case 'EnteredLevel': {
         const { level } = currentLevel(state);
-        if (!state.hero.dead && events.every((other) => other.type !== 'HeroRespawned')) {
+        if (e.levelId === UPRIVER.levelId) ending.play(performance.now());
+        else if (!state.hero.dead && events.every((other) => other.type !== 'HeroRespawned')) {
           hud.banner(level.name, level.subtitle, 2);
+          greetFromEngine();
           // The speakers greet each floor once, on the way down.
           if (!greeted.has(e.levelId)) say(ON_ENTERING[e.levelId] && [ON_ENTERING[e.levelId]!]);
           greeted.add(e.levelId);
@@ -303,10 +319,6 @@ function react(events: SimEvent[]): void {
         break;
       case 'PortalLocked':
         labels.text(e.x, e.y, 60 * PX, lockedSays(e.to, state.quest), '#ff7a62', 14);
-        break;
-      case 'EnemyAlerted':
-        if (e.boss && !engineSpoke) say([ENGINE_SAYS]);
-        engineSpoke ||= e.boss;
         break;
       case 'Armed':
         hud.say(CHAINSAW_FOUND);
@@ -362,6 +374,7 @@ game.run({
     showPlace();
     hud.update(s, place!.at.name);
     chainsaw.update(s, playing);
+    ending.update(performance.now());
   },
   onStart() {
     synth.unlock();
@@ -374,6 +387,7 @@ game.run({
   // Tapping the world walks away from a conversation, which can be picked up again by talking. Things read and scenes
   // stay until their own button closes them, and the tap is dropped, so a line can't be lost to a stray tap.
   onWorldTap: () => {
+    if (ending.playing) return false;
     if ($('dialog').hidden) return true;
     if (dialog.npcId === null) return false;
     dialog.close();

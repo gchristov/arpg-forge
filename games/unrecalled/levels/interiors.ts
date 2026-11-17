@@ -29,14 +29,14 @@ const INTERIORS = {
     ],
   },
   // The old depot: the shop floor, a storeroom with the stairs up to the office and the loading door into the Foundry
-  // (G), dead until the power's back on, and a back room, divided by partitions (%) with a doorway between each.
+  // (G), shut until the power's back on and Mags shows the way, with a panel (Q) saying so, and a back room, divided by partitions (%) with a doorway between each.
   tradingPost: {
     name: 'Mags’s Trading Post', subtitle: 'Everything here was somebody’s once',
     rows: [
       '##############################',
       '##############################',
       '#####L#####L#######L##G#######',
-      '###hh.dd..k......cc......U.###',
+      '###hh.dd..k......cc..Q...U.###',
       '###........................###',
       '###...2....................###',
       '###............%...........###',
@@ -120,6 +120,7 @@ const KEY: Record<string, RoomKey> = {
     light: { radius: 1.8, intensity: 0.5, colour: 'amber', flicker: 0, offset: { x: 0, y: -0.7 } },
   },
   // Mags and Pell are at work until the story calls them out to the fire.
+  Q: { ...solid(Prop.Computer), readable: 'back-door-panel', light: { radius: 2.2, intensity: 0.6, colour: 'amber', flicker: 0.4 } },
   '2': { npc: { kind: 'trader', name: 'Mags', untilStep: STEP.powerOn } },
   '3': { npc: { kind: 'tinker', name: 'Pell', untilStep: STEP.freed } },
 };

@@ -314,6 +314,10 @@ export class SceneRenderer {
     const k = snap ? 1 : 1 - Math.exp(-frameSeconds * CAMERA_FOLLOW_RATE);
     this.target.x += (x - this.target.x) * k;
     this.target.z += (y - this.target.z) * k;
+  }
+
+  /** Moves the light the hero carries to where they stand. */
+  lightHero(x: number, y: number): void {
     this.heroLight.position.set(x, 1.2, y);
     this.lightMap.setHero(x, y);
   }

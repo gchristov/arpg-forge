@@ -5,8 +5,9 @@ import { Ground, Prop } from '../content/tiles';
 
 /**
  * The Foundry, floor by floor: for now each floor is one plain hall, going deeper through a door in the back wall (U)
- * and back through the front wall (V), with what the story needs on it. Intake has the recall notice (T) by the way in
- * and the loader carrying the stock tags that open the way on; the Sorting Line a tagged crate (R) on a belt and the
+ * and back through the front wall (V), with what the story needs on it, and a panel by every door the story keeps shut
+ * saying what opens it. Intake has the recall notice (T), the loader carrying the stock tags that open the way on and
+ * the panel (K) asking for them; the Sorting Line a tagged crate (R) on a belt and the
  * manifest board (M) by the way on; the Control Gallery a terminal (P) by its door saying who may pass, and U-7's
  * charging station (Y), whose use opens the way on; and the
  * Assembly Hall the Order Engine, the crate the foreman is locked in (Z), opened once the Order Engine is down, and the
@@ -40,18 +41,18 @@ const FLOORS = {
       '#################################',
       '#################################',
       '######L###B###L#U#L###B###L######',
-      '###...........................###',
+      '###............K..............###',
       '##A...........................###',
       '###...........................###',
       '###...........................###',
       '###...........................###',
       '##A.............x.............###',
       '###...........................###',
-      '###...........................###',
+      '###.........T.................###',
       '###...........................###',
       '##A...........................###',
       '###...........................###',
-      '###..........T................###',
+      '###...........................###',
       '###...........................###',
       '################V################',
       '#################################',
@@ -155,6 +156,7 @@ const KEY: Record<string, RoomKey> = {
   B: { prop: Prop.WallAlarm, solid: true, light: { radius: 6, intensity: 2, colour: 'alarm', flicker: 0, lean: 0.7, alarm: true } },
   Y: { ...solid(Prop.Cradle), readable: 'charging-station', light: { radius: 2.6, intensity: 0.8, colour: 'cyan', flicker: 0.2 } },
   M: { ...solid(Prop.Computer), readable: 'manifest', light: { radius: 2.4, intensity: 0.8, colour: 'amber', flicker: 0.4 } },
+  K: { ...solid(Prop.Computer), readable: 'tags-panel', light: { radius: 2.4, intensity: 0.8, colour: 'alarm', flicker: 0.4 } },
   P: { ...solid(Prop.Computer), readable: 'access-terminal', light: { radius: 2.4, intensity: 0.8, colour: 'alarm', flicker: 0.4 } },
   T: { ...solid(Prop.Computer), readable: 'recall-notice', light: { radius: 2.4, intensity: 0.8, colour: 'amber', flicker: 0.4 } },
   Z: { ...solid(Prop.Crate), readable: 'crate', light: { radius: 2.6, intensity: 0.8, colour: 'cyan', flicker: 0.2 } },
