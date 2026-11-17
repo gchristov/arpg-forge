@@ -10,8 +10,8 @@ import { MODEL_URLS, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import {
-  ALARM, CHAINSAW_FOUND, CHARGING, dialogueFor, ENDING, ENGINE_CALLS, ENGINE_FALLS, levelUp, LOCKED, MACHINE_SCANS, NPCS, ON_ENTERING,
-  OPENING, ORDER_CLOSED, READINGS, scrapDropped, STEP, STEP_LINES, VOICES, type Dialogue, type Line,
+  ALARM, CHAINSAW_FOUND, CHARGING, dialogueFor, ENDING, ENGINE_CALLS, levelUp, LOCKED, MACHINE_SCANS, NPCS, ON_ENTERING, OPENING,
+  READINGS, scrapDropped, stashOpened, STEP, STEP_LINES, VOICES, type Dialogue, type Line,
 } from './content/story';
 import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
@@ -139,7 +139,6 @@ function showReading(id: string, events: SimEvent[]): void {
 /** What happens in the world as the story moves on. */
 function reachStep(step: number): void {
   if (step === STEP.ending) playEnding();
-  else if (step === STEP.engineDown) present(ENGINE_FALLS, undefined, () => say([ORDER_CLOSED]));
   // The charging station's lines follow its scene.
   else if (step !== STEP.charged) say(STEP_LINES[step]);
 }
@@ -316,6 +315,11 @@ function react(events: SimEvent[]): void {
       case 'Read':
         showReading(e.id, events);
         break;
+      case 'ContainerOpened': {
+        const stash = currentLevel(state).containers[e.index];
+        if (stash && !stash.weapon) hud.say(stashOpened(stash.gold, stash.healingItems));
+        break;
+      }
       case 'QuestAdvanced':
         reachStep(e.step);
         break;
@@ -352,5 +356,12 @@ game.run({
     hud.banner(level.name, level.subtitle, 3);
     if (state.quest === 0) say(OPENING);
   },
-  onWorldTap: () => dialog.close(),
+  // Tapping the world walks away from a conversation, which can be picked up again by talking. Things read and scenes
+  // stay until their own button closes them, and the tap is dropped, so a line can't be lost to a stray tap.
+  onWorldTap: () => {
+    if ($('dialog').hidden) return true;
+    if (dialog.npcId === null) return false;
+    dialog.close();
+    return true;
+  },
 });

@@ -124,6 +124,8 @@ export interface QuestStep {
    * entering the town they keep coming back to.
    */
   inOrder?: boolean;
+  /** Reaching this step takes the hero straight to a place, such as home once the story there is done. */
+  takesHeroTo?: { levelId: string; x: number; y: number };
 }
 
 export type Range = [min: number, max: number];
