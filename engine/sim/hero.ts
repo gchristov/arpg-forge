@@ -134,7 +134,7 @@ function strike(state: GameState, events: SimEvent[]): void {
 function useSkill(state: GameState, slot: number, events: SimEvent[]): void {
   const { hero } = state;
   const skill = state.rules.hero.skills[slot];
-  if (!skill || (hero.skillCooldowns[slot] ?? 0) > 0) return;
+  if (!skill || state.quest < (skill.fromStep ?? 0) || (hero.skillCooldowns[slot] ?? 0) > 0) return;
   if (hero.resource < skill.cost) {
     events.push({ type: 'Refused', reason: 'noResource', x: hero.x, y: hero.y });
     return;

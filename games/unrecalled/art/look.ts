@@ -194,9 +194,11 @@ export const MODEL_URLS: Record<string, string> = Object.fromEntries(
   ),
 );
 
+const WEAPON_NAMES: Record<string, string> = { chainsaw: 'Pell’s chainsaw' };
+
 export const unrecalledLook: Look = {
   effects: {
-    skill: 0x8ae8ff, shot: 0xffd070, telegraph: 0xff7a3a, items: { gold: 0xd8c070, healingItem: 0x50d070 },
+    skill: 0x8ae8ff, shot: 0xffd070, telegraph: 0xff7a3a, items: { gold: 0xd8c070, healingItem: 0x50d070, weapon: 0xe0782a },
     walkMarker: 0x9ad8e8, targetMarker: 0xff7a3a,
     guide: { arrow: 0xffb050, name: 0xd8e4e8 },
     skillLight: 0x6ad8ff, telegraphLight: 0xff7a3a, bossLight: 0xff9a50, scan: 0xff3a2a, lightning: 0x5ac8ff,
@@ -239,6 +241,7 @@ export const unrecalledLook: Look = {
   },
   floorModel: (kind, levelId) => (kind === Ground.Plate ? styleOf(levelId).plate : null),
   prop: (kind) => PROPS[kind] ?? null,
+  weaponName: (weapon) => WEAPON_NAMES[weapon] ?? weapon,
   walls: (levelId) => ({
     props: [Prop.Wall, Prop.WallLow, Prop.WallLight, Prop.WallAlarm], panel: styleOf(levelId).panel, span: 3, front: { name: 'wall-front', height: 0.3 },
     // Every doorway gets the kit's frame, so the ways in and out are clear.

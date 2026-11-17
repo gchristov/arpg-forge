@@ -76,11 +76,11 @@ export function addWoods(room: LevelContent, reserve: (x: number, y: number, w: 
   }
   for (const trail of TRAILS) paintPath(map, trail.map(([x, y]) => [x0 + x, y]), reserve);
 
-  // The logging camp: the turbine and its terminal at its foot, opened by the codes of the loader that turns up to guard
-  // it once Pell asks for her saw back, a crate by the cutting bench, a truck, stacked salvage and a brazier.
+  // The logging camp: the turbine and its terminal at its foot, which wants the access code of the loader that turns up
+  // to guard it once Pell asks for her saw back, a crate by the cutting bench, a truck, stacked salvage and a brazier.
   prop(42, 8, Prop.Pylon);
   prop(44, 8, Prop.Computer);
-  room.readables!.push({ tx: x0 + 44, ty: 8, id: 'switch', fromStep: STEP.switchFreed });
+  room.readables!.push({ tx: x0 + 44, ty: 8, id: 'switch' });
   room.spawns.push({
     kind: 'loader', x: x0 + 43.5, y: 10.5, tag: TAG.switchLoader, strength: WOODS_STRENGTH, fromStep: STEP.sawAsked, carries: 'chainsaw',
   });

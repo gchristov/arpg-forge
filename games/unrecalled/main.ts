@@ -10,8 +10,8 @@ import { MODEL_URLS, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import {
-  ALARM, CHAINSAW_FOUND, CHARGING, dialogueFor, ENDING, ENGINE_SAYS, levelUp, lockedSays, MACHINE_SCANS, NPCS, ON_ENTERING, OPENING,
-  READINGS, scrapDropped, stashOpened, STEP, STEP_LINES, VOICES, type Dialogue, type Line,
+  ALARM, CHAINSAW_FOUND, CHARGING, dialogueFor, ENDING, ENGINE_GREETING, GIVING_THE_ORDER, levelUp, lockedSays, MACHINE_SCANS, NPCS,
+  ON_ENTERING, OPENING, readingFor, scrapDropped, stashOpened, STEP, STEP_LINES, VOICES, type Dialogue, type Line,
 } from './content/story';
 import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
@@ -126,21 +126,30 @@ const say = (lines: Line[] | undefined): void => {
   for (const line of lines ?? []) hud.say(line.text, line.from);
 };
 
-/** What reading something says, and the first time the charging station is used, the scene that follows. */
+/** What reading something says, or the scene it starts: the charging station, the crate and the order terminal. */
 function showReading(id: string, events: SimEvent[]): void {
-  const reading = READINGS[id];
+  const reached = events.flatMap((e) => (e.type === 'QuestAdvanced' ? [e.step] : []));
+  // Worded as it was when it was used, before using it moved the story on.
+  const reading = readingFor(id, Math.min(state.quest, ...reached.map((step) => step - 1)));
   if (!reading) return;
-  const charging = events.some((e) => e.type === 'QuestAdvanced' && e.step === STEP.charged);
-  const page: Dialogue = { title: reading.title, text: reading.text, options: [{ label: charging ? 'Plug in' : 'Close' }] };
-  if (charging) playScene([page, ...CHARGING], () => say(STEP_LINES[STEP.charged]));
+  if (reached.includes(STEP.crateOpened)) {
+    const foreman = currentLevel(state).npcs.find((n) => n.kind === 'foreman');
+    if (foreman) showDialogue(foreman.id, foreman.kind);
+    return;
+  }
+  const page: Dialogue = { title: reading.title, text: reading.text, options: [{ label: 'Close' }] };
+  if (reached.includes(STEP.charged)) playScene([{ ...page, options: [{ label: 'Plug in' }] }, ...CHARGING], () => say(STEP_LINES[STEP.charged]));
+  else if (reached.includes(STEP.orderClosed)) playScene(GIVING_THE_ORDER, () => say(STEP_LINES[STEP.orderClosed]));
   else present(page);
 }
+
+/** Steps whose lines wait for the scene that reaches them. */
+const AFTER_SCENE: number[] = [STEP.charged, STEP.orderClosed];
 
 /** What happens in the world as the story moves on. */
 function reachStep(step: number): void {
   if (step === STEP.ending) playEnding();
-  // The charging station's lines follow its scene.
-  else if (step !== STEP.charged) say(STEP_LINES[step]);
+  else if (!AFTER_SCENE.includes(step)) say(STEP_LINES[step]);
 }
 
 /** After a purchase: getting patched up closes the dialogue, other services refresh it with the new prices. */
@@ -209,7 +218,7 @@ function playSounds(events: SimEvent[]): void {
         break;
       case 'PickedUp':
         if (e.kind === 'gold') sfx.scrap();
-        else sfx.patch();
+        else if (e.kind === 'healingItem') sfx.patch();
         break;
       case 'Healed':
         sfx.patch();
@@ -265,9 +274,11 @@ function react(events: SimEvent[]): void {
       case 'EnteredLevel': {
         const { level } = currentLevel(state);
         if (!state.hero.dead && events.every((other) => other.type !== 'HeroRespawned')) {
-          hud.banner(level.name, level.subtitle, 2);
+          const first = !greeted.has(e.levelId);
+          if (first && e.levelId === ENGINE_GREETING.levelId) hud.banner(ENGINE_GREETING.title, ENGINE_GREETING.subtitle, 3.5);
+          else hud.banner(level.name, level.subtitle, 2);
           // The speakers greet each floor once, on the way down.
-          if (!greeted.has(e.levelId)) say(ON_ENTERING[e.levelId] && [ON_ENTERING[e.levelId]!]);
+          if (first) say(ON_ENTERING[e.levelId] && [ON_ENTERING[e.levelId]!]);
           greeted.add(e.levelId);
         }
         break;
@@ -289,9 +300,6 @@ function react(events: SimEvent[]): void {
       case 'PortalLocked':
         labels.text(e.x, e.y, 60 * PX, lockedSays(e.to, state.quest), '#ff7a62', 14);
         break;
-      case 'EnemyAlerted':
-        if (e.boss) hud.say(ENGINE_SAYS, VOICES.orderEngine);
-        break;
       case 'Armed':
         hud.say(CHAINSAW_FOUND);
         break;
@@ -309,7 +317,7 @@ function react(events: SimEvent[]): void {
         break;
       case 'PickedUp':
         if (e.kind === 'gold') labels.text(e.x, e.y, 30 * PX, `+${e.amount} scrap`, '#e8c870', 13);
-        else labels.text(e.x, e.y, 30 * PX, '+1 patch kit', '#7ae08a', 13);
+        else if (e.kind === 'healingItem') labels.text(e.x, e.y, 30 * PX, '+1 patch kit', '#7ae08a', 13);
         break;
       case 'Read':
         showReading(e.id, events);

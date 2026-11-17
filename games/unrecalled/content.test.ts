@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { checkContent } from '../../engine/sim/content-checks';
 import { MODEL_URLS, unrecalledLook } from './art/look';
-import { dialogueFor, QUEST, READINGS } from './content/story';
+import { dialogueFor, QUEST, READABLE_IDS } from './content/story';
 import { unrecalledContent } from './content/world';
 
 const content = unrecalledContent();
@@ -16,8 +16,8 @@ describe('Unrecalled content', () => {
     const kinds = content.levels.flatMap((l) => l.npcs.map((n) => n.kind));
     expect(kinds.filter((kind) => !dialogueFor(kind, 0, 0, null))).toEqual([]);
     const ids = content.levels.flatMap((l) => (l.readables ?? []).map((r) => r.id));
-    expect(ids.filter((id) => !READINGS[id])).toEqual([]);
-    expect(Object.keys(READINGS).filter((id) => !ids.includes(id))).toEqual([]);
+    expect(ids.filter((id) => !READABLE_IDS.includes(id))).toEqual([]);
+    expect(READABLE_IDS.filter((id) => !ids.includes(id))).toEqual([]);
   });
 
   it('gives every actor kind a model that was built', () => {

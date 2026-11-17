@@ -298,6 +298,8 @@ export interface Look {
   floorModel?(kind: number, levelId: string): string | null;
   /** Null for prop kinds that aren't drawn as a prop, such as building tiles. */
   prop(kind: number, levelId: string): PropLook | null;
+  /** What a weapon lying on the ground is called, shown over it; its id if not given. */
+  weaponName?(weapon: string): string;
   structure(kind: string): StructureLook;
   /** How walls are drawn on a level; without it, or if the models don't load, wall props are drawn as props. */
   walls?(levelId: string): WallLook | null;

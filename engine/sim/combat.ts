@@ -5,8 +5,8 @@ import { isSolidAt } from '../world/tile-map';
 import { regrowEnemies } from './enemy-strength';
 import { advanceQuest } from './interaction';
 import { knockBack } from './knockback';
-import { dropEnemyLoot } from './loot';
-import { arm, meleeOf } from './weapons';
+import { dropEnemyLoot, dropItem } from './loot';
+import { meleeOf } from './weapons';
 import type { BurstDamage } from './content';
 import { currentLevel, type Enemy, type GameState, type SimEvent } from './state';
 
@@ -89,7 +89,7 @@ function killEnemy(state: GameState, e: Enemy, events: SimEvent[]): void {
   gainXp(state, type.xp, events);
   dropEnemyLoot(state, e.kind, e.x, e.y);
   events.push({ type: 'EnemyKilled', enemyId: e.id, kind: e.kind, x: e.x, y: e.y, boss: Boolean(type.boss) });
-  if (e.carries) arm(state, e.carries, e.x, e.y, events);
+  if (e.carries) dropItem(state, currentLevel(state), e.x, e.y, 'weapon', 1, e.carries);
   advanceQuest(state, { type: 'kill', enemyKind: e.kind }, events);
   if (e.tag) advanceQuest(state, { type: 'defeat', tag: e.tag }, events);
   if (currentLevel(state).enemies.every((other) => other.dead)) events.push({ type: 'LevelCleared', levelId: state.levelId });

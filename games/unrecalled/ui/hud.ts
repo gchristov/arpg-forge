@@ -56,7 +56,8 @@ export class Hud {
       $('patchN').textContent = String(v);
       $('bPatch').classList.toggle('off', v <= 0);
     });
-    const emp = state.rules.hero.skills[EMP];
+    const skill = state.rules.hero.skills[EMP];
+    const emp = skill && state.quest >= (skill.fromStep ?? 0) ? skill : undefined;
     // Charge only powers the EMP, so neither shows until the salvager has it.
     shown.set('hasEmp', Boolean(emp), (v) => {
       $('bEmp').hidden = !v;

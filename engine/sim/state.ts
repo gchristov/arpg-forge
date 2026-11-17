@@ -99,7 +99,7 @@ export interface Enemy extends Actor {
   strength: number;
   /** Names this one enemy, for a quest step reached by defeating it. */
   tag?: string;
-  /** A weapon of the hero's it gives up when defeated. */
+  /** A weapon of the hero's it drops when defeated. */
   carries?: string;
   /** Fighting it doesn't sound the alarm. */
   quiet?: boolean;
@@ -131,8 +131,10 @@ export interface Telegraph {
 
 /** Gold or a healing item on the ground. Height and fall speed are in tiles. */
 export interface GroundItem {
-  kind: 'gold' | 'healingItem';
+  kind: 'gold' | 'healingItem' | 'weapon';
   amount: number;
+  /** For a weapon, which of the hero's it is. */
+  weapon?: string;
   x: number;
   y: number;
   z: number;
@@ -265,5 +267,5 @@ export type SimEvent =
   | { type: 'ServiceUsed'; npcId: number; service: number; x: number; y: number }
   | { type: 'ContainerOpened'; index: number; x: number; y: number }
   | { type: 'Read'; id: string; x: number; y: number }
-  | { type: 'PickedUp'; kind: GroundItem['kind']; amount: number; x: number; y: number }
+  | { type: 'PickedUp'; kind: GroundItem['kind']; amount: number; x: number; y: number; weapon?: string }
   | { type: 'QuestAdvanced'; step: number };

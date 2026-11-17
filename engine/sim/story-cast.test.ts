@@ -62,7 +62,7 @@ describe('story cast', () => {
     expect(where(state)).toEqual({ village: 0, cellar: 1, tracks: 1 });
   });
 
-  it('brings an enemy in once the story reaches its step, and puts what it carried in the hero\'s hand when it\'s defeated', () => {
+  it('brings an enemy in once the story reaches its step, which drops what it carried for the hero to pick up', () => {
     const content: GameContent = {
       levels: [room('village', { spawns: [{ kind: 'brute', x: 4.5, y: 2.5, tag: 'thief', fromStep: 1, carries: 'saw', strength: 0.2 }] })],
       startLevel: 'village', hero: { ...TEST_HERO, weapons: { saw: {} } }, enemies: TEST_ENEMIES, npcRadius: 0.32, npcs: {},
@@ -76,9 +76,12 @@ describe('story cast', () => {
     jumpToStep(state, 1);
     expect(currentLevel(state).enemies.length).toBe(1);
     state.hero.hp = state.hero.maxHp = 1e6;
-    const events = run(state, 10, [{ type: 'attack', enemyId: thief!.id }]);
+    run(state, 10, [{ type: 'attack', enemyId: thief!.id }]);
+    const saw = currentLevel(state).items.find((i) => i.kind === 'weapon')!;
+    expect([saw.weapon, state.hero.weapon, state.quest]).toEqual(['saw', null, 2]);
+    const events = run(state, 5, [{ type: 'walk', x: saw.x, y: saw.y }]);
     expect(events.some((e) => e.type === 'Armed' && e.weapon === 'saw')).toBe(true);
-    expect([state.hero.weapon, state.quest]).toEqual(['saw', 2]);
+    expect([state.hero.weapon, currentLevel(state).items.some((i) => i.kind === 'weapon')]).toEqual(['saw', false]);
   });
 
   it('stops the hero walking up to someone the story has taken away', () => {
