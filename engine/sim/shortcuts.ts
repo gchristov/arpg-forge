@@ -5,8 +5,7 @@ import { castForStep } from './story-cast';
 /**
  * Moves the story straight to `step`, as if every step before it had been reached: a weapon that reached one is in the
  * hero's hand, an enemy defeated or killed to reach one is gone (and what it carried is in the hero's hand, as if picked
- * up), and if one calmed
- * everything, everything is calm. For trying one part of a game without playing up to it.
+ * up), and if one calmed everything, everything is calm. For trying one part of a game without playing up to it.
  */
 export function jumpToStep(state: GameState, step: number): void {
   const steps = state.rules.quest;
