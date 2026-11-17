@@ -10,7 +10,8 @@ import { MODEL_URLS, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import {
-  CHAINSAW_FOUND, dialogueFor, LOCKED, ENDING, ENDING_STEP, ENGINE_CALLS, ENGINE_DOWN_STEP, ENGINE_FALLS, LINE_ALERT, MACHINE_SCANS, NPCS, READINGS,
+  ALARM, CHAINSAW_FOUND, dialogueFor, LOCKED, ENDING, ENDING_STEP, ENGINE_CALLS, ENGINE_DOWN_STEP, ENGINE_FALLS, levelUp, MACHINE_SCANS, NPCS,
+  READINGS, scrapDropped, VOICES,
 } from './content/story';
 import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
@@ -238,13 +239,14 @@ function react(events: SimEvent[]): void {
         break;
       }
       case 'LevelAlarmed':
-        hud.banner(LINE_ALERT.title, LINE_ALERT.subtitle, 2.2);
+        if (currentLevel(state).level.building) hud.say(ALARM.foundry, VOICES.foundry);
+        hud.say(ALARM.turns);
         break;
       case 'PortalLocked':
         labels.text(e.x, e.y, 60 * PX, LOCKED, '#ff7a62', 14);
         break;
       case 'Armed':
-        hud.banner(CHAINSAW_FOUND.title, CHAINSAW_FOUND.subtitle, 2.6);
+        hud.say(CHAINSAW_FOUND);
         break;
       case 'HeroHurt':
         labels.text(e.x, e.y, 46 * PX, `-${e.amount}`, '#ff7a5a', 15);
@@ -256,10 +258,11 @@ function react(events: SimEvent[]): void {
         labels.text(e.x, e.y, 50 * PX, REFUSALS[e.reason], '#8a98a6', 13);
         break;
       case 'Summoned':
-        hud.banner(ENGINE_CALLS.title, ENGINE_CALLS.subtitle, 2.6);
+        hud.say(ENGINE_CALLS.says, VOICES.orderEngine);
+        hud.say(ENGINE_CALLS.then);
         break;
       case 'LevelUp':
-        hud.banner(`Level ${e.level}`, 'Patched up, and hitting harder.');
+        hud.say(levelUp(e.level));
         break;
       case 'PickedUp':
         if (e.kind === 'gold') labels.text(e.x, e.y, 30 * PX, `+${e.amount} scrap`, '#e8c870', 13);
@@ -271,7 +274,10 @@ function react(events: SimEvent[]): void {
         break;
       }
       case 'QuestAdvanced':
-        if (e.step === ENGINE_DOWN_STEP) setTimeout(() => hud.banner(ENGINE_FALLS.title, ENGINE_FALLS.subtitle, 5), 600);
+        if (e.step === ENGINE_DOWN_STEP) {
+          hud.say(ENGINE_FALLS.then);
+          hud.say(ENGINE_FALLS.foundry, VOICES.foundry);
+        }
         break;
       case 'HeroDied':
         deaths++;
@@ -285,7 +291,7 @@ function react(events: SimEvent[]): void {
         reactToService(e.npcId, e.service, e.x, e.y);
         break;
       case 'HeroRespawned':
-        if (e.goldLost) setTimeout(() => hud.banner('Back on your feet', `You dropped ${e.goldLost} scrap in the scramble.`), 400);
+        if (e.goldLost) hud.say(scrapDropped(e.goldLost));
         break;
     }
   }

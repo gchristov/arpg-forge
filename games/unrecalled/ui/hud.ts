@@ -1,6 +1,7 @@
 import { currentLevel, type Command, type GameState } from '../../../engine/sim/state';
 import { Banner } from '../../../engine/ui/banner';
 import { bindCommand } from '../../../engine/ui/command-button';
+import { MessageFeed, type Speaker } from '../../../engine/ui/message-feed';
 import { ShownValues } from '../../../engine/ui/shown-values';
 import { ENEMIES } from '../content/enemies';
 import { QUEST } from '../content/story';
@@ -10,10 +11,14 @@ const EMP = 0;
 
 const $ = (id: string): HTMLElement => document.getElementById(id)!;
 
-/** Unrecalled's HUD: health, charge and XP, the objective, scrap and level, the skill buttons, the boss bar and banners. */
+/**
+ * Unrecalled's HUD: the objective and the message feed under it at the top left, scrap, level and sound at the top
+ * right, health, charge and XP with the buttons along the bottom, the boss bar, and banners for places.
+ */
 export class Hud {
   private readonly shown = new ShownValues();
   private readonly bannerBox = new Banner({ root: $('banner'), title: $('bannerT'), subtitle: $('bannerS') });
+  private readonly feed = new MessageFeed($('feed'));
 
   constructor(send: (command: Command) => void) {
     bindCommand($('bAttack'), { type: 'attackNearest' }, send);
@@ -52,7 +57,13 @@ export class Hud {
       // The bar along the button's foot fills back up as the EMP recharges.
       shown.set('empCharge', Math.round((1 - recharging) * 20), (v) => ($('empCd').style.transform = `scaleX(${v / 20})`));
     }
-    shown.set('quest', QUEST[state.quest]?.text ?? '', (v) => ($('quest').textContent = v));
+    shown.set('quest', QUEST[state.quest]?.text ?? '', (v) => {
+      $('quest').textContent = v;
+      // A new objective lights up for a moment, so it's noticed without a banner.
+      $('quest').classList.remove('new');
+      void $('quest').offsetWidth;
+      $('quest').classList.add('new');
+    });
     const ls = currentLevel(state);
     shown.set('location', place, (v) => ($('loc').textContent = v));
     const boss = ls.enemies.find((e) => ENEMIES[e.kind]?.boss && !e.dead && e.mode === 'chase');
@@ -71,6 +82,11 @@ export class Hud {
   /** A title and subtitle across the screen. Shown until replaced when `seconds` is Infinity. */
   banner(title: string, subtitle = '', seconds = 2.4): void {
     this.bannerBox.show(title, subtitle, seconds);
+  }
+
+  /** A line in the message feed: what someone says, or with no speaker, what the salvager notices. */
+  say(text: string, from?: Speaker): void {
+    this.feed.add(text, from);
   }
 
   hideBanner(): void {
