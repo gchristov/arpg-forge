@@ -60,7 +60,6 @@ export function unrecalledSounds(s: Synth) {
     },
     read: () => [1200, 1500, 1200].forEach((f, i) => s.tone(f, 0.05, 'square', 0.025, 1, i * 0.07)),
     sealed: () => s.tone(110, 0.3, 'sawtooth', 0.06, 0.9),
-    unsealed: () => [523, 784, 1046].forEach((f, i) => s.tone(f, 0.3, 'triangle', 0.07, 1, i * 0.12)),
     deny: () => s.tone(150, 0.14, 'square', 0.05),
   };
 }

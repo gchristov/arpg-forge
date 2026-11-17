@@ -10,6 +10,7 @@ import { ModelLibrary } from '../render/models';
 import { SceneRenderer } from '../render/scene-renderer';
 import type { GameContent } from '../sim/content';
 import { createGameState } from '../sim/setup';
+import { jumpToStep, removeEnemies } from '../sim/shortcuts';
 import { currentLevel, type Command, type GameState, type SimEvent } from '../sim/state';
 import { step } from '../sim/step';
 import { ScreenFade } from '../ui/fade';
@@ -46,8 +47,8 @@ export interface GameHooks {
  * into commands. The rules wait until `start`, typically from a title screen, and models load meanwhile.
  *
  * With `?debug` in the page URL it shows frame timings and exposes `window.game` (`state`, `send`, `start`) for
- * scripted checks. `#<level id>` starts in that level, `?debug&lights=N` scatters N extra lights and
- * `?debug&resolution=N` draws N pixels per screen point.
+ * scripted checks. `#<level id>` starts in that level, `?step=N` at step N of the story, `?calm` with no enemies,
+ * `?debug&lights=N` scatters N extra lights and `?debug&resolution=N` draws N pixels per screen point.
  */
 export class Game {
   readonly state: GameState;
@@ -82,6 +83,8 @@ export class Game {
     const jumpTo = location.hash.slice(1);
     const startLevel = content.levels.some((l) => l.level.id === jumpTo) ? jumpTo : content.startLevel;
     this.state = createGameState(content, (Math.random() * 2 ** 32) >>> 0, startLevel);
+    if (params.has('step')) jumpToStep(this.state, Number(params.get('step')) || 0);
+    if (params.has('calm')) removeEnemies(this.state);
     if (debugMode) this.scatterLights(Number(params.get('lights') ?? 0));
     const fade = new ScreenFade(document.body, FADE_SECONDS);
     this.view = new WorldView(this.state, this.renderer, setup.look, this.labels, fade, this.project);
