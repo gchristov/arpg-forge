@@ -7,6 +7,9 @@ import type { Speaker } from '../../../engine/ui/message-feed';
  * robot that never came home.
  */
 
+/** The replies the story waits for, by their id. */
+export const REPLY = { howIn: 'how-do-i-get-in', goHome: 'go-home', dontKnow: 'dont-know' } as const;
+
 /** The machines the story needs beaten, by their tag. */
 export const TAG = { raider: 'raider', switchLoader: 'switch-loader', tagsLoader: 'tags-loader' } as const;
 
@@ -28,9 +31,9 @@ export const STEP = {
 
 /** The quest: what the HUD says at each step, and what moves the quest to it. */
 export const QUEST: Array<QuestStep & { text: string }> = [
-  { text: 'Stop the machine.' },
+  { text: 'Stop the crawler making off with the camp’s tools.' },
   { text: 'Talk to the foreman by the fire.', reachedBy: { type: 'defeat', tag: TAG.raider } },
-  { text: 'Find Pell’s chainsaw at the logging camp, east through the woods.', reachedBy: { type: 'talk', npcKind: 'foreman' } },
+  { text: 'Find Pell’s chainsaw at the logging camp, east through the woods.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.howIn } },
   { text: 'Break the loader holding the turbine’s switch.', reachedBy: { type: 'arm', weapon: 'chainsaw' } },
   // Breaking the loader before finding the saw skips it: the saw stays in its crate for whoever goes back for it.
   { text: 'Switch the turbine back to the town.', reachedBy: { type: 'defeat', tag: TAG.switchLoader } },
@@ -43,11 +46,11 @@ export const QUEST: Array<QuestStep & { text: string }> = [
   { text: 'Free the foreman.', reachedBy: { type: 'enter', levelId: 'assembly' } },
   // The machines stop where they stand and wait for orders.
   { text: 'Free the foreman.', reachedBy: { type: 'kill', enemyKind: 'orderEngine' }, calmsEverything: true },
-  { text: 'Take him home.', reachedBy: { type: 'talk', npcKind: 'foreman' } },
+  { text: 'Take him home.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.goHome } },
   // Rustbelt is entered all through the story, so only coming home with the foreman reaches this.
   { text: 'Ring the bell.', reachedBy: { type: 'enter', levelId: 'rustbelt' }, inOrder: true },
   { text: 'Talk to the foreman by the fire.', reachedBy: { type: 'use', id: 'bell' } },
-  { text: 'The order was passed on to you.', reachedBy: { type: 'talk', npcKind: 'foreman' } },
+  { text: 'The order was passed on to you.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.dontKnow } },
 ];
 
 export const NPCS: Record<string, NpcType> = {
@@ -61,6 +64,7 @@ export const NPCS: Record<string, NpcType> = {
 export const VOICES = {
   foundry: { name: 'Foundry', voice: 'foundry' },
   orderEngine: { name: 'The Order Engine', voice: 'foundry' },
+  foreman: { name: 'Odell', voice: 'person' },
   sentry: { name: 'Sentry', voice: 'foundry' },
   mags: { name: 'Mags', voice: 'person' },
   pell: { name: 'Pell', voice: 'person' },
@@ -78,6 +82,8 @@ export interface DialogueOption {
   service?: number;
   /** Shown beside the option, such as a price. */
   tag?: (price: number) => string;
+  /** The reply's id, for a quest step that waits for it. */
+  reply?: string;
   /** What comes next when it's chosen; options with neither a service nor this close the dialogue. */
   next?: Dialogue;
 }
@@ -90,14 +96,11 @@ export interface Dialogue {
 
 const FOREMAN = 'Foreman Odell';
 
-/**
- * What each townsperson says, given the quest step before and after talking, how often the salvager has gone down and
- * the weapon in their hand.
- */
-export function dialogueFor(kind: string, questBefore: number, quest: number, deaths: number, weapon: string | null): Dialogue | null {
+/** What each townsperson says, given the quest step, how often the salvager has gone down and the weapon in their hand. */
+export function dialogueFor(kind: string, quest: number, deaths: number, weapon: string | null): Dialogue | null {
   switch (kind) {
     case 'foreman':
-      return foremanSays(questBefore, quest);
+      return foremanSays(quest);
     case 'trader':
       return {
         title: 'Mags the Trader',
@@ -132,33 +135,41 @@ export function dialogueFor(kind: string, questBefore: number, quest: number, de
   }
 }
 
-function foremanSays(questBefore: number, quest: number): Dialogue {
-  if (questBefore === STEP.raidStopped) {
+/** The foreman's job for the salvager: why, and with the reply, how. */
+const theJob: Dialogue = {
+  title: FOREMAN,
+  text: 'I never asked who you were. I am not asking now. See that factory upriver, the Foundry? It was built to make things for the whole valley. The people left, but nobody switched it off. Now its machines are taking our town apart for parts. Last night they took the chapel bell. They keep a list, you know. Mags saw it once. We’re somewhere past two hundred. Someone has to go in there and switch it off.',
+  options: [{
+    label: 'How do I get in?',
+    next: {
+      title: FOREMAN,
+      text: 'Mags’s back door opens into the Foundry. No power since the machines switched our wind turbine over to it, out at the logging camp, east through the woods. Switch it back. Pell left her chainsaw out there, too.',
+      options: [{ label: 'On my way' }],
+    },
+    reply: REPLY.howIn,
+  }],
+};
+
+function foremanSays(quest: number): Dialogue {
+  if (quest === STEP.raidStopped) {
     return {
       title: FOREMAN,
-      text: 'I never asked who you were. I am not asking now. See that factory upriver, the Foundry? It was built to make things for the whole valley. The people left, but nobody switched it off. Now its machines are taking our town apart for parts. Last night they took the chapel bell. They keep a list, you know. Mags saw it once. We’re somewhere past two hundred. Someone has to go in there and switch it off.',
-      options: [{
-        label: 'How do I get in?',
-        next: {
-          title: FOREMAN,
-          text: 'Mags’s back door opens into the Foundry. No power since the machines switched our wind turbine over to it, out at the logging camp, east through the woods. Switch it back. Pell left her chainsaw out there, too.',
-          options: [{ label: 'On my way' }],
-        },
-      }],
+      text: 'That’s the third one this week. They used to come for scrap. Now they come for anything. … I sat with you on that jetty for an hour, the night we found you. Thought you were gone. Then you opened your eyes and asked if you could help. Still doing it.',
+      options: [{ label: '…', next: theJob }],
     };
   }
-  if (questBefore === STEP.engineDown) {
+  if (quest === STEP.engineDown) {
     return {
       title: FOREMAN,
       text: 'You open the cradle. The foreman steps down, stiff, and looks at you like he’s seeing you for the first time, and also like he isn’t.',
-      options: [{ label: '“Come on. Let’s go home.”' }],
+      options: [{ label: '“Come on. Let’s go home.”', reply: REPLY.goHome }],
     };
   }
-  if (questBefore === STEP.bellRung) {
+  if (quest === STEP.bellRung) {
     return {
       title: FOREMAN,
       text: 'I carved that post on the jetty. I knew what you were the morning you woke up. Didn’t matter then. Doesn’t now. … So. What happens now?',
-      options: [{ label: '“I don’t know yet.”' }],
+      options: [{ label: '“I don’t know yet.”', reply: REPLY.dontKnow }],
     };
   }
   const text = quest >= STEP.ending
@@ -169,16 +180,15 @@ function foremanSays(questBefore: number, quest: number): Dialogue {
         ? 'Found Pell’s saw, then. Now the turbine’s switch, and Mags’s door will open.'
         : quest > STEP.raidStopped
           ? 'East through the woods to the logging camp. Pell’s saw is in a crate by the workbench, and the switch is at the turbine.'
-          : 'Stop that thing before it gets away with the tools.';
+          : 'Stop that thing before it gets away with the tools!';
   return { title: FOREMAN, text, options: [{ label: quest >= STEP.ending ? 'Leave' : 'On my way' }] };
 }
 
-/** What the foreman says once the raid's crawler is stopped. */
-export const RAID_STOPPED: Dialogue = {
-  title: FOREMAN,
-  text: 'That’s the third one this week. They used to come for scrap. Now they come for anything. … I sat with you on that jetty for an hour, the night we found you. Thought you were gone. Then you opened your eyes and asked if you could help. Still doing it.',
-  options: [{ label: 'Close' }],
-};
+/** What the salvager sees and hears as the game opens. */
+export const OPENING: Line[] = [
+  { text: 'Night in Rustbelt. A crawler is dragging a crate of the camp’s tools towards the dark.' },
+  { text: 'Hey! That’s our tools! Stop it!', from: VOICES.foreman },
+];
 
 /** Once the chainsaw is in the salvager's hands. */
 export const CHAINSAW_FOUND = 'The chainsaw. It starts first pull, and keeps cutting for as long as you hold it on them.';
@@ -259,7 +269,7 @@ export const READINGS: Record<string, { title: string; text: string }> = {
   },
   switch: {
     title: 'The turbine’s switch',
-    text: 'Someone jammed it over to the Foundry and bent the handle. You force it back. The turbine catches the wind, and far away in town a heavy door unlocks.',
+    text: 'Someone had jammed the switch over to the Foundry and bent the handle. You forced it back to the town. The turbine is turning again, and Mags’s back door has power.',
   },
   'drag-marks': {
     title: 'By the fire',

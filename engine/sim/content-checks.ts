@@ -171,7 +171,9 @@ function checkQuest(content: GameContent, levels: Map<string, LevelContent>): st
   return content.quest.flatMap((step, i) => {
     const trigger = step.reachedBy;
     if (!trigger) return [];
-    if (trigger.type === 'talk' && !npcKinds.has(trigger.npcKind)) return [`quest step ${i} needs talking to "${trigger.npcKind}", who isn't in any level`];
+    if ((trigger.type === 'talk' || trigger.type === 'reply') && !npcKinds.has(trigger.npcKind)) {
+      return [`quest step ${i} needs talking to "${trigger.npcKind}", who isn't in any level`];
+    }
     if (trigger.type === 'enter' && !levels.has(trigger.levelId)) return [`quest step ${i} needs entering "${trigger.levelId}", which doesn't exist`];
     if (trigger.type === 'kill' && !enemyKinds.has(trigger.enemyKind)) return [`quest step ${i} needs killing a "${trigger.enemyKind}", which never appears`];
     if (trigger.type === 'defeat' && !tags.has(trigger.tag)) return [`quest step ${i} needs defeating "${trigger.tag}", which never appears`];

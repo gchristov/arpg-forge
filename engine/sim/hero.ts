@@ -6,7 +6,7 @@ import { tileIndex } from '../world/tile-map';
 import { burst, damageEnemy, findEnemy, nearestEnemy } from './combat';
 import { cut, stopCutting } from './cutting';
 import { meleeOf } from './weapons';
-import { updateInteraction, useService, walkToContainer, walkToNpc, walkToReadable } from './interaction';
+import { reply, updateInteraction, useService, walkToContainer, walkToNpc, walkToReadable } from './interaction';
 import { placeAt } from './setup';
 import type { ProjectileSkill } from './content';
 import { currentLevel, type Command, type GameState, type SimEvent } from './state';
@@ -89,6 +89,9 @@ export function applyCommand(state: GameState, command: Command, events: SimEven
       break;
     case 'useService':
       useService(state, command.npcId, command.service, events);
+      break;
+    case 'reply':
+      reply(state, command.npcId, command.id, events);
       break;
   }
 }

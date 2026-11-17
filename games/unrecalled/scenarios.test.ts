@@ -7,7 +7,7 @@ import { step } from '../../engine/sim/step';
 import { EMP } from './content/hero';
 import { unrecalledContent } from './content/world';
 import { jumpToStep } from '../../engine/sim/shortcuts';
-import { STEP, TAG } from './content/story';
+import { REPLY, STEP, TAG } from './content/story';
 import { FLOOR_ORDER } from './levels/foundry';
 
 const DT = 1 / 60;
@@ -39,6 +39,12 @@ function takeDoor(state: GameState, to: string): void {
 function talkTo(state: GameState, kind: string): SimEvent[] {
   const npc = currentLevel(state).npcs.find((n) => n.kind === kind)!;
   return play(state, 15, [{ type: 'talk', npcId: npc.id }]);
+}
+
+/** Chooses a reply in a conversation with someone in the current level, by their kind. */
+function answer(state: GameState, kind: string, id: string): SimEvent[] {
+  const npc = currentLevel(state).npcs.find((n) => n.kind === kind)!;
+  return play(state, 1 / 60, [{ type: 'reply', npcId: npc.id, id }]);
 }
 
 /** Opens the current level's container holding `weapon`, walking up to it first. */
@@ -107,6 +113,8 @@ describe('Unrecalled scenarios', () => {
     const foreman = currentLevel(state).npcs.find((n) => n.kind === 'foreman')!;
     expect(questGoal(state)?.actorId).toBe(foreman.id);
     talkTo(state, 'foreman');
+    expect(state.quest).toBe(STEP.raidStopped);
+    answer(state, 'foreman', REPLY.howIn);
     expect(state.quest).toBe(STEP.raidStopped + 1);
   });
 
@@ -126,6 +134,8 @@ describe('Unrecalled scenarios', () => {
       } else if (npc) {
         done.push(`${npc.kind} in ${state.levelId}`);
         talkTo(state, npc.kind);
+        const waitsFor = state.rules.quest[state.quest + 1]?.reachedBy;
+        if (waitsFor?.type === 'reply') answer(state, npc.kind, waitsFor.id);
       } else if (crate?.weapon) {
         done.push(crate.weapon);
         openCrateWith(state, crate.weapon);
@@ -318,12 +328,14 @@ describe('Unrecalled scenarios', () => {
     expect([state.levelId, state.quest]).toEqual(['rustbelt', STEP.charged + 1]);
   });
 
-  it('never skips ahead for chatting with the foreman again on the way', () => {
+  it('waits for the salvager\'s reply, so walking away from the foreman before it doesn\'t move the story on', () => {
     const state = unstoppable(createGameState(content, 1));
     defeat(state, TAG.raider);
     talkTo(state, 'foreman');
-    play(state, 1);
     talkTo(state, 'foreman');
+    expect(state.quest).toBe(STEP.raidStopped);
+    answer(state, 'foreman', REPLY.howIn);
+    answer(state, 'foreman', REPLY.howIn);
     expect(state.quest).toBe(STEP.raidStopped + 1);
   });
 

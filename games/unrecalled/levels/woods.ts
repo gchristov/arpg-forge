@@ -44,7 +44,7 @@ const reach = (e: Ellipse, x: number, y: number) => ((x + 0.5 - e.x) / e.rx) ** 
 /**
  * The dead woods east of the town, laid into Rustbelt's map from column `x0`. A trail winds to the logging camp: the
  * turbine whose switch a loader holds over to the Foundry and, in a crate by the cutting bench, Pell's chainsaw. Off the
- * trail lie a pond with U-4 in its reeds, a stash past it, and the sawmill yard by the river with a cache of its own.
+ * trail lie a pond, a stash past it, and the sawmill yard by the river with a cache of its own and U-4 on the bank below.
  */
 export function addWoods(room: LevelContent, reserve: (x: number, y: number, w: number, h: number) => void, x0: number): void {
   const { level } = room;
@@ -101,9 +101,9 @@ export function addWoods(room: LevelContent, reserve: (x: number, y: number, w: 
 
   cache(7, 5, 30);
 
-  // U-4, face down in the reeds on the pond's south bank.
-  room.readables!.push({ tx: x0 + 24, ty: 10, id: 'u-4' });
-  reserve(x0 + 23, 9, 3, 4);
+  // U-4, face down in the reeds on the river's bank below the sawmill yard, reaching upriver.
+  room.readables!.push({ tx: x0 + 26, ty: 27, id: 'u-4' });
+  reserve(x0 + 25, 26, 3, 3);
 }
 
 /** In the woods' own columns: trees everywhere, thickest in clumps and along the far edges, so the trails are the way through. */

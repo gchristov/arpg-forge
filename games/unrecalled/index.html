@@ -14,12 +14,14 @@
   <div class="objective"><div class="loc" id="loc"></div><div id="quest"></div><div id="feed" aria-live="polite"></div></div>
   <div class="stats">
     <span id="scrap"></span><span id="lvl"></span>
+    <button id="logOpen" aria-label="Messages so far">Log</button>
     <button id="mute" aria-label="Sound on or off">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path class="waves" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
     </button>
   </div>
 </div>
 <div id="banner"><div class="t" id="bannerT"></div><div class="s" id="bannerS"></div></div>
+<div id="log" hidden><div class="t">Messages so far</div><div id="logLines"></div><button class="close">Close</button></div>
 <div id="dialog" hidden><div class="t" id="dlgT"></div><p id="dlgP"></p><div class="choices" id="dlgO"></div></div>
 <div id="end" hidden>
   <div>

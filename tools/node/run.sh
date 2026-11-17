@@ -8,7 +8,7 @@ set -e
 #
 # Runs a Node command in Docker, so Node doesn't need installing on this machine. The repo is mounted at
 # /repo; node_modules lives in a Docker volume, so Linux packages never mix with the checkout.
-# `npm run dev` and `npm run preview` are served on localhost:5173 and localhost:4173, and to phones on the
+# `npm run dev` and `npm run play` are served on localhost:5173 and `npm run preview` on localhost:4173, and to phones on the
 # same network at this machine's address.
 
 cd "$(dirname "$0")/../.."
@@ -26,7 +26,7 @@ if [ -t 0 ] && [ -t 1 ]; then
 fi
 PORTS=()
 case " $* " in
-  *" dev "*) PORTS=(-p 5173:5173) ;;
+  *" dev "* | *" play "*) PORTS=(-p 5173:5173) ;;
   *" preview "*) PORTS=(-p 4173:4173) ;;
 esac
 

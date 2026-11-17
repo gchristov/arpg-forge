@@ -9,6 +9,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "play": "vite preview --outDir .play --port 5173",
+    "play:update": "vite build --outDir .play --emptyOutDir",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"

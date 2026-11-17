@@ -11,6 +11,20 @@ function withNpc(state: GameState, kind: string, x: number, y: number): number {
   return id;
 }
 
+describe('replying', () => {
+  it('moves the story on when the player chooses the reply it waits for, not when they start talking', () => {
+    const state = arena(OPEN_ROOM, { x: 2.5, y: 2.5 });
+    state.rules.quest = [{}, { reachedBy: { type: 'reply', npcKind: 'elder', id: 'yes' } }, { reachedBy: { type: 'reply', npcKind: 'elder', id: 'go' } }];
+    const id = withNpc(state, 'elder', 3.5, 2.5);
+    run(state, 2, [{ type: 'talk', npcId: id }]);
+    expect(state.quest).toBe(0);
+    run(state, 1 / 60, [{ type: 'reply', npcId: id, id: 'go' }, { type: 'reply', npcId: id, id: 'no' }]);
+    expect(state.quest).toBe(0);
+    run(state, 1 / 60, [{ type: 'reply', npcId: id, id: 'yes' }]);
+    expect(state.quest).toBe(1);
+  });
+});
+
 describe('talking', () => {
   it('walks up to an NPC and talks once close, turning them to face the hero', () => {
     const state = arena(OPEN_ROOM, { x: 2.5, y: 2.5 });

@@ -10,14 +10,30 @@ export interface Speaker {
  * with the class `line` and its speaker's voice, and gets `gone` as it fades.
  */
 export class MessageFeed {
+  /** Every line so far, oldest first, up to `keep`, so a line missed can be read again. */
+  private readonly said: Array<{ text: string; from?: Speaker }> = [];
+
   constructor(
     private readonly root: HTMLElement,
     private readonly maxLines = 4,
     private readonly seconds = 9,
     private readonly fadeSeconds = 0.6,
+    private readonly keep = 60,
   ) {}
 
+  /** The lines said so far, oldest first. */
+  history(): ReadonlyArray<{ text: string; from?: Speaker }> {
+    return this.said;
+  }
+
+  /** Keeps a line for the history without showing it, such as a page of dialogue the player has just read. */
+  remember(text: string, from?: Speaker): void {
+    this.said.push(from ? { text, from } : { text });
+    if (this.said.length > this.keep) this.said.shift();
+  }
+
   add(text: string, from?: Speaker): void {
+    this.remember(text, from);
     const line = document.createElement('div');
     line.className = from ? `line ${from.voice}` : 'line';
     if (from) {
