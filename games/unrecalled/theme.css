@@ -26,17 +26,23 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 #bossbar .bar{height:8px;border:1px solid #5a3018;background:#140c08;border-radius:4px;overflow:hidden}
 #bossbar .bar i{display:block;height:100%;width:100%;transform-origin:left;background:linear-gradient(#ffb070,#a04a1a);transition:transform .2s}
 #top{position:fixed;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;pointer-events:none}
-.objective{max-width:min(60vw,360px);text-shadow:0 1px 3px #000}
-.objective .loc{font:700 11px/1 var(--body);letter-spacing:.18em;text-transform:uppercase;color:var(--signal);margin-bottom:5px}
+.objective{max-width:min(60vw,320px);text-shadow:0 1px 3px #000}
+.objective .loc{font:700 11px/1 var(--body);letter-spacing:.18em;text-transform:uppercase;color:var(--signal);margin-bottom:8px}
+/* What to do next has its own panel, apart from what's being said. */
+.objective .goal{background:rgba(10,14,18,.78);border:1px solid #2a3440;border-left:3px solid #e8c870;border-radius:6px;padding:8px 12px 10px}
+.objective .goal .h{font:700 10px/1 var(--body);letter-spacing:.18em;text-transform:uppercase;color:#e8c870;margin-bottom:5px}
 #quest{font:500 15px/1.3 var(--body);border-radius:4px;transition:background-color 1.2s}
 #quest.new{animation:newObjective 2.4s ease-out}
 @keyframes newObjective{0%,30%{color:#ffe0a0;text-shadow:0 0 12px rgba(255,190,100,.7),0 1px 3px #000}}
-#feed{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 96px);transform:translateX(-50%);width:min(440px,calc(100% - 32px));pointer-events:none;display:grid}
-#feed .line{grid-area:1/1;font:500 16px/1.45 var(--body);color:var(--ink);background:rgba(10,14,18,.86);border:1px solid #2a3642;border-radius:8px;padding:12px 16px;box-sizing:border-box;transition:opacity .4s;animation:feedIn .3s ease-out}
+/* Conversations and the lines said during play share one box at the foot of the screen, and look the same in it. */
+#feed,#dialog{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 96px);transform:translateX(-50%);width:min(440px,calc(100% - 32px))}
+#feed{pointer-events:none;display:grid}
+#feed .line,#dialog{font:500 16px/1.45 var(--body);color:var(--ink);background:rgba(10,14,18,.9);border:1px solid #3a4a58;border-left:3px solid var(--signal);border-radius:6px;padding:14px 16px;box-sizing:border-box}
+#feed .line{grid-area:1/1;transition:opacity .4s;animation:feedIn .3s ease-out}
 #feed .line.gone{opacity:0}
-#feed .line b{display:block;font:700 12px/1 var(--body);letter-spacing:.16em;text-transform:uppercase;color:var(--signal);margin-bottom:8px}
-#feed .line.own{font-style:italic;color:#c8d4dc}
-#feed .line.foundry{font-family:ui-monospace,Menlo,monospace;font-size:14px;color:#ffb088}
+#feed .line b,#dialog .t{display:block;font:700 12px/1 var(--body);letter-spacing:.16em;text-transform:uppercase;color:var(--signal);margin-bottom:10px}
+#feed .line.own{font-style:italic;color:#c8d4dc;border-left-color:var(--muted)}
+#feed .line.foundry{font-family:ui-monospace,Menlo,monospace;font-size:14px;color:#ffb088;border-left-color:#ff7a5a}
 #feed .line.foundry b{color:#ff7a5a;font-style:normal}
 @keyframes feedIn{from{opacity:0;transform:translateY(-4px)}}
 @media (prefers-reduced-motion:reduce){#quest.new,#feed .line{animation:none}}
@@ -67,9 +73,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 #banner.show{opacity:1}
 #banner .t{font:800 clamp(24px,6.5vw,38px)/1.1 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--ink);text-shadow:0 2px 16px #000}
 #banner .s{font:500 16px/1.4 var(--body);color:var(--muted);margin-top:10px;text-shadow:0 1px 6px #000}
-#dialog{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 96px);transform:translateX(-50%);width:min(440px,calc(100% - 32px));box-sizing:border-box;background:var(--panel);border:1px solid #3a4a58;border-left:3px solid var(--signal);border-radius:6px;padding:14px 16px}
-#dialog .t{font:700 12px/1 var(--body);letter-spacing:.16em;text-transform:uppercase;color:var(--signal)}
-#dialog p{font:500 16px/1.45 var(--body);margin:10px 0 12px}
+#dialog p{margin:0 0 12px}
 #dialog .choices{display:flex;gap:8px;justify-content:flex-end}
 #dialog .choices button{font:600 14px/1 var(--body);color:var(--ink);background:transparent;border:1px solid #3a4a58;border-radius:6px;padding:10px 14px}
 #dialog .choices em{font-style:normal;color:var(--muted);margin-left:8px}

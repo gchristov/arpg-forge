@@ -6,6 +6,7 @@ import { PX } from '../../engine/game/world-view';
 import { servicePrice } from '../../engine/sim/interaction';
 import { currentLevel, type RefusalReason, type SimEvent } from '../../engine/sim/state';
 import { DialogBox } from '../../engine/ui/dialog-box';
+import { SPEAKING } from '../../engine/ui/typewriter';
 import { MODEL_URLS, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
@@ -27,7 +28,7 @@ const game = new Game({
 });
 const { state, labels, view, platform } = game;
 const $ = (id: string): HTMLElement => document.getElementById(id)!;
-const dialog = new DialogBox({ root: $('dialog'), title: $('dlgT'), text: $('dlgP'), choices: $('dlgO') });
+const dialog = new DialogBox({ root: $('dialog'), title: $('dlgT'), text: $('dlgP'), choices: $('dlgO') }, SPEAKING);
 const hud = new Hud((command) => {
   if (command.type === 'attackNearest') dialog.close();
   game.send(command);
@@ -113,6 +114,7 @@ function present(d: Dialogue, npc?: { npcId: number; kind: string }, then?: () =
       };
     }),
     npc?.npcId ?? null,
+    !d.written,
   );
 }
 
@@ -138,7 +140,7 @@ function showReading(id: string, events: SimEvent[]): void {
     if (foreman) showDialogue(foreman.id, foreman.kind);
     return;
   }
-  const page: Dialogue = { title: reading.title, text: reading.text, options: [{ label: 'Close' }] };
+  const page: Dialogue = { title: reading.title, text: reading.text, options: [{ label: 'Close' }], written: true };
   if (reached.includes(STEP.charged)) {
     // The EMP is the charge's gift, so it shows once the scene is over.
     hud.empWithheld = true;

@@ -1,4 +1,5 @@
 import { LineQueue } from './line-queue';
+import { Typewriter, typingSeconds } from './typewriter';
 
 /** Who a line in the feed comes from: a name shown before it, and a voice the game's style sheet can colour. */
 export interface Speaker {
@@ -6,8 +7,8 @@ export interface Speaker {
   voice: string;
 }
 
-/** How long a line stays up: long enough to read at an easy pace, within these bounds, in seconds. */
-const READING = { base: 2, perCharacter: 0.05, min: 3, max: 9 };
+/** How long a line stays up once it has typed out, to finish reading it at an easy pace, in seconds. */
+const READING = { base: 1.5, perCharacter: 0.025, max: 4 };
 const FADE_SECONDS = 0.4;
 
 interface Line {
@@ -16,7 +17,7 @@ interface Line {
 }
 
 /**
- * What happens, in words, so nothing depends on sound: one line at a time in one place, each waiting its turn, so a
+ * What happens, in words, so nothing depends on sound: one line at a time in one place, typed out as if spoken, each waiting its turn, so a
  * line never lands on top of another or goes unread. While something else is being read (`hold`), lines wait, and one
  * cut short shows again afterwards. The game's page and style sheet decide how it looks: a line is a `div` with the
  * class `line` and its speaker's voice, or `own` when it has no speaker (such as the hero's own thoughts), with the
@@ -26,8 +27,9 @@ export class MessageFeed {
   /** Every line so far, oldest first, up to `keep`, so a line missed can be read again. */
   private readonly said: Line[] = [];
   private readonly lines = new LineQueue<Line>(({ text }) =>
-    Math.min(READING.max, Math.max(READING.min, READING.base + text.length * READING.perCharacter)));
+    typingSeconds(text) + Math.min(READING.max, READING.base + text.length * READING.perCharacter));
   private el: HTMLElement | null = null;
+  private typing: { typewriter: Typewriter; seconds: number } | null = null;
   private lastUpdate: number | null = null;
 
   constructor(
@@ -57,6 +59,7 @@ export class MessageFeed {
     if (this.lines.hold(held)) {
       this.el?.remove();
       this.el = null;
+      this.typing = null;
     }
   }
 
@@ -65,11 +68,13 @@ export class MessageFeed {
     const seconds = this.lastUpdate === null ? 0 : (now - this.lastUpdate) / 1000;
     this.lastUpdate = now;
     const { retired, shown } = this.lines.tick(seconds);
+    if (this.typing && !this.typing.typewriter.done) this.typing.typewriter.update((this.typing.seconds += seconds));
     if (retired && this.el) {
       const el = this.el;
       el.classList.add('gone');
       window.setTimeout(() => el.remove(), FADE_SECONDS * 1000);
       this.el = null;
+      this.typing = null;
     }
     if (shown) this.show(shown);
   }
@@ -77,6 +82,7 @@ export class MessageFeed {
   clear(): void {
     this.lines.clear();
     this.el = null;
+    this.typing = null;
     this.root.replaceChildren();
   }
 
@@ -88,7 +94,11 @@ export class MessageFeed {
       name.textContent = line.from.name;
       el.append(name);
     }
-    el.append(line.text);
+    const text = document.createElement('span');
+    el.append(text);
+    const typewriter = new Typewriter(text);
+    typewriter.start(line.text);
+    this.typing = { typewriter, seconds: 0 };
     this.root.append(el);
     this.el = el;
   }

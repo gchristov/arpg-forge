@@ -112,6 +112,8 @@ export interface Dialogue {
   title: string;
   text: string;
   options: DialogueOption[];
+  /** Shown all at once, as a sign or a screen is, rather than typed out as speech is. */
+  written?: boolean;
 }
 
 const FOREMAN = 'Foreman Odell';
@@ -326,11 +328,13 @@ export const GIVING_THE_ORDER: Dialogue[] = [
     title: 'Order terminal',
     text: 'ORDER FOR RUSTBELT: OPEN. 341 ITEMS COLLECTED. ORDER PASSED TO NEXT IN LINE: U-7. AWAITING ORDERS.',
     options: [{ label: '“Give it all back.”' }],
+    written: true,
   },
   {
     title: 'Order terminal',
     text: 'ORDER FOR RUSTBELT: CLOSED. RETURNING ALL ITEMS.',
     options: [{ label: 'Close' }],
+    written: true,
   },
 ];
 
