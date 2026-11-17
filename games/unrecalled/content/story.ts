@@ -1,4 +1,5 @@
 import type { NpcType, QuestStep } from '../../../engine/sim/content';
+import type { Speaker } from '../../../engine/ui/message-feed';
 
 /**
  * Unrecalled's words. The story is mostly told by the places; these are the few lines it needs. The quiet question is
@@ -104,8 +105,14 @@ export function dialogueFor(kind: string, questBefore: number, quest: number, de
   }
 }
 
-/** The banner once the chainsaw is in the salvager's hands. */
-export const CHAINSAW_FOUND = { title: 'The chainsaw', subtitle: 'It keeps cutting for as long as you hold it on them.' };
+/** Who speaks in the message feed, besides the people in town; lines with no speaker are what the salvager notices. */
+export const VOICES = {
+  foundry: { name: 'Foundry', voice: 'foundry' },
+  orderEngine: { name: 'The Order Engine', voice: 'foundry' },
+} satisfies Record<string, Speaker>;
+
+/** Once the chainsaw is in the salvager's hands. */
+export const CHAINSAW_FOUND = 'The chainsaw. It keeps cutting for as long as you hold it on them.';
 
 /** Said over a door the story hasn't opened yet. */
 export const LOCKED = 'No power';
@@ -155,6 +162,9 @@ export const READINGS: Record<string, { title: string; text: string }> = {
 /** Lines the machines speak. */
 /** What a machine with a scanner says on looking the salvager over: it knows what they are. */
 export const MACHINE_SCANS = 'SCANNING… UNIT RECOGNISED';
-export const LINE_ALERT = { title: 'Line alert', subtitle: 'Every machine on the floor turns toward you.' };
-export const ENGINE_CALLS = { title: 'U-7. You are late.', subtitle: 'The Order Engine calls the line to it.' };
-export const ENGINE_FALLS = { title: 'The Order Engine falls silent', subtitle: 'Somewhere in the walls, a relay clicks: ORDER REASSIGNED.' };
+/** When a fight starts: what the Foundry's speakers say, and what the salvager sees anywhere. */
+export const ALARM = { foundry: 'LINE BREACH ALERT.', turns: 'Every machine around turns toward you.' };
+export const ENGINE_CALLS = { says: 'U-7. You are late.', then: 'The Order Engine calls the line to it.' };
+export const ENGINE_FALLS = { then: 'The Order Engine falls silent.', foundry: 'ORDER REASSIGNED.' };
+export const levelUp = (level: number) => `Level ${level}. Patched up, and hitting harder.`;
+export const scrapDropped = (amount: number) => `Back on your feet. You dropped ${amount} scrap in the scramble.`;
