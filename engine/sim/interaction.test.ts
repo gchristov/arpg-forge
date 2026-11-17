@@ -25,6 +25,18 @@ describe('replying', () => {
   });
 });
 
+describe('steps that take the hero somewhere', () => {
+  it('moves the hero to the place once the step is reached', () => {
+    const state = arena(OPEN_ROOM, { x: 2.5, y: 2.5 });
+    state.rules.quest = [{}, { reachedBy: { type: 'kill', enemyKind: 'lord' }, takesHeroTo: { levelId: 'home', x: 1.5, y: 0.5 } }];
+    const events: SimEvent[] = [];
+    advanceQuest(state, { type: 'kill', enemyKind: 'lord' }, events);
+    expect(ofType(events, 'TransitionStarted').map((e) => e.to)).toEqual(['home']);
+    run(state, 1);
+    expect([state.levelId, state.hero.x, state.hero.y]).toEqual(['home', 1.5, 0.5]);
+  });
+});
+
 describe('talking', () => {
   it('walks up to an NPC and talks once close, turning them to face the hero', () => {
     const state = arena(OPEN_ROOM, { x: 2.5, y: 2.5 });

@@ -38,8 +38,11 @@ export interface GameHooks {
   update(state: GameState): void;
   /** Called when play starts, after the title screen. */
   onStart?(): void;
-  /** Called when a tap on the world is about to become a command, for example to close a dialogue. */
-  onWorldTap?(): void;
+  /**
+   * Called when a tap on the world is about to become a command, for example to close a dialogue. Returning false
+   * drops the tap, for example while something is open that only its own button closes.
+   */
+  onWorldTap?(): boolean | void;
 }
 
 /**
@@ -171,7 +174,7 @@ export class Game {
   private commandForTap(x: number, y: number): Command | null {
     if (this.state.transition) return null;
     if (this.state.hero.dead) return { type: 'respawn' };
-    this.hooks?.onWorldTap?.();
+    if (this.hooks?.onWorldTap?.() === false) return null;
     return tapCommand(this.state, this.renderer, (kind) => this.view.scaleOf(kind), x, y, (id) => this.view.sight.of(id) > 0.5);
   }
 

@@ -129,6 +129,7 @@ const READABLE_BY_ROOM: Partial<Record<InteriorId, string>> = { pumphouse: 'pump
 export function buildInterior(id: InteriorId): LevelContent {
   const { name, subtitle, rows } = INTERIORS[id];
   const readable = READABLE_BY_ROOM[id];
-  const key = readable ? { ...KEY, k: { ...KEY.k!, readable } } : KEY;
+  // Lit terminals are kept for things to read, so a desk stands where an empty one would.
+  const key = readable ? { ...KEY, k: { ...KEY.k!, readable } } : { ...KEY, k: solid(Prop.Desk) };
   return roomFromRows({ id, name, subtitle, floor: Ground.Plate, rows, key });
 }

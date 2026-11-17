@@ -44,7 +44,7 @@ function talkTo(state: GameState, kind: string): SimEvent[] {
 /** Chooses a reply in a conversation with someone in the current level, by their kind. */
 function answer(state: GameState, kind: string, id: string): SimEvent[] {
   const npc = currentLevel(state).npcs.find((n) => n.kind === kind)!;
-  return play(state, 1 / 60, [{ type: 'reply', npcId: npc.id, id }]);
+  return play(state, 1, [{ type: 'reply', npcId: npc.id, id }]);
 }
 
 /** Opens the current level's container holding `weapon`, walking up to it first. */
@@ -103,14 +103,18 @@ function inIntake(): GameState {
 }
 
 describe('Unrecalled scenarios', () => {
-  it('opens on a crawler making off with the camp\'s tools; stopping it sends the salvager to the foreman', () => {
+  it('opens on the foreman, who points the salvager at the crawler making off with the tools, then gives them the job', () => {
     const state = untouchable(createGameState(content, 1));
     expect(state.levelId).toBe('rustbelt');
+    const foreman = currentLevel(state).npcs.find((n) => n.kind === 'foreman')!;
+    expect(questGoal(state)?.actorId).toBe(foreman.id);
+    talkTo(state, 'foreman');
+    expect(state.quest).toBe(0);
+    answer(state, 'foreman', REPLY.onIt);
     const raider = currentLevel(state).enemies.find((e) => e.tag === TAG.raider)!;
     expect(questGoal(state)?.actorId).toBe(raider.id);
     defeat(state, TAG.raider);
     expect(state.quest).toBe(STEP.raidStopped);
-    const foreman = currentLevel(state).npcs.find((n) => n.kind === 'foreman')!;
     expect(questGoal(state)?.actorId).toBe(foreman.id);
     talkTo(state, 'foreman');
     expect(state.quest).toBe(STEP.raidStopped);
@@ -148,25 +152,27 @@ describe('Unrecalled scenarios', () => {
       }
     }
     expect(done).toEqual([
-      TAG.raider, 'foreman in rustbelt', 'chainsaw', TAG.switchLoader, 'switch', 'drag-marks', TAG.tagsLoader,
-      'charging-station', 'orderEngine', 'foreman in assembly', 'bell', 'foreman in rustbelt',
+      'foreman in rustbelt', TAG.raider, 'foreman in rustbelt', 'chainsaw', TAG.switchLoader, 'switch', 'drag-marks',
+      'trader in tradingPost', TAG.tagsLoader, 'charging-station', 'orderEngine', 'foreman in assembly', 'foreman in assembly',
+      'bell', 'foreman in rustbelt',
     ]);
     expect(state.quest).toBe(STEP.ending);
   });
 
-  it('takes the foreman from the fire once the turbine is switched back, holds him in the Assembly Hall, and brings him home', () => {
+  it('takes the foreman from the fire once the turbine is switched back, shows him in the Assembly Hall once the Order Engine is down, and brings him home', () => {
     const state = createGameState(content, 1);
     const foremen = () => Object.entries(state.levels).flatMap(([id, ls]) => ls.npcs.filter((n) => n.kind === 'foreman').map(() => id));
     expect(foremen()).toEqual(['rustbelt']);
     jumpToStep(state, STEP.powerOn);
     expect(foremen()).toEqual([]);
     expect(currentLevel(state).readables.map((r) => r.id)).toContain('drag-marks');
-    jumpToStep(state, STEP.taken);
+    jumpToStep(state, STEP.charged);
+    expect(foremen()).toEqual([]);
+    jumpToStep(state, STEP.engineDown);
     expect(foremen()).toEqual(['assembly']);
+    expect(currentLevel(state).readables.map((r) => r.id)).not.toContain('bell');
     jumpToStep(state, STEP.freed);
     expect(foremen()).toEqual(['rustbelt']);
-    expect(currentLevel(state).readables.map((r) => r.id)).not.toContain('bell');
-    jumpToStep(state, STEP.home);
     expect(currentLevel(state).readables.map((r) => r.id)).toContain('bell');
   });
 
@@ -236,32 +242,25 @@ describe('Unrecalled scenarios', () => {
     }
   });
 
-  it('lets the salvager walk among the working machines until one is hit, then turns them all', () => {
+  it('lets the salvager walk up to a working machine until it\'s hit, which puts the whole Foundry on alert', () => {
     const state = inIntake();
-    takeDoor(state, 'sorting');
     const hp = state.hero.hp;
-    const crawler = currentLevel(state).enemies.find((e) => e.kind === 'crawler')!;
-    play(state, 12, [{ type: 'walk', x: crawler.x, y: crawler.y + 1 }]);
-    expect(state.hero.hp).toBe(hp);
-    expect(currentLevel(state).enemies.every((e) => e.mode === 'idle')).toBe(true);
-    const events = play(state, 2, [{ type: 'attack', enemyId: crawler.id }]);
+    const loader = currentLevel(state).enemies.find((e) => e.tag === TAG.tagsLoader)!;
+    play(state, 15, [{ type: 'walk', x: loader.x, y: loader.y + 1.2 }]);
+    expect([state.hero.hp, loader.mode]).toEqual([hp, 'idle']);
+    const events = play(state, 2, [{ type: 'attack', enemyId: loader.id }]);
     expect(events.map((e) => e.type)).toContain('LevelAlarmed');
-    expect(currentLevel(state).enemies.filter((e) => !e.dead).every((e) => e.mode === 'chase')).toBe(true);
-  });
-
-  it('puts the whole Foundry on alert after a fight on one floor, so the next floor\'s machines attack on sight', () => {
-    const state = inIntake();
-    defeat(state, TAG.tagsLoader);
+    expect(loader.mode).toBe('chase');
     expect(FLOOR_ORDER.every((id) => state.levels[id]!.alarmed)).toBe(true);
     expect(state.levels.rustbelt!.alarmed).toBe(false);
+  });
 
-    takeDoor(state, 'sorting');
-    const crawler = currentLevel(state).enemies.find((e) => e.kind === 'crawler')!;
-    state.hero.x = state.hero.prevX = crawler.x + 2;
-    state.hero.y = state.hero.prevY = crawler.y;
-    const events = play(state, 1);
-    expect(crawler.mode).toBe('chase');
-    expect(events.filter((e) => e.type === 'EnemyRecognised')).toHaveLength(0);
+  it('places only the machines the story needs, and nothing on the floors between Intake and the Order Engine', () => {
+    const state = createGameState(content, 1);
+    const machines = Object.entries(state.levels)
+      .filter(([id]) => id !== 'arena')
+      .flatMap(([, ls]) => ls.enemies.map((e) => e.tag ?? e.kind));
+    expect(machines.sort()).toEqual(['orderEngine', TAG.raider, TAG.switchLoader, TAG.tagsLoader].sort());
   });
 
   it('starts the salvager without the EMP, since it\'s to be earned', () => {
@@ -272,9 +271,7 @@ describe('Unrecalled scenarios', () => {
   });
 
   it('sets off an EMP, once the salvager has it, among a pack of crawlers, hitting them all and sounding the alarm', () => {
-    const state = untouchable(createGameState({ ...content, hero: { ...content.hero, skills: [EMP] } }, 1));
-    intoFoundry(state);
-    takeDoor(state, 'sorting');
+    const state = untouchable(createGameState({ ...content, hero: { ...content.hero, skills: [EMP] } }, 1, 'arena'));
     const pack = currentLevel(state).enemies.filter((e) => e.kind === 'crawler').slice(0, 3);
     const middle = { x: pack.reduce((s, e) => s + e.x, 0) / 3, y: pack.reduce((s, e) => s + e.y, 0) / 3 };
     state.hero.x = state.hero.prevX = middle.x;
@@ -357,11 +354,8 @@ describe('Unrecalled scenarios', () => {
     expect(events.map((e) => e.type)).toContain('Armed');
     expect([state.hero.weapon, state.quest]).toEqual(['chainsaw', STEP.armed]);
 
-    intoFoundry(state);
-    takeDoor(state, 'sorting');
-    const crawler = currentLevel(state).enemies.find((e) => e.kind === 'crawler')!;
-    const cut = play(state, 10, [{ type: 'attack', enemyId: crawler.id }]);
-    expect(crawler.dead).toBe(true);
+    const cut = defeat(state, TAG.switchLoader);
+    expect(state.quest).toBe(STEP.switchFreed);
     expect(cut.some((e) => e.type === 'Swung' && e.actorId === state.hero.id)).toBe(false);
   });
 

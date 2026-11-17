@@ -6,9 +6,8 @@ import { updateItems } from './loot';
 import { separateBodies } from './separation';
 import { placeAt } from './setup';
 import { currentLevel, type GameState, type SimEvent, type StepInput } from './state';
+import { travel } from './travel';
 
-/** The fade between levels. */
-const TRANSITION_SECONDS = 0.3;
 const PORTAL_COOLDOWN_SECONDS = 0.7;
 /** A sealed portal says so again only after this long, rather than every step the hero stands on it. */
 const SEALED_REMINDER_SECONDS = 1.5;
@@ -79,8 +78,7 @@ function enterPortalUnderHero(state: GameState, events: SimEvent[]): void {
   const arrival = back
     ? { x: back.tx + 0.5 + back.stepOut.x, y: back.ty + 0.5 + back.stepOut.y }
     : destination.level.start;
-  state.transition = { to: portal.to, x: arrival.x, y: arrival.y, remaining: TRANSITION_SECONDS };
-  events.push({ type: 'TransitionStarted', to: portal.to });
+  travel(state, portal.to, arrival.x, arrival.y, events);
 }
 
 function advanceTransition(state: GameState, dt: number, events: SimEvent[]): void {

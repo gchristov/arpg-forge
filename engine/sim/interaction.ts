@@ -4,6 +4,7 @@ import type { QuestTrigger, Service } from './content';
 import { dropItem } from './loot';
 import { currentLevel, type GameState, type Hero, type SimEvent } from './state';
 import { castForStep } from './story-cast';
+import { travel } from './travel';
 import { arm } from './weapons';
 
 /** The hero talks or opens once this close. */
@@ -146,9 +147,11 @@ export function advanceQuest(state: GameState, trigger: QuestTrigger, events: Si
     if ((t?.type === 'talk' || t?.type === 'reply' || steps[step]!.inOrder) && step > state.quest + 1) continue;
     if (t && sameTrigger(t, trigger)) {
       state.quest = step;
-      if (steps[step]!.calmsEverything) calmEverything(state);
+      const reached = steps[step]!;
+      if (reached.calmsEverything) calmEverything(state);
       castForStep(state);
       events.push({ type: 'QuestAdvanced', step });
+      if (reached.takesHeroTo) travel(state, reached.takesHeroTo.levelId, reached.takesHeroTo.x, reached.takesHeroTo.y, events);
       return;
     }
   }
