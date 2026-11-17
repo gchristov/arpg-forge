@@ -137,7 +137,7 @@ export function advanceQuest(state: GameState, trigger: QuestTrigger, events: Si
     const t = steps[step]!.reachedBy;
     // Entering a place or killing something can skip ahead, but talking only moves on by one step, so someone met
     // twice never skips what lies between.
-    if (t?.type === 'talk' && step > state.quest + 1) continue;
+    if ((t?.type === 'talk' || steps[step]!.inOrder) && step > state.quest + 1) continue;
     if (t && sameTrigger(t, trigger)) {
       state.quest = step;
       if (steps[step]!.calmsEverything) calmEverything(state);
