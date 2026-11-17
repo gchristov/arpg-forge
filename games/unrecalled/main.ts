@@ -10,8 +10,8 @@ import { MODEL_URLS, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import {
-  ALARM, CHAINSAW_FOUND, dialogueFor, LOCKED, ENDING, ENDING_STEP, ENGINE_CALLS, ENGINE_DOWN_STEP, ENGINE_FALLS, levelUp, MACHINE_SCANS, NPCS,
-  READINGS, scrapDropped, VOICES,
+  ALARM, CHAINSAW_FOUND, CHARGING, dialogueFor, ENDING, ENGINE_CALLS, ENGINE_FALLS, levelUp, LOCKED, MACHINE_SCANS, NPCS, ON_ENTERING,
+  ORDER_CLOSED, RAID_STOPPED, READINGS, scrapDropped, STEP, STEP_LINES, VOICES, type Dialogue, type Line,
 } from './content/story';
 import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
@@ -74,13 +74,21 @@ const kindOf = (enemyId: number): string | undefined => currentLevel(state).enem
 /** Times the salvager has gone down, for the trader to remark on. */
 let deaths = 0;
 
-/** Opens a townsperson's dialogue, with each service's price and whether the salvager can afford it. */
+/** Opens a townsperson's dialogue; when they're done talking, `then` runs, for a step of the story that follows. */
 function showDialogue(npcId: number, questBefore: number): void {
   const npc = currentLevel(state).npcs.find((n) => n.id === npcId);
   const d = npc && dialogueFor(npc.kind, questBefore, state.quest, deaths, state.hero.weapon);
   if (!npc || !d) return;
-  const services = NPCS[npc.kind]?.services ?? [];
-  const ending = npc.kind === 'foreman' && questBefore < ENDING_STEP && state.quest >= ENDING_STEP;
+  const ending = npc.kind === 'foreman' && questBefore < STEP.ending && state.quest >= STEP.ending;
+  present(d, { npcId, kind: npc.kind }, ending ? playEnding : undefined);
+}
+
+/**
+ * Shows a page of dialogue, with each service's price and whether the salvager can afford it. A reply leads to the
+ * next page; the last closes it and runs `then`.
+ */
+function present(d: Dialogue, npc?: { npcId: number; kind: string }, then?: () => void): void {
+  const services = npc ? NPCS[npc.kind]?.services ?? [] : [];
   dialog.open(
     d.title,
     d.text,
@@ -92,16 +100,45 @@ function showDialogue(npcId: number, questBefore: number): void {
         ...(o.tag ? { tag: o.tag(price) } : {}),
         disabled: state.hero.gold < price,
         onChoose: () => {
-          if (o.service !== undefined) game.send({ type: 'useService', npcId, service: o.service });
+          if (o.service !== undefined && npc) game.send({ type: 'useService', npcId: npc.npcId, service: o.service });
+          else if (o.next) present(o.next, npc, then);
           else {
             dialog.close();
-            if (ending) playEnding();
+            then?.();
           }
         },
       };
     }),
-    npcId,
+    npc?.npcId ?? null,
   );
+}
+
+/** Pages of dialogue one after another, then `then`. */
+function playScene(pages: Dialogue[], then?: () => void): void {
+  const [first, ...rest] = pages;
+  if (first) present(first, undefined, () => playScene(rest, then));
+  else then?.();
+}
+
+const say = (lines: Line[] | undefined): void => {
+  for (const line of lines ?? []) hud.say(line.text, line.from);
+};
+
+/** What reading something says, and for the charging station, the scene that follows. */
+function showReading(id: string): void {
+  const reading = READINGS[id];
+  if (!reading) return;
+  const page: Dialogue = { title: reading.title, text: reading.text, options: [{ label: id === 'charging-station' ? 'Plug in' : 'Close' }] };
+  if (id === 'charging-station') playScene([page, ...CHARGING], () => say(STEP_LINES[STEP.charged]));
+  else present(page);
+}
+
+/** What happens in the world as the story moves on. */
+function reachStep(step: number): void {
+  if (step === STEP.raidStopped) present(RAID_STOPPED);
+  else if (step === STEP.engineDown) present(ENGINE_FALLS, undefined, () => say([ORDER_CLOSED]));
+  // The charging station's lines follow its scene.
+  else if (step !== STEP.charged) say(STEP_LINES[step]);
 }
 
 /** After a purchase: getting patched up closes the dialogue, other services refresh it with the new prices. */
@@ -225,7 +262,10 @@ function react(events: SimEvent[]): void {
     switch (e.type) {
       case 'EnteredLevel': {
         const { level } = currentLevel(state);
-        if (!state.hero.dead && events.every((other) => other.type !== 'HeroRespawned')) hud.banner(level.name, level.subtitle, 2);
+        if (!state.hero.dead && events.every((other) => other.type !== 'HeroRespawned')) {
+          hud.banner(level.name, level.subtitle, 2);
+          say(ON_ENTERING[e.levelId] && [ON_ENTERING[e.levelId]!]);
+        }
         break;
       }
       case 'EnemyDamaged': {
@@ -243,7 +283,7 @@ function react(events: SimEvent[]): void {
         hud.say(ALARM.turns);
         break;
       case 'PortalLocked':
-        labels.text(e.x, e.y, 60 * PX, LOCKED, '#ff7a62', 14);
+        labels.text(e.x, e.y, 60 * PX, LOCKED[e.to] ?? 'Locked', '#ff7a62', 14);
         break;
       case 'Armed':
         hud.say(CHAINSAW_FOUND);
@@ -268,16 +308,11 @@ function react(events: SimEvent[]): void {
         if (e.kind === 'gold') labels.text(e.x, e.y, 30 * PX, `+${e.amount} scrap`, '#e8c870', 13);
         else labels.text(e.x, e.y, 30 * PX, '+1 patch kit', '#7ae08a', 13);
         break;
-      case 'Read': {
-        const reading = READINGS[e.id];
-        if (reading) dialog.open(reading.title, reading.text, [{ label: 'Close', onChoose: () => dialog.close() }]);
+      case 'Read':
+        showReading(e.id);
         break;
-      }
       case 'QuestAdvanced':
-        if (e.step === ENGINE_DOWN_STEP) {
-          hud.say(ENGINE_FALLS.then);
-          hud.say(ENGINE_FALLS.foundry, VOICES.foundry);
-        }
+        reachStep(e.step);
         break;
       case 'HeroDied':
         deaths++;

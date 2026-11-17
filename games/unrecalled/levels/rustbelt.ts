@@ -2,6 +2,7 @@ import { valueNoise } from '../../../engine/core/math';
 import type { LevelContent } from '../../../engine/sim/content';
 import type { BuildingPart, Level, Structure } from '../../../engine/world/level';
 import { createTileMap, inBounds, setProp, setSolid, tileIndex } from '../../../engine/world/tile-map';
+import { STEP, TAG } from '../content/story';
 import { Ground, Prop } from '../content/tiles';
 import { paintPath, scatterWilds } from './wilds';
 import { addWoods, WOODS_TRAIL_ROW, WOODS_WIDTH, woodsTreeChance } from './woods';
@@ -153,7 +154,13 @@ export function buildRustbelt(): LevelContent {
   setProp(map, 22, 10, Prop.Pylon, true);
   setProp(map, 20, 13, Prop.FireBarrel, true);
   level.lights.push({ x: 20.5, y: 13.5, radius: 4.4, intensity: 1.3, colour: 'molten', flicker: 1.6, seed: 7 });
-  room.npcs.push({ kind: 'foreman', name: 'Foreman Odell', x: 21.5, y: 13.6 });
+  // The foreman by the fire, until the Foundry takes him and after he's brought home; drag marks where he was meanwhile,
+  // and at the end the chapel bell beside it. A crawler is making off with the camp's tools when the story opens.
+  const foreman = { kind: 'foreman', name: 'Foreman Odell', x: 21.5, y: 13.6 };
+  room.npcs.push({ ...foreman, untilStep: STEP.powerOn }, { ...foreman, fromStep: STEP.freed });
+  room.readables!.push({ tx: 21, ty: 13, id: 'drag-marks', fromStep: STEP.powerOn, untilStep: STEP.taken });
+  room.readables!.push({ tx: 23, ty: 14, id: 'bell', fromStep: STEP.home });
+  room.spawns.push({ kind: 'crawler', x: 26.5, y: 18.5, tag: TAG.raider, strength: 0.5 });
   for (const [x, y] of [[17, 10], [26, 9], [27, 15], [16, 16], [29, 11], [14, 9], [30, 16]] as const) {
     setProp(map, x, y, Prop.Containers, true);
   }

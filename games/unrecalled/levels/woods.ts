@@ -1,6 +1,7 @@
 import { valueNoise } from '../../../engine/core/math';
 import type { LevelContent } from '../../../engine/sim/content';
 import { inBounds, setProp, setSolid, tileIndex } from '../../../engine/world/tile-map';
+import { STEP, TAG } from '../content/story';
 import { Ground, Prop } from '../content/tiles';
 import { paintPath } from './wilds';
 
@@ -31,6 +32,9 @@ interface Ellipse {
 const CAMP: Ellipse = { x: 41, y: 11, rx: 7.5, ry: 6.5 };
 /** The sawmill yard by the river, where the logs were cut. */
 const YARD: Ellipse = { x: 31, y: 23, rx: 4.5, ry: 2.6 };
+/** How much tougher than its kind the loader at the switch is, for a salvager who may still be on their fists. */
+const WOODS_STRENGTH = 0.5;
+
 /** A still pond in the trees north of the trail. */
 const POND: Ellipse = { x: 24, y: 7, rx: 4.5, ry: 2.6 };
 
@@ -38,10 +42,9 @@ const POND: Ellipse = { x: 24, y: 7, rx: 4.5, ry: 2.6 };
 const reach = (e: Ellipse, x: number, y: number) => ((x + 0.5 - e.x) / e.rx) ** 2 + ((y + 0.5 - e.y) / e.ry) ** 2;
 
 /**
- * The dead woods east of the town, laid into Rustbelt's map from column `x0`. A trail winds to
- * the logging camp: the turbine whose breaker the machines threw to cut the town's power and, in a crate by the cutting
- * bench, Pell's old chainsaw. Off the trail lie a pond, a stash past it, and the sawmill yard
- * by the river with a cache of its own.
+ * The dead woods east of the town, laid into Rustbelt's map from column `x0`. A trail winds to the logging camp: the
+ * turbine whose switch a loader holds over to the Foundry and, in a crate by the cutting bench, Pell's chainsaw. Off the
+ * trail lie a pond with U-4 in its reeds, a stash past it, and the sawmill yard by the river with a cache of its own.
  */
 export function addWoods(room: LevelContent, reserve: (x: number, y: number, w: number, h: number) => void, x0: number): void {
   const { level } = room;
@@ -73,11 +76,12 @@ export function addWoods(room: LevelContent, reserve: (x: number, y: number, w: 
   }
   for (const trail of TRAILS) paintPath(map, trail.map(([x, y]) => [x0 + x, y]), reserve);
 
-  // The logging camp: the turbine and the breaker cabinet at its foot, the crate by the cutting bench, a truck, stacked
-  // salvage and a brazier.
+  // The logging camp: the turbine and its switch at its foot, held over to the Foundry by a loader until it's broken,
+  // the crate by the cutting bench, a truck, stacked salvage and a brazier.
   prop(42, 8, Prop.Pylon);
   prop(44, 8, Prop.Computer);
-  room.readables!.push({ tx: x0 + 44, ty: 8, id: 'breaker' });
+  room.readables!.push({ tx: x0 + 44, ty: 8, id: 'switch', fromStep: STEP.switchFreed });
+  room.spawns.push({ kind: 'loader', x: x0 + 43.5, y: 10.5, tag: TAG.switchLoader, strength: WOODS_STRENGTH });
   light(44, 8, 'cyan', 4);
   prop(45, 13, Prop.Crate);
   room.containers!.push({ tx: x0 + 45, ty: 13, gold: 0, healingItems: 0, weapon: 'chainsaw' });
@@ -96,6 +100,10 @@ export function addWoods(room: LevelContent, reserve: (x: number, y: number, w: 
   cache(35, 22, 25);
 
   cache(7, 5, 30);
+
+  // U-4, face down in the reeds on the pond's south bank.
+  room.readables!.push({ tx: x0 + 24, ty: 10, id: 'u-4' });
+  reserve(x0 + 23, 9, 3, 4);
 }
 
 /** In the woods' own columns: trees everywhere, thickest in clumps and along the far edges, so the trails are the way through. */

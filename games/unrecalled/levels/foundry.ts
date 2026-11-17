@@ -1,19 +1,27 @@
-import type { LevelContent } from '../../../engine/sim/content';
+import type { LevelContent, NpcPlacement } from '../../../engine/sim/content';
 import { roomFromRows, type RoomKey } from '../../../engine/sim/rooms';
+import { STEP, TAG } from '../content/story';
 import { Ground, Prop } from '../content/tiles';
 
 /**
  * The Foundry, floor by floor: rooms and corridors cut out of solid rock on the wall kit's 3-tile grid, going deeper through a door in a back wall
  * (U) and back through a gap in a front wall (V). Each floor has its own shape, threat and discovery to read:
- * Intake's loading bay, receiving hall and storage aisles, with the recall notice (T) in a side office off its offices;
- * the Sorting Line's three belt halls joined in a loop by service corridors, a tagged crate (R) on the first; the
- * Control Gallery's walkway round a shaft, with control rooms off it and a locker (Y) in one; and the Assembly Hall,
- * reached through two furnace rooms and an antechamber, with an empty cradle in its back wall (Z). Salvage caches (S)
- * wait in dead ends and side rooms.
+ * Intake's loading bay, receiving hall and storage aisles, with the recall notice (T) just inside the way in and the
+ * loader carrying the stock tags that open the way on; the Sorting Line's three belt halls joined in a loop by service
+ * corridors, a tagged crate (R) on the first and the manifest board (M) by the way on; the Control Gallery's walkway
+ * round a shaft, with control rooms off it and U-7's charging station (Y) in one, whose way on opens once it's used;
+ * and the Assembly Hall, reached through two furnace rooms and an antechamber, with the cradle the foreman is held in
+ * in its back wall (Z). Salvage caches (S) wait in dead ends and side rooms.
  */
 interface FloorSpec {
   name: string;
   subtitle: string;
+  /** The quest step from which the way deeper opens. */
+  deeperFromStep?: number;
+  /** One machine the story needs beaten, by its kind on this floor. */
+  tagged?: { kind: string; tag: string };
+  /** Townspeople the story brings here. */
+  npcs?: NpcPlacement[];
   /** Colour names for the main wall lamps (L) and the accents (A). */
   lamps: { L: string; A: string };
   rows: string[];
@@ -27,7 +35,8 @@ const STRENGTH: Record<FloorId, number> = { intake: 1, sorting: 1.15, gallery: 1
 
 const FLOORS = {
   intake: {
-    name: 'Intake', subtitle: 'Receiving for the Valley Order', lamps: { L: 'cyan', A: 'amber' },
+    name: 'Intake', subtitle: 'Receiving for the Valley Order',
+    deeperFromStep: STEP.tagsTaken, tagged: { kind: 'loader', tag: TAG.tagsLoader }, lamps: { L: 'cyan', A: 'amber' },
     rows: [
       '#####################################################################',
       '#####################################################################',
@@ -52,7 +61,7 @@ const FLOORS = {
       '###............###############...#####################.......S.######',
       '###.hhhh..hhhh.###############...####################A.........######',
       '###............##############A...#####################.........######',
-      '##A............###############...#####################...T.....######',
+      '##A............###############...#####################...k.....######',
       '###............###############...#####################.........######',
       '###.hhhh..hhhh.###############...#####################.dd......######',
       '###............###############...####################A.........######',
@@ -69,7 +78,7 @@ const FLOORS = {
       '######....................................###########################',
       '#####A....................................###########################',
       '########################.b...=======u==u..###########################',
-      '########################..................###########################',
+      '########################..T...............###########################',
       '########################..................###########################',
       '###############################V#####################################',
       '#####################################################################',
@@ -91,7 +100,7 @@ const FLOORS = {
       '########A.......................................###########################',
       '#########.......................................###########################',
       '#########...===========ww=============..........###L###L###B#U###L#########',
-      '###############...###########################........................######',
+      '###############...###########################...................M....######',
       '###############...###########################........................######',
       '###############...###########################........................######',
       '###############...###########################..====u================.######',
@@ -127,7 +136,7 @@ const FLOORS = {
     ],
   },
   gallery: {
-    name: 'Control Gallery', subtitle: 'Something is watching the line', lamps: { L: 'alarm', A: 'alarm' },
+    name: 'Control Gallery', subtitle: 'Something is watching the line', deeperFromStep: STEP.charged, lamps: { L: 'alarm', A: 'alarm' },
     rows: [
       '##################################################################',
       '##################################################################',
@@ -180,7 +189,8 @@ const FLOORS = {
     ],
   },
   assembly: {
-    name: 'Assembly Hall', subtitle: 'Where the order is kept', lamps: { L: 'amber', A: 'molten' },
+    name: 'Assembly Hall', subtitle: 'Where the order is kept',
+    npcs: [{ kind: 'foreman', name: 'Foreman Odell', x: 31.5, y: 3.6, fromStep: STEP.taken, untilStep: STEP.freed }], lamps: { L: 'amber', A: 'molten' },
     rows: [
       '#####################################################################',
       '#####################################################################',
@@ -257,12 +267,13 @@ const KEY: Record<string, RoomKey> = {
   c: solid(Prop.Crate),
   b: solid(Prop.Barrel),
   l: solid(Prop.Locker),
-  Y: { ...solid(Prop.Locker), readable: 'locker' },
+  Y: { ...solid(Prop.Cradle), readable: 'charging-station', light: { radius: 2.6, intensity: 0.8, colour: 'cyan', flicker: 0.2 } },
+  M: { ...solid(Prop.Computer), readable: 'manifest', light: { radius: 2.4, intensity: 0.8, colour: 'amber', flicker: 0.4 } },
   h: solid(Prop.Shelves),
   d: solid(Prop.Desk),
   k: { ...solid(Prop.Computer), light: { radius: 2.2, intensity: 0.6, colour: 'cyan', flicker: 0.6 } },
   T: { ...solid(Prop.Computer), readable: 'recall-notice', light: { radius: 2.4, intensity: 0.8, colour: 'amber', flicker: 0.4 } },
-  Z: { ...solid(Prop.Cradle), readable: 'cradle', light: { radius: 2.6, intensity: 0.8, colour: 'cyan', flicker: 0.2 } },
+  Z: { ...solid(Prop.Cradle), light: { radius: 2.6, intensity: 0.8, colour: 'cyan', flicker: 0.2 } },
   '=': { ground: Ground.Belt },
   q: onBelt(Prop.Chair),
   w: onBelt(Prop.Desk),
@@ -286,17 +297,19 @@ function lamps(id: FloorId): Record<string, RoomKey> {
 }
 
 /**
- * The doors on one floor: deeper through the back wall, and back the way the hero came through the front.
+ * The doors on one floor: deeper through the back wall, shut until the story reaches the floor's `deeperFromStep`,
+ * and back the way the hero came through the front.
  */
 function doors(id: FloorId): Record<string, RoomKey> {
   const at = FLOOR_ORDER.indexOf(id);
   const deeper = FLOOR_ORDER[at + 1];
   // Intake's front door leads back out through the loading door of Mags's depot, where deliveries came in.
   const back = FLOOR_ORDER[at - 1] ?? 'tradingPost';
+  const opensAt = (FLOORS[id] as FloorSpec).deeperFromStep;
   return {
     U: deeper
       ? {
-        portal: { to: deeper, stepOut: { x: 0, y: 0.9 }, start: { x: 0, y: 0.9 } },
+        portal: { to: deeper, stepOut: { x: 0, y: 0.9 }, start: { x: 0, y: 0.9 }, ...(opensAt === undefined ? {} : { lockedUntilStep: opensAt }) },
         light: { radius: 2.2, intensity: 0.8, colour: 'amber', flicker: 0.2, offset: { x: 0, y: 0.7 } },
       }
       : { prop: Prop.Wall, solid: true },
@@ -310,9 +323,12 @@ function doors(id: FloorId): Record<string, RoomKey> {
 const BUILDING = 'foundry';
 
 export function buildFloor(id: FloorId): LevelContent {
-  const { name, subtitle, rows } = FLOORS[id];
+  const spec: FloorSpec = FLOORS[id];
+  const { name, subtitle, rows, tagged, npcs } = spec;
   const floor = roomFromRows({ id, name, subtitle, floor: Ground.Plate, rows, key: { ...KEY, ...lamps(id), ...doors(id) } });
   floor.level.building = BUILDING;
   floor.enemyStrength = STRENGTH[id];
+  if (tagged) floor.spawns.find((s) => s.kind === tagged.kind)!.tag = tagged.tag;
+  floor.npcs.push(...(npcs ?? []));
   return floor;
 }
