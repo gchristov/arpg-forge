@@ -15,18 +15,16 @@ describe('LineQueue', () => {
     expect(q.showing).toBeNull();
   });
 
-  it('shows nothing while held, and shows a line cut short again in full afterwards', () => {
+  it('shows nothing while held, puts away the line showing, and goes on with the next afterwards', () => {
     const q = queue();
     q.push('abcd');
     q.push('ef');
     q.tick(0);
-    q.tick(3);
+    q.tick(1);
     expect(q.hold(true)).toBe('abcd');
     expect(q.tick(10)).toEqual({ retired: null, shown: null });
     q.hold(false);
-    expect(q.tick(0)).toEqual({ retired: null, shown: 'abcd' });
-    expect(q.tick(3)).toEqual({ retired: null, shown: null });
-    expect(q.tick(1)).toEqual({ retired: 'abcd', shown: 'ef' });
+    expect(q.tick(0)).toEqual({ retired: null, shown: 'ef' });
   });
 
   it('keeps lines that arrive while held for afterwards', () => {
@@ -36,16 +34,5 @@ describe('LineQueue', () => {
     expect(q.tick(1)).toEqual({ retired: null, shown: null });
     q.hold(false);
     expect(q.tick(0).shown).toBe('a');
-  });
-
-  it('lets a line go when held once it has been up long enough to read, rather than showing it again', () => {
-    const q = new LineQueue<string>((line) => line.length, () => 2);
-    q.push('abcd');
-    q.push('ef');
-    q.tick(0);
-    q.tick(2.5);
-    expect(q.hold(true)).toBe('abcd');
-    q.hold(false);
-    expect(q.tick(0).shown).toBe('ef');
   });
 });

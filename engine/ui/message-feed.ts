@@ -9,8 +9,6 @@ export interface Speaker {
 
 /** How long a line stays up once it has typed out, to finish reading it at an easy pace, in seconds. */
 const READING = { base: 1.5, perCharacter: 0.025, max: 4 };
-/** How long a line stays up once typed out before it counts as read, so being cut short doesn't bring it back. */
-const SEEN_AFTER = 1;
 const FADE_SECONDS = 0.4;
 
 interface Line {
@@ -30,7 +28,7 @@ export interface FeedOptions {
 /**
  * What happens, in words, so nothing depends on sound: one line at a time in one place, typed out as if spoken, each
  * waiting its turn, so a line never lands on top of another or goes unread. While something else is being read
- * (`hold`), lines wait, and one cut short before it could be read shows again afterwards. The game's page and style
+ * (`hold`), lines wait, and the one showing is put away; each line shows once. The game's page and style
  * sheet decide how it looks: a line is a `div` with the class `line` and its speaker's voice, or `own` when it has no
  * speaker (such as the hero's own thoughts), with the speaker's name in a `b`; it gets `gone` as it fades. With a
  * portrait it's also `pictured`, with the `img` first and the words in a `div` after it.
@@ -38,11 +36,8 @@ export interface FeedOptions {
 export class MessageFeed {
   /** Every line so far, oldest first, up to `keep`, so a line missed can be read again. */
   private readonly said: Line[] = [];
-  private readonly lines = new LineQueue<Line>(
-    ({ text, from }) =>
-      typingSeconds(text, this.paceOf(from)) + Math.min(READING.max, READING.base + text.length * READING.perCharacter),
-    ({ text, from }) => typingSeconds(text, this.paceOf(from)) + SEEN_AFTER,
-  );
+  private readonly lines = new LineQueue<Line>(({ text, from }) =>
+    typingSeconds(text, this.paceOf(from)) + Math.min(READING.max, READING.base + text.length * READING.perCharacter));
   private readonly portraitOf: (from?: Speaker) => string | undefined;
   private readonly paceOf: (from?: Speaker) => TypingPace;
   private readonly keep: number;
@@ -81,7 +76,7 @@ export class MessageFeed {
     this.lines.push(from ? { text, from } : { text });
   }
 
-  /** While held, nothing shows; a line cut short before it could be read shows again afterwards. */
+  /** While held, nothing shows: the line showing is put away, and the rest wait. */
   hold(held: boolean): void {
     if (this.lines.hold(held)) {
       this.el?.remove();

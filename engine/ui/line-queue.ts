@@ -1,17 +1,13 @@
 /**
  * Lines taking turns: one shows at a time, for as long as `seconds` gives it, and the rest wait in order. While held,
- * nothing shows, and a line cut short before it could be read (`seenAfter`) goes back to the front to show again in
- * full; one already read is let go.
+ * nothing shows: the line showing is put away and the rest wait, each line showing only once.
  */
 export class LineQueue<T> {
   private readonly waiting: T[] = [];
-  private current: { line: T; left: number; shownFor: number } | null = null;
+  private current: { line: T; left: number } | null = null;
   private held = false;
 
-  constructor(
-    private readonly seconds: (line: T) => number,
-    private readonly seenAfter: (line: T) => number = seconds,
-  ) {}
+  constructor(private readonly seconds: (line: T) => number) {}
 
   get showing(): T | null {
     return this.current?.line ?? null;
@@ -31,9 +27,8 @@ export class LineQueue<T> {
     if (held === this.held) return null;
     this.held = held;
     if (!held || !this.current) return null;
-    const { line, shownFor } = this.current;
+    const { line } = this.current;
     this.current = null;
-    if (shownFor < this.seenAfter(line)) this.waiting.unshift(line);
     return line;
   }
 
@@ -43,14 +38,13 @@ export class LineQueue<T> {
     let retired: T | null = null;
     if (this.current) {
       this.current.left -= seconds;
-      this.current.shownFor += seconds;
       if (this.current.left > 0) return { retired: null, shown: null };
       retired = this.current.line;
       this.current = null;
     }
     const next = this.waiting.shift();
     if (next === undefined) return { retired, shown: null };
-    this.current = { line: next, left: this.seconds(next), shownFor: 0 };
+    this.current = { line: next, left: this.seconds(next) };
     return { retired, shown: next };
   }
 
