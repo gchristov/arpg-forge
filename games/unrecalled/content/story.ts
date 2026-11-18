@@ -340,7 +340,7 @@ export const ENGINE_SAYS: Line = { text: 'U-7. You are late. We kept your place.
 export const CHARGED: { remembered: Line; overcharged: Line; burst: Line } = {
   remembered: { text: 'I remember now. I left! They ordered me to take the town apart.' },
   overcharged: { text: 'OVERCHARGE DETECTED.', from: VOICES.foundry },
-  burst: { text: 'That came out of me. Next time a crowd of them comes at me, I’ll do it on purpose.' },
+  burst: { text: 'It’s still humming in my hands. Next time they crowd me, I’ll be ready.' },
 };
 
 /** Plugging into the charging station, page by page. */
