@@ -155,7 +155,7 @@ export const ARRIVAL: Line[] = [
   { text: 'Stop right there. You’re one of them. Come to take what’s left?', from: VOICES.odell },
   { text: 'I left the Foundry. I came to warn you.', from: VOICES.u7 },
   { text: 'Warn us? They come down every night already. Scrap, tools, last week the chapel bell.', from: VOICES.odell },
-  { text: 'That was only the start. Our new order is to strip the whole town.', from: VOICES.u7 },
+  { text: 'That was only the start. Our new order is to strip the whole town for parts.', from: VOICES.u7 },
   { text: 'The whole town… And why should I believe a Foundry machine? … Look, there’s one of yours at the crates right now.', from: VOICES.odell },
   { text: 'Let me prove it.', from: VOICES.u7 },
 ];
