@@ -43,9 +43,8 @@ export function typingSeconds(text: string, pace: TypingPace = SPEAKING): number
 /**
  * Types text into an element: the part typed so far shows, and the rest of the word being typed is laid out but
  * invisible, so a word doesn't jump to the next line halfway through. The box it sits in grows a line at a time as the
- * text reaches it. With a cursor, it's a `span` with the class
- * `cursor` between the two, which gets `idle` once the text is all out; the style sheet draws it without giving it any
- * width, so it doesn't move the words.
+ * text reaches it. With a cursor, it's a `span` with the class `cursor` between the two, which gets `idle` once the
+ * text is all out; the style sheet draws it without giving it any width, so it doesn't move the words.
  */
 export class Typewriter {
   private readonly typed = document.createElement('span');
