@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { checkContent } from '../../engine/sim/content-checks';
 import { MODEL_URLS, unrecalledLook } from './art/look';
-import { dialogueFor, QUEST, READABLE_IDS } from './content/story';
+import { dialogueFor, QUEST, READABLE_IDS, STEP } from './content/story';
 import { unrecalledContent } from './content/world';
 
 const content = unrecalledContent();
@@ -12,7 +12,9 @@ describe('Unrecalled content', () => {
   });
 
   it('words every quest step, everything there is to read, and everyone there is to talk to', () => {
-    expect(QUEST.every((step) => step.text)).toBe(true);
+    // Steps played as scenes show no objective.
+    const scenes: number[] = [0, STEP.freed, STEP.ending];
+    expect(QUEST.every((step, at) => step.text || scenes.includes(at))).toBe(true);
     const kinds = content.levels.flatMap((l) => l.npcs.map((n) => n.kind));
     expect(kinds.filter((kind) => !dialogueFor(kind, 0, 0, null))).toEqual([]);
     const ids = content.levels.flatMap((l) => (l.readables ?? []).map((r) => r.id));

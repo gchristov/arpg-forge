@@ -97,6 +97,16 @@ describe('questGoal', () => {
     expect(questGoal(armed)).toEqual({ x: 4.5, y: 3.5 });
   });
 
+  it('points at the enemy carrying the weapon to get, until it drops it', () => {
+    const state = game([{}, { reachedBy: { type: 'arm', weapon: 'saw' } }]);
+    const carrier = state.levels.crypt!.enemies[0]!;
+    carrier.carries = 'saw';
+    state.levels.town!.enemies.push(...state.levels.crypt!.enemies.splice(0));
+    expect(questGoal(state)).toEqual({ x: carrier.x, y: carrier.y, actorId: carrier.id });
+    carrier.dead = true;
+    expect(questGoal(state)).toBeNull();
+  });
+
   it('never leads through a door the story keeps locked', () => {
     const state = game([{}, { reachedBy: { type: 'enter', levelId: 'crypt' } }]);
     state.levels.town!.level.portals[1]!.lockedUntilStep = 1;

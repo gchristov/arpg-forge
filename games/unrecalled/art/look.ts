@@ -202,7 +202,7 @@ export const MODEL_URLS: Record<string, string> = Object.fromEntries(
   ),
 );
 
-const WEAPON_NAMES: Record<string, string> = { chainsaw: 'Pell’s chainsaw' };
+const WEAPON_NAMES: Record<string, string> = { chainsaw: 'Chainsaw' };
 
 export const unrecalledLook: Look = {
   effects: {

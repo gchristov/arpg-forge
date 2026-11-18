@@ -149,12 +149,20 @@ export function advanceQuest(state: GameState, trigger: QuestTrigger, events: Si
       state.quest = step;
       const reached = steps[step]!;
       if (reached.calmsEverything) calmEverything(state);
+      if (reached.alarmsEverything) alarmEverything(state, events);
       castForStep(state);
       events.push({ type: 'QuestAdvanced', step });
       if (reached.takesHeroTo) travel(state, reached.takesHeroTo.levelId, reached.takesHeroTo.x, reached.takesHeroTo.y, events);
       return;
     }
   }
+}
+
+/** Sounds the alarm on every level that isn't already alarmed. */
+export function alarmEverything(state: GameState, events: SimEvent[] = []): void {
+  if (Object.values(state.levels).every((ls) => ls.alarmed)) return;
+  for (const ls of Object.values(state.levels)) ls.alarmed = true;
+  events.push({ type: 'LevelAlarmed', levelId: state.levelId });
 }
 
 /** Ends every level's alarm and sends calm enemies everywhere back to their work. */

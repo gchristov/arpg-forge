@@ -1,11 +1,12 @@
-import { calmEverything } from './interaction';
+import { alarmEverything, calmEverything } from './interaction';
 import type { GameState } from './state';
 import { castForStep } from './story-cast';
 
 /**
  * Moves the story straight to `step`, as if every step before it had been reached: a weapon that reached one is in the
  * hero's hand, an enemy defeated or killed to reach one is gone (and what it carried is in the hero's hand, as if picked
- * up), and if one calmed everything, everything is calm. For trying one part of a game without playing up to it.
+ * up), and if one calmed or alarmed everything, everything is calm or alarmed. For trying one part of a game without
+ * playing up to it.
  */
 export function jumpToStep(state: GameState, step: number): void {
   const steps = state.rules.quest;
@@ -16,6 +17,7 @@ export function jumpToStep(state: GameState, step: number): void {
     if (trigger?.type === 'defeat') defeatedAlready(state, trigger.tag);
     if (trigger?.type === 'kill') killedAlready(state, trigger.enemyKind);
     if (reached.calmsEverything) calmEverything(state);
+    if (reached.alarmsEverything) alarmEverything(state);
   }
   castForStep(state);
 }

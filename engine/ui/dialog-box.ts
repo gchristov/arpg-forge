@@ -44,7 +44,7 @@ export class DialogBox {
     this.el.title.textContent = title;
     cancelAnimationFrame(this.frame);
     this.typing = false;
-    this.el.choices.style.visibility = '';
+    this.el.choices.hidden = false;
     if (pace) this.type(text, pace);
     else this.el.text.textContent = text;
     this.el.choices.replaceChildren(
@@ -80,13 +80,13 @@ export class DialogBox {
     const typewriter = this.typewriter;
     typewriter.start(text, pace);
     this.typing = true;
-    // Hidden rather than left out, so the box is its full size from the first letter.
-    this.el.choices.style.visibility = 'hidden';
+    // Left out until the words are done, so the box grows by the replies only once there's something to choose.
+    this.el.choices.hidden = true;
     const started = performance.now();
     const tick = (now: number) => {
       if (typewriter.update((now - started) / 1000)) {
         this.typing = false;
-        this.el.choices.style.visibility = '';
+        this.el.choices.hidden = false;
       } else this.frame = requestAnimationFrame(tick);
     };
     this.frame = requestAnimationFrame(tick);
@@ -97,7 +97,7 @@ export class DialogBox {
     this.typing = false;
     cancelAnimationFrame(this.frame);
     this.typewriter.finish();
-    this.el.choices.style.visibility = '';
+    this.el.choices.hidden = false;
     this.choicesFrom = performance.now() + 300;
   }
 }

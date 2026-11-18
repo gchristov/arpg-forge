@@ -6,16 +6,14 @@ import { Ground, Prop } from '../content/tiles';
 /**
  * The Foundry, floor by floor: for now each floor is one plain hall, going deeper through a door in the back wall (U)
  * and back through the front wall (V), with what the story needs on it, and a panel by every door the story keeps shut
- * saying what opens it. Intake has the recall notice (T), the loader carrying the stock tags that open the way on and
- * the panel (K) asking for them; the Sorting Line a tagged crate (R) on a belt and the
- * manifest board (M) by the way on; the Control Gallery a terminal (P) by its door saying who may pass, and U-7's
- * charging station (Y), whose use opens the way on; and the
- * Control Centre the Order Engine, the crate the foreman is locked in (Z), opened once the Order Engine is down, and the
- * order terminal (O) where the Foundry's orders are given.
+ * saying what opens it. Intake has the recall notice (T), the loader carrying the access code that opens the way on and
+ * the panel (K) asking for it; the Sorting Line a tagged crate (R) on a belt; the
+ * Control Gallery a terminal (P) by its door saying U-7's access is revoked, and U-7's charging station (Y), whose use
+ * restores it; and the Control Centre the Order Engine, the crate Odell is locked in (Z), opened once the Order Engine
+ * is down, and the order terminal (O) where the Foundry's orders are given.
  */
 interface FloorSpec {
   name: string;
-  subtitle: string;
   /** The quest step from which the way deeper opens. */
   deeperFromStep?: number;
   /** One machine the story needs beaten, by its kind on this floor. */
@@ -35,8 +33,8 @@ const STRENGTH: Record<FloorId, number> = { intake: 1, sorting: 1.15, gallery: 1
 
 const FLOORS = {
   intake: {
-    name: 'Intake', subtitle: 'Receiving for the Valley Order',
-    deeperFromStep: STEP.tagsTaken, tagged: { kind: 'loader', tag: TAG.tagsLoader }, lamps: { L: 'cyan', A: 'amber' },
+    name: 'Intake',
+    deeperFromStep: STEP.doorCodeTaken, tagged: { kind: 'loader', tag: TAG.doorCodeLoader }, lamps: { L: 'cyan', A: 'amber' },
     rows: [
       '#################################',
       '#################################',
@@ -62,12 +60,12 @@ const FLOORS = {
     ],
   },
   sorting: {
-    name: 'The Sorting Line', subtitle: 'Everything here is stock', lamps: { L: 'hazard', A: 'amber' },
+    name: 'The Sorting Line', lamps: { L: 'hazard', A: 'amber' },
     rows: [
       '#################################',
       '#################################',
       '######L###B###L#U#L###B###L######',
-      '###...............M...........###',
+      '###...........................###',
       '##A...........................###',
       '###...........................###',
       '###...........................###',
@@ -88,7 +86,7 @@ const FLOORS = {
     ],
   },
   gallery: {
-    name: 'Control Gallery', subtitle: 'Something is watching the line', deeperFromStep: STEP.charged, lamps: { L: 'alarm', A: 'alarm' },
+    name: 'Control Gallery', deeperFromStep: STEP.charged, lamps: { L: 'alarm', A: 'alarm' },
     rows: [
       '#################################',
       '#################################',
@@ -114,7 +112,7 @@ const FLOORS = {
     ],
   },
   control: {
-    name: 'Control Centre', subtitle: 'Where the order is kept',
+    name: 'Control Centre',
     npcs: [{ kind: 'foreman', name: 'Foreman Odell', x: 16.5, y: 4.6, fromStep: STEP.crateOpened, untilStep: STEP.freed }], lamps: { L: 'amber', A: 'molten' },
     rows: [
       '#################################',
@@ -155,8 +153,7 @@ const KEY: Record<string, RoomKey> = {
   '#': { prop: Prop.Wall, frontProp: Prop.WallLow, solid: true },
   B: { prop: Prop.WallAlarm, solid: true, light: { radius: 6, intensity: 2, colour: 'alarm', flicker: 0, lean: 0.7, alarm: true } },
   Y: { ...solid(Prop.Cradle), readable: 'charging-station', light: { radius: 2.6, intensity: 0.8, colour: 'cyan', flicker: 0.2 } },
-  M: { ...solid(Prop.Computer), readable: 'manifest', light: { radius: 2.4, intensity: 0.8, colour: 'amber', flicker: 0.4 } },
-  K: { ...solid(Prop.Computer), readable: 'tags-panel', light: { radius: 2.4, intensity: 0.8, colour: 'alarm', flicker: 0.4 } },
+  K: { ...solid(Prop.Computer), readable: 'intake-door-panel', light: { radius: 2.4, intensity: 0.8, colour: 'alarm', flicker: 0.4 } },
   P: { ...solid(Prop.Computer), readable: 'access-terminal', light: { radius: 2.4, intensity: 0.8, colour: 'alarm', flicker: 0.4 } },
   T: { ...solid(Prop.Computer), readable: 'recall-notice', light: { radius: 2.4, intensity: 0.8, colour: 'amber', flicker: 0.4 } },
   Z: { ...solid(Prop.Crate), readable: 'crate', light: { radius: 2.6, intensity: 0.8, colour: 'cyan', flicker: 0.2 } },
@@ -203,8 +200,9 @@ const BUILDING = 'foundry';
 
 export function buildFloor(id: FloorId): LevelContent {
   const spec: FloorSpec = FLOORS[id];
-  const { name, subtitle, rows, tagged, npcs } = spec;
-  const floor = roomFromRows({ id, name, subtitle, floor: Ground.Plate, rows, key: { ...KEY, ...lamps(id), ...doors(id) } });
+  const { name, rows, tagged, npcs } = spec;
+  // The floors go unannounced: the Foundry's speakers say what matters.
+  const floor = roomFromRows({ id, name, subtitle: '', floor: Ground.Plate, rows, key: { ...KEY, ...lamps(id), ...doors(id) } });
   floor.level.building = BUILDING;
   floor.enemyStrength = STRENGTH[id];
   if (tagged) floor.spawns.find((s) => s.kind === tagged.kind)!.tag = tagged.tag;

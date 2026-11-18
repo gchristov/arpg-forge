@@ -125,6 +125,8 @@ export interface QuestStep {
   reachedBy?: QuestTrigger;
   /** Reaching this step ends every level's alarm, and calm enemies everywhere go back to their work. */
   calmsEverything?: boolean;
+  /** Reaching this step sounds the alarm on every level: from then on every calm enemy comes for the hero on sight. */
+  alarmsEverything?: boolean;
   /**
    * Reached only from the step just before it, never skipped to, for a trigger the hero can meet early, such as
    * entering the town they keep coming back to.
