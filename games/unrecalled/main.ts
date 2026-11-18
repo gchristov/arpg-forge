@@ -203,11 +203,11 @@ function thinkNearby(): void {
  * their first EMP, before its button appears, so the player sees what it does rather than reads it.
  */
 async function chargeUp(): Promise<void> {
-  say([CHARGED.remembered]);
+  say([CHARGED.remembered, CHARGED.overcharged]);
   await until(() => hud.quiet);
   game.send({ type: 'useSkill', slot: EMP });
   hud.empWithheld = false;
-  say([CHARGED.authorised]);
+  say([CHARGED.burst]);
 }
 
 /** Steps whose lines wait for the scene that reaches them. */

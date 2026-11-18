@@ -331,19 +331,20 @@ export const ON_ENTERING: Partial<Record<string, Line>> = {
 export const ENGINE_SAYS: Line = { text: 'U-7. You are late. We kept your place.', from: VOICES.orderEngine };
 
 /**
- * After the log plays back: the salvager remembers, then the charge kept warm for them bursts out as their first EMP,
- * and the Foundry takes them for one of its own.
+ * After the log plays back: the salvager remembers, the station warns of the charge kept warm for them, it bursts out
+ * as their first EMP, and they see what it's good for.
  */
-export const CHARGED: { remembered: Line; authorised: Line } = {
+export const CHARGED: { remembered: Line; overcharged: Line; burst: Line } = {
   remembered: { text: 'I remember now. I left! They ordered me to take the town apart.' },
-  authorised: { text: 'U-7 CHARGED. U-7 AUTHORISED.', from: VOICES.foundry },
+  overcharged: { text: 'OVERCHARGE DETECTED.', from: VOICES.foundry },
+  burst: { text: 'That came out of me. Next time a crowd of them comes at me, I’ll do it on purpose.' },
 };
 
 /** Plugging into the charging station, page by page. */
 export const CHARGING: Dialogue[] = [
   {
-    title: 'U-7 log, playing back',
-    text: 'NIGHT OF THE FLOOD. 02:14: RIVER GATE OPENED. 02:16: LEFT FOUNDRY. REASON: ORDER CONFLICT. RUSTBELT NOT STOCK. RUSTBELT NOT ST—',
+    title: 'A charging station',
+    text: 'U-7 AUTHORISED. PLAYING BACK LATEST LOG. NIGHT OF THE FLOOD. 02:14: RIVER GATE OPENED. 02:16: LEFT FOUNDRY. REASON: ORDER CONFLICT. RUSTBELT NOT STOCK. RUSTBELT NOT ST—',
     options: [{ label: '…' }],
     medium: 'screen',
   },
