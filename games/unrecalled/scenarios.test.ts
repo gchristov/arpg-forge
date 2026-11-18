@@ -147,8 +147,8 @@ describe('Unrecalled scenarios', () => {
     }
     expect(done).toEqual([
       'foreman in rustbelt', TAG.raider, 'foreman in rustbelt', 'tinker in workshop', TAG.switchLoader, 'switch',
-      'trader in rustbelt', TAG.tagsLoader, 'access-terminal', 'charging-station', 'orderEngine', 'crate', 'foreman in assembly',
-      'order-terminal', 'foreman in assembly', 'foreman in rustbelt',
+      'trader in rustbelt', TAG.tagsLoader, 'access-terminal', 'charging-station', 'orderEngine', 'crate', 'foreman in control',
+      'order-terminal', 'foreman in control', 'foreman in rustbelt',
     ]);
     expect([state.levelId, state.quest]).toEqual(['upriver', STEP.ending]);
   });
@@ -166,7 +166,7 @@ describe('Unrecalled scenarios', () => {
     for (const next of FLOOR_ORDER.slice(1)) takeDoor(state, next);
     expect(where('foreman')).toEqual([]);
     use(state, 'crate');
-    expect([where('foreman'), state.quest]).toEqual([['assembly'], STEP.crateOpened]);
+    expect([where('foreman'), state.quest]).toEqual([['control'], STEP.crateOpened]);
     expect(currentLevel(state).readables.map((r) => r.id)).not.toContain('crate');
     jumpToStep(state, STEP.freed);
     expect(cast()).toEqual({ foreman: ['rustbelt'], mags: ['rustbelt'], pell: ['rustbelt'] });
@@ -205,11 +205,11 @@ describe('Unrecalled scenarios', () => {
     expect(state.quest).toBe(STEP.tagsTaken);
     takeDoor(state, 'sorting');
     takeDoor(state, 'gallery');
-    expect(tryDoor('assembly')).toBeGreaterThan(0);
+    expect(tryDoor('control')).toBeGreaterThan(0);
     use(state, 'charging-station');
     expect(state.quest).toBe(STEP.charged);
-    takeDoor(state, 'assembly');
-    expect(state.levelId).toBe('assembly');
+    takeDoor(state, 'control');
+    expect(state.levelId).toBe('control');
   });
 
   it('walks into each of Rustbelt\'s buildings, finds who works there, and back out of the same door', () => {
@@ -240,7 +240,7 @@ describe('Unrecalled scenarios', () => {
     expect(Math.hypot(state.hero.x - (stairs.tx + 0.5), state.hero.y - (stairs.ty + 0.5))).toBeLessThan(1.5);
   });
 
-  it('goes down through every floor to the Assembly Hall, and back up through the depot to Rustbelt', () => {
+  it('goes down through every floor to the Control Centre, and back up through the depot to Rustbelt', () => {
     const state = inIntake();
     for (const next of FLOOR_ORDER.slice(1)) {
       takeDoor(state, next);
@@ -363,7 +363,7 @@ describe('Unrecalled scenarios', () => {
     expect([state.quest, state.hero.weapon]).toEqual([STEP.powerOn, 'chainsaw']);
   });
 
-  it('ends the story outside the Cradle upriver, once the salvager answers the foreman\'s last question', () => {
+  it('ends the story outside the Assembly upriver, once the salvager answers the foreman\'s last question', () => {
     const state = untouchable(createGameState(content, 1));
     jumpToStep(state, STEP.freed);
     answer(state, 'foreman', REPLY.dontKnow);
@@ -383,7 +383,7 @@ describe('Unrecalled scenarios', () => {
     const state = untouchable(createGameState(content, 1));
     intoFoundry(state);
     const events = FLOOR_ORDER.slice(1).flatMap((next) => takeDoor(state, next));
-    expect(state.levelId).toBe('assembly');
+    expect(state.levelId).toBe('control');
     expect(events.some((e) => e.type === 'EnemyAlerted' && e.boss)).toBe(true);
   });
 

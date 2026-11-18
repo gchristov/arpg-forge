@@ -11,15 +11,16 @@ import { MODEL_URLS, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import {
-  AFTER_READING, ALARM, BY_THE_FIRE, CHAINSAW_FOUND, CHARGING, dialogueFor, ENDING, ENGINE_SAYS, GIVING_THE_ORDER, HOMECOMING,
-  levelUp, LOCKED, MACHINE_SCANS, NPCS, ON_ENTERING, OPENING, readingFor, REPLY, UPRIVER, scrapDropped, STEP, STEP_LINES, VOICES,
+  AFTER_READING, ALARM, BY_THE_FIRE, CHAINSAW_FOUND, CHARGED, CHARGING, dialogueFor, ENDING, ENGINE_SAYS, GIVING_THE_ORDER, HOMECOMING,
+  levelUp, LOCKED, MACHINE_SCANS, NPCS, ON_ENTERING, ON_NEARING, OPENING, readingFor, REPLY, UPRIVER, scrapDropped, STEP, STEP_LINES, VOICES,
   type Dialogue, type Line,
 } from './content/story';
 import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
+import { until } from './ui/beats';
 import { Ending } from './ui/ending';
 import { Homecoming } from './ui/homecoming';
-import { Hud } from './ui/hud';
+import { EMP, Hud } from './ui/hud';
 import { Portraits } from './ui/portraits';
 
 const game = new Game({
@@ -168,12 +169,11 @@ function showReading(id: string, events: SimEvent[]): void {
     medium: reading.screen ? 'screen' : 'written',
   };
   if (reached.includes(STEP.charged)) {
-    // The EMP is the charge's gift, so it shows once the scene is over.
+    // The EMP is the charge's gift, so it shows once the scene is over. The scene waits for the salvager's thought on
+    // coming near, which a page opening at once would put away.
     hud.empWithheld = true;
-    playScene([{ ...page, options: [{ label: 'Plug in' }] }, ...CHARGING], () => {
-      hud.empWithheld = false;
-      say(STEP_LINES[STEP.charged]);
-    });
+    const plugIn = [{ ...page, options: [{ label: 'Plug in' }] }, ...CHARGING];
+    void until(() => hud.quiet).then(() => playScene(plugIn, () => void chargeUp()));
   } else if (reached.includes(STEP.orderClosed)) playScene(GIVING_THE_ORDER, () => say(STEP_LINES[STEP.orderClosed]));
   else present(page);
   const thought = AFTER_READING[id];
@@ -184,8 +184,34 @@ function showReading(id: string, events: SimEvent[]): void {
 /** Things the salvager has already had their thought about. */
 const thoughtsHad = new Set<string>();
 
+/** How near, in tiles, the salvager comes to something before thinking about it. */
+const NEARING = 2.5;
+
+/** The salvager's thought on first coming near something that has one. */
+function thinkNearby(): void {
+  for (const r of currentLevel(state).readables) {
+    const thought = ON_NEARING[r.id];
+    if (!thought || thoughtsHad.has(r.id)) continue;
+    if (Math.hypot(state.hero.x - (r.tx + 0.5), state.hero.y - (r.ty + 0.5)) > NEARING) continue;
+    thoughtsHad.add(r.id);
+    say([{ text: thought }]);
+  }
+}
+
+/**
+ * After the log plays back: the salvager remembers, then the charge kept warm for them bursts out of its own accord as
+ * their first EMP, before its button appears, so the player sees what it does rather than reads it.
+ */
+async function chargeUp(): Promise<void> {
+  say([CHARGED.remembered]);
+  await until(() => hud.quiet);
+  game.send({ type: 'useSkill', slot: EMP });
+  hud.empWithheld = false;
+  say([CHARGED.authorised]);
+}
+
 /** Steps whose lines wait for the scene that reaches them. */
-const AFTER_SCENE: number[] = [STEP.charged, STEP.orderClosed, STEP.ending];
+const AFTER_SCENE: number[] = [STEP.orderClosed, STEP.ending];
 
 /** What happens in the world as the story moves on. */
 function reachStep(step: number): void {
@@ -196,7 +222,7 @@ function reachStep(step: number): void {
 /** Where the camera rests while the town welcomes the foreman home: on the fire and the people round it. */
 const AROUND_THE_FIRE = { x: 22.5, y: 15 };
 
-/** Home at dawn, from leaving the Foundry until the Cradle upriver, played with no input from the player. */
+/** Home at dawn, from leaving the Foundry until the Assembly upriver, played with no input from the player. */
 const homecoming = new Homecoming({
   begin: () => {
     dialog.close();
@@ -252,7 +278,7 @@ function showPlace(): void {
   place = { at, levelId: state.levelId, x: state.hero.x };
 }
 
-/** The Cradle waking upriver and reaching further upriver, then the card that closes the demo. */
+/** The Assembly waking upriver and reaching further upriver, then the card that closes the demo. */
 const ending = new Ending(game, {
   begin: () => {
     dialog.close();
@@ -437,6 +463,7 @@ game.run({
   react,
   update: (s) => {
     showPlace();
+    thinkNearby();
     hud.update(s, place!.at.name);
     chainsaw.update(s, playing);
     ending.update(performance.now());
