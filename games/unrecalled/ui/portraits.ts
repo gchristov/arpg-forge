@@ -20,6 +20,7 @@ const BY_NAME: Record<string, string> = {
   [VOICES.mags.name]: 'trader',
   [VOICES.pell.name]: 'tinker',
   [VOICES.orderEngine.name]: 'orderEngine',
+  [VOICES.salvager.name]: 'salvager',
 };
 
 /** The speakers' portraits, drawn once the models have loaded; until then nobody has one. */

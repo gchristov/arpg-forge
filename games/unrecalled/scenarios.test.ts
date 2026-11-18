@@ -116,7 +116,7 @@ describe('Unrecalled scenarios', () => {
     expect(state.quest).toBe(STEP.sentToPell);
   });
 
-  it('plays the whole story by following where the guide points, from the raid to the bell and the foreman at dawn', () => {
+  it('plays the whole story by following where the guide points, from the raid to the foreman at dawn', () => {
     const state = unstoppable(createGameState(content, 1));
     const done: string[] = [];
     for (let goal = questGoal(state); goal && done.length < 60; goal = questGoal(state)) {
@@ -148,7 +148,7 @@ describe('Unrecalled scenarios', () => {
     expect(done).toEqual([
       'foreman in rustbelt', TAG.raider, 'foreman in rustbelt', 'tinker in workshop', TAG.switchLoader, 'switch',
       'trader in rustbelt', TAG.tagsLoader, 'access-terminal', 'charging-station', 'orderEngine', 'crate', 'foreman in assembly',
-      'order-terminal', 'foreman in assembly', 'bell', 'foreman in rustbelt',
+      'order-terminal', 'foreman in assembly', 'foreman in rustbelt',
     ]);
     expect([state.levelId, state.quest]).toEqual(['upriver', STEP.ending]);
   });
@@ -170,7 +170,6 @@ describe('Unrecalled scenarios', () => {
     expect(currentLevel(state).readables.map((r) => r.id)).not.toContain('crate');
     jumpToStep(state, STEP.freed);
     expect(cast()).toEqual({ foreman: ['rustbelt'], mags: ['rustbelt'], pell: ['rustbelt'] });
-    expect(state.levels.rustbelt!.readables.map((r) => r.id)).toContain('bell');
   });
 
   it('gives the Foundry its order only once the foreman has asked, at the order terminal', () => {
@@ -366,7 +365,7 @@ describe('Unrecalled scenarios', () => {
 
   it('ends the story outside the Cradle upriver, once the salvager answers the foreman\'s last question', () => {
     const state = untouchable(createGameState(content, 1));
-    jumpToStep(state, STEP.bellRung);
+    jumpToStep(state, STEP.freed);
     answer(state, 'foreman', REPLY.dontKnow);
     play(state, 2);
     expect([state.levelId, state.quest]).toEqual(['upriver', STEP.ending]);

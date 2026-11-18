@@ -11,19 +11,10 @@ export interface HomecomingParts {
   say(lines: Line[]): void;
   /** Every line said has been read. */
   quiet(): boolean;
-  /** The salvager walks to the bell and rings it. */
-  ringBell(): void;
-  rung(): boolean;
   /** The picture fades to black. */
   fadeOut(): void;
   /** The salvager answers the foreman, which moves the story on to its end. */
   answer(): void;
-}
-
-export interface HomecomingLines {
-  welcome: Line[];
-  /** Said once the bell has been rung. */
-  afterBell: Line[];
 }
 
 const BEATS = { settle: 1.6, afterLines: 0.8, fade: 1.4 };
@@ -35,15 +26,15 @@ const until = (test: () => boolean) => new Promise<void>((done) => {
 });
 
 /**
- * Home at dawn, played out with no input from the player: the town greets the foreman, the salvager rings the bell,
- * the foreman says his piece, and the picture fades out towards the ending.
+ * Home at dawn, played out with no input from the player: the town greets the foreman, he says his piece, and the
+ * picture fades out towards the ending.
  */
 export class Homecoming {
   playing = false;
 
   constructor(private readonly parts: HomecomingParts) {}
 
-  async play(lines: HomecomingLines): Promise<void> {
+  async play(lines: Line[]): Promise<void> {
     if (this.playing) return;
     this.playing = true;
     const { parts } = this;
@@ -51,11 +42,7 @@ export class Homecoming {
     await until(parts.home);
     parts.frame();
     await wait(BEATS.settle);
-    parts.say(lines.welcome);
-    await until(parts.quiet);
-    parts.ringBell();
-    await until(parts.rung);
-    parts.say(lines.afterBell);
+    parts.say(lines);
     await until(parts.quiet);
     await wait(BEATS.afterLines);
     parts.fadeOut();

@@ -8,12 +8,6 @@ export function unrecalledSounds(s: Synth) {
       s.tone(70, 0.4, 'sawtooth', 0.05, 2.4);
       s.noise(0.3, 0.06, 1800, 1.2);
     },
-    /** The chapel bell, rung three times: a low strike with its brighter partials ringing over it. */
-    bell: () => [0, 1.6, 3.2].forEach((delay) => {
-      s.tone(196, 2.4, 'sine', 0.1, 0, delay);
-      s.tone(392 * 1.19, 1.6, 'sine', 0.04, 0, delay);
-      s.tone(588, 1.1, 'sine', 0.03, 0, delay);
-    }),
     /** The wrench, or a bolt, on a machine's casing. */
     clank: () => {
       s.tone(880, 0.08, 'square', 0.035, 0.7);

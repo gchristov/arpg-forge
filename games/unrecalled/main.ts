@@ -151,11 +151,6 @@ const say = (lines: Line[] | undefined): void => {
 
 /** What reading something says, or the scene it starts: the charging station, the crate and the order terminal. */
 function showReading(id: string, events: SimEvent[]): void {
-  // Rung in the homecoming, the bell is heard rather than read.
-  if (id === 'bell' && homecoming.playing) {
-    sfx.bell();
-    return;
-  }
   const reached = events.flatMap((e) => (e.type === 'QuestAdvanced' ? [e.step] : []));
   // Worded as it was when it was used, before using it moved the story on.
   const reading = readingFor(id, Math.min(state.quest, ...reached.map((step) => step - 1)));
@@ -190,21 +185,14 @@ const thoughtsHad = new Set<string>();
 
 /** Steps whose lines wait for the scene that reaches them. */
 const AFTER_SCENE: number[] = [STEP.charged, STEP.orderClosed, STEP.ending];
-/** Steps whose lines the homecoming says in its own time. */
-const IN_HOMECOMING: number[] = [STEP.freed, STEP.bellRung];
 
 /** What happens in the world as the story moves on. */
 function reachStep(step: number): void {
-  if (step === STEP.freed) {
-    void homecoming.play({
-      welcome: HOMECOMING.welcome,
-      afterBell: [HOMECOMING.bell, ...(STEP_LINES[STEP.bellRung] ?? []), ...HOMECOMING.confession],
-    });
-  }
-  if (!AFTER_SCENE.includes(step) && !IN_HOMECOMING.includes(step)) say(STEP_LINES[step]);
+  if (step === STEP.freed) void homecoming.play(HOMECOMING);
+  if (!AFTER_SCENE.includes(step)) say(STEP_LINES[step]);
 }
 
-/** Where the camera rests while the town welcomes the foreman home: on the fire, with the bell beside it. */
+/** Where the camera rests while the town welcomes the foreman home: on the fire and the people round it. */
 const AROUND_THE_FIRE = { x: 22.5, y: 15 };
 
 /** Home at dawn, from leaving the Foundry until the Cradle upriver, played with no input from the player. */
@@ -217,11 +205,6 @@ const homecoming = new Homecoming({
   frame: () => game.cutTo(AROUND_THE_FIRE),
   say,
   quiet: () => hud.quiet,
-  ringBell: () => {
-    const bell = currentLevel(state).readables.findIndex((r) => r.id === 'bell');
-    game.send({ type: 'read', index: bell });
-  },
-  rung: () => state.quest >= STEP.bellRung,
   fadeOut: () => $('curtain').classList.add('closing'),
   answer: () => {
     const foreman = currentLevel(state).npcs.find((n) => n.kind === 'foreman');

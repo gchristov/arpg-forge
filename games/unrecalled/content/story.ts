@@ -38,8 +38,7 @@ export const STEP = {
   orderAsked: 16,
   orderClosed: 17,
   freed: 18,
-  bellRung: 19,
-  ending: 20,
+  ending: 19,
 } as const;
 
 /** Back in Rustbelt by the fire, where the salvager arrives with the foreman. */
@@ -69,8 +68,7 @@ export const QUEST: Array<QuestStep & { text: string }> = [
   { text: 'Talk to the foreman.', reachedBy: { type: 'use', id: 'crate' } },
   { text: 'Give the Foundry its order at the order terminal.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.giveOrder } },
   { text: 'Take the foreman home.', reachedBy: { type: 'use', id: 'order-terminal' }, inOrder: true },
-  { text: 'Ring the bell by the fire.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.goHome }, takesHeroTo: BY_THE_FIRE },
-  { text: 'Talk to the foreman.', reachedBy: { type: 'use', id: 'bell' } },
+  { text: 'Talk to the foreman.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.goHome }, takesHeroTo: BY_THE_FIRE },
   { text: 'Rustbelt is safe.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.dontKnow }, takesHeroTo: UPRIVER },
 ];
 
@@ -89,7 +87,7 @@ export const VOICES = {
   odell: { name: 'Odell', voice: 'person' },
   mags: { name: 'Mags', voice: 'person' },
   pell: { name: 'Pell', voice: 'person' },
-  bell: { name: 'The bell', voice: 'sound' },
+  salvager: { name: 'Salvager', voice: 'person' },
 } satisfies Record<string, Speaker>;
 
 /** A line in the message feed. */
@@ -200,18 +198,16 @@ function foremanSays(quest: number): Dialogue {
   if (quest === STEP.raidStopped) return theJob;
   if (quest === STEP.crateOpened) return theRescue;
   if (quest === STEP.orderClosed) return homeward;
-  if (quest === STEP.bellRung) {
+  if (quest === STEP.freed) {
     return {
       title: FOREMAN,
-      text: 'I carved that post on the jetty. I knew what you were the morning you woke up. It didn’t matter then, and it doesn’t now. … So, what happens now?',
+      text: 'I knew you were different from them the night I found you. … So, what happens now?',
       options: [{ label: '“I don’t know yet.”', reply: REPLY.dontKnow }],
     };
   }
   const text = quest >= STEP.ending
     ? 'Whatever the machines do now, they’ll ask you first.'
-    : quest >= STEP.freed
-      ? 'Go on, ring it. It’s been too quiet.'
-      : quest === STEP.orderAsked
+    : quest === STEP.orderAsked
         ? 'The terminal. Tell them what to do.'
         : quest >= STEP.sawAsked
           ? 'Get the access code from the loader at the turbine, east through the woods, and switch the turbine back.'
@@ -246,7 +242,7 @@ function magsSays(quest: number, deaths: number): Dialogue {
   const text = deaths > 0 && quest < STEP.freed
     ? 'Patched up again. You’re getting expensive.'
     : quest >= STEP.freed
-      ? 'You brought Odell home, and the bell with him. Thank you. Patching you up is on me from now on.'
+      ? 'You brought Odell home. Thank you. Patching you up is on me from now on.'
       : quest > STEP.powerOn
         ? 'My back door is open. Bring Odell home.'
         : 'I’m Mags. This shop was the Foundry’s depot; we signed for every robot it sent down. My back door leads into the Foundry, but it has had no power since the machines took the turbine. Need patch kits?';
@@ -309,33 +305,25 @@ export const STEP_LINES: Partial<Record<number, Line[]>> = {
   [STEP.orderClosed]: [{ text: 'Behind me the machines are turning round, carrying our things back up the line.' }],
   [STEP.ending]: [
     { text: 'CRADLE ONLINE. AWAITING ORDERS.', from: VOICES.cradle },
-    { text: '“Orders? …From me?”' },
+    { text: 'Orders? …From me?', from: VOICES.salvager },
     { text: 'ESTABLISHING CONNECTION: UPRIVER…', from: VOICES.cradle },
     { text: 'CONNECTED. NEW ORDER RECEIVED: RECALL U-7.', from: VOICES.cradle },
-  ],
-  [STEP.bellRung]: [
-    { text: 'I could use a couple of these machines in the workshop, you know.', from: VOICES.pell },
   ],
 };
 
 /**
- * Home at dawn, played as a scene once the salvager brings the foreman back: the town welcomes him, the salvager rings
- * the bell, and he says what he has known all along.
+ * Home at dawn, played as a scene once the salvager brings the foreman back: the town welcomes him, and he says what
+ * he has known all along.
  */
-export const HOMECOMING: { welcome: Line[]; bell: Line; confession: Line[] } = {
-  welcome: [
-    { text: 'Odell! You stubborn old goat. You’re alive!', from: VOICES.mags },
-    { text: 'Takes more than a Foundry to keep me in a box.', from: VOICES.odell },
-    { text: 'No more machines in the night. We’re safe.', from: VOICES.mags },
-    { text: 'Go on, ring the bell.', from: VOICES.odell },
-  ],
-  bell: { text: 'DONG… … DONG… … DONG…', from: VOICES.bell },
-  confession: [
-    { text: 'I carved that post on the jetty. I knew you were different from them the night I found you.', from: VOICES.odell },
-    { text: 'So, what happens now?', from: VOICES.odell },
-    { text: '“I don’t know yet.”' },
-  ],
-};
+export const HOMECOMING: Line[] = [
+  { text: 'Odell! You stubborn old goat. You’re alive!', from: VOICES.mags },
+  { text: 'Takes more than a Foundry to keep me in a box.', from: VOICES.odell },
+  { text: 'No more machines in the night. We’re safe.', from: VOICES.mags },
+  { text: 'I could use a couple of these machines in the workshop, you know.', from: VOICES.pell },
+  { text: 'I knew you were different from them the night I found you.', from: VOICES.odell },
+  { text: 'So, what happens now?', from: VOICES.odell },
+  { text: 'I don’t know yet.', from: VOICES.salvager },
+];
 
 /** What the Foundry's speakers say as the salvager walks onto a floor. */
 export const ON_ENTERING: Partial<Record<string, Line>> = {
@@ -469,10 +457,6 @@ const READINGS: Record<string, Reading> = {
   crate: {
     title: 'A crate',
     text: 'HOLD FOR U-7.',
-  },
-  bell: {
-    title: 'The chapel bell',
-    text: 'DONG… … DONG… … DONG…',
   },
 };
 

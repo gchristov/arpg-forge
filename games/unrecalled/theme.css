@@ -119,8 +119,6 @@ body.cinematic #cinema i{height:12vh}
 #curtain.closing{opacity:1;transition:opacity 1.2s ease}
 /* Between the letterbox bars, the lines of a scene sit just above the lower bar. */
 body.cinematic #feed{bottom:calc(12vh + 16px)}
-#feed .line.sound{font-style:italic;letter-spacing:.12em;color:#e8d4a8;border-left-color:#e8c870}
-#feed .line.sound b{color:#e8c870}
 body.cinematic .world-text,body.cinematic .world-tag,body.cinematic .world-bar,body.cinematic #top,body.cinematic #hud,body.cinematic #bossbar{opacity:0;transition:opacity .6s;pointer-events:none}
 #end{animation:endIn 2.6s ease both}
 @keyframes endIn{from{opacity:0}}
