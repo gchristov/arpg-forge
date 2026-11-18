@@ -1,5 +1,5 @@
 import { LineQueue } from './line-queue';
-import { Typewriter, typingSeconds } from './typewriter';
+import { SPEAKING, Typewriter, type TypingPace, typingSeconds } from './typewriter';
 
 /** Who a line in the feed comes from: a name shown before it, and a voice the game's style sheet can colour. */
 export interface Speaker {
@@ -16,6 +16,15 @@ interface Line {
   from?: Speaker;
 }
 
+export interface FeedOptions {
+  /** A picture of whoever says a line, or of the hero for their own thoughts, as an image URL, if there is one. */
+  portraitOf?: (from?: Speaker) => string | undefined;
+  /** How fast a speaker's lines type out, such as a machine's printing faster than a person speaks. */
+  paceOf?: (from?: Speaker) => TypingPace;
+  /** How many lines the history keeps. */
+  keep?: number;
+}
+
 /**
  * What happens, in words, so nothing depends on sound: one line at a time in one place, typed out as if spoken, each
  * waiting its turn, so a line never lands on top of another or goes unread. While something else is being read
@@ -27,18 +36,23 @@ interface Line {
 export class MessageFeed {
   /** Every line so far, oldest first, up to `keep`, so a line missed can be read again. */
   private readonly said: Line[] = [];
-  private readonly lines = new LineQueue<Line>(({ text }) =>
-    typingSeconds(text) + Math.min(READING.max, READING.base + text.length * READING.perCharacter));
+  private readonly lines = new LineQueue<Line>(({ text, from }) =>
+    typingSeconds(text, this.paceOf(from)) + Math.min(READING.max, READING.base + text.length * READING.perCharacter));
+  private readonly portraitOf: (from?: Speaker) => string | undefined;
+  private readonly paceOf: (from?: Speaker) => TypingPace;
+  private readonly keep: number;
   private el: HTMLElement | null = null;
   private typing: { typewriter: Typewriter; seconds: number } | null = null;
   private lastUpdate: number | null = null;
 
   constructor(
     private readonly root: HTMLElement,
-    /** A picture of whoever says a line, or of the hero for their own thoughts, as an image URL, if there is one. */
-    private readonly portraitOf: (from?: Speaker) => string | undefined = () => undefined,
-    private readonly keep = 80,
-  ) {}
+    { portraitOf = () => undefined, paceOf = () => SPEAKING, keep = 80 }: FeedOptions = {},
+  ) {
+    this.portraitOf = portraitOf;
+    this.paceOf = paceOf;
+    this.keep = keep;
+  }
 
   /** Every line has had its turn: nothing showing and nothing waiting. */
   get idle(): boolean {
@@ -114,7 +128,7 @@ export class MessageFeed {
     }
     const text = document.createElement('span');
     words.append(text);
-    const typewriter = new Typewriter(text);
+    const typewriter = new Typewriter(text, this.paceOf(line.from));
     typewriter.start(line.text);
     this.typing = { typewriter, seconds: 0 };
     this.root.append(el);

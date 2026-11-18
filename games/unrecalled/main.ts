@@ -7,7 +7,7 @@ import { servicePrice } from '../../engine/sim/interaction';
 import { currentLevel, type RefusalReason, type SimEvent } from '../../engine/sim/state';
 import { DialogBox } from '../../engine/ui/dialog-box';
 import { Portraits } from './ui/portraits';
-import { SPEAKING } from '../../engine/ui/typewriter';
+import { PRINTING, SPEAKING } from '../../engine/ui/typewriter';
 import { MODEL_URLS, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
@@ -37,7 +37,11 @@ const hud = new Hud(
     if (command.type === 'attackNearest') dialog.close();
     game.send(command);
   },
-  (from) => portraits.of(from),
+  {
+    portraitOf: (from) => portraits.of(from),
+    // Machines print their words, as a terminal does.
+    paceOf: (from) => (from?.voice === 'foundry' ? PRINTING : SPEAKING),
+  },
 );
 
 const synth = new Synth();
@@ -98,7 +102,8 @@ function showDialogue(npcId: number, kind: string): void {
 function present(d: Dialogue, npc?: { npcId: number; kind: string }, then?: () => void): void {
   const services = npc ? NPCS[npc.kind]?.services ?? [] : [];
   hud.remember(d.text, { name: d.title, voice: 'page' });
-  showPortrait(d.written ? undefined : portraits.ofName(d.title));
+  showPortrait(d.medium ? undefined : portraits.ofName(d.title));
+  $('dialog').classList.toggle('screen', d.medium === 'screen');
   dialog.open(
     d.title,
     d.text,
@@ -121,7 +126,7 @@ function present(d: Dialogue, npc?: { npcId: number; kind: string }, then?: () =
       };
     }),
     npc?.npcId ?? null,
-    !d.written,
+    d.medium === 'screen' ? PRINTING : d.medium === 'written' ? null : SPEAKING,
   );
 }
 
@@ -160,7 +165,12 @@ function showReading(id: string, events: SimEvent[]): void {
     if (foreman) showDialogue(foreman.id, foreman.kind);
     return;
   }
-  const page: Dialogue = { title: reading.title, text: reading.text, options: [{ label: 'Close' }], written: true };
+  const page: Dialogue = {
+    title: reading.title,
+    text: reading.text,
+    options: [{ label: 'Close' }],
+    medium: reading.screen ? 'screen' : 'written',
+  };
   if (reached.includes(STEP.charged)) {
     // The EMP is the charge's gift, so it shows once the scene is over.
     hud.empWithheld = true;
@@ -276,11 +286,8 @@ const ending = new Ending(game, {
     sfx.slam();
     sfx.siren();
   },
-  online: () => {
-    hud.banner(ENDING.online.title, ENDING.online.subtitle, 4);
-    // Shown across the screen, so kept for the log without also queuing it below.
-    for (const line of STEP_LINES[STEP.ending] ?? []) hud.remember(line.text, line.from);
-  },
+  online: () => say(STEP_LINES[STEP.ending]),
+  quiet: () => hud.quiet,
   card: () => {
     $('endT').textContent = ENDING.title;
     $('endS').textContent = ENDING.subtitle;

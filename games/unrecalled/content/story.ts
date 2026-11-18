@@ -114,8 +114,15 @@ export interface Dialogue {
   title: string;
   text: string;
   options: DialogueOption[];
-  /** Shown all at once, as a sign or a screen is, rather than typed out as speech is. */
-  written?: boolean;
+  /** Not spoken: written, as a sign or a tag is, shows all at once; on a screen it prints out as a terminal does. */
+  medium?: 'written' | 'screen';
+}
+
+/** Something the salvager reads or uses: a sign or tag, or a machine's screen. */
+export interface Reading {
+  title: string;
+  text: string;
+  screen?: boolean;
 }
 
 /** The names the townspeople's dialogue is said under. */
@@ -300,7 +307,10 @@ export const STEP_LINES: Partial<Record<number, Line[]>> = {
   ],
   [STEP.engineDown]: [{ text: 'It’s down, and every machine in here stopped with it. Odell must be in that crate.' }],
   [STEP.orderClosed]: [{ text: 'Behind me the machines are turning round, carrying our things back up the line.' }],
-  [STEP.ending]: [{ text: 'FOUNDRY 2 ONLINE. AWAITING ORDERS.', from: VOICES.foundry2 }],
+  [STEP.ending]: [
+    { text: 'FOUNDRY 2 ONLINE. AWAITING ORDERS.', from: VOICES.foundry2 },
+    { text: '“Awaiting orders? …From me?”' },
+  ],
   [STEP.bellRung]: [
     { text: '…That’s our bell.', from: VOICES.mags },
     { text: 'I could use a couple of these machines in the workshop, you know.', from: VOICES.pell },
@@ -341,6 +351,7 @@ export const CHARGING: Dialogue[] = [
     title: 'U-7 log, playing back',
     text: 'NIGHT OF THE FLOOD. 02:14: RIVER GATE OPENED. 02:16: LEFT FOUNDRY. REASON: ORDER CONFLICT. RUSTBELT NOT STOCK. RUSTBELT NOT ST—',
     options: [{ label: '“…I left.”' }],
+    medium: 'screen',
   },
 ];
 
@@ -350,30 +361,30 @@ export const GIVING_THE_ORDER: Dialogue[] = [
     title: 'Order terminal',
     text: 'ORDER FOR RUSTBELT: OPEN. 341 ITEMS COLLECTED. ORDER PASSED TO NEXT IN LINE: U-7. AWAITING ORDERS.',
     options: [{ label: '“Give it all back.”' }],
-    written: true,
+    medium: 'screen',
   },
   {
     title: 'Order terminal',
     text: 'ORDER FOR RUSTBELT: CLOSED. RETURNING ALL ITEMS.',
     options: [{ label: 'Close' }],
-    written: true,
+    medium: 'screen',
   },
 ];
 
 /** The last thing the player sees, once Foundry 2 has come to life. */
 export const ENDING = {
-  online: { title: 'FOUNDRY 2 ONLINE', subtitle: 'AWAITING ORDERS.' },
   title: 'The order was never cancelled.',
   subtitle: 'It was passed on to you.',
   thanks: 'Thank you for playing.',
 };
 
 /** What the hero reads or uses, by readable id; some read differently as the story goes on. */
-export function readingFor(id: string, quest: number): { title: string; text: string } | undefined {
+export function readingFor(id: string, quest: number): Reading | undefined {
   switch (id) {
     case 'switch':
       return {
         title: 'The turbine’s terminal',
+        screen: true,
         text: quest >= STEP.powerOn
           ? 'TURBINE OUTPUT: RUSTBELT. STATUS: ACTIVE.'
           : quest === STEP.loaderDown
@@ -383,6 +394,7 @@ export function readingFor(id: string, quest: number): { title: string; text: st
     case 'back-door-panel':
       return {
         title: 'A panel by the loading door',
+        screen: true,
         text: quest < STEP.powerOn
           ? 'LOADING DOOR. NO POWER. SUPPLY: WIND TURBINE, LOGGING CAMP.'
           : quest < STEP.toldByMags
@@ -392,6 +404,7 @@ export function readingFor(id: string, quest: number): { title: string; text: st
     case 'tags-panel':
       return {
         title: 'A panel by the door',
+        screen: true,
         text: quest < STEP.tagsTaken
           ? 'STOCK ONLY. STOCK TAGS REQUIRED.'
           : 'STOCK TAGS ACCEPTED.',
@@ -399,6 +412,7 @@ export function readingFor(id: string, quest: number): { title: string; text: st
     case 'access-terminal':
       return {
         title: 'A terminal by the door',
+        screen: true,
         text: quest >= STEP.charged
           ? 'ASSEMBLY HALL. U-7: AUTHORISED.'
           : 'ASSEMBLY HALL. AUTHORISED UNITS ONLY. UNITS ARE AUTHORISED ON CHARGING. CHARGING STATION: THIS FLOOR. Scratched into the casing below: “Plug into the charger and the door takes you for one of them.”',
@@ -406,6 +420,7 @@ export function readingFor(id: string, quest: number): { title: string; text: st
     case 'order-terminal':
       return {
         title: 'Order terminal',
+        screen: true,
         text: quest > STEP.orderAsked
           ? 'ORDER FOR RUSTBELT: CLOSED. RETURNING ALL ITEMS TO RUSTBELT.'
           : 'ORDER FOR RUSTBELT: OPEN. 341 ITEMS COLLECTED. AWAITING ORDERS.',
@@ -415,7 +430,7 @@ export function readingFor(id: string, quest: number): { title: string; text: st
   }
 }
 
-const READINGS: Record<string, { title: string; text: string }> = {
+const READINGS: Record<string, Reading> = {
   riverbank: {
     title: 'The jetty post',
     text: 'Carved into the post: FOUND HERE, NIGHT OF THE FLOOD. Below it, smaller: DIDN’T BREATHE FOR AN HOUR. THEN WOKE UP.',
@@ -434,6 +449,7 @@ const READINGS: Record<string, { title: string; text: string }> = {
   },
   'recall-notice': {
     title: 'A terminal, still lit',
+    screen: true,
     text: 'RECALL NOTICE. All delivery robots must return to the Foundry. Missing: U-7. Last seen at the river crossing, the night of the flood.',
   },
   'stock-tag': {
@@ -446,6 +462,7 @@ const READINGS: Record<string, { title: string; text: string }> = {
   },
   'charging-station': {
     title: 'A charging station',
+    screen: true,
     text: 'CHARGING STATION. UNIT: U-7. KEPT WARM: 1,096 DAYS.',
   },
   crate: {

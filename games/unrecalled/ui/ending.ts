@@ -4,9 +4,10 @@ import { FOUNDRY_2_LIGHTS, FOUNDRY_2_VIEW } from '../levels/upriver';
 /**
  * When each beat lands, in seconds from arriving upriver: the picture fades up from black on empty ground below
  * Foundry 2, the camera drifts up to it standing dark, its windows come on a storey at a time from the ground up, it
- * shudders awake, its speakers speak, and the closing card fades in.
+ * shudders awake, its speakers speak and the salvager answers, and once they've said their piece the closing card
+ * fades in.
  */
-const TIMING = { panFrom: 0.6, panSeconds: 5, lightsFrom: 6, storeyEvery: 0.9, online: 1.4, card: 5.2 };
+const TIMING = { panFrom: 0.6, panSeconds: 5, lightsFrom: 6, storeyEvery: 0.9, online: 1.4, card: 1.2 };
 /** How close the camera comes as it pans, from the empty ground to Foundry 2 whole, towers and all, even on a phone. */
 const CLOSENESS = { from: 1, to: 0.55 };
 /** Where the camera starts, below Foundry 2, in tiles from where it ends up. */
@@ -24,7 +25,10 @@ export interface EndingBeats {
   light(storey: number): void;
   /** The top storey is lit: the building shudders awake. */
   awake(): void;
+  /** Foundry 2 speaks, and the salvager answers. */
   online(): void;
+  /** Everything said has been read. */
+  quiet(): boolean;
   card(): void;
 }
 
@@ -39,6 +43,7 @@ export class Ending {
   private readonly focus = { x: 0, y: 0 };
   private lit = 0;
   private done = new Set<keyof EndingBeats>();
+  private quietAt: number | null = null;
 
   constructor(
     private readonly game: Game,
@@ -85,10 +90,11 @@ export class Ending {
     const allLit = TIMING.lightsFrom + Math.max(0, storeys - 1) * TIMING.storeyEvery + LIGHT_RISE;
     if (seconds >= allLit) this.once('awake');
     if (seconds >= allLit + TIMING.online) this.once('online');
-    if (seconds >= allLit + TIMING.card) this.once('card');
+    if (this.done.has('online') && this.quietAt === null && this.beats.quiet()) this.quietAt = seconds;
+    if (this.quietAt !== null && seconds >= this.quietAt + TIMING.card) this.once('card');
   }
 
-  private once(beat: Exclude<keyof EndingBeats, 'light'>): void {
+  private once(beat: Exclude<keyof EndingBeats, 'light' | 'quiet'>): void {
     if (this.done.has(beat)) return;
     this.done.add(beat);
     this.beats[beat]();

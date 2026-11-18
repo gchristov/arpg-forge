@@ -1,7 +1,7 @@
 import { currentLevel, type Command, type GameState } from '../../../engine/sim/state';
 import { Banner } from '../../../engine/ui/banner';
 import { bindCommand } from '../../../engine/ui/command-button';
-import { MessageFeed, type Speaker } from '../../../engine/ui/message-feed';
+import { type FeedOptions, MessageFeed, type Speaker } from '../../../engine/ui/message-feed';
 import { ShownValues } from '../../../engine/ui/shown-values';
 import { ENEMIES } from '../content/enemies';
 import { QUEST } from '../content/story';
@@ -23,8 +23,8 @@ export class Hud {
   /** Keeps the EMP's button hidden even once the salvager has it, while the scene that gives it plays. */
   empWithheld = false;
 
-  constructor(send: (command: Command) => void, portraitOf: (from?: Speaker) => string | undefined) {
-    this.feed = new MessageFeed($('feed'), portraitOf);
+  constructor(send: (command: Command) => void, feed: FeedOptions) {
+    this.feed = new MessageFeed($('feed'), feed);
     // The log lists every line and page so far, for one missed or closed too soon.
     $('logOpen').addEventListener('pointerdown', (e) => {
       e.preventDefault();
