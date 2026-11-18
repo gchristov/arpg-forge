@@ -212,7 +212,7 @@ const homecoming = new Homecoming({
   begin: () => {
     dialog.close();
     document.body.classList.add('cinematic');
-    game.cameraFocus = AROUND_THE_FIRE;
+    game.cutTo(AROUND_THE_FIRE);
   },
   say,
   quiet: () => hud.quiet,

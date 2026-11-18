@@ -72,6 +72,8 @@ export class Game {
   private holdWalks = false;
   /** Where the camera looks instead of at the hero, such as for a moment the game shows; null follows the hero. */
   cameraFocus: { x: number; y: number } | null = null;
+  /** The next frame jumps the camera to where it looks rather than easing there. */
+  private cutting = false;
   private readonly models = new ModelLibrary();
 
   constructor(setup: GameSetup) {
@@ -131,6 +133,12 @@ export class Game {
     requestAnimationFrame(frame);
   }
 
+  /** Points the camera at `focus`, or back at the hero with null, at once rather than easing there, as a film cuts. */
+  cutTo(focus: { x: number; y: number } | null): void {
+    this.cameraFocus = focus;
+    this.cutting = true;
+  }
+
   /** Head-and-shoulders pictures of the sitters, as image URLs by name, once the models have loaded. */
   async portraits(sitters: Record<string, Sitter>): Promise<Record<string, string>> {
     await this.modelsLoaded;
@@ -163,7 +171,8 @@ export class Game {
     this.view.draw(alpha, frameSeconds, loop.stepSeconds);
     const heroX = lerp(state.hero.prevX, state.hero.x, alpha);
     const heroY = lerp(state.hero.prevY, state.hero.y, alpha);
-    renderer.follow(this.cameraFocus?.x ?? heroX, this.cameraFocus?.y ?? heroY, frameSeconds);
+    renderer.follow(this.cameraFocus?.x ?? heroX, this.cameraFocus?.y ?? heroY, frameSeconds, this.cutting);
+    this.cutting = false;
     renderer.lightHero(heroX, heroY);
     renderer.render(now / 1000, frameSeconds);
     this.labels.update(this.project, frameSeconds);
