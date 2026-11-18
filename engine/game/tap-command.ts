@@ -23,9 +23,9 @@ const screenTop: Vec2 = { x: 0, y: 0 };
 export type TapView = Pick<SceneRenderer, 'screenPosition' | 'pick' | 'zoom'>;
 
 /**
- * Turns a tap on the world at screen point `x`, `y` into a command, checking in this order: enemies, NPCs,
- * things to read, doors by their body, buildings, chests, doors by the ground near them, then the ground. Only enemies `seen` says the hero can see can be tapped. Null when the
- * tap hits nothing.
+ * Turns a tap on the world at screen point `x`, `y` into a command, checking in this order: enemies, NPCs, things to
+ * read, doors by their body, buildings, chests, doors by the ground near them, then the ground. Only enemies `seen`
+ * says the hero can see can be tapped. Null when the tap hits nothing.
  */
 export function tapCommand(
   state: GameState,

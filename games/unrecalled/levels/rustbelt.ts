@@ -152,7 +152,8 @@ export function buildRustbelt(): LevelContent {
   setProp(map, 20, 13, Prop.FireBarrel, true);
   level.lights.push({ x: 20.5, y: 13.5, radius: 4.4, intensity: 1.3, colour: 'molten', flicker: 1.6, seed: 7 });
   // Odell by the fire, until the Foundry takes him and after he's brought home, when Mags and Pell join him there at
-  // dawn. A loader is at the camp's crates as U-7 arrives: a weak one, for its first fight, bare-handed. It fights alone; beating it is what sets every machine off.
+  // dawn. A loader is at the camp's crates as U-7 arrives: a weak one, for its first fight, bare-handed. It fights
+  // alone; beating it is what sets every machine off.
   const foreman = { kind: 'foreman', name: 'Foreman Odell', x: 21.5, y: 13.6 };
   room.npcs.push({ ...foreman, untilStep: STEP.powerOn }, { ...foreman, fromStep: STEP.freed });
   room.npcs.push({ kind: 'trader', name: 'Mags', x: 19.5, y: 15.5, fromStep: STEP.freed });
