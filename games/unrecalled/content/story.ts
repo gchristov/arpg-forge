@@ -283,9 +283,6 @@ function pellSays(quest: number, weapon: string | null): Dialogue {
 // Lines with no speaker are the salvager's own thoughts. Terminals and panels say only what they show; what has just
 // happened is told by the salvager, or by whoever is there.
 
-/** The salvager's first thought as the game opens. */
-export const OPENING: Line[] = [{ text: 'Night in Rustbelt. Odell is waving me over to the fire.' }];
-
 /** Once the chainsaw is in the salvager's hands. */
 export const CHAINSAW_FOUND = 'Pell’s chainsaw. It keeps cutting for as long as I hold it on a machine.';
 
@@ -346,7 +343,7 @@ export const CHARGED: { remembered: Line; overcharged: Line; burst: Line } = {
 /** Plugging into the charging station, page by page. */
 export const CHARGING: Dialogue[] = [
   {
-    title: 'Charger terminal',
+    title: 'U-7 charging station',
     text: 'U-7 AUTHORISED. LAST OUTSTANDING ORDER: STRIP THE TOWN.',
     options: [{ label: '…' }],
     medium: 'screen',
@@ -387,7 +384,7 @@ export function readingFor(id: string, quest: number): Reading | undefined {
           ? 'STATUS: ACTIVE.'
           : quest === STEP.loaderDown
             ? 'ACCESS CODE ACCEPTED. STATUS: ACTIVE.'
-            : 'ACCESS CODE NEEDED.',
+            : 'ACCESS CODE REQUIRED.',
       };
     case 'back-door-panel':
       return {
@@ -397,19 +394,19 @@ export function readingFor(id: string, quest: number): Reading | undefined {
       };
     case 'intake-door-panel':
       return {
-        title: 'Door',
+        title: 'Sorting Line door',
         screen: true,
         text: quest < STEP.doorCodeTaken
-          ? 'STATUS: LOCKED. ACCESS CODE NEEDED.'
-          : 'STATUS: UNLOCKED.',
+          ? 'ACCESS CODE REQUIRED.'
+          : 'ACCESS CODE ACCEPTED. STATUS: UNLOCKED.',
       };
     case 'access-terminal':
       return {
-        title: 'Access terminal',
+        title: 'Control Centre door',
         screen: true,
         text: quest >= STEP.charged
-          ? 'U-7 AUTHORISED. OPEN.'
-          : 'U-7 UNAUTHORISED. AUTHORISED UNITS ONLY.',
+          ? 'U-7 AUTHORISED. STATUS: UNLOCKED.'
+          : 'AUTHORISATION REQUIRED.',
       };
     case 'order-terminal':
       return {
@@ -426,19 +423,19 @@ export function readingFor(id: string, quest: number): Reading | undefined {
 
 const READINGS: Record<string, Reading> = {
   riverbank: {
-    title: 'The jetty post',
+    title: 'Jetty post',
     text: 'Carved into the post: FOUND HERE, NIGHT OF THE FLOOD. Below it, smaller: DIDN’T BREATHE FOR AN HOUR. THEN WOKE UP.',
   },
   'pump-log': {
-    title: 'The pumphouse log',
+    title: 'Pumphouse log',
     text: 'NIGHT OF THE FLOOD. 2:14: the Foundry’s river gate opened from the inside. 2:15: the pumps couldn’t keep up. 2:16: something walked out with the water.',
   },
   'depot-ledger': {
-    title: 'The depot ledger',
+    title: 'Depot ledger',
     text: 'DELIVERIES FROM THE FOUNDRY. Robots U-3, U-4, U-5, U-6: arrived. U-7: sent, missing.',
   },
   'u-4': {
-    title: 'In the reeds',
+    title: 'Delivery robot U-4',
     text: 'A delivery robot, rusted through, face down in the reeds with one arm reaching upriver. The plate on its back: U-4.',
   },
   'recall-notice': {
@@ -447,20 +444,20 @@ const READINGS: Record<string, Reading> = {
     text: 'ALL DELIVERY ROBOTS RETURN TO THE FOUNDRY.',
   },
   'stock-tag': {
-    title: 'A tag on a crate',
-    text: 'TAKEN FROM: RUSTBELT. Item 212 of 341. Contents: one chapel bell.',
+    title: 'Crate tag',
+    text: 'FROM: RUSTBELT. ITEM 212 OF 341: CHAPEL BELL.',
   },
   manifest: {
-    title: 'The manifest board',
-    text: 'COLLECTED FROM RUSTBELT. … ITEM 340: ONE CHAPEL DOOR. ITEM 341 (ADDED): ONE FOREMAN. COLLECTED. HOLD FOR U-7.',
+    title: 'Manifest',
+    text: 'FROM: RUSTBELT. ITEM 340: CHAPEL DOOR. ITEM 341: FOREMAN. HOLD FOR U-7.',
   },
   'charging-station': {
-    title: 'Charger terminal',
+    title: 'U-7 charging station',
     screen: true,
     text: 'RESERVED: U-7. PLUG IN TO CHARGE.',
   },
   crate: {
-    title: 'A crate',
+    title: 'Crate',
     text: 'HOLD FOR U-7.',
   },
 };

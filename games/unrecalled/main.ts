@@ -12,7 +12,7 @@ import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import {
   AFTER_READING, ALARM, BY_THE_FIRE, CHAINSAW_FOUND, CHARGED, CHARGING, dialogueFor, ENDING, ENGINE_SAYS, GIVING_THE_ORDER,
-  HOMECOMING, levelUp, LOCKED, MACHINE_SCANS, NPCS, ON_ENTERING, ON_NEARING, OPENING, readingFor, REPLY, UPRIVER, scrapDropped,
+  HOMECOMING, levelUp, LOCKED, MACHINE_SCANS, NPCS, ON_ENTERING, ON_NEARING, readingFor, REPLY, UPRIVER, scrapDropped,
   STEP, STEP_LINES, VOICES, type Dialogue, type Line,
 } from './content/story';
 import { placeOf, type Place } from './content/places';
@@ -485,7 +485,6 @@ game.run({
     $('title').hidden = true;
     const { level } = currentLevel(state);
     hud.banner(level.name, level.subtitle, 3);
-    if (state.quest === 0) say(OPENING);
   },
   // Tapping the world walks away from a conversation, which can be picked up again by talking. Things read and scenes
   // stay until their own button closes them, and the tap is dropped, so a line can't be lost to a stray tap.
