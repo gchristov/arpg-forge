@@ -62,7 +62,8 @@ export const UPRIVER = { levelId: 'upriver', x: 79.5, y: 63.5 };
 export const QUEST: Array<QuestStep & { text: string }> = [
   { text: '' },
   { text: 'Stop the loader at the crates.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.proveIt } },
-  { text: 'Talk to Odell.', reachedBy: { type: 'defeat', tag: TAG.raider } },
+  // Every machine answers to the Foundry: once U-7 has beaten one, all of them know.
+  { text: 'Talk to Odell.', reachedBy: { type: 'defeat', tag: TAG.raider }, alarmsEverything: true },
   { text: 'Talk to Pell in her workshop.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.seePell } },
   { text: 'Get Pell’s chainsaw back from the machine in the woods.', reachedBy: { type: 'reply', npcKind: 'tinker', id: REPLY.getSaw } },
   { text: 'Take the chainsaw back to Pell.', reachedBy: { type: 'arm', weapon: 'chainsaw' } },
@@ -231,7 +232,7 @@ function magsSays(quest: number, deaths: number): Dialogue {
   if (quest === STEP.sentToMags) {
     return {
       title: MAGS,
-      text: 'Pell sent you? Yes, my back door leads into the Foundry. But it’s had no power since the machines switched our turbine over to the Foundry.',
+      text: 'Pell sent you? Yes, my back door leads into the Foundry. But it’s had no power since the machines switched off the turbine.',
       options: [{
         label: '…',
         next: {
@@ -333,18 +334,17 @@ export const HOMECOMING: Line[] = [
   { text: 'Brought home by one of them. Never thought I’d see it.', from: VOICES.mags },
   { text: 'I could use a couple of these machines in the workshop, you know.', from: VOICES.pell },
   { text: 'I didn’t trust you when you walked in. I do now.', from: VOICES.odell },
-  { text: 'So, what happens now?', from: VOICES.odell },
   { text: 'The Foundry only follows orders. Someone upriver gives them.', from: VOICES.u7 },
 ];
 
 /** What the Foundry's speakers say as U-7 walks onto a floor. */
 export const ON_ENTERING: Partial<Record<string, Line>> = {
-  intake: { text: 'U-7 DETECTED.', from: VOICES.foundry },
-  sorting: { text: 'U-7: REPORT TO CONTROL.', from: VOICES.foundry },
+  intake: { text: 'U-7 DETECTED INSIDE THE FACILITY. ALARM SYSTEMS ACTIVE.', from: VOICES.foundry },
+  sorting: { text: 'U-7: REPORT TO CONTROL CENTRE.', from: VOICES.foundry },
 };
 
 /** What the Order Engine says when it first sees U-7. */
-export const ENGINE_SAYS: Line = { text: 'U-7. You came back. We kept your place.', from: VOICES.orderEngine };
+export const ENGINE_SAYS: Line = { text: 'U-7. You came back. We kept your place. Now you must fulfil your orders.', from: VOICES.orderEngine };
 
 /**
  * After plugging in: U-7 lets the Foundry believe it, the station warns of the charge kept for it, which bursts out as
@@ -399,8 +399,8 @@ export function readingFor(id: string, quest: number): Reading | undefined {
         text: quest >= STEP.powerOn
           ? 'STATUS: ACTIVE.'
           : quest === STEP.loaderDown
-            ? 'ACCESS CODE ACCEPTED. STATUS: ACTIVE.'
-            : 'ACCESS CODE REQUIRED.',
+            ? 'ACCESS GRANTED. STATUS: ACTIVE.'
+            : 'ACCESS DENIED.',
       };
     case 'back-door-panel':
       return {
@@ -413,15 +413,15 @@ export function readingFor(id: string, quest: number): Reading | undefined {
         title: 'Sorting Line door',
         screen: true,
         text: quest < STEP.doorCodeTaken
-          ? 'ACCESS CODE REQUIRED.'
-          : 'ACCESS CODE ACCEPTED. STATUS: UNLOCKED.',
+          ? 'ACCESS DENIED.'
+          : 'ACCESS GRANTED. STATUS: UNLOCKED.',
       };
     case 'access-terminal':
       return {
         title: 'Control Centre door',
         screen: true,
         text: quest >= STEP.charged
-          ? 'U-7: ACCESS RESTORED. STATUS: UNLOCKED.'
+          ? 'U-7: ACCESS GRANTED. STATUS: UNLOCKED.'
           : 'U-7: ACCESS REVOKED.',
       };
     case 'order-terminal':
@@ -430,7 +430,15 @@ export function readingFor(id: string, quest: number): Reading | undefined {
         screen: true,
         text: quest > STEP.orderAsked
           ? 'ORDER CANCELLED. RETURNING ALL ITEMS.'
-          : 'ORDER: STRIP THE TOWN. AWAITING INSTRUCTIONS.',
+          : quest >= STEP.engineDown
+            ? 'ORDER: STRIP THE TOWN. AWAITING INSTRUCTIONS.'
+            : 'ORDER: STRIP THE TOWN. STATUS: IN PROGRESS.',
+      };
+    case 'charging-station':
+      return {
+        title: 'U-7 charging station',
+        screen: true,
+        text: quest >= STEP.charged ? 'STATUS: OVERCHARGED.' : 'PLUG IN TO CHARGE.',
       };
     default:
       return READINGS[id];
@@ -451,11 +459,6 @@ const READINGS: Record<string, Reading> = {
     title: 'Crate tag',
     text: 'FROM: RUSTBELT. ITEM 212 OF 341: CHAPEL BELL.',
   },
-  'charging-station': {
-    title: 'U-7 charging station',
-    screen: true,
-    text: 'RESERVED: U-7. PLUG IN TO CHARGE.',
-  },
 };
 
 /** What U-7 thinks once it has read something, the first time. */
@@ -470,11 +473,11 @@ export const ON_NEARING: Partial<Record<string, string>> = {
 };
 
 /** Every readable id the game words. */
-export const READABLE_IDS = [...Object.keys(READINGS), 'crate', 'switch', 'back-door-panel', 'intake-door-panel', 'access-terminal', 'order-terminal'];
+export const READABLE_IDS = [...Object.keys(READINGS), 'crate', 'charging-station', 'switch', 'back-door-panel', 'intake-door-panel', 'access-terminal', 'order-terminal'];
 
 /** What a machine with a scanner says on looking U-7 over. */
 export const MACHINE_SCANS = 'SCANNING… ONE OF OURS';
-/** What the Foundry says when U-7 first fights one of its machines, and every machine from then on knows. */
+/** What the Foundry says when U-7 first beats one of its machines, and every machine from then on knows. */
 export const ALARM = 'LINE BREACH. ALL UNITS BE ADVISED.';
 
 export const levelUp = (level: number) => `Level ${level}`;

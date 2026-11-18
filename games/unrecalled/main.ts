@@ -88,6 +88,9 @@ const kindOf = (enemyId: number): string | undefined => currentLevel(state).enem
 /** The floors whose speakers have already greeted the salvager. */
 const greeted = new Set<string>();
 
+/** Whether the Foundry has announced the line breach. */
+let breachAnnounced = false;
+
 /** Times the salvager has gone down, for the trader to remark on. */
 let deaths = 0;
 
@@ -441,9 +444,10 @@ function react(events: SimEvent[]): void {
         if (kind && unrecalledLook.actor(kind).scanner) labels.text(e.x, e.y, 70 * PX * view.scaleOf(kind), MACHINE_SCANS, '#ff8a6a', 15);
         break;
       }
-      // Every machine hears it at once, so the Foundry says it only the once.
+      // The line is breached once, when U-7 beats its first machine; every machine hears it at once.
       case 'LevelAlarmed':
-        hud.say(ALARM, VOICES.foundry);
+        if (!breachAnnounced) hud.say(ALARM, VOICES.foundry);
+        breachAnnounced = true;
         break;
       case 'PortalLocked': {
         // Standing in a locked doorway repeats the event; the thought comes once each time the salvager walks into it.

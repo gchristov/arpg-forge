@@ -205,3 +205,22 @@ describe('quest steps that calm everything', () => {
     expect(ofType(events, 'HeroHurt')).toHaveLength(0);
   });
 });
+
+describe('quest steps that alarm everything', () => {
+  it('sound the alarm on every level once, so calm enemies anywhere come for the hero on sight', () => {
+    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'worker', x: 6.5, y: 5.5 }, { kind: 'worker', x: 9.5, y: 5.5 }]);
+    state.rules.quest = [{}, { reachedBy: { type: 'kill', enemyKind: 'worker' }, alarmsEverything: true }];
+    const here = currentLevel(state);
+    const elsewhere = { ...here, enemies: [], alarmed: false, level: { ...here.level, id: 'elsewhere' } };
+    state.levels.elsewhere = elsewhere;
+    const [first, second] = here.enemies;
+    first!.quiet = true;
+    first!.hp = 1;
+    const events = run(state, 1, [{ type: 'attack', enemyId: first!.id }]);
+    expect(state.quest).toBe(1);
+    expect([here.alarmed, elsewhere.alarmed]).toEqual([true, true]);
+    expect(ofType(events, 'LevelAlarmed')).toHaveLength(1);
+    run(state, 1);
+    expect(second!.mode).toBe('chase');
+  });
+});

@@ -187,7 +187,6 @@ export interface GameState {
     npcs: Record<string, NpcType>;
     quest: QuestStep[];
     enemyGrowthPerHeroLevel?: number;
-    alarmReach?: 'building' | 'everywhere';
   };
   /** Index of the current quest step. */
   quest: number;

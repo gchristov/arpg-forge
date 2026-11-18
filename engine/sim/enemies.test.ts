@@ -166,19 +166,6 @@ describe('calm enemies', () => {
     expect(ofType(later, 'LevelAlarmed')).toHaveLength(0);
   });
 
-  it('sound the alarm on every level when the game says it reaches everywhere, and only on their own otherwise', () => {
-    for (const alarmReach of ['everywhere', 'building'] as const) {
-      const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'worker', x: 6.5, y: 5.5 }]);
-      state.rules.alarmReach = alarmReach;
-      const here = currentLevel(state);
-      const elsewhere = { ...here, enemies: [], alarmed: false, level: { ...here.level, id: 'elsewhere' } };
-      state.levels.elsewhere = elsewhere;
-      run(state, 0.5, [{ type: 'attack', enemyId: enemiesOf(state)[0]!.id }]);
-      expect(here.alarmed).toBe(true);
-      expect(elsewhere.alarmed).toBe(alarmReach === 'everywhere');
-    }
-  });
-
   it('keep taking the hero for one of their own while they fight a quiet one, which sounds no alarm', () => {
     const state = arena(Array.from({ length: 6 }, () => '.'.repeat(40)), { x: 3.5, y: 2.5 }, [
       { kind: 'worker', x: 4.5, y: 2.5 }, { kind: 'worker', x: 36.5, y: 2.5 },

@@ -7,7 +7,7 @@ import { Ground, Prop } from '../content/tiles';
  * The Foundry, floor by floor: for now each floor is one plain hall, going deeper through a door in the back wall (U)
  * and back through the front wall (V), with what the story needs on it, and a panel by every door the story keeps shut
  * saying what opens it. Intake has the recall notice (T), the loader carrying the access code that opens the way on and
- * the panel (K) asking for it; the Sorting Line a tagged crate (R) on a belt and a terminal (M) by the way on; the
+ * the panel (K) asking for it; the Sorting Line a tagged crate (R) on a belt; the
  * Control Gallery a terminal (P) by its door saying U-7's access is revoked, and U-7's charging station (Y), whose use
  * restores it; and the Control Centre the Order Engine, the crate Odell is locked in (Z), opened once the Order Engine
  * is down, and the order terminal (O) where the Foundry's orders are given.
@@ -65,7 +65,7 @@ const FLOORS = {
       '#################################',
       '#################################',
       '######L###B###L#U#L###B###L######',
-      '###...............M...........###',
+      '###...........................###',
       '##A...........................###',
       '###...........................###',
       '###...........................###',
@@ -153,7 +153,6 @@ const KEY: Record<string, RoomKey> = {
   '#': { prop: Prop.Wall, frontProp: Prop.WallLow, solid: true },
   B: { prop: Prop.WallAlarm, solid: true, light: { radius: 6, intensity: 2, colour: 'alarm', flicker: 0, lean: 0.7, alarm: true } },
   Y: { ...solid(Prop.Cradle), readable: 'charging-station', light: { radius: 2.6, intensity: 0.8, colour: 'cyan', flicker: 0.2 } },
-  M: { ...solid(Prop.Computer), light: { radius: 2.4, intensity: 0.8, colour: 'amber', flicker: 0.4 } },
   K: { ...solid(Prop.Computer), readable: 'intake-door-panel', light: { radius: 2.4, intensity: 0.8, colour: 'alarm', flicker: 0.4 } },
   P: { ...solid(Prop.Computer), readable: 'access-terminal', light: { radius: 2.4, intensity: 0.8, colour: 'alarm', flicker: 0.4 } },
   T: { ...solid(Prop.Computer), readable: 'recall-notice', light: { radius: 2.4, intensity: 0.8, colour: 'amber', flicker: 0.4 } },

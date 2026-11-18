@@ -249,16 +249,22 @@ describe('Unrecalled scenarios', () => {
     }
   });
 
-  it('lets U-7 walk up to a working machine until it\'s hit, which puts every machine everywhere on alert', () => {
-    const state = inIntake(STEP.toldByMags);
+  it('lets U-7 walk up to the first machine, fight it without an alarm, and once it\'s beaten has every machine everywhere come on sight', () => {
+    const state = untouchable(createGameState(content, 1));
+    answer(state, 'foreman', REPLY.proveIt);
     const hp = state.hero.hp;
-    const loader = currentLevel(state).enemies.find((e) => e.tag === TAG.doorCodeLoader)!;
-    play(state, 15, [{ type: 'walk', x: loader.x, y: loader.y + 1.2 }]);
-    expect([state.hero.hp, loader.mode]).toEqual([hp, 'idle']);
-    const events = play(state, 2, [{ type: 'attack', enemyId: loader.id }]);
-    expect(events.map((e) => e.type)).toContain('LevelAlarmed');
-    expect(loader.mode).toBe('chase');
+    const raider = currentLevel(state).enemies.find((e) => e.tag === TAG.raider)!;
+    play(state, 15, [{ type: 'walk', x: raider.x, y: raider.y + 1.2 }]);
+    expect([state.hero.hp, raider.mode]).toEqual([hp, 'idle']);
+    play(state, 1, [{ type: 'attack', enemyId: raider.id }]);
+    expect(Object.values(state.levels).some((ls) => ls.alarmed)).toBe(false);
+    const events = defeat(state, TAG.raider);
+    expect(events.filter((e) => e.type === 'LevelAlarmed')).toHaveLength(1);
     expect(Object.values(state.levels).every((ls) => ls.alarmed)).toBe(true);
+    intoFoundry(state, STEP.toldByMags);
+    const loader = currentLevel(state).enemies.find((e) => e.tag === TAG.doorCodeLoader)!;
+    play(state, 8, [{ type: 'walk', x: loader.x, y: loader.y + 4 }]);
+    expect(loader.mode).toBe('chase');
   });
 
   it('places only the machines the story needs, and nothing on the floors between Intake and the Order Engine', () => {
@@ -276,7 +282,7 @@ describe('Unrecalled scenarios', () => {
     expect(play(state, 1 / 60, [{ type: 'useSkill', slot: 0 }]).map((e) => e.type)).toContain('SkillUsed');
   });
 
-  it('sets off an EMP, once the salvager has it, among a pack of crawlers, hitting them all and sounding the alarm', () => {
+  it('sets off an EMP, once U-7 has it, among a pack of crawlers, hitting them all and turning them on U-7', () => {
     const state = untouchable(createGameState(content, 1, 'arena'));
     jumpToStep(state, STEP.charged);
     expect(state.rules.hero.skills[0]?.id).toBe(EMP.id);
@@ -287,7 +293,8 @@ describe('Unrecalled scenarios', () => {
     const events = play(state, 1 / 60, [{ type: 'useSkill', slot: 0 }]);
     const hit = new Set(events.flatMap((e) => (e.type === 'EnemyDamaged' ? [e.enemyId] : [])));
     expect(pack.filter((e) => hit.has(e.id)).length).toBeGreaterThanOrEqual(2);
-    expect(events.map((e) => e.type)).toContain('LevelAlarmed');
+    play(state, 0.5);
+    expect(pack.filter((e) => hit.has(e.id)).every((e) => e.mode === 'chase')).toBe(true);
   });
 
   it('calms every machine once the Order Engine falls', () => {
