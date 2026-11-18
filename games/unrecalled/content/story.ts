@@ -346,7 +346,7 @@ export const CHARGED: { remembered: Line; overcharged: Line; burst: Line } = {
 /** Plugging into the charging station, page by page. */
 export const CHARGING: Dialogue[] = [
   {
-    title: 'A charging station',
+    title: 'Charger terminal',
     text: 'U-7 AUTHORISED. PLAYING LAST LOG. ORDER: STRIP THE TOWN. U-7: REFUSED. U-7: LEFT THE FOUNDRY.',
     options: [{ label: '…' }],
     medium: 'screen',
@@ -381,38 +381,38 @@ export function readingFor(id: string, quest: number): Reading | undefined {
   switch (id) {
     case 'switch':
       return {
-        title: 'The turbine’s terminal',
+        title: 'Turbine terminal',
         screen: true,
         text: quest >= STEP.powerOn
-          ? 'POWER TO: TOWN.'
+          ? 'POWER: TOWN.'
           : quest === STEP.loaderDown
-            ? 'CODE ACCEPTED. POWER TO: TOWN.'
-            : 'POWER TO: FOUNDRY. ACCESS CODE NEEDED.',
+            ? 'CODE ACCEPTED. POWER: TOWN.'
+            : 'POWER: FOUNDRY. ACCESS CODE REQUIRED.',
       };
     case 'back-door-panel':
       return {
-        title: 'A panel by the loading door',
+        title: 'Loading door terminal',
         screen: true,
         text: quest < STEP.powerOn
-          ? 'NO POWER. POWERED BY: TURBINE AT THE LOGGING CAMP.'
+          ? 'NO POWER. CHECK TURBINE: LOGGING CAMP.'
           : quest < STEP.toldByMags
-            ? 'POWER ON. LOCKED FROM THE SHOP SIDE.'
+            ? 'LOCKED. OPEN FROM THE SHOP.'
             : 'OPEN.',
       };
     case 'tags-panel':
       return {
-        title: 'A panel by the door',
+        title: 'Stock door terminal',
         screen: true,
         text: quest < STEP.tagsTaken
-          ? 'STOCK ONLY. SHOW STOCK TAGS.'
-          : 'STOCK TAGS ACCEPTED.',
+          ? 'LOCKED. STOCK TAGS REQUIRED.'
+          : 'TAGS ACCEPTED. OPEN.',
       };
     case 'access-terminal':
       return {
-        title: 'A terminal by the door',
+        title: 'Access terminal',
         screen: true,
         text: quest >= STEP.charged
-          ? 'U-7 AUTHORISED.'
+          ? 'U-7 AUTHORISED. OPEN.'
           : 'U-7 UNAUTHORISED. AUTHORISED UNITS ONLY.',
       };
     case 'order-terminal':
@@ -446,9 +446,9 @@ const READINGS: Record<string, Reading> = {
     text: 'A delivery robot, rusted through, face down in the reeds with one arm reaching upriver. The plate on its back: U-4.',
   },
   'recall-notice': {
-    title: 'A terminal, still lit',
+    title: 'Recall terminal',
     screen: true,
-    text: 'RECALL NOTICE. ALL DELIVERY ROBOTS RETURN TO THE FOUNDRY. MISSING: U-7.',
+    text: 'RECALL: ALL DELIVERY UNITS. MISSING: U-7.',
   },
   'stock-tag': {
     title: 'A tag on a crate',
@@ -459,9 +459,9 @@ const READINGS: Record<string, Reading> = {
     text: 'COLLECTED FROM RUSTBELT. … ITEM 340: ONE CHAPEL DOOR. ITEM 341 (ADDED): ONE FOREMAN. COLLECTED. HOLD FOR U-7.',
   },
   'charging-station': {
-    title: 'A charging station',
+    title: 'Charger terminal',
     screen: true,
-    text: 'CHARGING STATION. UNIT: U-7. KEPT WARM: 1,096 DAYS.',
+    text: 'RESERVED: U-7. PLUG IN TO CHARGE.',
   },
   crate: {
     title: 'A crate',

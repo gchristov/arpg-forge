@@ -88,6 +88,16 @@ describe('tapCommand', () => {
     expect(tapTile(state, 15.5, 5)).toEqual({ type: 'walk', x: 15.5, y: 5 });
   });
 
+  it('walks into a door tapped anywhere up its height, where the ground behind it is out of reach', () => {
+    const state = room();
+    currentLevel(state).level.portals.push({ tx: 17, ty: 9, to: 'home', stepOut: { x: 0, y: -1 } });
+    // Seen from the side: height rises up the screen, as a door does above its tile.
+    const side: TapView = { ...view, screenPosition: (x, y, height, out) => Object.assign(out, { x: x * PIXELS, y: (y - height) * PIXELS }) };
+    const tap = (x: number, y: number) => tapCommand(state, side, () => 1, x * PIXELS, y * PIXELS);
+    expect(tap(17.5, 9.5 - 1.5)).toEqual({ type: 'walkInto', tx: 17, ty: 9 });
+    expect(tap(17.5, 9.5 - 3)).toEqual({ type: 'walk', x: 17.5, y: 6.5 });
+  });
+
   it('walks to any other ground tapped', () => {
     expect(tapTile(room(), 3.25, 14.5)).toEqual({ type: 'walk', x: 3.25, y: 14.5 });
   });

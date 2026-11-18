@@ -13,15 +13,18 @@ const BUILDING_REACH = 0.8;
 const THING_REACH = 0.9;
 /** Where on an actor's body a tap aims, in screen pixels above its feet at zoom 1. */
 const BODY_PX = 18;
+/** How tall a door stands, in tiles; a tap anywhere up its height goes through it. */
+const DOOR_HEIGHT = 1.6;
 
 const screenPoint: Vec2 = { x: 0, y: 0 };
+const screenTop: Vec2 = { x: 0, y: 0 };
 
 /** What tapping needs from the renderer: where things are on screen, and what lies under a screen point. */
 export type TapView = Pick<SceneRenderer, 'screenPosition' | 'pick' | 'zoom'>;
 
 /**
  * Turns a tap on the world at screen point `x`, `y` into a command, checking in this order: enemies, NPCs,
- * buildings, chests, portals, then the ground. Only enemies `seen` says the hero can see can be tapped. Null when the
+ * things to read, doors by their body, buildings, chests, doors by the ground near them, then the ground. Only enemies `seen` says the hero can see can be tapped. Null when the
  * tap hits nothing.
  */
 export function tapCommand(
@@ -51,6 +54,14 @@ export function tapCommand(
     const p = renderer.screenPosition(r.tx + 0.5, r.ty + 0.5, BODY_PX * PX, screenPoint);
     if (Math.hypot(p.x - x, p.y - y) < TAP_REACH_PX * renderer.zoom) return { type: 'read', index };
   }
+  // A door stands up out of its wall, so a tap on it lands on the ground behind; it's tapped by its body on screen.
+  const reach = TAP_REACH_PX * renderer.zoom;
+  const tappedDoor = nearest(ls.level.portals, (p) => {
+    const foot = renderer.screenPosition(p.tx + 0.5, p.ty + 0.5, 0, screenPoint);
+    const top = renderer.screenPosition(p.tx + 0.5, p.ty + 0.5, DOOR_HEIGHT, screenTop);
+    return distanceToSegment(x, y, foot, top);
+  }, reach);
+  if (tappedDoor >= 0) return walkInto(ls.level.portals[tappedDoor]!);
   const picked = renderer.pick(x, y);
   if (!picked) return null;
   if ('structure' in picked) return { type: 'enterStructure', index: picked.structure };
@@ -60,7 +71,7 @@ export function tapCommand(
   const chest = nearest(ls.containers, (c) => (c.opened ? Infinity : distanceToTile(ground, c.tx, c.ty)), THING_REACH);
   if (chest >= 0) return { type: 'open', index: chest };
   const door = nearest(ls.level.portals, (p) => distanceToTile(ground, p.tx, p.ty), THING_REACH);
-  if (door >= 0) return { type: 'walkInto', tx: ls.level.portals[door]!.tx, ty: ls.level.portals[door]!.ty };
+  if (door >= 0) return walkInto(ls.level.portals[door]!);
   return { type: 'walk', x: ground.x, y: ground.y };
 }
 
@@ -76,6 +87,18 @@ function nearest<T>(items: readonly T[], distance: (item: T) => number, reach: n
     }
   }
   return best;
+}
+
+function walkInto(door: { tx: number; ty: number }): Command {
+  return { type: 'walkInto', tx: door.tx, ty: door.ty };
+}
+
+function distanceToSegment(x: number, y: number, a: Vec2, b: Vec2): number {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const length = dx * dx + dy * dy;
+  const t = length === 0 ? 0 : Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / length));
+  return Math.hypot(x - (a.x + t * dx), y - (a.y + t * dy));
 }
 
 function distanceToTile(p: Vec2, tx: number, ty: number): number {
