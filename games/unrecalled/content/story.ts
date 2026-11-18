@@ -295,7 +295,7 @@ export const LOCKED = 'Locked';
 /** What happens as the story reaches each step, one line at a time. */
 export const STEP_LINES: Partial<Record<number, Line[]>> = {
   [STEP.loaderDown]: [
-    { text: 'ORDER BREACHED.', from: VOICES.foundry },
+    { text: 'LOADER DOWN.', from: VOICES.foundry },
     { text: 'It had the turbine’s access code on it. And there’s Pell’s saw.' },
   ],
   [STEP.powerOn]: [{ text: 'I can hear the turbine turning back towards town. Mags’s door should have power now.' }],
@@ -327,7 +327,7 @@ export const HOMECOMING: Line[] = [
 /** What the Foundry's speakers say as the salvager walks onto a floor. */
 export const ON_ENTERING: Partial<Record<string, Line>> = {
   intake: { text: 'INTAKE OPEN. STOCK INCOMING.', from: VOICES.foundry },
-  sorting: { text: 'UNIT U-7 DETECTED ON THE SORTING LINE. REPORT TO CONTROL.', from: VOICES.foundry },
+  sorting: { text: 'U-7 DETECTED. REPORT TO CONTROL.', from: VOICES.foundry },
 };
 
 /** What the Order Engine says when it first sees the salvager. */
@@ -347,7 +347,7 @@ export const CHARGED: { remembered: Line; overcharged: Line; burst: Line } = {
 export const CHARGING: Dialogue[] = [
   {
     title: 'A charging station',
-    text: 'U-7 AUTHORISED. PLAYING BACK LATEST LOG. NIGHT OF THE FLOOD. 02:14: RIVER GATE OPENED. 02:16: LEFT FOUNDRY. REASON: ORDER CONFLICT. RUSTBELT NOT STOCK. RUSTBELT NOT ST—',
+    text: 'U-7 AUTHORISED. PLAYING LAST LOG. ORDER: STRIP THE TOWN. U-7: REFUSED. U-7: LEFT THE FOUNDRY.',
     options: [{ label: '…' }],
     medium: 'screen',
   },
@@ -357,13 +357,13 @@ export const CHARGING: Dialogue[] = [
 export const GIVING_THE_ORDER: Dialogue[] = [
   {
     title: 'Order terminal',
-    text: 'ORDER FOR RUSTBELT: OPEN. 341 ITEMS COLLECTED. ORDER PASSED TO NEXT IN LINE: U-7. AWAITING ORDERS.',
+    text: 'ORDER: STRIP THE TOWN. 341 ITEMS TAKEN. NEW ORDERS FROM: U-7.',
     options: [{ label: '“Give it all back.”' }],
     medium: 'screen',
   },
   {
     title: 'Order terminal',
-    text: 'ORDER FOR RUSTBELT: CLOSED. RETURNING ALL ITEMS.',
+    text: 'ORDER CANCELLED. RETURNING ALL ITEMS.',
     options: [{ label: 'Close' }],
     medium: 'screen',
   },
@@ -384,27 +384,27 @@ export function readingFor(id: string, quest: number): Reading | undefined {
         title: 'The turbine’s terminal',
         screen: true,
         text: quest >= STEP.powerOn
-          ? 'TURBINE OUTPUT: RUSTBELT. STATUS: ACTIVE.'
+          ? 'POWER TO: TOWN.'
           : quest === STEP.loaderDown
-            ? 'ACCESS CODE ACCEPTED. TURBINE OUTPUT: RUSTBELT. STATUS: ACTIVE.'
-            : 'TURBINE OUTPUT: FOUNDRY. ACCESS CODE REQUIRED.',
+            ? 'CODE ACCEPTED. POWER TO: TOWN.'
+            : 'POWER TO: FOUNDRY. ACCESS CODE NEEDED.',
       };
     case 'back-door-panel':
       return {
         title: 'A panel by the loading door',
         screen: true,
         text: quest < STEP.powerOn
-          ? 'LOADING DOOR. NO POWER. SUPPLY: WIND TURBINE, LOGGING CAMP.'
+          ? 'NO POWER. POWERED BY: TURBINE AT THE LOGGING CAMP.'
           : quest < STEP.toldByMags
-            ? 'LOADING DOOR. POWER ON. LOCKED FROM THE SHOP SIDE.'
-            : 'LOADING DOOR. OPEN.',
+            ? 'POWER ON. LOCKED FROM THE SHOP SIDE.'
+            : 'OPEN.',
       };
     case 'tags-panel':
       return {
         title: 'A panel by the door',
         screen: true,
         text: quest < STEP.tagsTaken
-          ? 'STOCK ONLY. STOCK TAGS REQUIRED.'
+          ? 'STOCK ONLY. SHOW STOCK TAGS.'
           : 'STOCK TAGS ACCEPTED.',
       };
     case 'access-terminal':
@@ -420,8 +420,8 @@ export function readingFor(id: string, quest: number): Reading | undefined {
         title: 'Order terminal',
         screen: true,
         text: quest > STEP.orderAsked
-          ? 'ORDER FOR RUSTBELT: CLOSED. RETURNING ALL ITEMS TO RUSTBELT.'
-          : 'ORDER FOR RUSTBELT: OPEN. 341 ITEMS COLLECTED. AWAITING ORDERS.',
+          ? 'ORDER CANCELLED. RETURNING ALL ITEMS.'
+          : 'ORDER: STRIP THE TOWN. 341 ITEMS TAKEN. NEW ORDERS FROM: U-7.',
       };
     default:
       return READINGS[id];
@@ -448,7 +448,7 @@ const READINGS: Record<string, Reading> = {
   'recall-notice': {
     title: 'A terminal, still lit',
     screen: true,
-    text: 'RECALL NOTICE. All delivery robots must return to the Foundry. Missing: U-7. Last seen at the river crossing, the night of the flood.',
+    text: 'RECALL NOTICE. ALL DELIVERY ROBOTS RETURN TO THE FOUNDRY. MISSING: U-7.',
   },
   'stock-tag': {
     title: 'A tag on a crate',
