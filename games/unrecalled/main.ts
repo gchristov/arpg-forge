@@ -266,7 +266,6 @@ const ending = new Ending(game, {
     sfx.slam();
   },
   awake: () => {
-    game.renderer.shake(0.8);
     sfx.slam();
     sfx.siren();
   },

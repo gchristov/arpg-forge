@@ -3,7 +3,7 @@ import { CRADLE_LIGHTS, CRADLE_VIEW } from '../levels/upriver';
 
 /**
  * When each beat lands, in seconds from arriving upriver: the picture fades up from black on the Cradle standing dark,
- * its windows come on a storey at a time from the ground up, it shudders awake, it speaks, the salvager answers and it
+ * its windows come on a storey at a time from the ground up, it comes awake with a siren, it speaks, the salvager answers and it
  * reaches upriver, and once they've said their piece the closing card fades in.
  */
 const TIMING = { lightsFrom: 2.2, storeyEvery: 0.9, online: 1.4, card: 1.2 };
@@ -20,7 +20,7 @@ export interface EndingBeats {
   begin(): void;
   /** Storey number `storey` catches. */
   light(storey: number): void;
-  /** The top storey is lit: the building shudders awake. */
+  /** The top storey is lit: the building comes awake. */
   awake(): void;
   /** The Cradle speaks, the salvager answers, and the Cradle reaches upriver. */
   online(): void;
