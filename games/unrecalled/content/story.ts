@@ -44,7 +44,7 @@ export const STEP = {
 
 /** Back in Rustbelt by the fire, where the salvager arrives with the foreman. */
 const BY_THE_FIRE = { levelId: 'rustbelt', x: 22.5, y: 15.5 };
-/** Upriver, outside the second Foundry, where the story ends. */
+/** Upriver, outside the Works, where the story ends. */
 export const UPRIVER = { levelId: 'upriver', x: 79.5, y: 63.5 };
 
 /** The quest: what the HUD says at each step, and what moves the quest to it. */
@@ -71,7 +71,7 @@ export const QUEST: Array<QuestStep & { text: string }> = [
   { text: 'Take the foreman home.', reachedBy: { type: 'use', id: 'order-terminal' }, inOrder: true },
   { text: 'Ring the bell by the fire.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.goHome }, takesHeroTo: BY_THE_FIRE },
   { text: 'Talk to the foreman.', reachedBy: { type: 'use', id: 'bell' } },
-  { text: 'The order was passed on to you.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.dontKnow }, takesHeroTo: UPRIVER },
+  { text: 'Rustbelt is safe.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.dontKnow }, takesHeroTo: UPRIVER },
 ];
 
 export const NPCS: Record<string, NpcType> = {
@@ -85,7 +85,7 @@ export const NPCS: Record<string, NpcType> = {
 export const VOICES = {
   foundry: { name: 'Foundry', voice: 'foundry' },
   orderEngine: { name: 'The Order Engine', voice: 'foundry' },
-  foundry2: { name: 'Foundry 2', voice: 'foundry' },
+  works: { name: 'The Works', voice: 'foundry' },
   odell: { name: 'Odell', voice: 'person' },
   mags: { name: 'Mags', voice: 'person' },
   pell: { name: 'Pell', voice: 'person' },
@@ -308,8 +308,9 @@ export const STEP_LINES: Partial<Record<number, Line[]>> = {
   [STEP.engineDown]: [{ text: 'It’s down, and every machine in here stopped with it. Odell must be in that crate.' }],
   [STEP.orderClosed]: [{ text: 'Behind me the machines are turning round, carrying our things back up the line.' }],
   [STEP.ending]: [
-    { text: 'FOUNDRY 2 ONLINE. AWAITING ORDERS.', from: VOICES.foundry2 },
-    { text: '“Awaiting orders? …From me?”' },
+    { text: 'THE WORKS ONLINE. AWAITING ORDERS.', from: VOICES.works },
+    { text: '“Orders? …From me?”' },
+    { text: 'ESTABLISHING CONNECTION: UPRIVER…', from: VOICES.works },
   ],
   [STEP.bellRung]: [
     { text: '…That’s our bell.', from: VOICES.mags },
@@ -326,6 +327,7 @@ export const HOMECOMING: { welcome: Line[]; bell: Line; confession: Line[] } = {
     { text: 'Odell! You stubborn old goat. You’re alive!', from: VOICES.mags },
     { text: 'Takes more than a Foundry to keep me in a box.', from: VOICES.odell },
     { text: 'And they brought it all back. Even my good spanner.', from: VOICES.pell },
+    { text: 'No more machines in the night. It’s over. We’re safe.', from: VOICES.mags },
     { text: 'Go on, ring the bell. It’s been too quiet round here.', from: VOICES.odell },
   ],
   bell: { text: 'DONG… … DONG… … DONG…', from: VOICES.bell },
@@ -371,10 +373,10 @@ export const GIVING_THE_ORDER: Dialogue[] = [
   },
 ];
 
-/** The last thing the player sees, once Foundry 2 has come to life. */
+/** The last thing the player sees, once the Works has reached upriver. */
 export const ENDING = {
-  title: 'The order was never cancelled.',
-  subtitle: 'It was passed on to you.',
+  title: 'Unrecalled',
+  subtitle: '',
   thanks: 'Thank you for playing.',
 };
 

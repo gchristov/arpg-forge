@@ -364,7 +364,7 @@ describe('Unrecalled scenarios', () => {
     expect([state.quest, state.hero.weapon]).toEqual([STEP.powerOn, 'chainsaw']);
   });
 
-  it('ends the story outside Foundry 2 upriver, once the salvager answers the foreman\'s last question', () => {
+  it('ends the story outside the Works upriver, once the salvager answers the foreman\'s last question', () => {
     const state = untouchable(createGameState(content, 1));
     jumpToStep(state, STEP.bellRung);
     answer(state, 'foreman', REPLY.dontKnow);
