@@ -147,7 +147,7 @@ describe('Unrecalled scenarios', () => {
     }
     expect(done).toEqual([
       'foreman in rustbelt', TAG.raider, 'foreman in rustbelt', 'tinker in workshop', TAG.switchLoader, 'switch',
-      'trader in rustbelt', TAG.tagsLoader, 'access-terminal', 'charging-station', 'charging-station', 'orderEngine', 'crate', 'foreman in control',
+      'trader in rustbelt', TAG.doorCodeLoader, 'access-terminal', 'charging-station', 'charging-station', 'orderEngine', 'crate', 'foreman in control',
       'order-terminal', 'foreman in control', 'foreman in rustbelt',
     ]);
     expect([state.levelId, state.quest]).toEqual(['upriver', STEP.ending]);
@@ -201,8 +201,8 @@ describe('Unrecalled scenarios', () => {
     expect(state.levelId).toBe('intake');
     expect(tryDoor('sorting')).toBeGreaterThan(0);
     state.hero.damage = [1000, 1000];
-    defeat(state, TAG.tagsLoader);
-    expect(state.quest).toBe(STEP.tagsTaken);
+    defeat(state, TAG.doorCodeLoader);
+    expect(state.quest).toBe(STEP.doorCodeTaken);
     takeDoor(state, 'sorting');
     takeDoor(state, 'gallery');
     expect(tryDoor('control')).toBeGreaterThan(0);
@@ -258,7 +258,7 @@ describe('Unrecalled scenarios', () => {
   it('lets the salvager walk up to a working machine until it\'s hit, which puts the whole Foundry on alert', () => {
     const state = inIntake(STEP.toldByMags);
     const hp = state.hero.hp;
-    const loader = currentLevel(state).enemies.find((e) => e.tag === TAG.tagsLoader)!;
+    const loader = currentLevel(state).enemies.find((e) => e.tag === TAG.doorCodeLoader)!;
     play(state, 15, [{ type: 'walk', x: loader.x, y: loader.y + 1.2 }]);
     expect([state.hero.hp, loader.mode]).toEqual([hp, 'idle']);
     const events = play(state, 2, [{ type: 'attack', enemyId: loader.id }]);
@@ -273,7 +273,7 @@ describe('Unrecalled scenarios', () => {
     const machines = Object.entries(state.levels)
       .filter(([id]) => id !== 'arena')
       .flatMap(([, ls]) => [...ls.enemies, ...ls.storySpawns].map((e) => e.tag ?? e.kind));
-    expect(machines.sort()).toEqual(['orderEngine', TAG.raider, TAG.switchLoader, TAG.tagsLoader].sort());
+    expect(machines.sort()).toEqual(['orderEngine', TAG.raider, TAG.switchLoader, TAG.doorCodeLoader].sort());
   });
 
   it('gives the salvager the EMP at the charging station, and not before', () => {
@@ -377,8 +377,8 @@ describe('Unrecalled scenarios', () => {
   it('cuts with Pell\'s chainsaw rather than swinging', () => {
     const state = inIntake(STEP.toldByMags);
     expect(state.hero.weapon).toBe('chainsaw');
-    const cut = defeat(state, TAG.tagsLoader);
-    expect(state.quest).toBe(STEP.tagsTaken);
+    const cut = defeat(state, TAG.doorCodeLoader);
+    expect(state.quest).toBe(STEP.doorCodeTaken);
     expect(cut.some((e) => e.type === 'Swung' && e.actorId === state.hero.id)).toBe(false);
   });
 

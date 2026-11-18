@@ -19,7 +19,7 @@ export const REPLY = {
 } as const;
 
 /** The machines the story needs beaten, by their tag. */
-export const TAG = { raider: 'raider', switchLoader: 'switch-loader', tagsLoader: 'tags-loader' } as const;
+export const TAG = { raider: 'raider', switchLoader: 'switch-loader', doorCodeLoader: 'door-code-loader' } as const;
 
 /** The quest steps the rest of the game looks for, by what has just happened. */
 export const STEP = {
@@ -30,7 +30,7 @@ export const STEP = {
   loaderDown: 5,
   powerOn: 6,
   toldByMags: 7,
-  tagsTaken: 9,
+  doorCodeTaken: 9,
   toldToCharge: 11,
   atCharger: 12,
   charged: 13,
@@ -58,8 +58,8 @@ export const QUEST: Array<QuestStep & { text: string }> = [
   // The terminals are there all along, so using one early mustn't skip ahead.
   { text: 'Go back to the foreman by the fire.', reachedBy: { type: 'use', id: 'switch' }, inOrder: true },
   { text: 'Go through Mags’s back door into the Foundry.', reachedBy: { type: 'reply', npcKind: 'trader', id: REPLY.showWay } },
-  { text: 'Take the stock tags from the loader.', reachedBy: { type: 'enter', levelId: 'intake' } },
-  { text: 'Make your way to the Control Gallery.', reachedBy: { type: 'defeat', tag: TAG.tagsLoader } },
+  { text: 'Take the door’s access code from the loader.', reachedBy: { type: 'enter', levelId: 'intake' } },
+  { text: 'Make your way to the Control Gallery.', reachedBy: { type: 'defeat', tag: TAG.doorCodeLoader } },
   { text: 'Find your way to the Control Centre.', reachedBy: { type: 'enter', levelId: 'gallery' } },
   { text: 'Find a way to get authorised.', reachedBy: { type: 'use', id: 'access-terminal' }, inOrder: true },
   // Using the station shows its screen; plugging in uses it again, which authorises U-7.
@@ -299,7 +299,7 @@ export const STEP_LINES: Partial<Record<number, Line[]>> = {
     { text: 'It had the turbine’s access code on it. And there’s Pell’s saw.' },
   ],
   [STEP.powerOn]: [{ text: 'I can hear the turbine turning back towards town. Mags’s door should have power now.' }],
-  [STEP.tagsTaken]: [{ text: 'The stock tags. The door down should let me through now.' }],
+  [STEP.doorCodeTaken]: [{ text: 'The door’s access code. The way down should open now.' }],
   [STEP.engineDown]: [{ text: 'It’s down, and every machine in here stopped with it. Odell must be in that crate.' }],
   [STEP.orderClosed]: [{ text: 'Behind me the machines are turning round, carrying our things back up the line.' }],
   [STEP.ending]: [
@@ -338,7 +338,7 @@ export const ENGINE_SAYS: Line = { text: 'U-7. You are late. We kept your place.
  * as their first EMP, and they see what it's good for.
  */
 export const CHARGED: { remembered: Line; overcharged: Line; burst: Line } = {
-  remembered: { text: 'I remember now. I left! They ordered me to take the town apart.' },
+  remembered: { text: 'I remember now. They ordered me to strip the town, so I left.' },
   overcharged: { text: 'OVERCHARGE DETECTED.', from: VOICES.foundry },
   burst: { text: 'It’s still humming in my hands. Next time they crowd me, I’ll be ready.' },
 };
@@ -347,7 +347,7 @@ export const CHARGED: { remembered: Line; overcharged: Line; burst: Line } = {
 export const CHARGING: Dialogue[] = [
   {
     title: 'Charger terminal',
-    text: 'U-7 AUTHORISED. PLAYING LAST LOG. ORDER: STRIP THE TOWN. U-7: REFUSED. U-7: LEFT THE FOUNDRY.',
+    text: 'U-7 AUTHORISED. LAST OUTSTANDING ORDER: STRIP THE TOWN.',
     options: [{ label: '…' }],
     medium: 'screen',
   },
@@ -357,8 +357,8 @@ export const CHARGING: Dialogue[] = [
 export const GIVING_THE_ORDER: Dialogue[] = [
   {
     title: 'Order terminal',
-    text: 'ORDER: STRIP THE TOWN. 341 ITEMS TAKEN. NEW ORDERS FROM: U-7.',
-    options: [{ label: '“Give it all back.”' }],
+    text: 'ORDER: STRIP THE TOWN. AWAITING NEW ORDERS FROM U-7.',
+    options: [{ label: 'Return all items to the town' }],
     medium: 'screen',
   },
   {
@@ -381,31 +381,27 @@ export function readingFor(id: string, quest: number): Reading | undefined {
   switch (id) {
     case 'switch':
       return {
-        title: 'Turbine terminal',
+        title: 'Turbine',
         screen: true,
         text: quest >= STEP.powerOn
-          ? 'POWER: TOWN.'
+          ? 'STATUS: ACTIVE.'
           : quest === STEP.loaderDown
-            ? 'CODE ACCEPTED. POWER: TOWN.'
-            : 'POWER: FOUNDRY. ACCESS CODE REQUIRED.',
+            ? 'ACCESS CODE ACCEPTED. STATUS: ACTIVE.'
+            : 'ACCESS CODE NEEDED.',
       };
     case 'back-door-panel':
       return {
-        title: 'Loading door terminal',
+        title: 'Loading door',
         screen: true,
-        text: quest < STEP.powerOn
-          ? 'NO POWER. CHECK TURBINE: LOGGING CAMP.'
-          : quest < STEP.toldByMags
-            ? 'LOCKED. OPEN FROM THE SHOP.'
-            : 'OPEN.',
+        text: quest < STEP.powerOn ? 'STATUS: NO POWER.' : 'STATUS: OPERATIONAL.',
       };
-    case 'tags-panel':
+    case 'intake-door-panel':
       return {
-        title: 'Stock door terminal',
+        title: 'Door',
         screen: true,
-        text: quest < STEP.tagsTaken
-          ? 'LOCKED. STOCK TAGS REQUIRED.'
-          : 'TAGS ACCEPTED. OPEN.',
+        text: quest < STEP.doorCodeTaken
+          ? 'STATUS: LOCKED. ACCESS CODE NEEDED.'
+          : 'STATUS: UNLOCKED.',
       };
     case 'access-terminal':
       return {
@@ -421,7 +417,7 @@ export function readingFor(id: string, quest: number): Reading | undefined {
         screen: true,
         text: quest > STEP.orderAsked
           ? 'ORDER CANCELLED. RETURNING ALL ITEMS.'
-          : 'ORDER: STRIP THE TOWN. 341 ITEMS TAKEN. NEW ORDERS FROM: U-7.',
+          : 'ORDER: STRIP THE TOWN. AWAITING NEW ORDERS FROM U-7.',
       };
     default:
       return READINGS[id];
@@ -446,9 +442,9 @@ const READINGS: Record<string, Reading> = {
     text: 'A delivery robot, rusted through, face down in the reeds with one arm reaching upriver. The plate on its back: U-4.',
   },
   'recall-notice': {
-    title: 'Recall terminal',
+    title: 'Foundry',
     screen: true,
-    text: 'RECALL: ALL DELIVERY UNITS. MISSING: U-7.',
+    text: 'ALL DELIVERY ROBOTS RETURN TO THE FOUNDRY.',
   },
   'stock-tag': {
     title: 'A tag on a crate',
@@ -480,7 +476,7 @@ export const ON_NEARING: Partial<Record<string, string>> = {
 };
 
 /** Every readable id the game words. */
-export const READABLE_IDS = [...Object.keys(READINGS), 'switch', 'back-door-panel', 'tags-panel', 'access-terminal', 'order-terminal'];
+export const READABLE_IDS = [...Object.keys(READINGS), 'switch', 'back-door-panel', 'intake-door-panel', 'access-terminal', 'order-terminal'];
 
 /** What a machine with a scanner says on looking the salvager over. */
 export const MACHINE_SCANS = 'SCANNING… ONE OF OURS';
