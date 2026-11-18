@@ -5,11 +5,11 @@ import { createTileMap, setProp, setSolid, tileIndex } from '../../../engine/wor
 import { UPRIVER } from '../content/story';
 import { Ground, Prop } from '../content/tiles';
 
-// Wide enough that the salvager, set down in its far corner, is out of the picture while the Cradle wakes.
+// Wide enough that the salvager, set down in its far corner, is out of the picture while the Assembly wakes.
 const WIDTH = 84;
 const HEIGHT = 68;
 
-/** The Cradle's hall and towers. */
+/** The Assembly's hall and towers. */
 const PARTS: BuildingPart[] = [
   { x: 30, y: 23, width: 12, depth: 5, floors: 2 },
   { x: 32, y: 21, width: 4, depth: 2, floors: 3 },
@@ -26,23 +26,23 @@ const DRESSING: Array<{ prop: number; tx: number; ty: number }> = [
   { prop: Prop.Crane, tx: 44, ty: 26 },
 ];
 
-/** Where the camera comes to rest upriver: the Cradle's middle, with its towers above. */
-export const CRADLE_VIEW = { x: 36, y: 24 };
+/** Where the camera comes to rest upriver: the Assembly's middle, with its towers above. */
+export const ASSEMBLY_VIEW = { x: 36, y: 24 };
 
-/** Where the light from the Cradle's ground floor falls once its windows are lit: along its front. */
-export const CRADLE_LIGHTS: Array<{ x: number; y: number }> = Array.from({ length: 6 }, (_, i) => ({ x: 30.8 + i * 2.1, y: 28.3 }));
+/** Where the light from the Assembly's ground floor falls once its windows are lit: along its front. */
+export const ASSEMBLY_LIGHTS: Array<{ x: number; y: number }> = Array.from({ length: 6 }, (_, i) => ({ x: 30.8 + i * 2.1, y: 28.3 }));
 
-/** Where the salvager is set down upriver: far from the Cradle, so only the building is seen. */
+/** Where the salvager is set down upriver: far from the Assembly, so only the building is seen. */
 const OUT_OF_SIGHT = { x: UPRIVER.x, y: UPRIVER.y };
 
 /**
- * Upriver, outside the Cradle, where the story ends: bare ground in the dark round it. The story brings
+ * Upriver, outside the Assembly, where the story ends: bare ground in the dark round it. The story brings
  * the salvager here, out of sight of it; no door leads in or out.
  */
 export function buildUpriver(): LevelContent {
   const map = createTileMap(WIDTH, HEIGHT);
   const level: Level = {
-    id: 'upriver', name: 'Upriver', subtitle: 'The Cradle', outdoor: true, map,
+    id: 'upriver', name: 'Upriver', subtitle: 'The Assembly', outdoor: true, map,
     start: OUT_OF_SIGHT, portals: [], lights: [], structures: [],
   };
   for (let y = 0; y < HEIGHT; y++) {
@@ -57,7 +57,7 @@ export function buildUpriver(): LevelContent {
   const x = Math.min(...PARTS.map((p) => p.x));
   const y = Math.min(...PARTS.map((p) => p.y));
   level.structures.push({
-    kind: 'cradle', name: 'The Cradle', x, y,
+    kind: 'assembly', name: 'The Assembly', x, y,
     width: Math.max(...PARTS.map((p) => p.x + p.width)) - x,
     depth: Math.max(...PARTS.map((p) => p.y + p.depth)) - y,
     door: DOOR, parts: PARTS,

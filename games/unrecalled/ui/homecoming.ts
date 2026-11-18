@@ -1,4 +1,5 @@
 import type { Line } from '../content/story';
+import { until, wait } from './beats';
 
 /** What the homecoming needs from the game to play out. */
 export interface HomecomingParts {
@@ -18,12 +19,6 @@ export interface HomecomingParts {
 }
 
 const BEATS = { settle: 1.6, afterLines: 0.8, fade: 1.4 };
-
-const wait = (seconds: number) => new Promise<void>((done) => setTimeout(done, seconds * 1000));
-const until = (test: () => boolean) => new Promise<void>((done) => {
-  const check = () => (test() ? done() : requestAnimationFrame(check));
-  check();
-});
 
 /**
  * Home at dawn, played out with no input from the player: the town greets the foreman, he says his piece, and the

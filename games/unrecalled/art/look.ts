@@ -42,7 +42,7 @@ const FLOOR_STYLES: Record<string, { panel: string; plate: string | null; mood: 
   gallery: { panel: 'wall-window', plate: 'floor-dark', mood: { ...foundry(0x3a2a2c, 0xf0c8c8), sightRange: FOUND_AS_YOU_GO } },
   arena: { panel: 'wall', plate: 'floor-plates', mood: foundry(0x343a40, 0xd8e4f0) },
   upriver: { panel: 'wall', plate: null, mood: { ...NIGHT, water: undefined } },
-  assembly: { panel: 'wall-divided', plate: 'floor-squares', mood: { ...foundry(0x3a2c22, 0xf0d0b0), sightRange: FOUND_AS_YOU_GO } },
+  control: { panel: 'wall-divided', plate: 'floor-squares', mood: { ...foundry(0x3a2c22, 0xf0d0b0), sightRange: FOUND_AS_YOU_GO } },
 };
 /** Each wall style's corner pieces, from the same kit, so walls turn in the style they're built in. */
 const KIT_CORNERS: Record<string, { inner: string; outer: string }> = {
@@ -134,9 +134,9 @@ const STRUCTURES: Record<string, StructureLook> = {
     glass: { material: 'M_Glass', colour: 0x7ab8c8, light: 'cyan' },
     sign: undefined,
   }),
-  // The Cradle, upriver, where the Foundry's machines are made, U-7 among them: dark windows and no sign, since its
+  // The Assembly, upriver, where the Foundry's machines are made, U-7 among them: dark windows and no sign, since its
   // lights only come on, storey by storey, as the story ends.
-  cradle: building(0x34383e, {
+  assembly: building(0x34383e, {
     tint: 0x8a909a, wall: ['town-wall-band', 'town-wall-astra'], window: 'town-window-astra',
     roofProps: [{ name: 'tank', width: 1.1 }, { name: 'cargo-roof', width: 1.8 }, 'roof-fan'],
     inside: 0x050608, glass: { material: 'M_Glass', colour: 0xffc070, light: 'amber', dark: true }, sign: undefined,

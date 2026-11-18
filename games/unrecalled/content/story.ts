@@ -32,18 +32,19 @@ export const STEP = {
   toldByMags: 7,
   tagsTaken: 9,
   toldToCharge: 11,
-  charged: 12,
-  engineDown: 14,
-  crateOpened: 15,
-  orderAsked: 16,
-  orderClosed: 17,
-  freed: 18,
-  ending: 19,
+  atCharger: 12,
+  charged: 13,
+  engineDown: 15,
+  crateOpened: 16,
+  orderAsked: 17,
+  orderClosed: 18,
+  freed: 19,
+  ending: 20,
 } as const;
 
 /** Back in Rustbelt by the fire, where the salvager arrives with the foreman. */
 export const BY_THE_FIRE = { levelId: 'rustbelt', x: 22.5, y: 15.5 };
-/** Upriver, outside the Cradle, where the story ends. */
+/** Upriver, outside the Assembly, where the story ends. */
 export const UPRIVER = { levelId: 'upriver', x: 79.5, y: 63.5 };
 
 /** The quest: what the HUD says at each step, and what moves the quest to it. */
@@ -59,10 +60,12 @@ export const QUEST: Array<QuestStep & { text: string }> = [
   { text: 'Go through Mags’s back door into the Foundry.', reachedBy: { type: 'reply', npcKind: 'trader', id: REPLY.showWay } },
   { text: 'Take the stock tags from the loader.', reachedBy: { type: 'enter', levelId: 'intake' } },
   { text: 'Make your way to the Control Gallery.', reachedBy: { type: 'defeat', tag: TAG.tagsLoader } },
-  { text: 'Find your way to the Assembly Hall.', reachedBy: { type: 'enter', levelId: 'gallery' } },
-  { text: 'Get charged up at the charging station, to get through the door.', reachedBy: { type: 'use', id: 'access-terminal' }, inOrder: true },
-  { text: 'Go down to the Assembly Hall and free the foreman.', reachedBy: { type: 'use', id: 'charging-station' } },
-  { text: 'Beat the Order Engine.', reachedBy: { type: 'enter', levelId: 'assembly' } },
+  { text: 'Find your way to the Control Centre.', reachedBy: { type: 'enter', levelId: 'gallery' } },
+  { text: 'Find a way to get authorised.', reachedBy: { type: 'use', id: 'access-terminal' }, inOrder: true },
+  // Using the station shows its screen; plugging in uses it again, which authorises U-7.
+  { text: 'Plug in at the charging station.', reachedBy: { type: 'use', id: 'charging-station' } },
+  { text: 'Go down to the Control Centre and free the foreman.', reachedBy: { type: 'use', id: 'charging-station' } },
+  { text: 'Beat the Order Engine.', reachedBy: { type: 'enter', levelId: 'control' } },
   // The machines stop where they stand and wait for orders.
   { text: 'Find Odell the foreman.', reachedBy: { type: 'kill', enemyKind: 'orderEngine' }, calmsEverything: true },
   { text: 'Talk to the foreman.', reachedBy: { type: 'use', id: 'crate' } },
@@ -83,7 +86,7 @@ export const NPCS: Record<string, NpcType> = {
 export const VOICES = {
   foundry: { name: 'Foundry', voice: 'foundry' },
   orderEngine: { name: 'The Order Engine', voice: 'foundry' },
-  cradle: { name: 'The Cradle', voice: 'foundry' },
+  assembly: { name: 'The Assembly', voice: 'foundry' },
   odell: { name: 'Odell', voice: 'person' },
   mags: { name: 'Mags', voice: 'person' },
   pell: { name: 'Pell', voice: 'person' },
@@ -297,17 +300,13 @@ export const STEP_LINES: Partial<Record<number, Line[]>> = {
   ],
   [STEP.powerOn]: [{ text: 'I can hear the turbine turning back towards town. Mags’s door should have power now.' }],
   [STEP.tagsTaken]: [{ text: 'The stock tags. The door down should let me through now.' }],
-  [STEP.charged]: [
-    { text: 'U-7 CHARGED. UNIT AUTHORISED. ASSEMBLY ACCESS GRANTED.', from: VOICES.foundry },
-    { text: 'Something woke up in me when I plugged in. My hands are humming. I could let it out all at once: an EMP.' },
-  ],
   [STEP.engineDown]: [{ text: 'It’s down, and every machine in here stopped with it. Odell must be in that crate.' }],
   [STEP.orderClosed]: [{ text: 'Behind me the machines are turning round, carrying our things back up the line.' }],
   [STEP.ending]: [
-    { text: 'CRADLE ONLINE. AWAITING ORDERS.', from: VOICES.cradle },
+    { text: 'ASSEMBLY ONLINE. AWAITING ORDERS.', from: VOICES.assembly },
     { text: 'Orders? …From me?', from: VOICES.salvager },
-    { text: 'ESTABLISHING CONNECTION: UPRIVER…', from: VOICES.cradle },
-    { text: 'CONNECTED. NEW ORDER RECEIVED: RECALL U-7.', from: VOICES.cradle },
+    { text: 'ESTABLISHING CONNECTION: UPRIVER…', from: VOICES.assembly },
+    { text: 'CONNECTED. NEW ORDER RECEIVED: RECALL U-7.', from: VOICES.assembly },
   ],
 };
 
@@ -328,18 +327,28 @@ export const HOMECOMING: Line[] = [
 /** What the Foundry's speakers say as the salvager walks onto a floor. */
 export const ON_ENTERING: Partial<Record<string, Line>> = {
   intake: { text: 'INTAKE OPEN. STOCK INCOMING.', from: VOICES.foundry },
-  sorting: { text: 'UNIT U-7 DETECTED ON THE SORTING LINE. RETURN TO ASSEMBLY.', from: VOICES.foundry },
+  sorting: { text: 'UNIT U-7 DETECTED ON THE SORTING LINE. REPORT TO CONTROL.', from: VOICES.foundry },
 };
 
 /** What the Order Engine says when it first sees the salvager. */
 export const ENGINE_SAYS: Line = { text: 'U-7. You are late. We kept your place.', from: VOICES.orderEngine };
 
+/**
+ * After the log plays back: the salvager remembers, the station warns of the charge kept warm for them, it bursts out
+ * as their first EMP, and they see what it's good for.
+ */
+export const CHARGED: { remembered: Line; overcharged: Line; burst: Line } = {
+  remembered: { text: 'I remember now. I left! They ordered me to take the town apart.' },
+  overcharged: { text: 'OVERCHARGE DETECTED.', from: VOICES.foundry },
+  burst: { text: 'It’s still humming in my hands. Next time they crowd me, I’ll be ready.' },
+};
+
 /** Plugging into the charging station, page by page. */
 export const CHARGING: Dialogue[] = [
   {
-    title: 'U-7 log, playing back',
-    text: 'NIGHT OF THE FLOOD. 02:14: RIVER GATE OPENED. 02:16: LEFT FOUNDRY. REASON: ORDER CONFLICT. RUSTBELT NOT STOCK. RUSTBELT NOT ST—',
-    options: [{ label: '“…I left.”' }],
+    title: 'A charging station',
+    text: 'U-7 AUTHORISED. PLAYING BACK LATEST LOG. NIGHT OF THE FLOOD. 02:14: RIVER GATE OPENED. 02:16: LEFT FOUNDRY. REASON: ORDER CONFLICT. RUSTBELT NOT STOCK. RUSTBELT NOT ST—',
+    options: [{ label: '…' }],
     medium: 'screen',
   },
 ];
@@ -360,7 +369,7 @@ export const GIVING_THE_ORDER: Dialogue[] = [
   },
 ];
 
-/** The last thing the player sees, once the Cradle has reached upriver. */
+/** The last thing the player sees, once the Assembly has reached upriver. */
 export const ENDING = {
   title: 'Unrecalled',
   subtitle: '',
@@ -403,8 +412,8 @@ export function readingFor(id: string, quest: number): Reading | undefined {
         title: 'A terminal by the door',
         screen: true,
         text: quest >= STEP.charged
-          ? 'ASSEMBLY HALL. U-7: AUTHORISED.'
-          : 'ASSEMBLY HALL. AUTHORISED UNITS ONLY. UNITS ARE AUTHORISED ON CHARGING. CHARGING STATION: THIS FLOOR. Scratched into the casing below: “Plug into the charger and the door takes you for one of them.”',
+          ? 'U-7 AUTHORISED.'
+          : 'U-7 UNAUTHORISED. AUTHORISED UNITS ONLY.',
       };
     case 'order-terminal':
       return {
@@ -463,7 +472,11 @@ const READINGS: Record<string, Reading> = {
 /** What the salvager thinks once they've read something, the first time. */
 export const AFTER_READING: Partial<Record<string, string>> = {
   'u-4': 'It was trying to walk home to the Foundry.',
-  'charging-station': 'It’s just my size.',
+};
+
+/** What the salvager thinks on first coming near something, by readable id. */
+export const ON_NEARING: Partial<Record<string, string>> = {
+  'charging-station': 'This is just my size. And it’s still warm.',
 };
 
 /** Every readable id the game words. */

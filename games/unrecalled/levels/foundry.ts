@@ -10,7 +10,7 @@ import { Ground, Prop } from '../content/tiles';
  * the panel (K) asking for them; the Sorting Line a tagged crate (R) on a belt and the
  * manifest board (M) by the way on; the Control Gallery a terminal (P) by its door saying who may pass, and U-7's
  * charging station (Y), whose use opens the way on; and the
- * Assembly Hall the Order Engine, the crate the foreman is locked in (Z), opened once the Order Engine is down, and the
+ * Control Centre the Order Engine, the crate the foreman is locked in (Z), opened once the Order Engine is down, and the
  * order terminal (O) where the Foundry's orders are given.
  */
 interface FloorSpec {
@@ -31,7 +31,7 @@ interface FloorSpec {
  * How much tougher than their kind each floor's machines are: the deeper the floor, the tougher. The Order Engine is
  * tuned on its own.
  */
-const STRENGTH: Record<FloorId, number> = { intake: 1, sorting: 1.15, gallery: 1.3, assembly: 1.4 };
+const STRENGTH: Record<FloorId, number> = { intake: 1, sorting: 1.15, gallery: 1.3, control: 1.4 };
 
 const FLOORS = {
   intake: {
@@ -113,8 +113,8 @@ const FLOORS = {
       '#################################',
     ],
   },
-  assembly: {
-    name: 'Assembly Hall', subtitle: 'Where the order is kept',
+  control: {
+    name: 'Control Centre', subtitle: 'Where the order is kept',
     npcs: [{ kind: 'foreman', name: 'Foreman Odell', x: 16.5, y: 4.6, fromStep: STEP.crateOpened, untilStep: STEP.freed }], lamps: { L: 'amber', A: 'molten' },
     rows: [
       '#################################',
@@ -145,7 +145,7 @@ const FLOORS = {
 export type FloorId = keyof typeof FLOORS;
 
 /** The floors in order, from the way in to the Order Engine. */
-export const FLOOR_ORDER: FloorId[] = ['intake', 'sorting', 'gallery', 'assembly'];
+export const FLOOR_ORDER: FloorId[] = ['intake', 'sorting', 'gallery', 'control'];
 
 const solid = (prop: number): RoomKey => ({ prop, solid: true });
 const onBelt = (prop: number): RoomKey => ({ ...solid(prop), ground: Ground.Belt });
