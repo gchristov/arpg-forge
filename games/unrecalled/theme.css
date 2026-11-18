@@ -37,7 +37,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 /* Conversations and the lines said during play share one box at the foot of the screen, and look the same in it. */
 #feed,#dialog{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 96px);transform:translateX(-50%);width:min(440px,calc(100% - 32px))}
 #feed{pointer-events:none;display:grid}
-#feed .line,#dialog{font:500 16px/1.45 var(--body);color:var(--ink);background:rgba(10,14,18,.9);border:1px solid #3a4a58;border-left:3px solid var(--signal);border-radius:6px;padding:14px 16px;box-sizing:border-box}
+#feed .line,#dialog{font:500 16px/1.45 var(--body);color:var(--ink);background:rgba(10,14,18,.9);border:1px solid #3a4a58;border-left:3px solid var(--signal);border-radius:6px;padding:14px 16px;box-sizing:border-box;min-height:94px}
 #feed .line{grid-area:1/1;transition:opacity .4s;animation:feedIn .3s ease-out}
 #feed .line.gone{opacity:0}
 #feed .line b,#dialog .t{display:block;font:700 12px/1 var(--body);letter-spacing:.16em;text-transform:uppercase;color:var(--signal);margin-bottom:10px}
