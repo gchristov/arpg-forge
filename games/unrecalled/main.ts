@@ -6,20 +6,21 @@ import { PX } from '../../engine/game/world-view';
 import { servicePrice } from '../../engine/sim/interaction';
 import { currentLevel, type RefusalReason, type SimEvent } from '../../engine/sim/state';
 import { DialogBox } from '../../engine/ui/dialog-box';
-import { Portraits } from './ui/portraits';
 import { PRINTING, SPEAKING } from '../../engine/ui/typewriter';
 import { MODEL_URLS, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import {
-  AFTER_READING, ALARM, BY_THE_FIRE, CHAINSAW_FOUND, CHARGING, dialogueFor, ENDING, ENGINE_SAYS, GIVING_THE_ORDER, HOMECOMING, levelUp, LOCKED, MACHINE_SCANS,
-  NPCS, ON_ENTERING, OPENING, readingFor, REPLY, UPRIVER, scrapDropped, STEP, STEP_LINES, VOICES, type Dialogue, type Line,
+  AFTER_READING, ALARM, BY_THE_FIRE, CHAINSAW_FOUND, CHARGING, dialogueFor, ENDING, ENGINE_SAYS, GIVING_THE_ORDER, HOMECOMING,
+  levelUp, LOCKED, MACHINE_SCANS, NPCS, ON_ENTERING, OPENING, readingFor, REPLY, UPRIVER, scrapDropped, STEP, STEP_LINES, VOICES,
+  type Dialogue, type Line,
 } from './content/story';
 import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
 import { Ending } from './ui/ending';
 import { Homecoming } from './ui/homecoming';
 import { Hud } from './ui/hud';
+import { Portraits } from './ui/portraits';
 
 const game = new Game({
   canvas: document.querySelector<HTMLCanvasElement>('#game')!,
