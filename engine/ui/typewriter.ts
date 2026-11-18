@@ -5,10 +5,12 @@ export interface TypingPace {
   clausePause: number;
   /** A block cursor at the end of the text, as on a screen: steady while it prints, blinking once it's done. */
   cursor?: boolean;
+  /** Seconds the cursor waits, blinking, before the first character, as a terminal does before it answers. */
+  lead?: number;
 }
 
 export const SPEAKING: TypingPace = { charactersPerSecond: 40, sentencePause: 0.3, clausePause: 0.12 };
-export const PRINTING: TypingPace = { charactersPerSecond: 75, sentencePause: 0.12, clausePause: 0.04, cursor: true };
+export const PRINTING: TypingPace = { charactersPerSecond: 50, sentencePause: 0.2, clausePause: 0.06, cursor: true, lead: 1 };
 
 const pauseAfter = (character: string, pace: TypingPace): number =>
   '.!?…'.includes(character) ? pace.sentencePause : ',;:—'.includes(character) ? pace.clausePause : 0;
@@ -16,7 +18,7 @@ const pauseAfter = (character: string, pace: TypingPace): number =>
 /** How many of `text`'s characters have typed out after `seconds`. */
 export function charactersTyped(text: string, seconds: number, pace: TypingPace = SPEAKING): number {
   const perCharacter = 1 / pace.charactersPerSecond;
-  let t = 0;
+  let t = pace.lead ?? 0;
   for (let i = 0; i < text.length; i++) {
     t += perCharacter;
     if (t > seconds) return i;
@@ -29,7 +31,7 @@ export function charactersTyped(text: string, seconds: number, pace: TypingPace 
 
 /** How long `text` takes to type out in full. */
 export function typingSeconds(text: string, pace: TypingPace = SPEAKING): number {
-  let t = 0;
+  let t = pace.lead ?? 0;
   for (let i = 0; i < text.length; i++) {
     t += 1 / pace.charactersPerSecond;
     const next = text[i + 1];
@@ -50,6 +52,7 @@ export class Typewriter {
   private readonly cursor = document.createElement('span');
   private text = '';
   private shown = 0;
+  private waiting = false;
 
   constructor(
     private readonly el: HTMLElement,
@@ -67,25 +70,28 @@ export class Typewriter {
     this.text = text;
     this.pace = pace;
     this.shown = -1;
+    this.waiting = Boolean(pace.lead);
     this.el.replaceChildren(...(pace.cursor ? [this.typed, this.cursor, this.rest] : [this.typed, this.rest]));
     this.show(0);
   }
 
   /** Types as far as `seconds` since the start; returns whether it's all out. */
   update(seconds: number): boolean {
+    this.waiting = seconds < (this.pace.lead ?? 0);
     this.show(charactersTyped(this.text, seconds, this.pace));
     return this.done;
   }
 
   finish(): void {
+    this.waiting = false;
     this.show(this.text.length);
   }
 
   private show(count: number): void {
+    this.cursor.classList.toggle('idle', this.waiting || count >= this.text.length);
     if (count === this.shown) return;
     this.shown = count;
     this.typed.textContent = this.text.slice(0, count);
     this.rest.textContent = this.text.slice(count);
-    this.cursor.classList.toggle('idle', this.done);
   }
 }

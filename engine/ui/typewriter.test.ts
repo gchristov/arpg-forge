@@ -23,4 +23,11 @@ describe('typing text out', () => {
     expect(charactersTyped(text, seconds + 0.001, pace)).toBe(text.length);
     expect(charactersTyped(text, seconds - 0.05, pace)).toBeLessThan(text.length);
   });
+
+  it('waits its lead before the first character', () => {
+    const waits: TypingPace = { ...pace, lead: 1 };
+    expect(charactersTyped('abc', 0.95, waits)).toBe(0);
+    expect(charactersTyped('abc', 1.15, waits)).toBe(1);
+    expect(typingSeconds('abc', waits)).toBeCloseTo(1.3);
+  });
 });
