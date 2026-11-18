@@ -147,6 +147,10 @@ function playScene(pages: Dialogue[], then?: () => void): void {
   else then?.();
 }
 
+/** How long after the last locked-door event a new one counts as walking into the door again. */
+const LOCKED_AGAIN_MS = 2500;
+let lastLocked = -Infinity;
+
 const say = (lines: Line[] | undefined): void => {
   for (const line of lines ?? []) hud.say(line.text, line.from);
 };
@@ -416,9 +420,13 @@ function react(events: SimEvent[]): void {
       case 'LevelAlarmed':
         if (currentLevel(state).level.building) hud.say(ALARM, VOICES.foundry);
         break;
-      case 'PortalLocked':
-        labels.text(e.x, e.y, 60 * PX, LOCKED, '#ff7a62', 14);
+      case 'PortalLocked': {
+        // Standing in a locked doorway repeats the event; the thought comes once each time the salvager walks into it.
+        const now = performance.now();
+        if (now - lastLocked > LOCKED_AGAIN_MS) hud.say(LOCKED);
+        lastLocked = now;
         break;
+      }
       case 'Armed':
         hud.say(CHAINSAW_FOUND);
         break;

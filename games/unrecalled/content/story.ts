@@ -289,8 +289,8 @@ export const OPENING: Line[] = [{ text: 'Night in Rustbelt. Odell is waving me o
 /** Once the chainsaw is in the salvager's hands. */
 export const CHAINSAW_FOUND = 'Pell’s chainsaw. It keeps cutting for as long as I hold it on a machine.';
 
-/** Over a door the story keeps shut, when the salvager walks into it; the panel beside it says why. */
-export const LOCKED = 'Locked';
+/** What the salvager thinks on walking into a door the story keeps shut; the panel beside it says why. */
+export const LOCKED = 'It’s locked.';
 
 /** What happens as the story reaches each step, one line at a time. */
 export const STEP_LINES: Partial<Record<number, Line[]>> = {
