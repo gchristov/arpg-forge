@@ -43,7 +43,7 @@ export const STEP = {
 } as const;
 
 /** Back in Rustbelt by the fire, where the salvager arrives with the foreman. */
-const BY_THE_FIRE = { levelId: 'rustbelt', x: 22.5, y: 15.5 };
+export const BY_THE_FIRE = { levelId: 'rustbelt', x: 22.5, y: 15.5 };
 /** Upriver, outside the Cradle, where the story ends. */
 export const UPRIVER = { levelId: 'upriver', x: 79.5, y: 63.5 };
 
@@ -314,7 +314,6 @@ export const STEP_LINES: Partial<Record<number, Line[]>> = {
     { text: 'CONNECTED. NEW ORDER RECEIVED: RECALL U-7.', from: VOICES.cradle },
   ],
   [STEP.bellRung]: [
-    { text: '…That’s our bell.', from: VOICES.mags },
     { text: 'I could use a couple of these machines in the workshop, you know.', from: VOICES.pell },
   ],
 };
@@ -327,14 +326,13 @@ export const HOMECOMING: { welcome: Line[]; bell: Line; confession: Line[] } = {
   welcome: [
     { text: 'Odell! You stubborn old goat. You’re alive!', from: VOICES.mags },
     { text: 'Takes more than a Foundry to keep me in a box.', from: VOICES.odell },
-    { text: 'And they brought it all back. Even my good spanner.', from: VOICES.pell },
-    { text: 'No more machines in the night. It’s over. We’re safe.', from: VOICES.mags },
-    { text: 'Go on, ring the bell. It’s been too quiet round here.', from: VOICES.odell },
+    { text: 'No more machines in the night. We’re safe.', from: VOICES.mags },
+    { text: 'Go on, ring the bell.', from: VOICES.odell },
   ],
   bell: { text: 'DONG… … DONG… … DONG…', from: VOICES.bell },
   confession: [
-    { text: 'I carved that post on the jetty. I knew what you were the morning you woke up.', from: VOICES.odell },
-    { text: 'It didn’t matter then, and it doesn’t now. So, what happens now?', from: VOICES.odell },
+    { text: 'I carved that post on the jetty. I knew you were different from them the night I found you.', from: VOICES.odell },
+    { text: 'So, what happens now?', from: VOICES.odell },
     { text: '“I don’t know yet.”' },
   ],
 };

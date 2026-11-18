@@ -12,7 +12,7 @@ import { MODEL_URLS, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import {
-  AFTER_READING, ALARM, CHAINSAW_FOUND, CHARGING, dialogueFor, ENDING, ENGINE_SAYS, GIVING_THE_ORDER, HOMECOMING, levelUp, LOCKED, MACHINE_SCANS,
+  AFTER_READING, ALARM, BY_THE_FIRE, CHAINSAW_FOUND, CHARGING, dialogueFor, ENDING, ENGINE_SAYS, GIVING_THE_ORDER, HOMECOMING, levelUp, LOCKED, MACHINE_SCANS,
   NPCS, ON_ENTERING, OPENING, readingFor, REPLY, UPRIVER, scrapDropped, STEP, STEP_LINES, VOICES, type Dialogue, type Line,
 } from './content/story';
 import { placeOf, type Place } from './content/places';
@@ -212,8 +212,9 @@ const homecoming = new Homecoming({
   begin: () => {
     dialog.close();
     document.body.classList.add('cinematic');
-    game.cutTo(AROUND_THE_FIRE);
   },
+  home: () => state.levelId === BY_THE_FIRE.levelId && !state.transition,
+  frame: () => game.cutTo(AROUND_THE_FIRE),
   say,
   quiet: () => hud.quiet,
   ringBell: () => {

@@ -2,8 +2,12 @@ import type { Line } from '../content/story';
 
 /** What the homecoming needs from the game to play out. */
 export interface HomecomingParts {
-  /** The picture goes cinematic and settles on the fire. */
+  /** The picture goes cinematic, as the salvager and the foreman set off home. */
   begin(): void;
+  /** They're home, with the picture still black. */
+  home(): boolean;
+  /** The camera is put on the fire before the picture fades up. */
+  frame(): void;
   say(lines: Line[]): void;
   /** Every line said has been read. */
   quiet(): boolean;
@@ -44,6 +48,8 @@ export class Homecoming {
     this.playing = true;
     const { parts } = this;
     parts.begin();
+    await until(parts.home);
+    parts.frame();
     await wait(BEATS.settle);
     parts.say(lines.welcome);
     await until(parts.quiet);
