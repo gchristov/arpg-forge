@@ -121,17 +121,13 @@ const KEY: Record<string, RoomKey> = {
   },
   // Mags and Pell are at work until the story calls them out to the fire.
   Q: { ...solid(Prop.Computer), readable: 'back-door-panel', light: { radius: 2.2, intensity: 0.6, colour: 'amber', flicker: 0.4 } },
-  '2': { npc: { kind: 'trader', name: 'Mags', untilStep: STEP.powerOn } },
+  '2': { npc: { kind: 'trader', name: 'Mags', untilStep: STEP.freed } },
   '3': { npc: { kind: 'tinker', name: 'Pell', untilStep: STEP.freed } },
 };
 
-/** What each room's terminal holds: the pump log from the night of the flood, and the depot's delivery ledger. */
-const READABLE_BY_ROOM: Partial<Record<InteriorId, string>> = { pumphouse: 'pump-log', depotOffice: 'depot-ledger' };
-
 export function buildInterior(id: InteriorId): LevelContent {
   const { name, subtitle, rows } = INTERIORS[id];
-  const readable = READABLE_BY_ROOM[id];
-  // Lit terminals are kept for things to read, so a desk stands where an empty one would.
-  const key = readable ? { ...KEY, k: { ...KEY.k!, readable } } : { ...KEY, k: solid(Prop.Desk) };
+  // Lit terminals are kept for things to read, so a desk stands where a terminal would.
+  const key = { ...KEY, k: solid(Prop.Desk) };
   return roomFromRows({ id, name, subtitle, floor: Ground.Plate, rows, key });
 }

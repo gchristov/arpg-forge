@@ -32,8 +32,10 @@ interface Ellipse {
 const CAMP: Ellipse = { x: 41, y: 11, rx: 7.5, ry: 6.5 };
 /** The sawmill yard by the river, where the logs were cut. */
 const YARD: Ellipse = { x: 31, y: 23, rx: 4.5, ry: 2.6 };
-/** How much tougher than its kind the loader at the switch is, for a salvager still on their fists. */
-const WOODS_STRENGTH = 0.5;
+/** How strong, against its kind, the crawler that took Pell's saw is: U-7 meets it bare-handed. */
+const SAW_THIEF_STRENGTH = 1.2;
+/** How strong, against its kind, the loader at the turbine is: U-7 has the saw by then. */
+const TURBINE_LOADER_STRENGTH = 0.8;
 
 /** A still pond in the trees north of the trail. */
 const POND: Ellipse = { x: 24, y: 7, rx: 4.5, ry: 2.6 };
@@ -42,8 +44,8 @@ const POND: Ellipse = { x: 24, y: 7, rx: 4.5, ry: 2.6 };
 const reach = (e: Ellipse, x: number, y: number) => ((x + 0.5 - e.x) / e.rx) ** 2 + ((y + 0.5 - e.y) / e.ry) ** 2;
 
 /**
- * The dead woods east of the town, laid into Rustbelt's map from column `x0`. A trail winds to the logging camp: the
- * turbine, guarded by the loader that took Pell's chainsaw and holds the codes to the turbine's terminal. Off the
+ * The dead woods east of the town, laid into Rustbelt's map from column `x0`. A trail winds past the crawler that took
+ * Pell's chainsaw to the logging camp: the turbine, guarded by the loader that holds its access code. Off the
  * trail lie a pond, a stash past it, and the sawmill yard by the river with a cache of its own and U-4 on the bank below.
  */
 export function addWoods(room: LevelContent, reserve: (x: number, y: number, w: number, h: number) => void, x0: number): void {
@@ -77,13 +79,11 @@ export function addWoods(room: LevelContent, reserve: (x: number, y: number, w: 
   for (const trail of TRAILS) paintPath(map, trail.map(([x, y]) => [x0 + x, y]), reserve);
 
   // The logging camp: the turbine and its terminal at its foot, which wants the access code of the loader that turns up
-  // to guard it once Pell asks for her saw back, a crate by the cutting bench, a truck, stacked salvage and a brazier.
+  // to guard it once Mags asks for the power back, a crate by the cutting bench, a truck, stacked salvage and a brazier.
   prop(42, 8, Prop.Pylon);
   prop(44, 8, Prop.Computer);
   room.readables!.push({ tx: x0 + 44, ty: 8, id: 'switch' });
-  room.spawns.push({
-    kind: 'loader', x: x0 + 43.5, y: 10.5, tag: TAG.switchLoader, strength: WOODS_STRENGTH, fromStep: STEP.sawAsked, carries: 'chainsaw',
-  });
+  room.spawns.push({ kind: 'loader', x: x0 + 43.5, y: 10.5, tag: TAG.switchLoader, strength: TURBINE_LOADER_STRENGTH, fromStep: STEP.codeAsked });
   light(44, 8, 'cyan', 4);
   prop(45, 13, Prop.Crate);
   prop(37, 9, Prop.Truck);
@@ -94,6 +94,9 @@ export function addWoods(room: LevelContent, reserve: (x: number, y: number, w: 
   prop(42, 15, Prop.FireBarrel);
   light(42, 15, 'molten', 11);
 
+  // Where the trail forks, not far into the woods, the crawler that took Pell's chainsaw, once she asks for it back.
+  room.spawns.push({ kind: 'crawler', x: x0 + 13.5, y: 18.5, tag: TAG.sawThief, strength: SAW_THIEF_STRENGTH, fromStep: STEP.sawAsked, carries: 'chainsaw' });
+
   // The sawmill yard: cut logs long gone, what they were loaded on left behind.
   for (const [x, y] of [[29, 22], [30, 24]] as const) prop(x, y, Prop.Cargo);
   prop(34, 24, Prop.Containers);
@@ -102,7 +105,7 @@ export function addWoods(room: LevelContent, reserve: (x: number, y: number, w: 
 
   cache(7, 5, 30);
 
-  // U-4, face down in the reeds on the river's bank below the sawmill yard, reaching upriver.
+  // U-4, face down in the reeds on the river's bank below the sawmill yard, reaching away from the Foundry.
   room.readables!.push({ tx: x0 + 26, ty: 27, id: 'u-4' });
   reserve(x0 + 25, 26, 3, 3);
 }

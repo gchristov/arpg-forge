@@ -7,7 +7,7 @@ export interface Place {
 }
 
 /** The dead woods east of the town: part of Rustbelt's map, with a name of its own. */
-export const WOODS: Place = { name: 'The Dead Woods', subtitle: 'The logging camp is somewhere east' };
+export const WOODS: Place = { name: 'The Dead Woods', subtitle: '' };
 
 /** How far past the treeline the salvager walks before the place they're in changes, so it doesn't flicker on the line. */
 const MARGIN = 1.5;

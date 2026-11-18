@@ -130,9 +130,6 @@ export function buildRustbelt(): LevelContent {
     setSolid(map, jetty.x, y, false);
   }
   reserve(jetty.x - 1, jetty.y - 5, 3, 6);
-  // The post stands at the jetty's end, read from the planks in front of it.
-  setProp(map, jetty.x, jetty.y - 4, Prop.Post, true);
-  room.readables!.push({ tx: jetty.x, ty: jetty.y - 4, id: 'riverbank' });
 
   // The Foundry stands in the dark past the middle of the top edge, so the ground there is kept open towards it.
   reserve(FOUNDRY_SIDE.from, 0, FOUNDRY_SIDE.to - FOUNDRY_SIDE.from + 1, 3);
@@ -154,15 +151,13 @@ export function buildRustbelt(): LevelContent {
   setProp(map, 22, 10, Prop.Pylon, true);
   setProp(map, 20, 13, Prop.FireBarrel, true);
   level.lights.push({ x: 20.5, y: 13.5, radius: 4.4, intensity: 1.3, colour: 'molten', flicker: 1.6, seed: 7 });
-  // The foreman by the fire, until the Foundry takes him and after he's brought home. Mags waits in his place from
-  // then on, stepping aside when he's back, and at dawn Pell joins them by the fire. A crawler
-  // comes for the camp's tools as the foreman points it out, and fighting it alone doesn't set the woods' machines off.
+  // Odell by the fire, until the Foundry takes him and after he's brought home, when Mags and Pell join him there at
+  // dawn. A loader is at the camp's crates as U-7 arrives: a weak one, for its first fight, bare-handed.
   const foreman = { kind: 'foreman', name: 'Foreman Odell', x: 21.5, y: 13.6 };
   room.npcs.push({ ...foreman, untilStep: STEP.powerOn }, { ...foreman, fromStep: STEP.freed });
-  room.npcs.push({ kind: 'trader', name: 'Mags', x: 21.5, y: 13.6, fromStep: STEP.powerOn, untilStep: STEP.freed });
   room.npcs.push({ kind: 'trader', name: 'Mags', x: 19.5, y: 15.5, fromStep: STEP.freed });
   room.npcs.push({ kind: 'tinker', name: 'Pell', x: 25.5, y: 15.5, fromStep: STEP.freed });
-  room.spawns.push({ kind: 'crawler', x: 26.5, y: 18.5, tag: TAG.raider, strength: 0.5, fromStep: STEP.raidAsked, quiet: true });
+  room.spawns.push({ kind: 'loader', x: 26.5, y: 18.5, tag: TAG.raider, strength: 0.35 });
   for (const [x, y] of [[17, 10], [26, 9], [27, 15], [16, 16], [29, 11], [14, 9], [30, 16]] as const) {
     setProp(map, x, y, Prop.Containers, true);
   }

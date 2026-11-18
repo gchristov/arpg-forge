@@ -23,5 +23,7 @@ export function unrecalledContent(): GameContent {
     quest: QUEST.map(({ text: _text, ...step }) => step),
     // Machines keep pace with the salvager, so a level gained makes fights easier without making them trivial.
     enemyGrowthPerHeroLevel: 0.05,
+    // Every machine answers to the Foundry: once U-7 fights one, all of them know.
+    alarmReach: 'everywhere',
   };
 }

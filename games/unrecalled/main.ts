@@ -11,7 +11,7 @@ import { MODEL_URLS, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import {
-  AFTER_READING, ALARM, BY_THE_FIRE, CHAINSAW_FOUND, CHARGED, CHARGING, dialogueFor, ENDING, ENGINE_SAYS, GIVING_THE_ORDER,
+  AFTER_READING, ALARM, ARRIVAL, BY_THE_FIRE, CHARGED, CHARGING, dialogueFor, ENDING, ENGINE_SAYS, GIVING_THE_ORDER,
   HOMECOMING, levelUp, LOCKED, MACHINE_SCANS, NPCS, ON_ENTERING, ON_NEARING, readingFor, REPLY, UPRIVER, scrapDropped,
   STEP, STEP_LINES, VOICES, type Dialogue, type Line,
 } from './content/story';
@@ -155,17 +155,23 @@ const say = (lines: Line[] | undefined): void => {
   for (const line of lines ?? []) hud.say(line.text, line.from);
 };
 
+/** Opens what Odell has to say, wherever he is. */
+function talkToOdell(): void {
+  const foreman = currentLevel(state).npcs.find((n) => n.kind === 'foreman');
+  if (foreman) showDialogue(foreman.id, foreman.kind);
+}
+
 /** What reading something says, or the scene it starts: the charging station, the crate and the order terminal. */
 function showReading(id: string, events: SimEvent[]): void {
   const reached = events.flatMap((e) => (e.type === 'QuestAdvanced' ? [e.step] : []));
+  // Opening the crate lets Odell out, and he speaks at once.
+  if (reached.includes(STEP.crateOpened)) {
+    talkToOdell();
+    return;
+  }
   // Worded as it was when it was used, before using it moved the story on.
   const reading = readingFor(id, Math.min(state.quest, ...reached.map((step) => step - 1)));
   if (!reading) return;
-  if (reached.includes(STEP.crateOpened)) {
-    const foreman = currentLevel(state).npcs.find((n) => n.kind === 'foreman');
-    if (foreman) showDialogue(foreman.id, foreman.kind);
-    return;
-  }
   const page: Dialogue = {
     title: reading.title,
     text: reading.text,
@@ -181,7 +187,7 @@ function showReading(id: string, events: SimEvent[]): void {
     const plugIn = { ...page, options: [{ label: 'Plug in' }] };
     void until(() => hud.quiet).then(() => playScene([plugIn], () => game.send({ type: 'read', index: station })));
   } else if (reached.includes(STEP.charged)) playScene(CHARGING, () => void chargeUp());
-  else if (reached.includes(STEP.orderClosed)) playScene(GIVING_THE_ORDER, () => say(STEP_LINES[STEP.orderClosed]));
+  else if (reached.includes(STEP.orderClosed)) playScene(GIVING_THE_ORDER, talkToOdell);
   else present(page);
   const thought = AFTER_READING[id];
   if (thought && !thoughtsHad.has(id)) say([{ text: thought }]);
@@ -206,11 +212,11 @@ function thinkNearby(): void {
 }
 
 /**
- * After the log plays back: the salvager remembers, then the charge kept warm for them bursts out of its own accord as
- * their first EMP, before its button appears, so the player sees what it does rather than reads it.
+ * After plugging in: U-7 lets the Foundry believe it has come back, then the charge kept for it bursts out of its own
+ * accord as the EMP, before its button appears, so the player sees what it does rather than reads it.
  */
 async function chargeUp(): Promise<void> {
-  say([CHARGED.remembered, CHARGED.overcharged]);
+  say([CHARGED.believed, CHARGED.overcharged]);
   await until(() => hud.quiet);
   game.send({ type: 'useSkill', slot: EMP });
   hud.empWithheld = false;
@@ -218,7 +224,7 @@ async function chargeUp(): Promise<void> {
 }
 
 /** Steps whose lines wait for the scene that reaches them. */
-const AFTER_SCENE: number[] = [STEP.orderClosed, STEP.ending];
+const AFTER_SCENE: number[] = [STEP.ending];
 
 /** What happens in the world as the story moves on. */
 function reachStep(step: number): void {
@@ -242,9 +248,27 @@ const homecoming = new Homecoming({
   fadeOut: () => $('curtain').classList.add('closing'),
   answer: () => {
     const foreman = currentLevel(state).npcs.find((n) => n.kind === 'foreman');
-    if (foreman) game.send({ type: 'reply', npcId: foreman.id, id: REPLY.dontKnow });
+    if (foreman) game.send({ type: 'reply', npcId: foreman.id, id: REPLY.upriver });
   },
 });
+
+/** Whether U-7's arrival in the town is playing, with no input from the player. */
+let arriving = false;
+
+/**
+ * U-7 walks into the town at night and warns Odell, played as a scene; offering to prove itself on the loader at the
+ * crates starts the game proper.
+ */
+async function arrive(): Promise<void> {
+  arriving = true;
+  document.body.classList.add('cinematic');
+  say(ARRIVAL);
+  await until(() => hud.quiet);
+  document.body.classList.remove('cinematic');
+  arriving = false;
+  const foreman = currentLevel(state).npcs.find((n) => n.kind === 'foreman');
+  if (foreman) game.send({ type: 'reply', npcId: foreman.id, id: REPLY.proveIt });
+}
 
 /** Whether the Order Engine has greeted the salvager yet. */
 let engineSpoke = false;
@@ -417,8 +441,9 @@ function react(events: SimEvent[]): void {
         if (kind && unrecalledLook.actor(kind).scanner) labels.text(e.x, e.y, 70 * PX * view.scaleOf(kind), MACHINE_SCANS, '#ff8a6a', 15);
         break;
       }
+      // Every machine hears it at once, so the Foundry says it only the once.
       case 'LevelAlarmed':
-        if (currentLevel(state).level.building) hud.say(ALARM, VOICES.foundry);
+        hud.say(ALARM, VOICES.foundry);
         break;
       case 'PortalLocked': {
         // Standing in a locked doorway repeats the event; the thought comes once each time the salvager walks into it.
@@ -427,9 +452,6 @@ function react(events: SimEvent[]): void {
         lastLocked = now;
         break;
       }
-      case 'Armed':
-        hud.say(CHAINSAW_FOUND);
-        break;
       case 'HeroHurt':
         labels.text(e.x, e.y, 46 * PX, `-${e.amount}`, '#ff7a5a', 15);
         break;
@@ -485,11 +507,12 @@ game.run({
     $('title').hidden = true;
     const { level } = currentLevel(state);
     hud.banner(level.name, level.subtitle, 3);
+    if (state.quest === 0) void arrive();
   },
   // Tapping the world walks away from a conversation, which can be picked up again by talking. Things read and scenes
   // stay until their own button closes them, and the tap is dropped, so a line can't be lost to a stray tap.
   onWorldTap: () => {
-    if (ending.playing || homecoming.playing) return false;
+    if (arriving || ending.playing || homecoming.playing) return false;
     if ($('dialog').hidden) return true;
     if (dialog.npcId === null) return false;
     dialog.close();

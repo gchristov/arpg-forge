@@ -271,4 +271,9 @@ export interface GameContent {
   quest: QuestStep[];
   /** Every enemy grows this share stronger, in health and damage, for each level the hero gains. None if not given. */
   enemyGrowthPerHeroLevel?: number;
+  /**
+   * How far an alarm sounds: through the level and the other floors of its building (the default), or through every
+   * level, for a game whose machines all answer to one place.
+   */
+  alarmReach?: 'building' | 'everywhere';
 }
