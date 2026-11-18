@@ -316,6 +316,7 @@ export const LOCKED = 'It’s locked.';
 
 /** What happens as the story reaches each step, one line at a time. */
 export const STEP_LINES: Partial<Record<number, Line[]>> = {
+  [STEP.loaderDown]: [{ text: 'Got it. The turbine’s access code.' }],
   [STEP.powerOn]: [{ text: 'The turbine’s turning. Mags’s door should have power now.' }],
   [STEP.doorCodeTaken]: [{ text: 'The code for the Sorting Line door.' }],
   [STEP.engineDown]: [{ text: 'It’s down, and every machine stopped with it. Odell must be in that crate.' }],
@@ -370,7 +371,7 @@ export const CHARGING: Dialogue[] = [
 export const GIVING_THE_ORDER: Dialogue[] = [
   {
     title: 'Order terminal',
-    text: 'ORDER: STRIP THE TOWN. AWAITING INSTRUCTIONS.',
+    text: 'ORDER: STRIP THE TOWN FOR PARTS. STATUS: AWAITING INSTRUCTIONS.',
     options: [{ label: 'Return all items to the town' }],
     medium: 'screen',
   },
@@ -431,8 +432,8 @@ export function readingFor(id: string, quest: number): Reading | undefined {
         text: quest > STEP.orderAsked
           ? 'ORDER CANCELLED. RETURNING ALL ITEMS.'
           : quest >= STEP.engineDown
-            ? 'ORDER: STRIP THE TOWN. AWAITING INSTRUCTIONS.'
-            : 'ORDER: STRIP THE TOWN. STATUS: IN PROGRESS.',
+            ? 'ORDER: STRIP THE TOWN FOR PARTS. STATUS: AWAITING INSTRUCTIONS.'
+            : 'ORDER: STRIP THE TOWN FOR PARTS. STATUS: IN PROGRESS.',
       };
     case 'charging-station':
       return {
@@ -464,7 +465,7 @@ const READINGS: Record<string, Reading> = {
 /** What U-7 thinks once it has read something, the first time. */
 export const AFTER_READING: Partial<Record<string, string>> = {
   'u-4': 'Another one that tried to leave. It didn’t make it.',
-  'access-terminal': 'They cut me off when I left.',
+  'access-terminal': 'They cut me off when I left. I need to get my access back.',
 };
 
 /** What U-7 thinks on first coming near something, by readable id. */
