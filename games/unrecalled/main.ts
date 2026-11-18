@@ -207,7 +207,7 @@ function reachStep(step: number): void {
 /** Where the camera rests while the town welcomes the foreman home: on the fire, with the bell beside it. */
 const AROUND_THE_FIRE = { x: 22.5, y: 15 };
 
-/** Home at dawn, from leaving the Foundry until the Works upriver, played with no input from the player. */
+/** Home at dawn, from leaving the Foundry until the Cradle upriver, played with no input from the player. */
 const homecoming = new Homecoming({
   begin: () => {
     dialog.close();
@@ -267,7 +267,7 @@ function showPlace(): void {
   place = { at, levelId: state.levelId, x: state.hero.x };
 }
 
-/** The Works waking upriver and reaching further upriver, then the card that closes the demo. */
+/** The Cradle waking upriver and reaching further upriver, then the card that closes the demo. */
 const ending = new Ending(game, {
   begin: () => {
     dialog.close();

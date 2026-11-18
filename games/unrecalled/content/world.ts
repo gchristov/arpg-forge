@@ -10,7 +10,7 @@ import { NPCS, QUEST } from './story';
 
 /**
  * Unrecalled as the rules see it: Rustbelt, its buildings and the dead woods to its east, and the Foundry's four floors
- * down to the Order Engine, the Works upriver where the story ends, plus a practice arena off the map.
+ * down to the Order Engine, the Cradle upriver where the story ends, plus a practice arena off the map.
  */
 export function unrecalledContent(): GameContent {
   return {

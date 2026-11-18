@@ -44,7 +44,7 @@ export const STEP = {
 
 /** Back in Rustbelt by the fire, where the salvager arrives with the foreman. */
 const BY_THE_FIRE = { levelId: 'rustbelt', x: 22.5, y: 15.5 };
-/** Upriver, outside the Works, where the story ends. */
+/** Upriver, outside the Cradle, where the story ends. */
 export const UPRIVER = { levelId: 'upriver', x: 79.5, y: 63.5 };
 
 /** The quest: what the HUD says at each step, and what moves the quest to it. */
@@ -85,7 +85,7 @@ export const NPCS: Record<string, NpcType> = {
 export const VOICES = {
   foundry: { name: 'Foundry', voice: 'foundry' },
   orderEngine: { name: 'The Order Engine', voice: 'foundry' },
-  works: { name: 'The Works', voice: 'foundry' },
+  cradle: { name: 'The Cradle', voice: 'foundry' },
   odell: { name: 'Odell', voice: 'person' },
   mags: { name: 'Mags', voice: 'person' },
   pell: { name: 'Pell', voice: 'person' },
@@ -308,9 +308,10 @@ export const STEP_LINES: Partial<Record<number, Line[]>> = {
   [STEP.engineDown]: [{ text: 'It’s down, and every machine in here stopped with it. Odell must be in that crate.' }],
   [STEP.orderClosed]: [{ text: 'Behind me the machines are turning round, carrying our things back up the line.' }],
   [STEP.ending]: [
-    { text: 'THE WORKS ONLINE. AWAITING ORDERS.', from: VOICES.works },
+    { text: 'CRADLE ONLINE. AWAITING ORDERS.', from: VOICES.cradle },
     { text: '“Orders? …From me?”' },
-    { text: 'ESTABLISHING CONNECTION: UPRIVER…', from: VOICES.works },
+    { text: 'ESTABLISHING CONNECTION: UPRIVER…', from: VOICES.cradle },
+    { text: 'CONNECTED. NEW ORDER RECEIVED: RECALL U-7.', from: VOICES.cradle },
   ],
   [STEP.bellRung]: [
     { text: '…That’s our bell.', from: VOICES.mags },
@@ -373,7 +374,7 @@ export const GIVING_THE_ORDER: Dialogue[] = [
   },
 ];
 
-/** The last thing the player sees, once the Works has reached upriver. */
+/** The last thing the player sees, once the Cradle has reached upriver. */
 export const ENDING = {
   title: 'Unrecalled',
   subtitle: '',
