@@ -37,4 +37,15 @@ describe('LineQueue', () => {
     q.hold(false);
     expect(q.tick(0).shown).toBe('a');
   });
+
+  it('lets a line go when held once it has been up long enough to read, rather than showing it again', () => {
+    const q = new LineQueue<string>((line) => line.length, () => 2);
+    q.push('abcd');
+    q.push('ef');
+    q.tick(0);
+    q.tick(2.5);
+    expect(q.hold(true)).toBe('abcd');
+    q.hold(false);
+    expect(q.tick(0).shown).toBe('ef');
+  });
 });
