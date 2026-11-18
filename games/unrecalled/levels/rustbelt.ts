@@ -155,14 +155,13 @@ export function buildRustbelt(): LevelContent {
   setProp(map, 20, 13, Prop.FireBarrel, true);
   level.lights.push({ x: 20.5, y: 13.5, radius: 4.4, intensity: 1.3, colour: 'molten', flicker: 1.6, seed: 7 });
   // The foreman by the fire, until the Foundry takes him and after he's brought home. Mags waits in his place from
-  // then on, stepping aside when he's back, and at dawn Pell joins them by the fire with the chapel bell. A crawler
+  // then on, stepping aside when he's back, and at dawn Pell joins them by the fire. A crawler
   // comes for the camp's tools as the foreman points it out, and fighting it alone doesn't set the woods' machines off.
   const foreman = { kind: 'foreman', name: 'Foreman Odell', x: 21.5, y: 13.6 };
   room.npcs.push({ ...foreman, untilStep: STEP.powerOn }, { ...foreman, fromStep: STEP.freed });
   room.npcs.push({ kind: 'trader', name: 'Mags', x: 21.5, y: 13.6, fromStep: STEP.powerOn, untilStep: STEP.freed });
   room.npcs.push({ kind: 'trader', name: 'Mags', x: 19.5, y: 15.5, fromStep: STEP.freed });
   room.npcs.push({ kind: 'tinker', name: 'Pell', x: 25.5, y: 15.5, fromStep: STEP.freed });
-  room.readables!.push({ tx: 23, ty: 14, id: 'bell', fromStep: STEP.freed });
   room.spawns.push({ kind: 'crawler', x: 26.5, y: 18.5, tag: TAG.raider, strength: 0.5, fromStep: STEP.raidAsked, quiet: true });
   for (const [x, y] of [[17, 10], [26, 9], [27, 15], [16, 16], [29, 11], [14, 9], [30, 16]] as const) {
     setProp(map, x, y, Prop.Containers, true);

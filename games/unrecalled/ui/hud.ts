@@ -1,7 +1,7 @@
 import { currentLevel, type Command, type GameState } from '../../../engine/sim/state';
 import { Banner } from '../../../engine/ui/banner';
 import { bindCommand } from '../../../engine/ui/command-button';
-import { MessageFeed, type Speaker } from '../../../engine/ui/message-feed';
+import { type FeedOptions, MessageFeed, type Speaker } from '../../../engine/ui/message-feed';
 import { ShownValues } from '../../../engine/ui/shown-values';
 import { ENEMIES } from '../content/enemies';
 import { QUEST } from '../content/story';
@@ -12,17 +12,19 @@ const EMP = 0;
 const $ = (id: string): HTMLElement => document.getElementById(id)!;
 
 /**
- * Unrecalled's HUD: the objective and the message feed under it at the top left, scrap, level and sound at the top
- * right, health, charge and XP with the buttons along the bottom, the boss bar, and banners for places.
+ * Unrecalled's HUD: the objective at the top left, scrap, level and sound at the top right, the story's lines one at a
+ * time above the buttons (where dialogue opens too, so the lines wait for it), health, charge and XP with the buttons
+ * along the bottom, the boss bar, and banners for places.
  */
 export class Hud {
   private readonly shown = new ShownValues();
   private readonly bannerBox = new Banner({ root: $('banner'), title: $('bannerT'), subtitle: $('bannerS') });
-  private readonly feed = new MessageFeed($('feed'));
+  private readonly feed: MessageFeed;
   /** Keeps the EMP's button hidden even once the salvager has it, while the scene that gives it plays. */
   empWithheld = false;
 
-  constructor(send: (command: Command) => void) {
+  constructor(send: (command: Command) => void, feed: FeedOptions) {
+    this.feed = new MessageFeed($('feed'), feed);
     // The log lists every line and page so far, for one missed or closed too soon.
     $('logOpen').addEventListener('pointerdown', (e) => {
       e.preventDefault();
@@ -91,6 +93,8 @@ export class Hud {
       shown.set('boss', Math.round((boss.hp / boss.maxHp) * 100), (v) => ($('bossFill').style.transform = `scaleX(${v / 100})`));
     }
     shown.set('fallen', hero.dead, (v) => ($('fallen').hidden = !v));
+    this.feed.hold(!$('dialog').hidden || !$('log').hidden);
+    this.feed.update(performance.now());
   }
 
   /** A title and subtitle across the screen. Shown until replaced when `seconds` is Infinity. */
@@ -98,9 +102,14 @@ export class Hud {
     this.bannerBox.show(title, subtitle, seconds);
   }
 
-  /** A line in the message feed: what someone says, or with no speaker, what the salvager notices. */
+  /** A line of the story, shown in its turn: what someone says, or with no speaker, the salvager's own thought. */
   say(text: string, from?: Speaker): void {
     this.feed.add(text, from);
+  }
+
+  /** Every line said has had its turn in the feed. */
+  get quiet(): boolean {
+    return this.feed.idle;
   }
 
   /** Keeps something read elsewhere, such as a page of dialogue, in the log without showing it in the feed. */
@@ -111,7 +120,7 @@ export class Hud {
   private showLog(): void {
     const lines = this.feed.history().map(({ text, from }) => {
       const line = document.createElement('div');
-      line.className = from ? `line ${from.voice}` : 'line';
+      line.className = from ? `line ${from.voice}` : 'line own';
       if (from) {
         const name = document.createElement('b');
         name.textContent = from.name;

@@ -6,17 +6,21 @@ import { PX } from '../../engine/game/world-view';
 import { servicePrice } from '../../engine/sim/interaction';
 import { currentLevel, type RefusalReason, type SimEvent } from '../../engine/sim/state';
 import { DialogBox } from '../../engine/ui/dialog-box';
+import { PRINTING, SPEAKING } from '../../engine/ui/typewriter';
 import { MODEL_URLS, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import {
-  ALARM, CHAINSAW_FOUND, CHARGING, dialogueFor, ENDING, ENGINE_SAYS, GIVING_THE_ORDER, levelUp, lockedSays, MACHINE_SCANS, NPCS,
-  ON_ENTERING, OPENING, readingFor, UPRIVER, scrapDropped, stashOpened, STEP, STEP_LINES, VOICES, type Dialogue, type Line,
+  AFTER_READING, ALARM, BY_THE_FIRE, CHAINSAW_FOUND, CHARGING, dialogueFor, ENDING, ENGINE_SAYS, GIVING_THE_ORDER, HOMECOMING,
+  levelUp, LOCKED, MACHINE_SCANS, NPCS, ON_ENTERING, OPENING, readingFor, REPLY, UPRIVER, scrapDropped, STEP, STEP_LINES, VOICES,
+  type Dialogue, type Line,
 } from './content/story';
 import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
 import { Ending } from './ui/ending';
+import { Homecoming } from './ui/homecoming';
 import { Hud } from './ui/hud';
+import { Portraits } from './ui/portraits';
 
 const game = new Game({
   canvas: document.querySelector<HTMLCanvasElement>('#game')!,
@@ -27,11 +31,19 @@ const game = new Game({
 });
 const { state, labels, view, platform } = game;
 const $ = (id: string): HTMLElement => document.getElementById(id)!;
-const dialog = new DialogBox({ root: $('dialog'), title: $('dlgT'), text: $('dlgP'), choices: $('dlgO') });
-const hud = new Hud((command) => {
-  if (command.type === 'attackNearest') dialog.close();
-  game.send(command);
-});
+const dialog = new DialogBox({ root: $('dialog'), title: $('dlgT'), text: $('dlgP'), choices: $('dlgO') }, SPEAKING);
+const portraits = new Portraits((sitters) => game.portraits(sitters));
+const hud = new Hud(
+  (command) => {
+    if (command.type === 'attackNearest') dialog.close();
+    game.send(command);
+  },
+  {
+    portraitOf: (from) => portraits.of(from),
+    // Machines print their words, as a terminal does.
+    paceOf: (from) => (from?.voice === 'foundry' ? PRINTING : SPEAKING),
+  },
+);
 
 const synth = new Synth();
 // Sound starts off until the player turns it on.
@@ -91,6 +103,8 @@ function showDialogue(npcId: number, kind: string): void {
 function present(d: Dialogue, npc?: { npcId: number; kind: string }, then?: () => void): void {
   const services = npc ? NPCS[npc.kind]?.services ?? [] : [];
   hud.remember(d.text, { name: d.title, voice: 'page' });
+  showPortrait(d.medium ? undefined : portraits.ofName(d.title));
+  $('dialog').classList.toggle('screen', d.medium === 'screen');
   dialog.open(
     d.title,
     d.text,
@@ -113,7 +127,16 @@ function present(d: Dialogue, npc?: { npcId: number; kind: string }, then?: () =
       };
     }),
     npc?.npcId ?? null,
+    d.medium === 'screen' ? PRINTING : d.medium === 'written' ? null : SPEAKING,
   );
+}
+
+/** The speaker's face beside a page of dialogue; signs and screens have none. */
+function showPortrait(url: string | undefined): void {
+  const picture = $('dlgPic') as HTMLImageElement;
+  picture.hidden = !url;
+  $('dialog').classList.toggle('pictured', Boolean(url));
+  if (url) picture.src = url;
 }
 
 /** Pages of dialogue one after another, then `then`. */
@@ -138,7 +161,12 @@ function showReading(id: string, events: SimEvent[]): void {
     if (foreman) showDialogue(foreman.id, foreman.kind);
     return;
   }
-  const page: Dialogue = { title: reading.title, text: reading.text, options: [{ label: 'Close' }] };
+  const page: Dialogue = {
+    title: reading.title,
+    text: reading.text,
+    options: [{ label: 'Close' }],
+    medium: reading.screen ? 'screen' : 'written',
+  };
   if (reached.includes(STEP.charged)) {
     // The EMP is the charge's gift, so it shows once the scene is over.
     hud.empWithheld = true;
@@ -148,15 +176,42 @@ function showReading(id: string, events: SimEvent[]): void {
     });
   } else if (reached.includes(STEP.orderClosed)) playScene(GIVING_THE_ORDER, () => say(STEP_LINES[STEP.orderClosed]));
   else present(page);
+  const thought = AFTER_READING[id];
+  if (thought && !thoughtsHad.has(id)) say([{ text: thought }]);
+  thoughtsHad.add(id);
 }
+
+/** Things the salvager has already had their thought about. */
+const thoughtsHad = new Set<string>();
 
 /** Steps whose lines wait for the scene that reaches them. */
 const AFTER_SCENE: number[] = [STEP.charged, STEP.orderClosed, STEP.ending];
 
 /** What happens in the world as the story moves on. */
 function reachStep(step: number): void {
+  if (step === STEP.freed) void homecoming.play(HOMECOMING);
   if (!AFTER_SCENE.includes(step)) say(STEP_LINES[step]);
 }
+
+/** Where the camera rests while the town welcomes the foreman home: on the fire and the people round it. */
+const AROUND_THE_FIRE = { x: 22.5, y: 15 };
+
+/** Home at dawn, from leaving the Foundry until the Cradle upriver, played with no input from the player. */
+const homecoming = new Homecoming({
+  begin: () => {
+    dialog.close();
+    document.body.classList.add('cinematic');
+  },
+  home: () => state.levelId === BY_THE_FIRE.levelId && !state.transition,
+  frame: () => game.cutTo(AROUND_THE_FIRE),
+  say,
+  quiet: () => hud.quiet,
+  fadeOut: () => $('curtain').classList.add('closing'),
+  answer: () => {
+    const foreman = currentLevel(state).npcs.find((n) => n.kind === 'foreman');
+    if (foreman) game.send({ type: 'reply', npcId: foreman.id, id: REPLY.dontKnow });
+  },
+});
 
 /** Whether the Order Engine has greeted the salvager yet. */
 let engineSpoke = false;
@@ -197,25 +252,26 @@ function showPlace(): void {
   place = { at, levelId: state.levelId, x: state.hero.x };
 }
 
-/** Foundry 2 waking upriver, then the card that closes the demo on its question. */
+/** The Cradle waking upriver and reaching further upriver, then the card that closes the demo. */
 const ending = new Ending(game, {
   begin: () => {
     dialog.close();
     document.body.classList.add('cinematic');
     // Up from black: shut at once, then let the curtain's own transition lift it.
+    $('curtain').classList.remove('closing');
     $('curtain').classList.add('shut');
     requestAnimationFrame(() => requestAnimationFrame(() => $('curtain').classList.remove('shut')));
   },
-  light: () => sfx.clank(),
+  light: () => {
+    sfx.clank();
+    sfx.slam();
+  },
   awake: () => {
-    game.renderer.shake(0.8);
     sfx.slam();
     sfx.siren();
   },
-  online: () => {
-    hud.banner(ENDING.online.title, ENDING.online.subtitle, 4);
-    say(STEP_LINES[STEP.ending]);
-  },
+  online: () => say(STEP_LINES[STEP.ending]),
+  quiet: () => hud.quiet,
   card: () => {
     $('endT').textContent = ENDING.title;
     $('endS').textContent = ENDING.subtitle;
@@ -329,11 +385,10 @@ function react(events: SimEvent[]): void {
         break;
       }
       case 'LevelAlarmed':
-        if (currentLevel(state).level.building) hud.say(ALARM.foundry, VOICES.foundry);
-        hud.say(ALARM.turns);
+        if (currentLevel(state).level.building) hud.say(ALARM, VOICES.foundry);
         break;
       case 'PortalLocked':
-        labels.text(e.x, e.y, 60 * PX, lockedSays(e.to, state.quest), '#ff7a62', 14);
+        labels.text(e.x, e.y, 60 * PX, LOCKED, '#ff7a62', 14);
         break;
       case 'Armed':
         hud.say(CHAINSAW_FOUND);
@@ -348,7 +403,7 @@ function react(events: SimEvent[]): void {
         labels.text(e.x, e.y, 50 * PX, REFUSALS[e.reason], '#8a98a6', 13);
         break;
       case 'LevelUp':
-        hud.say(levelUp(e.level));
+        labels.text(state.hero.x, state.hero.y, 70 * PX, levelUp(e.level), '#e8c870', 18);
         break;
       case 'PickedUp':
         if (e.kind === 'gold') labels.text(e.x, e.y, 30 * PX, `+${e.amount} scrap`, '#e8c870', 13);
@@ -357,11 +412,6 @@ function react(events: SimEvent[]): void {
       case 'Read':
         showReading(e.id, events);
         break;
-      case 'ContainerOpened': {
-        const stash = currentLevel(state).containers[e.index];
-        if (stash && !stash.weapon) hud.say(stashOpened(stash.gold, stash.healingItems));
-        break;
-      }
       case 'QuestAdvanced':
         reachStep(e.step);
         break;
@@ -402,7 +452,7 @@ game.run({
   // Tapping the world walks away from a conversation, which can be picked up again by talking. Things read and scenes
   // stay until their own button closes them, and the tap is dropped, so a line can't be lost to a stray tap.
   onWorldTap: () => {
-    if (ending.playing) return false;
+    if (ending.playing || homecoming.playing) return false;
     if ($('dialog').hidden) return true;
     if (dialog.npcId === null) return false;
     dialog.close();

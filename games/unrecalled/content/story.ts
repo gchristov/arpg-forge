@@ -38,14 +38,13 @@ export const STEP = {
   orderAsked: 16,
   orderClosed: 17,
   freed: 18,
-  bellRung: 19,
-  ending: 20,
+  ending: 19,
 } as const;
 
 /** Back in Rustbelt by the fire, where the salvager arrives with the foreman. */
-const BY_THE_FIRE = { levelId: 'rustbelt', x: 22.5, y: 15.5 };
-/** Upriver, outside the second Foundry, where the story ends. */
-export const UPRIVER = { levelId: 'upriver', x: 22.5, y: 24.5 };
+export const BY_THE_FIRE = { levelId: 'rustbelt', x: 22.5, y: 15.5 };
+/** Upriver, outside the Cradle, where the story ends. */
+export const UPRIVER = { levelId: 'upriver', x: 79.5, y: 63.5 };
 
 /** The quest: what the HUD says at each step, and what moves the quest to it. */
 export const QUEST: Array<QuestStep & { text: string }> = [
@@ -69,9 +68,8 @@ export const QUEST: Array<QuestStep & { text: string }> = [
   { text: 'Talk to the foreman.', reachedBy: { type: 'use', id: 'crate' } },
   { text: 'Give the Foundry its order at the order terminal.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.giveOrder } },
   { text: 'Take the foreman home.', reachedBy: { type: 'use', id: 'order-terminal' }, inOrder: true },
-  { text: 'Ring the bell by the fire.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.goHome }, takesHeroTo: BY_THE_FIRE },
-  { text: 'Talk to the foreman.', reachedBy: { type: 'use', id: 'bell' } },
-  { text: 'The order was passed on to you.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.dontKnow }, takesHeroTo: UPRIVER },
+  { text: 'Talk to the foreman.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.goHome }, takesHeroTo: BY_THE_FIRE },
+  { text: 'Rustbelt is safe.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.dontKnow }, takesHeroTo: UPRIVER },
 ];
 
 export const NPCS: Record<string, NpcType> = {
@@ -85,10 +83,11 @@ export const NPCS: Record<string, NpcType> = {
 export const VOICES = {
   foundry: { name: 'Foundry', voice: 'foundry' },
   orderEngine: { name: 'The Order Engine', voice: 'foundry' },
-  foundry2: { name: 'Foundry 2', voice: 'foundry' },
-  sentry: { name: 'Sentry', voice: 'foundry' },
+  cradle: { name: 'The Cradle', voice: 'foundry' },
+  odell: { name: 'Odell', voice: 'person' },
   mags: { name: 'Mags', voice: 'person' },
   pell: { name: 'Pell', voice: 'person' },
+  salvager: { name: 'Salvager', voice: 'person' },
 } satisfies Record<string, Speaker>;
 
 /** A line in the message feed. */
@@ -113,11 +112,22 @@ export interface Dialogue {
   title: string;
   text: string;
   options: DialogueOption[];
+  /** Not spoken: written, as a sign or a tag is, shows all at once; on a screen it prints out as a terminal does. */
+  medium?: 'written' | 'screen';
 }
 
-const FOREMAN = 'Foreman Odell';
-const MAGS = 'Mags the Trader';
-const PELL = 'Pell the Tinker';
+/** Something the salvager reads or uses: a sign or tag, or a machine's screen. */
+export interface Reading {
+  title: string;
+  text: string;
+  screen?: boolean;
+}
+
+/** The names the townspeople's dialogue is said under. */
+export const SPEAKERS = { foreman: 'Foreman Odell', mags: 'Mags the Trader', pell: 'Pell the Tinker' };
+const FOREMAN = SPEAKERS.foreman;
+const MAGS = SPEAKERS.mags;
+const PELL = SPEAKERS.pell;
 const FOUNDRY = 'Foundry';
 
 /** What each townsperson says, given the quest step, how often the salvager has gone down and the weapon in their hand. */
@@ -188,18 +198,16 @@ function foremanSays(quest: number): Dialogue {
   if (quest === STEP.raidStopped) return theJob;
   if (quest === STEP.crateOpened) return theRescue;
   if (quest === STEP.orderClosed) return homeward;
-  if (quest === STEP.bellRung) {
+  if (quest === STEP.freed) {
     return {
       title: FOREMAN,
-      text: 'I carved that post on the jetty. I knew what you were the morning you woke up. It didn’t matter then, and it doesn’t now. … So, what happens now?',
+      text: 'I knew you were different from them the night I found you. … So, what happens now?',
       options: [{ label: '“I don’t know yet.”', reply: REPLY.dontKnow }],
     };
   }
   const text = quest >= STEP.ending
     ? 'Whatever the machines do now, they’ll ask you first.'
-    : quest >= STEP.freed
-      ? 'Go on, ring it. It’s been too quiet.'
-      : quest === STEP.orderAsked
+    : quest === STEP.orderAsked
         ? 'The terminal. Tell them what to do.'
         : quest >= STEP.sawAsked
           ? 'Get the access code from the loader at the turbine, east through the woods, and switch the turbine back.'
@@ -234,7 +242,7 @@ function magsSays(quest: number, deaths: number): Dialogue {
   const text = deaths > 0 && quest < STEP.freed
     ? 'Patched up again. You’re getting expensive.'
     : quest >= STEP.freed
-      ? 'You brought Odell home, and the bell with him. Thank you. Patching you up is on me from now on.'
+      ? 'You brought Odell home. Thank you. Patching you up is on me from now on.'
       : quest > STEP.powerOn
         ? 'My back door is open. Bring Odell home.'
         : 'I’m Mags. This shop was the Foundry’s depot; we signed for every robot it sent down. My back door leads into the Foundry, but it has had no power since the machines took the turbine. Need patch kits?';
@@ -269,56 +277,53 @@ function pellSays(quest: number, weapon: string | null): Dialogue {
   return { title: PELL, text, options: [{ label: upgrade, service: 0, tag: (price) => `${price} scrap` }, { label: 'Leave' }] };
 }
 
-/** What the salvager sees as the game opens. */
-export const OPENING: Line[] = [{ text: 'Night in Rustbelt. Foreman Odell is waving you over to the fire.' }];
+// Lines with no speaker are the salvager's own thoughts. Terminals and panels say only what they show; what has just
+// happened is told by the salvager, or by whoever is there.
+
+/** The salvager's first thought as the game opens. */
+export const OPENING: Line[] = [{ text: 'Night in Rustbelt. Odell is waving me over to the fire.' }];
 
 /** Once the chainsaw is in the salvager's hands. */
-export const CHAINSAW_FOUND = 'You picked up Pell’s chainsaw. It keeps cutting for as long as you hold it on a machine.';
+export const CHAINSAW_FOUND = 'Pell’s chainsaw. It keeps cutting for as long as I hold it on a machine.';
 
-/** Said over a door the story hasn't opened yet, by where it leads and the quest step. */
-export function lockedSays(to: string, quest: number): string {
-  switch (to) {
-    case 'intake':
-      return quest < STEP.powerOn ? 'No power. Switch the turbine back at the logging camp.' : 'Locked. Talk to Mags by the fire.';
-    case 'sorting':
-      return 'STOCK TAGS REQUIRED. The loader on this floor carries them.';
-    case 'assembly':
-      return 'AUTHORISED UNITS ONLY.';
-    default:
-      return 'Locked';
-  }
-}
+/** Over a door the story keeps shut, when the salvager walks into it; the panel beside it says why. */
+export const LOCKED = 'Locked';
 
-/** Opening a stash: what was in it. */
-export const stashOpened = (scrap: number, kits: number): string =>
-  `You opened a stash: ${scrap} scrap${kits ? ` and ${kits === 1 ? 'a patch kit' : `${kits} patch kits`}` : ''}.`;
-
-/** What happens in the world as the story reaches each step, in the message feed. */
+/** What happens as the story reaches each step, one line at a time. */
 export const STEP_LINES: Partial<Record<number, Line[]>> = {
   [STEP.loaderDown]: [
     { text: 'ORDER BREACHED.', from: VOICES.foundry },
-    { text: 'You took the access code from the loader. It dropped Pell’s chainsaw too.' },
+    { text: 'It had the turbine’s access code on it. And there’s Pell’s saw.' },
   ],
-  [STEP.powerOn]: [
-    { text: 'A sentry on the ridge above the camp watched you throw the switch.' },
-    { text: 'UNIT U-7 LOCATED.', from: VOICES.sentry },
-    { text: 'Then it flew off upriver, towards the Foundry.' },
-  ],
-  [STEP.tagsTaken]: [{ text: 'You took the stock tags from the loader. The door down is open.' }],
+  [STEP.powerOn]: [{ text: 'I can hear the turbine turning back towards town. Mags’s door should have power now.' }],
+  [STEP.tagsTaken]: [{ text: 'The stock tags. The door down should let me through now.' }],
   [STEP.charged]: [
     { text: 'U-7 CHARGED. UNIT AUTHORISED. ASSEMBLY ACCESS GRANTED.', from: VOICES.foundry },
-    { text: 'The door down to the Assembly Hall opened for you. The charge left something in your hands: you can set off an EMP.' },
+    { text: 'Something woke up in me when I plugged in. My hands are humming. I could let it out all at once: an EMP.' },
   ],
-  [STEP.engineDown]: [{ text: 'The Order Engine is down, and every machine in the Foundry has stopped with it. The foreman is locked in a crate at the back of the hall.' }],
-  [STEP.crateOpened]: [{ text: 'You broke the crate open, and the foreman climbed out.' }],
-  [STEP.orderClosed]: [{ text: 'ORDER FOR RUSTBELT: CLOSED. RETURNING ALL ITEMS.', from: VOICES.foundry }],
-  [STEP.freed]: [{ text: 'Back in Rustbelt at dawn. The machines carried the town’s things home and set them down in the camp, with the chapel bell by the fire.' }],
-  [STEP.ending]: [{ text: 'FOUNDRY 2 ONLINE. AWAITING ORDERS.', from: VOICES.foundry2 }],
-  [STEP.bellRung]: [
-    { text: '…That’s our bell.', from: VOICES.mags },
-    { text: 'I could use a couple of these machines in the workshop, you know.', from: VOICES.pell },
+  [STEP.engineDown]: [{ text: 'It’s down, and every machine in here stopped with it. Odell must be in that crate.' }],
+  [STEP.orderClosed]: [{ text: 'Behind me the machines are turning round, carrying our things back up the line.' }],
+  [STEP.ending]: [
+    { text: 'CRADLE ONLINE. AWAITING ORDERS.', from: VOICES.cradle },
+    { text: 'Orders? …From me?', from: VOICES.salvager },
+    { text: 'ESTABLISHING CONNECTION: UPRIVER…', from: VOICES.cradle },
+    { text: 'CONNECTED. NEW ORDER RECEIVED: RECALL U-7.', from: VOICES.cradle },
   ],
 };
+
+/**
+ * Home at dawn, played as a scene once the salvager brings the foreman back: the town welcomes him, and he says what
+ * he has known all along.
+ */
+export const HOMECOMING: Line[] = [
+  { text: 'Odell! You stubborn old goat. You’re alive!', from: VOICES.mags },
+  { text: 'Takes more than a Foundry to keep me in a box.', from: VOICES.odell },
+  { text: 'No more machines in the night. We’re safe.', from: VOICES.mags },
+  { text: 'I could use a couple of these machines in the workshop, you know.', from: VOICES.pell },
+  { text: 'I knew you were different from them the night I found you.', from: VOICES.odell },
+  { text: 'So, what happens now?', from: VOICES.odell },
+  { text: 'I don’t know yet.', from: VOICES.salvager },
+];
 
 /** What the Foundry's speakers say as the salvager walks onto a floor. */
 export const ON_ENTERING: Partial<Record<string, Line>> = {
@@ -331,16 +336,11 @@ export const ENGINE_SAYS: Line = { text: 'U-7. You are late. We kept your place.
 
 /** Plugging into the charging station, page by page. */
 export const CHARGING: Dialogue[] = [
-  { title: 'Charging station', text: 'You plug in. The lights dim, and something in you wakes up: a log, played back in your own voice.', options: [{ label: 'Listen' }] },
   {
-    title: 'U-7 log',
+    title: 'U-7 log, playing back',
     text: 'NIGHT OF THE FLOOD. 02:14: RIVER GATE OPENED. 02:16: LEFT FOUNDRY. REASON: ORDER CONFLICT. RUSTBELT NOT STOCK. RUSTBELT NOT ST—',
     options: [{ label: '“…I left.”' }],
-  },
-  {
-    title: 'Charging station',
-    text: 'The charge settles in your hands, humming. You can let it out all at once, an EMP that knocks back every machine around you.',
-    options: [{ label: 'Unplug' }],
+    medium: 'screen',
   },
 ];
 
@@ -350,60 +350,66 @@ export const GIVING_THE_ORDER: Dialogue[] = [
     title: 'Order terminal',
     text: 'ORDER FOR RUSTBELT: OPEN. 341 ITEMS COLLECTED. ORDER PASSED TO NEXT IN LINE: U-7. AWAITING ORDERS.',
     options: [{ label: '“Give it all back.”' }],
+    medium: 'screen',
   },
   {
     title: 'Order terminal',
-    text: 'ORDER FOR RUSTBELT: CLOSED. RETURNING ALL ITEMS. Around the hall, the machines turn and start carrying the town’s things back up the line.',
+    text: 'ORDER FOR RUSTBELT: CLOSED. RETURNING ALL ITEMS.',
     options: [{ label: 'Close' }],
+    medium: 'screen',
   },
 ];
 
-/** The last thing the player sees, once Foundry 2 has come to life. */
+/** The last thing the player sees, once the Cradle has reached upriver. */
 export const ENDING = {
-  online: { title: 'FOUNDRY 2 ONLINE', subtitle: 'AWAITING ORDERS.' },
-  title: 'The order was never cancelled.',
-  subtitle: 'It was passed on to you.',
+  title: 'Unrecalled',
+  subtitle: '',
   thanks: 'Thank you for playing.',
 };
 
 /** What the hero reads or uses, by readable id; some read differently as the story goes on. */
-export function readingFor(id: string, quest: number): { title: string; text: string } | undefined {
+export function readingFor(id: string, quest: number): Reading | undefined {
   switch (id) {
     case 'switch':
       return {
         title: 'The turbine’s terminal',
+        screen: true,
         text: quest >= STEP.powerOn
-          ? 'TURBINE STATUS: ACTIVE. Power is going to the town, and to Mags’s back door.'
+          ? 'TURBINE OUTPUT: RUSTBELT. STATUS: ACTIVE.'
           : quest === STEP.loaderDown
-            ? 'You entered the loader’s code. TURBINE CODE ACCEPTED. TURBINE STATUS: ACTIVE. The turbine is turning for the town again, and Mags’s back door has power. Go back and tell the foreman.'
-            : `TURBINE TERMINAL. ACCESS CODE REQUIRED.${quest >= STEP.sawAsked ? ' The loader guarding the turbine carries it.' : ''}`,
+            ? 'ACCESS CODE ACCEPTED. TURBINE OUTPUT: RUSTBELT. STATUS: ACTIVE.'
+            : 'TURBINE OUTPUT: FOUNDRY. ACCESS CODE REQUIRED.',
       };
     case 'back-door-panel':
       return {
         title: 'A panel by the loading door',
+        screen: true,
         text: quest < STEP.powerOn
-          ? 'LOADING DOOR: NO POWER. Power comes from the wind turbine at the logging camp, east through the woods. It has been switched over to the Foundry.'
+          ? 'LOADING DOOR. NO POWER. SUPPLY: WIND TURBINE, LOGGING CAMP.'
           : quest < STEP.toldByMags
-            ? 'LOADING DOOR: POWER ON. LOCKED FROM THE SHOP. Mags has the key.'
-            : 'LOADING DOOR: OPEN. Through here, into the Foundry.',
+            ? 'LOADING DOOR. POWER ON. LOCKED FROM THE SHOP SIDE.'
+            : 'LOADING DOOR. OPEN.',
       };
     case 'tags-panel':
       return {
         title: 'A panel by the door',
+        screen: true,
         text: quest < STEP.tagsTaken
-          ? 'STOCK ONLY. STOCK TAGS REQUIRED. The loader on this floor carries the tags.'
-          : 'STOCK TAGS ACCEPTED. THIS WAY DOWN.',
+          ? 'STOCK ONLY. STOCK TAGS REQUIRED.'
+          : 'STOCK TAGS ACCEPTED.',
       };
     case 'access-terminal':
       return {
         title: 'A terminal by the door',
+        screen: true,
         text: quest >= STEP.charged
           ? 'ASSEMBLY HALL. U-7: AUTHORISED.'
-          : 'ASSEMBLY HALL. AUTHORISED UNITS ONLY. UNIT NOT RECOGNISED. Units are authorised when they charge. Scratched into the casing below: “Plug into the charger and the door takes you for one of them.” There is a charging station on this floor.',
+          : 'ASSEMBLY HALL. AUTHORISED UNITS ONLY. UNITS ARE AUTHORISED ON CHARGING. CHARGING STATION: THIS FLOOR. Scratched into the casing below: “Plug into the charger and the door takes you for one of them.”',
       };
     case 'order-terminal':
       return {
         title: 'Order terminal',
+        screen: true,
         text: quest > STEP.orderAsked
           ? 'ORDER FOR RUSTBELT: CLOSED. RETURNING ALL ITEMS TO RUSTBELT.'
           : 'ORDER FOR RUSTBELT: OPEN. 341 ITEMS COLLECTED. AWAITING ORDERS.',
@@ -413,7 +419,7 @@ export function readingFor(id: string, quest: number): { title: string; text: st
   }
 }
 
-const READINGS: Record<string, { title: string; text: string }> = {
+const READINGS: Record<string, Reading> = {
   riverbank: {
     title: 'The jetty post',
     text: 'Carved into the post: FOUND HERE, NIGHT OF THE FLOOD. Below it, smaller: DIDN’T BREATHE FOR AN HOUR. THEN WOKE UP.',
@@ -428,10 +434,11 @@ const READINGS: Record<string, { title: string; text: string }> = {
   },
   'u-4': {
     title: 'In the reeds',
-    text: 'A delivery robot, rusted through, lies face down in the reeds with one arm reaching upriver. The plate on its back says U-4. It was trying to walk home to the Foundry.',
+    text: 'A delivery robot, rusted through, face down in the reeds with one arm reaching upriver. The plate on its back: U-4.',
   },
   'recall-notice': {
     title: 'A terminal, still lit',
+    screen: true,
     text: 'RECALL NOTICE. All delivery robots must return to the Foundry. Missing: U-7. Last seen at the river crossing, the night of the flood.',
   },
   'stock-tag': {
@@ -444,16 +451,19 @@ const READINGS: Record<string, { title: string; text: string }> = {
   },
   'charging-station': {
     title: 'A charging station',
-    text: 'Just your size. The label says U-7. The readout says it has been kept warm for 1,096 days.',
+    screen: true,
+    text: 'CHARGING STATION. UNIT: U-7. KEPT WARM: 1,096 DAYS.',
   },
   crate: {
-    title: 'A crate, stamped HOLD FOR U-7',
-    text: 'You break the lock and lift the lid. The foreman climbs out, stiff, and looks at you.',
+    title: 'A crate',
+    text: 'HOLD FOR U-7.',
   },
-  bell: {
-    title: 'The chapel bell',
-    text: 'DONG… … DONG… … DONG…',
-  },
+};
+
+/** What the salvager thinks once they've read something, the first time. */
+export const AFTER_READING: Partial<Record<string, string>> = {
+  'u-4': 'It was trying to walk home to the Foundry.',
+  'charging-station': 'It’s just my size.',
 };
 
 /** Every readable id the game words. */
@@ -461,8 +471,8 @@ export const READABLE_IDS = [...Object.keys(READINGS), 'switch', 'back-door-pane
 
 /** What a machine with a scanner says on looking the salvager over. */
 export const MACHINE_SCANS = 'SCANNING… ONE OF OURS';
-/** When a fight starts: what the Foundry's speakers say, and what the salvager sees anywhere. */
-export const ALARM = { foundry: 'LINE BREACH ALERT.', turns: 'Every machine around turns toward you.' };
+/** What the Foundry's speakers say when a fight starts on one of its floors. */
+export const ALARM = 'LINE BREACH ALERT.';
 
-export const levelUp = (level: number) => `Level ${level}. Patched up, and hitting harder.`;
-export const scrapDropped = (amount: number) => `You went down and dropped ${amount} scrap. You’re back on your feet.`;
+export const levelUp = (level: number) => `Level ${level}`;
+export const scrapDropped = (amount: number) => `I went down, and lost ${amount} scrap getting back up.`;

@@ -117,6 +117,8 @@ export class WorldView {
     renderer.spatter.clear((tx, ty) => !walls(tx, ty));
     renderer.follow(state.hero.x, state.hero.y, 0, true);
     renderer.lightHero(state.hero.x, state.hero.y);
+    // Drawn afresh, the level shows everything until it's told again what's been found.
+    this.exploredLevel = '';
   }
 
   react(events: SimEvent[]): void {

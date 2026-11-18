@@ -21,7 +21,7 @@ const WINDOW_LIGHT = { out: 0.6, radius: 1.3, intensity: 0.45 };
  */
 export function kitBuilding(
   s: Structure, kit: BuildingKit, models: ModelLibrary,
-): { group: THREE.Group; lights: LevelLight[] } | null {
+): { group: THREE.Group; lights: LevelLight[]; windows: StoreyWindows[] } | null {
   const wall = models.get(kit.wall[0]!);
   if (!wall) return null;
   const group = new THREE.Group();
@@ -37,6 +37,8 @@ export function kitBuilding(
   const layout = buildingLayout(s, kit.span, kit.roofProps?.length ?? 0);
 
   const placed = new Map<ModelTemplate, THREE.Matrix4[]>();
+  // Dark windows are kept apart storey by storey, so each storey can be lit on its own.
+  const darkWindows = new Map<number, THREE.Matrix4[]>();
   const place = (template: ModelTemplate | undefined, matrix: THREE.Matrix4) => {
     if (!template) return;
     let list = placed.get(template);
@@ -48,7 +50,12 @@ export function kitBuilding(
     if (slot.part === 'door') continue;
     const variant = Math.floor(hash2(slot.x * 2, slot.y * 2 + slot.storey * 31, 7) * kit.wall.length);
     const piece = slot.part === 'window' && windowPiece ? windowPiece : models.get(kit.wall[variant]!) ?? wall;
-    place(piece, along(slot, slot.storey * storeyHeight, kit.span).multiply(panelFit(piece, kit.span)));
+    const matrix = along(slot, slot.storey * storeyHeight, kit.span).multiply(panelFit(piece, kit.span));
+    if (piece === windowPiece && kit.glass?.dark) {
+      const storey = darkWindows.get(slot.storey) ?? [];
+      darkWindows.set(slot.storey, storey);
+      storey.push(matrix);
+    } else place(piece, matrix);
   }
   if (top) {
     for (const slot of layout.bands) place(top, along(slot, (slot.storey + 1) * storeyHeight, kit.span).multiply(panelFit(top, kit.span)));
@@ -69,6 +76,13 @@ export function kitBuilding(
   for (const [template, matrices] of placed) {
     const meshes = painted(instancedModel(template, new THREE.Matrix4(), matrices));
     if (kit.glass && template === windowPiece) for (const mesh of meshes) lightGlass(mesh, kit.glass.material, kit.glass.colour);
+    add(meshes);
+  }
+  const windows: StoreyWindows[] = [];
+  for (const [storey, matrices] of [...darkWindows].sort(([a], [b]) => a - b)) {
+    const meshes = painted(instancedModel(windowPiece!, new THREE.Matrix4(), matrices));
+    const glass = meshes.flatMap((mesh) => lightGlass(mesh, kit.glass!.material, 0x000000));
+    windows.push({ storey, glass, colour: new THREE.Color(kit.glass!.colour) });
     add(meshes);
   }
 
@@ -127,13 +141,20 @@ export function kitBuilding(
     sign.rotation.y = Math.atan2(doorSlot.facing.x, doorSlot.facing.y);
     group.add(sign);
   }
-  const lights: LevelLight[] = kit.glass && windowPiece
+  const lights: LevelLight[] = kit.glass && !kit.glass.dark && windowPiece
     ? layout.walls.filter((slot) => slot.part === 'window' && slot.storey === 0).map((slot, i) => ({
       x: slot.x + slot.facing.x * WINDOW_LIGHT.out, y: slot.y + slot.facing.y * WINDOW_LIGHT.out,
       radius: WINDOW_LIGHT.radius, intensity: WINDOW_LIGHT.intensity, colour: kit.glass!.light, flicker: 0.3, seed: i * 7 + s.x,
     }))
     : [];
-  return { group, lights };
+  return { group, lights, windows };
+}
+
+/** A storey's dark windows: their glass, and the colour it glows once lit. */
+export interface StoreyWindows {
+  storey: number;
+  glass: THREE.MeshBasicMaterial[];
+  colour: THREE.Color;
 }
 
 /** Gives a mesh its own copies of its materials, multiplied by `paint`. */
@@ -147,15 +168,18 @@ function tintMaterials(mesh: THREE.InstancedMesh, paint: THREE.Color): void {
   mesh.material = Array.isArray(mesh.material) ? mesh.material.map(tint) : tint(mesh.material);
 }
 
-/** Swaps a mesh's glass for a glowing copy, lit from inside whatever light falls on it. */
-function lightGlass(mesh: THREE.InstancedMesh, name: string, colour: number): void {
+/** Swaps a mesh's glass for a glowing copy, lit from inside whatever light falls on it; returns the copies. */
+function lightGlass(mesh: THREE.InstancedMesh, name: string, colour: number): THREE.MeshBasicMaterial[] {
+  const lit: THREE.MeshBasicMaterial[] = [];
   const swap = (m: THREE.Material) => {
     if (m.name !== name) return m;
-    const lit = new THREE.MeshBasicMaterial({ color: colour });
-    lit.userData.ownCopy = true;
-    return lit;
+    const glass = new THREE.MeshBasicMaterial({ color: colour });
+    glass.userData.ownCopy = true;
+    lit.push(glass);
+    return glass;
   };
   mesh.material = Array.isArray(mesh.material) ? mesh.material.map(swap) : swap(mesh.material);
+  return lit;
 }
 
 /** Stands a piece lying along z, facing +x and `span` tiles long, on a wall slot `height` tiles up, fitted to it. */

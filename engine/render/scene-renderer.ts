@@ -7,7 +7,7 @@ import { cornerArms } from './corner-arms';
 import { Effects } from './effects';
 import { Flames, type FlameSpot } from './flames';
 import { blendedGround } from './ground-blend';
-import { kitBuilding } from './kit-building';
+import { kitBuilding, type StoreyWindows } from './kit-building';
 import { ELEVATION } from './camera-angle';
 import { LightMap, type SurfaceFade } from './light-map';
 import { Mist } from './mist';
@@ -81,6 +81,8 @@ export class SceneRenderer {
   private levelGroup = new THREE.Group();
   private structures: THREE.Object3D[] = [];
   private levelLights: LevelLight[] = [];
+  /** Each building's windows that start dark, by its index in the level's structures. */
+  private readonly darkWindows = new Map<number, StoreyWindows[]>();
   /** Whether the level shown is alarmed, which lights its alarm lights. */
   private alarmed = false;
   private mood: Mood | null = null;
@@ -128,6 +130,12 @@ export class SceneRenderer {
     return (this.pixelsPerUnit * Math.SQRT2) / TILE_PIXELS;
   }
 
+  /** How close the camera is: 1 as in play, less for a wider shot, such as a moment the game shows from afar. */
+  setCloseness(closeness: number): void {
+    this.camera.zoom = closeness;
+    this.camera.updateProjectionMatrix();
+  }
+
   resize(width: number, height: number, pixelRatio: number): void {
     this.width = width;
     this.height = height;
@@ -147,6 +155,7 @@ export class SceneRenderer {
     this.levelGroup = new THREE.Group();
     this.scene.add(this.levelGroup);
     this.levelLights = [...level.lights];
+    this.darkWindows.clear();
     this.lightMap.setArea(level.map.width, level.map.height);
 
     const mood = this.look.mood(level.id);
@@ -192,6 +201,20 @@ export class SceneRenderer {
     // Flames give their own light, so they stay out of the light map.
     this.flames = new Flames(this.flameSpots(level));
     this.levelGroup.add(this.flames.group);
+  }
+
+  /**
+   * How lit a storey of a building's dark windows is, from 0 (dark) to 1, by the building's index in the level's
+   * structures and the storey from the ground up.
+   */
+  lightWindows(structureIndex: number, storey: number, amount: number): void {
+    const windows = this.darkWindows.get(structureIndex)?.find((w) => w.storey === storey);
+    if (windows) for (const glass of windows.glass) glass.color.copy(windows.colour).multiplyScalar(amount);
+  }
+
+  /** How many storeys of a building have dark windows. */
+  darkStoreys(structureIndex: number): number {
+    return this.darkWindows.get(structureIndex)?.length ?? 0;
   }
 
   /** Adds a light for the coming frame only, such as one carried by a fireball or an explosion's flash. */
@@ -813,6 +836,7 @@ export class SceneRenderer {
       if (built) {
         built.group.userData.structureIndex = index;
         this.levelLights.push(...built.lights);
+        this.darkWindows.set(index, built.windows);
         return built.group;
       }
       const group = new THREE.Group();
