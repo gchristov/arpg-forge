@@ -147,7 +147,7 @@ describe('Unrecalled scenarios', () => {
     }
     expect(done).toEqual([
       'foreman in rustbelt', TAG.raider, 'foreman in rustbelt', 'tinker in workshop', TAG.switchLoader, 'switch',
-      'trader in rustbelt', TAG.tagsLoader, 'access-terminal', 'charging-station', 'orderEngine', 'crate', 'foreman in control',
+      'trader in rustbelt', TAG.tagsLoader, 'access-terminal', 'charging-station', 'charging-station', 'orderEngine', 'crate', 'foreman in control',
       'order-terminal', 'foreman in control', 'foreman in rustbelt',
     ]);
     expect([state.levelId, state.quest]).toEqual(['upriver', STEP.ending]);
@@ -205,6 +205,9 @@ describe('Unrecalled scenarios', () => {
     expect(state.quest).toBe(STEP.tagsTaken);
     takeDoor(state, 'sorting');
     takeDoor(state, 'gallery');
+    expect(tryDoor('control')).toBeGreaterThan(0);
+    use(state, 'charging-station');
+    expect(state.quest).toBe(STEP.atCharger);
     expect(tryDoor('control')).toBeGreaterThan(0);
     use(state, 'charging-station');
     expect(state.quest).toBe(STEP.charged);

@@ -32,13 +32,14 @@ export const STEP = {
   toldByMags: 7,
   tagsTaken: 9,
   toldToCharge: 11,
-  charged: 12,
-  engineDown: 14,
-  crateOpened: 15,
-  orderAsked: 16,
-  orderClosed: 17,
-  freed: 18,
-  ending: 19,
+  atCharger: 12,
+  charged: 13,
+  engineDown: 15,
+  crateOpened: 16,
+  orderAsked: 17,
+  orderClosed: 18,
+  freed: 19,
+  ending: 20,
 } as const;
 
 /** Back in Rustbelt by the fire, where the salvager arrives with the foreman. */
@@ -61,6 +62,8 @@ export const QUEST: Array<QuestStep & { text: string }> = [
   { text: 'Make your way to the Control Gallery.', reachedBy: { type: 'defeat', tag: TAG.tagsLoader } },
   { text: 'Find your way to the Control Centre.', reachedBy: { type: 'enter', levelId: 'gallery' } },
   { text: 'Find a way to get authorised.', reachedBy: { type: 'use', id: 'access-terminal' }, inOrder: true },
+  // Using the station shows its screen; plugging in uses it again, which authorises U-7.
+  { text: 'Plug in at the charging station.', reachedBy: { type: 'use', id: 'charging-station' } },
   { text: 'Go down to the Control Centre and free the foreman.', reachedBy: { type: 'use', id: 'charging-station' } },
   { text: 'Beat the Order Engine.', reachedBy: { type: 'enter', levelId: 'control' } },
   // The machines stop where they stand and wait for orders.

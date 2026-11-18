@@ -168,13 +168,16 @@ function showReading(id: string, events: SimEvent[]): void {
     options: [{ label: 'Close' }],
     medium: reading.screen ? 'screen' : 'written',
   };
-  if (reached.includes(STEP.charged)) {
-    // The EMP is the charge's gift, so it shows once the scene is over. The scene waits for the salvager's thought on
-    // coming near, which a page opening at once would put away.
+  if (reached.includes(STEP.atCharger)) {
+    // The EMP is the charge's gift, so it shows once the scene is over. The screen waits for the salvager's thought on
+    // coming near, which a page opening at once would put away. Plugging in uses the station again, which authorises
+    // U-7 and opens the door down.
     hud.empWithheld = true;
-    const plugIn = [{ ...page, options: [{ label: 'Plug in' }] }, ...CHARGING];
-    void until(() => hud.quiet).then(() => playScene(plugIn, () => void chargeUp()));
-  } else if (reached.includes(STEP.orderClosed)) playScene(GIVING_THE_ORDER, () => say(STEP_LINES[STEP.orderClosed]));
+    const station = currentLevel(state).readables.findIndex((r) => r.id === id);
+    const plugIn = { ...page, options: [{ label: 'Plug in' }] };
+    void until(() => hud.quiet).then(() => playScene([plugIn], () => game.send({ type: 'read', index: station })));
+  } else if (reached.includes(STEP.charged)) playScene(CHARGING, () => void chargeUp());
+  else if (reached.includes(STEP.orderClosed)) playScene(GIVING_THE_ORDER, () => say(STEP_LINES[STEP.orderClosed]));
   else present(page);
   const thought = AFTER_READING[id];
   if (thought && !thoughtsHad.has(id)) say([{ text: thought }]);
