@@ -286,14 +286,14 @@ describe('ActorFigure weapon', () => {
 });
 
 describe('ActorFigure parts with looks of their own', () => {
-  /** A figure of one box in `material`, with an optional wireframe look. */
-  function partFigure(material: THREE.Material, wireframe?: { material: string; colour: number; opacity: number }): ActorFigure {
+  /** A figure of one box in `material`, dressed by the game if `dress` is given. */
+  function partFigure(material: THREE.Material, dress?: NonNullable<ActorLook['model']>['dress']): ActorFigure {
     const scene = new THREE.Group();
     scene.add(new THREE.Mesh(new THREE.BoxGeometry(), material));
     const template: ModelTemplate = { scene, animations: [new THREE.AnimationClip('Idle', 1, [])], height: 1 };
     const library = { get: () => template, instantiate: () => scene.clone() } as unknown as ModelLibrary;
     const look: ActorLook = {
-      colour: 0, height: 1, radius: 0.3, model: { name: 'm', animations: { idle: 'Idle' }, ...(wireframe ? { wireframe } : {}) },
+      colour: 0, height: 1, radius: 0.3, model: { name: 'm', animations: { idle: 'Idle' }, ...(dress ? { dress } : {}) },
     };
     return new ActorFigure(look, library);
   }
@@ -325,19 +325,14 @@ describe('ActorFigure parts with looks of their own', () => {
     expect(core.emissive.equals(glow)).toBe(true);
   });
 
-  it('draws the edges of the named part as lines over it, fading with the actor', () => {
-    const shellMaterial = new THREE.MeshStandardMaterial();
-    shellMaterial.name = 'Shell';
-    const f = partFigure(shellMaterial, { material: 'Shell', colour: 0xd8dee6, opacity: 0.45 });
-    const [shell, lines] = meshesOf(f);
-    expect(lines!.geometry).toBe(shell!.geometry);
-    const wire = lines!.material as THREE.MeshBasicMaterial;
-    expect(wire.wireframe).toBe(true);
+  it("flashes and fades the game's own pieces with the actor", () => {
+    const piece = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.4 });
+    const f = partFigure(new THREE.MeshStandardMaterial(), (model, keep) => {
+      keep(piece);
+      model.add(new THREE.Mesh(new THREE.BoxGeometry(), piece));
+    });
+    expect(meshesOf(f)).toHaveLength(2);
     f.setLookOf(0, 0.5);
-    expect(wire.opacity).toBeCloseTo(0.225);
-  });
-
-  it('draws no lines when no part has the named material', () => {
-    expect(meshesOf(partFigure(new THREE.MeshStandardMaterial(), { material: 'Shell', colour: 0, opacity: 1 }))).toHaveLength(1);
+    expect(piece.opacity).toBeCloseTo(0.2);
   });
 });

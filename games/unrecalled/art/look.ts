@@ -4,6 +4,7 @@ import type { ActorLook, BuildingKit, Look, Mood, PropLook, StructureLook } from
 import { Ground, Prop } from '../content/tiles';
 import { surroundingsOf } from './surroundings';
 import { ALARM_MARK } from '../extensions/calm-machines';
+import { meshLines } from '../extensions/mesh-lines';
 
 /** Unrecalled's look: Quaternius people and machines, cold workshop light against furnace glow. */
 
@@ -169,7 +170,7 @@ const ACTORS: Record<string, ActorLook> = {
     model: {
       name: 'hero',
       // A fine mesh over U-7's silver shell, drawn from a copy of it raised off its surface (the model's Mesh).
-      wireframe: { material: 'Mesh', colour: 0xeef3f8, opacity: 0.5 },
+      dress: meshLines({ material: 'Mesh', colour: 0xeef3f8, opacity: 0.5 }),
       animations: { idle: 'Idle', move: 'Run', attack: 'Punch', cast: 'Shoot_OneHanded', hit: 'RecieveHit', death: 'Death' },
       armed: {
         // At rest the chainsaw hangs at U-7's side; it's held out ahead in both hands while cutting, and

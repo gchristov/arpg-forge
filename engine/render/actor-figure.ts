@@ -107,7 +107,7 @@ export class ActorFigure {
     });
     this.setBase('idle');
     this.addSeenThrough();
-    if (look.model.wireframe) this.addWireframe(look.model.wireframe);
+    look.model.dress?.(model, (material) => this.keep(material));
   }
 
   /**
@@ -330,30 +330,6 @@ export class ActorFigure {
       transparent: material.transparent,
       emissive: material.emissive ? material.emissive.clone() : null,
     });
-  }
-
-  /** Gives each mesh drawn in the named material a twin that draws its edges as lines, sharing its skeleton. */
-  private addWireframe({ material: name, colour, opacity }: { material: string; colour: number; opacity: number }): void {
-    const lines = new THREE.MeshBasicMaterial({ color: colour, wireframe: true, transparent: true, opacity, depthWrite: false });
-    const meshes: THREE.Mesh[] = [];
-    this.root.traverse((o) => {
-      if (o instanceof THREE.Mesh && !Array.isArray(o.material) && (o.material as THREE.Material).name === name) meshes.push(o);
-    });
-    if (meshes.length === 0) return;
-    this.keep(lines);
-    for (const mesh of meshes) {
-      let twin: THREE.Mesh;
-      if (mesh instanceof THREE.SkinnedMesh) {
-        const skinned = new THREE.SkinnedMesh(mesh.geometry, lines);
-        skinned.bind(mesh.skeleton, mesh.bindMatrix);
-        twin = skinned;
-      } else twin = new THREE.Mesh(mesh.geometry, lines);
-      twin.position.copy(mesh.position);
-      twin.quaternion.copy(mesh.quaternion);
-      twin.scale.copy(mesh.scale);
-      twin.frustumCulled = false;
-      mesh.parent?.add(twin);
-    }
   }
 
   private buildCapsule(): void {
