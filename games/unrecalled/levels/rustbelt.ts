@@ -158,7 +158,7 @@ export function buildRustbelt(): LevelContent {
   room.npcs.push({ ...foreman, untilStep: 'powerOn' }, { ...foreman, fromStep: 'freed' });
   room.npcs.push({ kind: 'trader', name: 'Mags', x: 19.5, y: 15.5, fromStep: 'freed' });
   room.npcs.push({ kind: 'tinker', name: 'Pell', x: 25.5, y: 15.5, fromStep: 'freed' });
-  room.spawns.push({ kind: 'loader', x: 31.5, y: 13.5, tag: TAG.raider, strength: 0.35, quiet: true });
+  room.spawns.push({ kind: 'loader', x: 31.5, y: 13.5, tag: TAG.raider, strength: 0.35 });
   for (const [x, y] of [[17, 10], [26, 9], [27, 15], [16, 16], [29, 11], [14, 9], [30, 16]] as const) {
     setProp(map, x, y, Prop.Containers, true);
   }

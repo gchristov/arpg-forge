@@ -11,8 +11,10 @@ export interface LevelLight {
   /** How strongly it flickers, 0 for steady. */
   flicker: number;
   seed: number;
-  /** Dark until the level is alarmed, then pulsing like a rotating beacon. */
-  alarm?: boolean;
+  /** Dark unless the level's memory has this mark set, such as by a game's alarm. */
+  onlyWhen?: string;
+  /** Pulses like a rotating beacon. */
+  pulse?: boolean;
 }
 
 /**
@@ -66,6 +68,6 @@ export interface Level {
   portals: Portal[];
   lights: LevelLight[];
   structures: Structure[];
-  /** Levels in one building share its alarm: a fight on one floor puts every floor on alert. */
+  /** The building it's a floor of, by name, for what a building's floors share, such as a game's alarm. */
   building?: string;
 }

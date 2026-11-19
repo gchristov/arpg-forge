@@ -26,7 +26,6 @@ export const summon: EnemyAbility<SummonSettings> = {
       if (isBlocked(level.level.map, x, y, body.radius)) continue;
       const s = makeEnemy(state, settings.kind, x, y, level.enemyStrength);
       s.mode = 'chase';
-      s.provoked = true;
       s.homeX = enemy.homeX;
       s.homeY = enemy.homeY + 2;
       level.enemies.push(s);

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 /** At most this many machines scan the hero at once. */
-const POOL = 6;
+export const POOL = 6;
 /** The flat slice of light round the body is this many times the body's radius. */
 const SLICE_SPREAD = 1.8;
 /** The beam fades in over this share of a scan, and out over this share at its end, rather than switching on and off. */
@@ -34,7 +34,7 @@ export class ScanBeams {
   private readonly beams: Beam[] = [];
   private readonly target = new THREE.Vector3();
 
-  constructor(scene: THREE.Scene, colour: number) {
+  constructor(scene: { add(object: THREE.Object3D): void }, colour: number) {
     // Open at both ends, its tip at the origin and its base one tile along z, so it can be aimed with lookAt.
     const coneGeometry = new THREE.CylinderGeometry(0.02, 1, 1, 24, 1, true).translate(0, -0.5, 0).rotateX(-Math.PI / 2);
     const plane = new THREE.PlaneGeometry(2, 2).rotateX(-Math.PI / 2);
@@ -42,7 +42,8 @@ export class ScanBeams {
       const cone = new THREE.Mesh(coneGeometry, material(CONE_VERTEX, CONE_FRAGMENT, colour, THREE.DoubleSide));
       const slice = new THREE.Mesh(plane, material(SLICE_VERTEX, SLICE_FRAGMENT, colour, THREE.DoubleSide));
       cone.visible = slice.visible = false;
-      scene.add(cone, slice);
+      scene.add(cone);
+      scene.add(slice);
       this.beams.push({ cone, slice });
     }
   }

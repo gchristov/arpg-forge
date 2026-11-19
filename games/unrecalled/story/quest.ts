@@ -40,7 +40,7 @@ export const QUEST = [
   { id: 'arrival', text: '' },
   { id: 'raidAsked', text: 'Stop the loader at the crates.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.proveIt } },
   // Every machine answers to the Foundry: once U-7 has beaten one, all of them know.
-  { id: 'raidStopped', text: 'Talk to Odell.', reachedBy: { type: 'defeat', tag: TAG.raider }, alarmsEverything: true },
+  { id: 'raidStopped', text: 'Talk to Odell.', reachedBy: { type: 'defeat', tag: TAG.raider }, does: ['alarmEverything'] },
   { id: 'sentToPell', text: 'Talk to Pell in her workshop.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.seePell } },
   { id: 'sawAsked', text: 'Get Pell’s chainsaw back from the machine in the woods.', reachedBy: { type: 'reply', npcKind: 'tinker', id: REPLY.getSaw } },
   { id: 'sawFound', text: 'Take the chainsaw back to Pell.', reachedBy: { type: 'arm', weapon: 'chainsaw' } },
@@ -59,7 +59,7 @@ export const QUEST = [
   { id: 'charged', text: 'Go down to the Control Centre and free Odell.', reachedBy: { type: 'use', id: 'charging-station' } },
   { id: 'inControl', text: 'Deactivate the Order Engine.', reachedBy: { type: 'enter', levelId: 'control' } },
   // The machines stop where they stand and wait for orders.
-  { id: 'engineDown', text: 'Find Odell.', reachedBy: { type: 'kill', enemyKind: 'orderEngine' }, calmsEverything: true },
+  { id: 'engineDown', text: 'Find Odell.', reachedBy: { type: 'kill', enemyKind: 'orderEngine' }, does: ['calmEverything'] },
   { id: 'crateOpened', text: 'Talk to Odell.', reachedBy: { type: 'use', id: 'crate' } },
   { id: 'orderAsked', text: 'Cancel the order at the order terminal.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.giveOrder } },
   { id: 'orderClosed', text: 'Take Odell home.', reachedBy: { type: 'use', id: 'order-terminal' }, inOrder: true },

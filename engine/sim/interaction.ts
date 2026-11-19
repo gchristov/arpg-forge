@@ -3,6 +3,7 @@ import { planRoute } from '../world/pathfinding';
 import type { QuestTrigger, Service } from './content';
 import { dropItem } from './loot';
 import { currentLevel, type GameState, type Hero, type SimEvent } from './state';
+import { doStepActions } from './step-actions';
 import { castForStep } from './story-cast';
 import { travel } from './travel';
 import { arm } from './weapons';
@@ -148,34 +149,11 @@ export function advanceQuest(state: GameState, trigger: QuestTrigger, events: Si
     if (t && sameTrigger(t, trigger)) {
       state.quest = step;
       const reached = steps[step]!;
-      if (reached.calmsEverything) calmEverything(state);
-      if (reached.alarmsEverything) alarmEverything(state, events);
+      doStepActions(state, reached, events);
       castForStep(state);
       events.push({ type: 'QuestAdvanced', step });
       if (reached.takesHeroTo) travel(state, reached.takesHeroTo.levelId, reached.takesHeroTo.x, reached.takesHeroTo.y, events);
       return;
-    }
-  }
-}
-
-/** Sounds the alarm on every level that isn't already alarmed. */
-export function alarmEverything(state: GameState, events: SimEvent[] = []): void {
-  if (Object.values(state.levels).every((ls) => ls.alarmed)) return;
-  for (const ls of Object.values(state.levels)) ls.alarmed = true;
-  events.push({ type: 'LevelAlarmed', levelId: state.levelId });
-}
-
-/** Ends every level's alarm and sends calm enemies everywhere back to their work. */
-export function calmEverything(state: GameState): void {
-  for (const ls of Object.values(state.levels)) {
-    ls.alarmed = false;
-    for (const e of ls.enemies) {
-      if (e.dead || !state.rules.enemies[e.kind]?.calm) continue;
-      e.mode = 'idle';
-      e.provoked = false;
-      e.path = null;
-      e.windUp = -1;
-      e.scan = -1;
     }
   }
 }

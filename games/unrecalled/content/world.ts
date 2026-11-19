@@ -5,6 +5,7 @@ import { buildFloor, FLOOR_ORDER } from '../levels/foundry';
 import { buildInterior, INTERIOR_IDS } from '../levels/interiors';
 import { buildRustbelt } from '../levels/rustbelt';
 import { buildUpriver } from '../levels/upriver';
+import { CALM, STEP_ACTIONS } from '../extensions/calm-machines';
 import { ENEMIES } from './enemies';
 import { HERO } from './hero';
 import { NPCS } from '../story/people';
@@ -27,5 +28,7 @@ export function unrecalledContent(): GameContent {
     // Machines keep pace with U-7, so a level gained makes fights easier without making them trivial.
     enemyGrowthPerHeroLevel: 0.05,
     watch: watchFor(RULES),
+    abilities: { calm: CALM },
+    stepActions: STEP_ACTIONS,
   };
 }

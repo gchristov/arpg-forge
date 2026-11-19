@@ -170,6 +170,13 @@ describe('checkContent', () => {
     ]));
   });
 
+  it('finds a quest step doing a step action the game doesn\'t have', () => {
+    const c = rooms();
+    c.stepActions = { ring: () => {} };
+    c.quest = [{}, { id: 'rung', reachedBy: { type: 'enter', levelId: c.levels[0]!.level.id }, does: ['ring', 'sing'] }];
+    expect(checkContent(c)).toContain('quest step "rung" does "sing", which the game has no step action for');
+  });
+
   it('finds quest steps nothing can reach', () => {
     const c = rooms();
     c.quest = [

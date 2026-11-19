@@ -3,7 +3,7 @@ import { int, pick, range } from '../core/rng';
 import { isBlocked } from '../world/collision';
 import { hasLineOfSight } from '../world/line-of-sight';
 import { planRoute } from '../world/pathfinding';
-import { fightWithAbilities } from './abilities';
+import { afterEnemiesWithAbilities, fightWithAbilities, idleWithAbilities } from './abilities';
 import type { EnemyType } from './content';
 import { hurtHero } from './combat';
 import { enemyDamage } from './enemy-strength';
@@ -13,8 +13,6 @@ import { currentLevel, type Enemy, type GameState, type LevelState, type SimEven
 import { followPath, steerTowards } from './walking';
 
 const WANDER_RADIUS = 2.5;
-/** A calm enemy that recognises the hero stops and looks them over for this long. */
-const SCAN_SECONDS = 1.2;
 const WANDER_SPEED_SHARE = 0.35;
 /** Chasers give up beyond this multiple of their aggro range. */
 const GIVE_UP_AGGRO_MULTIPLE = 2.4;
@@ -41,25 +39,11 @@ const CORPSE_SECONDS = 1;
 export function updateEnemies(state: GameState, dt: number, events: SimEvent[]): void {
   const ls = currentLevel(state);
   for (const e of ls.enemies) updateEnemy(state, ls, e, dt, events);
-  soundAlarm(state, ls, events);
+  afterEnemiesWithAbilities(state, ls, events);
   for (let k = ls.enemies.length - 1; k >= 0; k--) {
     const e = ls.enemies[k]!;
     if (e.dead && e.deadFor > CORPSE_SECONDS) ls.enemies.splice(k, 1);
   }
-}
-
-/**
- * The alarm sounds once a provoked enemy first hunts the hero, and then stays on, on the level and on every other floor
- * of its building: from then on every calm enemy there comes for the hero as soon as it sees them. Only the story
- * calming everything puts it out.
- */
-function soundAlarm(state: GameState, ls: LevelState, events: SimEvent[]): void {
-  if (ls.alarmed || !ls.enemies.some((e) => !e.dead && !e.quiet && e.provoked && e.mode === 'chase')) return;
-  const { building } = ls.level;
-  for (const other of Object.values(state.levels)) {
-    if (other === ls || (building !== undefined && other.level.building === building)) other.alarmed = true;
-  }
-  events.push({ type: 'LevelAlarmed', levelId: state.levelId });
 }
 
 function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, events: SimEvent[]): void {
@@ -81,24 +65,11 @@ function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, eve
   e.moving = false;
 
   if (e.mode === 'idle') {
-    if (sees && type.calm && !e.provoked && !ls.alarmed) {
-      if (!e.recognised) {
-        events.push({ type: 'EnemyRecognised', enemyId: e.id, x: e.x, y: e.y });
-        e.scan = 0;
-      }
-      e.recognised = true;
-    } else if (sees) {
-      e.scan = -1;
+    const choice = idleWithAbilities(state, ls, e, type, d, sees, dt, events);
+    if (choice === 'busy') return;
+    if (sees && choice === 'asUsual') {
       e.mode = 'chase';
-      if (type.calm) e.provoked = true;
       events.push({ type: 'EnemyAlerted', enemyId: e.id, boss: Boolean(type.boss) });
-      return;
-    }
-    if (e.scan >= 0) {
-      e.scan += dt / SCAN_SECONDS;
-      if (e.scan >= 1) e.scan = -1;
-      e.facingX = lerp(e.facingX, (hero.x - e.x) / (d || 1), 0.2);
-      e.facingY = lerp(e.facingY, (hero.y - e.y) / (d || 1), 0.2);
       return;
     }
     e.wanderTimer -= dt;
@@ -144,7 +115,7 @@ function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, eve
   }
   const fx = (hero.x - e.x) / (d || 1);
   const fy = (hero.y - e.y) / (d || 1);
-  fightWithAbilities(state, ls, e, type, d, dt, events);
+  fightWithAbilities(state, ls, e, type, d, sees, dt, events);
 
   if (e.windUp >= 0) {
     e.facingX = lerp(e.facingX, fx, 0.2);

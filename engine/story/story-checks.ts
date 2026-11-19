@@ -9,6 +9,8 @@ export interface Story {
   rules: readonly Rule[];
   /** The names of the game's own actions, for `run`. */
   actions: readonly string[];
+  /** The names of the signals the game's extensions send, for `on: { signal }`. */
+  signals?: readonly string[];
   /** Things to read or use that show nothing of their own, because a rule does something else with them. */
   showsNothing?: readonly string[];
 }
@@ -73,6 +75,7 @@ export function checkStory(content: GameContent, story: Story): string[] {
     if ('enter' in on && !levels.has(on.enter)) problems.push(`${where}: no level is named "${on.enter}"`);
     if ('near' in on && !readables.has(on.near)) problems.push(`${where}: "${on.near}" isn't in any level`);
     if ('read' in on && !readables.has(on.read)) problems.push(`${where}: "${on.read}" isn't in any level`);
+    if ('signal' in on && !story.signals?.includes(on.signal)) problems.push(`${where}: the game sends no signal "${on.signal}"`);
     if ('bought' in on && !kinds.has(on.bought.from)) problems.push(`${where}: nobody of kind "${on.bought.from}" is in any level`);
   };
   const act = (where: string, a: Action) => {

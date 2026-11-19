@@ -83,8 +83,10 @@ export class SceneRenderer {
   private levelLights: LevelLight[] = [];
   /** Each building's windows that start dark, by its index in the level's structures. */
   private readonly darkWindows = new Map<number, StoreyWindows[]>();
-  /** Whether the level shown is alarmed, which lights its alarm lights. */
-  private alarmed = false;
+  /** What the shown level's extensions keep, whose marks switch on the lights waiting for them. */
+  private levelMemory: Readonly<Record<string, number>> = {};
+  /** Whether the air is the mood's `ambientWhen` colour. */
+  private ambientSwitched = false;
   private mood: Mood | null = null;
   private mist: Mist | null = null;
   private water: WaterSurface | null = null;
@@ -160,7 +162,8 @@ export class SceneRenderer {
 
     const mood = this.look.mood(level.id);
     this.mood = mood;
-    this.alarmed = false;
+    this.levelMemory = {};
+    this.ambientSwitched = false;
     this.scene.background = new THREE.Color(mood.background);
     this.ambient.color.set(mood.ambient);
     this.ambient.intensity = mood.ambientIntensity;
@@ -414,23 +417,30 @@ export class SceneRenderer {
     this.moon.target.position.copy(this.target);
   }
 
-  /** Lights the level's alarm lights and turns its air to the mood's alarm colour, or puts them out. */
-  setAlarmed(alarmed: boolean): void {
-    if (alarmed === this.alarmed || !this.mood) return;
-    this.alarmed = alarmed;
-    this.ambient.color.set(alarmed && this.mood.alarmAmbient !== undefined ? this.mood.alarmAmbient : this.mood.ambient);
+  /** Lights the level's lights whose mark is set in its memory, and turns its air to the mood's colour for its mark. */
+  showLevelMemory(memory: Readonly<Record<string, number>>): void {
+    this.levelMemory = memory;
+    const when = this.mood?.ambientWhen;
+    if (!when || Boolean(memory[when.mark]) === this.ambientSwitched) return;
+    this.ambientSwitched = !this.ambientSwitched;
+    this.ambient.color.set(this.ambientSwitched ? when.colour : this.mood!.ambient);
+  }
+
+  /** Adds something a game draws itself, such as its own effects, to the scene for good. */
+  add(object: THREE.Object3D): void {
+    this.scene.add(object);
   }
 
   /** Draws every level light, with its flicker, and this frame's extra glows into the light map. */
   private updateLightMap(seconds: number): void {
     this.lightMap.begin();
     for (const l of this.levelLights) {
-      if (l.alarm && !this.alarmed) continue;
+      if (l.onlyWhen !== undefined && !this.levelMemory[l.onlyWhen]) continue;
       const flicker = l.flicker
         ? 1 + Math.sin(seconds * 9 + l.seed) * 0.06 * l.flicker + Math.sin(seconds * 23 + l.seed * 3) * 0.04 * l.flicker
         : 1;
       // A beacon sweeps past about twice a second, bright when it faces the room and dim between.
-      const pulse = l.alarm ? 0.3 + 0.7 * Math.max(0, Math.sin(seconds * 12 + l.seed)) ** 2 : 1;
+      const pulse = l.pulse ? 0.3 + 0.7 * Math.max(0, Math.sin(seconds * 12 + l.seed)) ** 2 : 1;
       this.glowColour.set(this.look.lightColour(l.colour));
       this.lightMap.add(l.x, l.y, l.radius * GLOW_REACH * flicker, this.glowColour, l.intensity * GLOW_STRENGTH * pulse);
     }

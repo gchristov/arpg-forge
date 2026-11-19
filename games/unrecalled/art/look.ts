@@ -3,6 +3,7 @@ import { hash2, valueNoise } from '../../../engine/core/math';
 import type { ActorLook, BuildingKit, Look, Mood, PropLook, StructureLook } from '../../../engine/render/look';
 import { Ground, Prop } from '../content/tiles';
 import { surroundingsOf } from './surroundings';
+import { ALARM_MARK } from '../extensions/calm-machines';
 
 /** Unrecalled's look: Quaternius people and machines, cold workshop light against furnace glow. */
 
@@ -11,7 +12,7 @@ const hsl = (h: number, s: number, l: number): number => colour.setHSL(h / 360, 
 
 // Indoors, wall tops and the cables over them fade into the dark above head height.
 const foundry = (ambient: number, sky: number): Mood => ({
-  background: 0x050505, ambient, ambientIntensity: 0.5, alarmAmbient: 0x5a1c18, heroLightRadius: 4.6, heightFade: { from: 0.8, to: 2.0 },
+  background: 0x050505, ambient, ambientIntensity: 0.5, ambientWhen: { mark: ALARM_MARK, colour: 0x5a1c18 }, heroLightRadius: 4.6, heightFade: { from: 0.8, to: 2.0 },
   fill: { sky, ground: 0x201810, intensity: 0.55 },
 });
 
@@ -179,11 +180,10 @@ const ACTORS: Record<string, ActorLook> = {
     ...robot('crawler', 0.6, { idle: 'Idle', move: 'Run', attack: 'Attack', hit: 'Hit', death: 'TurnOff' }, 0.8),
     light: { colour: 0xffa040, radius: 0.9, intensity: 0.4 },
   },
-  loader: { ...robot('loader', 1.0, { idle: 'Idle', move: 'Walk', attack: 'Attack', hit: 'Hit', death: 'TurnOff' }, 1.3), scanner: { eyeHeight: 0.75 } },
+  loader: { ...robot('loader', 1.0, { idle: 'Idle', move: 'Walk', attack: 'Attack', hit: 'Hit', death: 'TurnOff' }, 1.3) },
   sentry: {
     ...robot('sentry', 0.75, { idle: 'Idle', attack: 'Attack', hit: 'Hit' }),
     hover: 0.8,
-    scanner: { eyeHeight: 1.15 },
     light: { colour: 0xff8a40, radius: 0.9, intensity: 0.2 },
   },
   foreman: { colour: 0x8a7a60, height: 1.25, radius: 0.26, model: { name: 'foreman', animations: { idle: 'Idle' } } },
@@ -191,7 +191,6 @@ const ACTORS: Record<string, ActorLook> = {
   tinker: { colour: 0x6a7a8a, height: 1.15, radius: 0.24, model: { name: 'tinker', animations: { idle: 'Idle' } } },
   orderEngine: {
     ...robot('order-engine', 2.1, { idle: 'Idle', move: 'Walk', attack: 'Punch', cast: 'Jump', hit: 'HitRecieve_1', death: 'Death' }, 2.0),
-    scanner: { eyeHeight: 1.8 },
   },
 };
 
@@ -204,12 +203,17 @@ export const MODEL_URLS: Record<string, string> = Object.fromEntries(
 
 const WEAPON_NAMES: Record<string, string> = { chainsaw: 'Chainsaw' };
 
+/** The machines that look U-7 over (`extensions/calm-machines.ts`): the height of the eye each one's beam comes from, in tiles. */
+export const SCANNER_EYES: Readonly<Record<string, number>> = { loader: 0.75, sentry: 1.15, orderEngine: 1.8 };
+/** The colour of their scanning beams. */
+export const SCAN_COLOUR = 0xff3a2a;
+
 export const unrecalledLook: Look = {
   effects: {
     skill: 0x8ae8ff, shot: 0xffd070, telegraph: 0xff7a3a, items: { gold: 0xd8c070, healingItem: 0x50d070, weapon: 0xe0782a },
     walkMarker: 0x9ad8e8, targetMarker: 0xff7a3a,
     guide: { arrow: 0xffb050, name: 0xd8e4e8 },
-    skillLight: 0x6ad8ff, telegraphLight: 0xff7a3a, bossLight: 0xff9a50, scan: 0xff3a2a, lightning: 0x5ac8ff,
+    skillLight: 0x6ad8ff, telegraphLight: 0xff7a3a, bossLight: 0xff9a50, lightning: 0x5ac8ff,
     smoke: 0x5a5e66,
     explosion: { flash: 0x8ae8ff },
     slam: { flash: 0xffa050, scorch: 0x201008 },

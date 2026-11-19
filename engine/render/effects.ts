@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { EnergyDomes } from './energy-domes';
 import { GoalArrow } from './goal-arrow';
 import { Lightning } from './lightning';
-import { ScanBeams, type ScanView } from './scan-beams';
 
 /** Heights above the ground, in tiles. */
 const PROJECTILE_HEIGHT = 0.52;
@@ -41,7 +40,6 @@ export interface EffectColours {
   telegraph: number;
   /** Item colours by kind, such as gold or a healing item. */
   items: Record<string, number>;
-  scan?: number;
   guide?: { arrow: number };
 }
 
@@ -89,7 +87,6 @@ export class Effects {
   private readonly itemsUsed = new Map<string, number>();
   private readonly decals: Decal[] = [];
   private readonly puffs: Puff[] = [];
-  private readonly scanBeams: ScanBeams;
 
   constructor(scene: THREE.Scene, colours: EffectColours) {
     const skillGeometry = new THREE.SphereGeometry(0.15, 12, 8);
@@ -118,7 +115,6 @@ export class Effects {
       for (let i = 0; i < POOL_SIZE; i++) pool.push(hidden(scene, new THREE.Mesh(itemGeometry, material)));
       this.items.set(kind, pool);
     }
-    this.scanBeams = new ScanBeams(scene, colours.scan ?? colours.skill);
     this.lightning = new Lightning(scene);
     this.domes = new EnergyDomes(scene);
     this.goalArrow = colours.guide ? new GoalArrow(scene, colours.guide.arrow) : null;
@@ -174,10 +170,6 @@ export class Effects {
   }
 
   /** Warning circles darken as the moment they land gets closer. */
-  showScans(scans: readonly ScanView[], count: number): void {
-    this.scanBeams.show(scans, count);
-  }
-
   showTelegraphs(telegraphs: readonly TelegraphView[]): void {
     for (let i = 0; i < POOL_SIZE; i++) {
       const circle = this.circles[i]!;

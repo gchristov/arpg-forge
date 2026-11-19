@@ -1,4 +1,5 @@
 import type { EnemyAbility } from './abilities';
+import type { StepAction } from './step-actions';
 import type { Level } from '../world/level';
 
 export interface SpawnPoint {
@@ -17,8 +18,6 @@ export interface EnemySpawn extends SpawnPoint {
   fromStep?: string;
   /** One of the hero's weapons, dropped on the ground when it's defeated, for the hero to pick up. */
   carries?: string;
-  /** Fighting it doesn't sound the level's alarm, so the calm enemies around it keep taking the hero for one of their own. */
-  quiet?: boolean;
 }
 
 /**
@@ -126,10 +125,8 @@ export interface QuestStep {
   /** Its name, for the content that refers to it; only steps something refers to need one. */
   id?: string;
   reachedBy?: QuestTrigger;
-  /** Reaching this step ends every level's alarm, and calm enemies everywhere go back to their work. */
-  calmsEverything?: boolean;
-  /** Reaching this step sounds the alarm on every level: from then on every calm enemy comes for the hero on sight. */
-  alarmsEverything?: boolean;
+  /** The game's own step actions done on reaching it, by name, such as sounding an alarm everywhere. */
+  does?: readonly string[];
   /**
    * Reached only from the step just before it, never skipped to, for a trigger the hero can meet early, such as
    * entering the town they keep coming back to.
@@ -160,11 +157,6 @@ export interface EnemyType {
   radius: number;
   /** Bosses aren't knocked back and never give up a chase for being far from home. */
   boss?: boolean;
-  /**
-   * Starts calm, going about its work: it ignores the hero, however close, until it's hit or one of its kind is hit
-   * nearby, in its sight. That sounds the level's alarm, and from then on it comes for the hero as soon as it sees them.
-   */
-  calm?: boolean;
   /** How many spawn together at a camp. */
   groupSize: number;
   /**
@@ -281,6 +273,8 @@ export interface GameContent {
   watch?: Watch[];
   /** The game's own enemy abilities, by the names its enemies list them under. */
   abilities?: Record<string, EnemyAbility<never>>;
+  /** The game's own step actions, by the names its quest steps list them under in `does`. */
+  stepActions?: Record<string, StepAction>;
 }
 
 /** A thing to read or use, by id, that emits `Approached` when the hero comes within `within` tiles of it. */

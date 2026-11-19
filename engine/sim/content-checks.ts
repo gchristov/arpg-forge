@@ -1,4 +1,5 @@
 import { abilityNamed, useAbilities } from './abilities';
+import { useStepActions } from './step-actions';
 import type { Vec2 } from '../core/math';
 import type { Level } from '../world/level';
 import { inBounds, tileIndex, type TileMap } from '../world/tile-map';
@@ -11,6 +12,7 @@ import type { GameContent, LevelContent } from './content';
  */
 export function checkContent(content: GameContent): string[] {
   useAbilities(content.abilities);
+  useStepActions(content.stepActions);
   const problems: string[] = [];
   const levels = new Map(content.levels.map((l) => [l.level.id, l]));
   if (levels.size !== content.levels.length) problems.push('two levels share an id');
@@ -24,6 +26,11 @@ export function checkContent(content: GameContent): string[] {
   for (const skill of content.hero.skills) {
     if (skill.fromStep !== undefined && !stepIds.has(skill.fromStep)) {
       problems.push(`skill "${skill.id}" names quest step "${skill.fromStep}", which doesn't exist`);
+    }
+  }
+  for (const step of content.quest) {
+    for (const name of step.does ?? []) {
+      if (!content.stepActions?.[name]) problems.push(`quest step "${step.id ?? content.quest.indexOf(step)}" does "${name}", which the game has no step action for`);
     }
   }
   const skillIds = content.hero.skills.map((s) => s.id);

@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { QuestStep } from './content';
 import { jumpToStep, removeEnemies } from './shortcuts';
+import { useStepActions } from './step-actions';
 import { arena, OPEN_ROOM } from './testing';
 
 function withQuest(quest: QuestStep[]) {
-  const state = arena(OPEN_ROOM, { x: 2, y: 2 }, [{ kind: 'worker', x: 8, y: 8 }]);
+  const state = arena(OPEN_ROOM, { x: 2, y: 2 }, [{ kind: 'brute', x: 8, y: 8 }]);
   state.rules.quest = quest;
   return state;
 }
@@ -33,7 +34,7 @@ describe('shortcuts', () => {
   });
 
   it('takes away the enemy whose kill reached a step on the way', () => {
-    const state = withQuest([{}, { reachedBy: { type: 'kill', enemyKind: 'worker' } }]);
+    const state = withQuest([{}, { reachedBy: { type: 'kill', enemyKind: 'brute' } }]);
     jumpToStep(state, 1);
     expect(state.levels.arena!.enemies).toEqual([]);
   });
@@ -44,11 +45,12 @@ describe('shortcuts', () => {
     expect(state.quest).toBe(1);
   });
 
-  it('calms everything when a step on the way did', () => {
-    const state = withQuest([{}, { reachedBy: { type: 'kill', enemyKind: 'lord' }, calmsEverything: true }]);
-    for (const ls of Object.values(state.levels)) ls.alarmed = true;
-    jumpToStep(state, 1);
-    expect(Object.values(state.levels).some((ls) => ls.alarmed)).toBe(false);
+  it('does what each step on the way does', () => {
+    const done: string[] = [];
+    useStepActions({ ring: () => void done.push('ring') });
+    const state = withQuest([{}, { reachedBy: { type: 'kill', enemyKind: 'lord' }, does: ['ring'] }, { reachedBy: { type: 'talk', npcKind: 'smith' } }]);
+    jumpToStep(state, 2);
+    expect(done).toEqual(['ring']);
   });
 
   it('takes every enemy out and stops camps refilling', () => {
