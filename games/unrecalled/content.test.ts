@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { checkContent } from '../../engine/sim/content-checks';
+import { storyScript } from '../../engine/story/script';
+import { checkStory } from '../../engine/story/story-checks';
+import { GAME_ACTIONS } from './extensions/actions';
 import { MODEL_URLS, unrecalledLook } from './art/look';
 import { PEOPLE } from './story/people';
 import { QUEST, STEP } from './story/quest';
+import { RULES } from './story/rules';
 import { THINGS } from './story/things';
 import { unrecalledContent } from './content/world';
 
@@ -13,16 +17,20 @@ describe('Unrecalled content', () => {
     expect(checkContent(content)).toEqual([]);
   });
 
-  it('words every quest step, everything there is to read, and everyone there is to talk to', () => {
-    // Steps played as scenes show no objective.
-    const scenes: number[] = [0, STEP.freed, STEP.ending];
+  // Odell's crate shows nothing: opening it lets him out, and he speaks.
+  const story = { people: PEOPLE, things: THINGS, rules: RULES, actions: GAME_ACTIONS, showsNothing: ['crate'] };
+
+  it('passes the story checks: every name it uses exists, every reply waited for is offered, every entry can be said', () => {
+    expect(checkStory(content, story)).toEqual([]);
+  });
+
+  it('keeps the whole story written out in story/SCRIPT.md, so a change to it shows up there (update it with -u)', async () => {
+    await expect(storyScript('Unrecalled', QUEST, story)).toMatchFileSnapshot('./story/SCRIPT.md');
+  });
+
+  it('gives every quest step an objective, but the ones played as scenes', () => {
+    const scenes: number[] = [STEP.arrival, STEP.freed, STEP.ending];
     expect(QUEST.every((step, at) => step.text || scenes.includes(at))).toBe(true);
-    const kinds = content.levels.flatMap((l) => l.npcs.map((n) => n.kind));
-    expect(kinds.filter((kind) => !PEOPLE[kind])).toEqual([]);
-    // Odell's crate shows nothing: opening it lets him out, and he speaks.
-    const ids = content.levels.flatMap((l) => (l.readables ?? []).map((r) => r.id)).filter((id) => id !== 'crate');
-    expect(ids.filter((id) => !THINGS[id])).toEqual([]);
-    expect(Object.keys(THINGS).filter((id) => !ids.includes(id))).toEqual([]);
   });
 
   it('puts a panel beside every door the story keeps locked, saying what opens it', () => {
