@@ -3,6 +3,7 @@ import { buildInterior, INTERIOR_IDS } from '../levels/interiors';
 import { generateVillage } from '../levels/village';
 import { ENEMIES } from './enemies';
 import { HERO } from './hero';
+import { ABILITIES } from '../extensions/abilities';
 import { NPCS } from '../story/people';
 import { QUEST } from '../story/quest';
 
@@ -23,6 +24,7 @@ export function ashenHollowContent(): GameContent {
     enemies: ENEMIES,
     npcRadius: 0.32,
     npcs: NPCS,
+    abilities: ABILITIES,
     quest: QUEST.map(({ text: _text, ...step }) => step),
   };
 }

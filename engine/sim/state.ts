@@ -86,8 +86,8 @@ export interface Enemy extends Actor {
   repathTimer: number;
   dead: boolean;
   deadFor: number;
-  slamTimer: number;
-  summoned: boolean;
+  /** What its abilities keep between steps, by name. */
+  memory: Record<string, number>;
   /** Whether a calm enemy has seen the hero yet, so it recognises them only once. */
   recognised: boolean;
   /** Whether a calm enemy has been hit, called by one hit nearby or seen the hero during an alarm: it no longer takes the hero for one of its own. */

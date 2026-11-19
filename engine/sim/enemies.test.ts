@@ -1,3 +1,4 @@
+import { type AbilityTurn, useAbilities } from './abilities';
 import { describe, expect, it } from 'vitest';
 import { dist } from '../core/math';
 import { currentLevel } from './state';
@@ -61,50 +62,27 @@ describe('enemy behaviour', () => {
   });
 });
 
-describe('boss abilities', () => {
-  it('slams a circle under the hero that hurts if they stay in it', () => {
-    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'lord', x: 10.5, y: 5.5 }]);
-    const lord = enemiesOf(state)[0]!;
-    lord.slamTimer = 0;
-    state.hero.hp = state.hero.maxHp = 1000;
-    expect(ofType(run(state, 0.1), 'SlamWarned')).toHaveLength(1);
-    const events = run(state, 1.0);
-    const landed = events.findIndex((e) => e.type === 'SlamLanded');
-    expect(landed).toBeGreaterThanOrEqual(0);
-    const hurt = events[landed + 1];
-    expect(hurt?.type).toBe('HeroHurt');
-    if (hurt?.type === 'HeroHurt') expect(hurt.amount).toBeGreaterThanOrEqual(16), expect(hurt.amount).toBeLessThanOrEqual(24);
+describe('abilities', () => {
+  it('run each step an enemy that lists them fights the hero, with its settings and a memory of its own', () => {
+    const turns: Array<{ setting: number; turn: number }> = [];
+    useAbilities({
+      count: {
+        fight: ({ settings, memory }: AbilityTurn<{ setting: number }>) => {
+          memory.turn = (memory.turn ?? 0) + 1;
+          turns.push({ setting: settings.setting, turn: memory.turn });
+        },
+      },
+    });
+    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'lord', x: 7.5, y: 5.5 }]);
+    state.rules.enemies.lord = { ...state.rules.enemies.lord!, abilities: { count: { setting: 7 } } };
+    run(state, 3 / 60);
+    expect(turns.length).toBeGreaterThan(0);
+    expect(turns[0]).toEqual({ setting: 7, turn: 1 });
+    expect(turns.at(-1)!.turn).toBe(turns.length);
   });
+});
 
-  it('dodging the circle avoids the slam', () => {
-    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'lord', x: 10.5, y: 5.5 }]);
-    const lord = enemiesOf(state)[0]!;
-    lord.slamTimer = 0;
-    lord.mode = 'chase';
-    run(state, 1 / 60);
-    expect(state.telegraphs).toHaveLength(1);
-    state.hero.x = state.hero.prevX = 5.5;
-    state.hero.y = state.hero.prevY = 12.5;
-    const events = run(state, 1.1);
-    expect(ofType(events, 'SlamLanded')).toHaveLength(1);
-    expect(ofType(events, 'HeroHurt').filter((h) => h.amount >= 16)).toHaveLength(0);
-  });
-
-  it('summons three chasing helpers once, below half health, already provoked so they never take the hero for one of their own', () => {
-    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'lord', x: 10.5, y: 5.5 }]);
-    const lord = enemiesOf(state)[0]!;
-    lord.mode = 'chase';
-    lord.hp = 150;
-    const events = run(state, 0.5);
-    const summoned = ofType(events, 'Summoned');
-    expect(summoned).toHaveLength(1);
-    expect(summoned[0]!.summonedIds).toHaveLength(3);
-    const helpers = enemiesOf(state).filter((e) => e.kind === 'brute');
-    expect(helpers.every((h) => h.mode === 'chase' && h.provoked)).toBe(true);
-    run(state, 0.5);
-    expect(enemiesOf(state).filter((e) => e.kind === 'brute')).toHaveLength(3);
-  });
-
+describe('bosses', () => {
   it('is not knocked back by hits', () => {
     const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'lord', x: 6.5, y: 5.5 }]);
     const lord = enemiesOf(state)[0]!;

@@ -1,3 +1,4 @@
+import type { EnemyAbility } from './abilities';
 import { describe, expect, it } from 'vitest';
 import type { Level } from '../world/level';
 import { mapFromRows } from '../world/testing';
@@ -155,6 +156,17 @@ describe('checkContent', () => {
       'home: the portal to "cellar" names quest step "opened", which doesn\'t exist',
       'quest step "leverPulled" needs using "lever", which isn\'t in any level',
       'quest step 2 needs the "saw" in hand, which nothing gives',
+    ]));
+  });
+
+  it('finds an enemy with an ability no game has made available, and one bringing in an unknown kind', () => {
+    const c = rooms();
+    const call = { fight: () => {}, bringsIn: (settings: { kind: string }) => [settings.kind] };
+    c.abilities = { call: call as EnemyAbility<never> };
+    c.enemies = { ...c.enemies, brute: { ...c.enemies.brute!, abilities: { teleport: {}, call: { kind: 'ghost' } } } };
+    expect(checkContent(c)).toEqual(expect.arrayContaining([
+      'enemy "brute" has unknown ability "teleport"',
+      'enemy "brute"\'s call brings in unknown kind "ghost"',
     ]));
   });
 

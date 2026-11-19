@@ -1,3 +1,4 @@
+import type { EnemyAbility } from './abilities';
 import type { Level } from '../world/level';
 
 export interface SpawnPoint {
@@ -166,10 +167,11 @@ export interface EnemyType {
   calm?: boolean;
   /** How many spawn together at a camp. */
   groupSize: number;
-  /** Marks a circle under the hero that lands after a delay. */
-  slam?: { everySeconds: Range; reach: number; radius: number; delay: number; damage: Range };
-  /** Once, below a share of its health, calls others to its side. */
-  summon?: { belowHealthShare: number; kind: string; count: number; distance: number };
+  /**
+   * What it can do on top of chasing and attacking, by ability name, each with its settings: abilities a game defines
+   * in its extensions and hands over in its content's `abilities`.
+   */
+  abilities?: Record<string, unknown>;
   /** What it drops on death: gold, a chance of a healing item, and extra healing items for certain. */
   drops: { gold: Range; healingChance: number; extraHealingItems?: number };
 }
@@ -277,6 +279,8 @@ export interface GameContent {
   enemyGrowthPerHeroLevel?: number;
   /** Things to read or use whose approach the story listens for, and how near, in tiles, counts as approaching. */
   watch?: Watch[];
+  /** The game's own enemy abilities, by the names its enemies list them under. */
+  abilities?: Record<string, EnemyAbility<never>>;
 }
 
 /** A thing to read or use, by id, that emits `Approached` when the hero comes within `within` tiles of it. */
