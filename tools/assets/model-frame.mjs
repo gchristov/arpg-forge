@@ -108,11 +108,11 @@ export function addFrame(doc, { material: name, colour, thickness, skip = [], wi
 }
 
 /**
- * Hangs a glowing ball of `colour`, in a material called Core, in front of `bone`, `size` (a share of the bone's
- * length) across, inside a fainter `halo`, called Halo, of `halo.size` times the ball and `halo.opacity`. Paint
+ * Hangs a glowing ball of `colour`, in a material called Core, `out` of its own size in front of `bone`, `size` (a
+ * share of the bone's length) across, inside a fainter `halo`, called Halo, of `halo.size` times the ball and `halo.opacity`. Paint
  * either to make it glow brighter.
  */
-export function addCore(doc, { bone: boneName, colour, size, halo }) {
+export function addCore(doc, { bone: boneName, colour, size, halo, out = 0.9 }) {
   const bone = [...bonesOf(doc)].find((b) => b.getName() === boneName);
   if (!bone) throw new Error(`no bone ${boneName} for the core`);
   const child = bone.listChildren().find((c) => bonesOf(doc).has(c));
@@ -122,16 +122,17 @@ export function addCore(doc, { bone: boneName, colour, size, halo }) {
     if (opacity < 1) material.setAlphaMode('BLEND');
     return material;
   };
-  const core = doc.createNode('Core').setMesh(meshOf(doc, ball(radius, 8), glowing('Core', 1))).setTranslation([0, radius * 0.6, radius * 0.9]);
+  const core = doc.createNode('Core').setMesh(meshOf(doc, ball(radius, 8), glowing('Core', 1))).setTranslation([0, radius * 0.6, radius * out]);
   bone.addChild(core);
   if (halo) core.addChild(doc.createNode('Core.halo').setMesh(meshOf(doc, ball(radius * halo.size, 8), glowing('Halo', halo.opacity))));
 }
 
 /**
  * Fits a machine's brain into `bone` (a head): two metal lobes of `colour`, `size` of the bone's length across, a
- * `back` share of it behind the bone and `up` above it, studded with glowing nodes in a material called Synapse.
+ * `back` share of it behind the bone and `up` above it, studded with up to six glowing `nodes` of `nodeSize` (a share
+ * of the brain) in a material called Synapse.
  */
-export function addBrain(doc, { bone: boneName, colour, size, up = 0.5, back = 0.1 }) {
+export function addBrain(doc, { bone: boneName, colour, size, up = 0.5, back = 0.1, nodes = 6, nodeSize = 0.11 }) {
   const bone = [...bonesOf(doc)].find((b) => b.getName() === boneName);
   if (!bone) throw new Error(`no bone ${boneName} for the brain`);
   const child = bone.listChildren().find((c) => bonesOf(doc).has(c));
@@ -147,7 +148,7 @@ export function addBrain(doc, { bone: boneName, colour, size, up = 0.5, back = 0
   }
   // Nodes over the top and sides of the lobes, where they show through the skull.
   const spots = [[0.5, 0.75, 0.3], [-0.5, 0.75, 0.3], [0.85, 0.3, -0.3], [-0.85, 0.3, -0.3], [0.3, 0.85, -0.5], [-0.3, 0.85, -0.5]];
-  spots.forEach(([x, y, z], i) => {
-    brain.addChild(doc.createNode(`Synapse.${i}`).setMesh(meshOf(doc, ball(radius * 0.11, 4), synapse)).setTranslation([x * radius * 0.85, y * radius * 0.85, z * radius * 0.85]));
+  spots.slice(0, nodes).forEach(([x, y, z], i) => {
+    brain.addChild(doc.createNode(`Synapse.${i}`).setMesh(meshOf(doc, ball(radius * nodeSize, 4), synapse)).setTranslation([x * radius * 0.85, y * radius * 0.85, z * radius * 0.85]));
   });
 }

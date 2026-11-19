@@ -100,3 +100,54 @@ export function splitPart(doc, { material: name, into, bones, front = 0, below =
   }
   if (moved === 0) throw new Error(`no triangles of ${name} on ${bones.join(', ')} to split into ${into}`);
 }
+
+/**
+ * Adds a copy of every part drawn in `material`, in a new material called `into`, `lift` out from the part's
+ * surface: something to draw a mesh of lines over the part from, which the part itself doesn't hide. The copy is
+ * weighted to the same bones, so it bends with the part.
+ */
+export function addRaisedCopy(doc, { material: name, into, lift }) {
+  const source = doc.getRoot().listMaterials().find((m) => m.getName() === name);
+  if (!source) throw new Error(`no material ${name} to copy`);
+  const material = source.clone().setName(into);
+  let copied = 0;
+  for (const mesh of doc.getRoot().listMeshes()) {
+    for (const primitive of mesh.listPrimitives()) {
+      if (primitive.getMaterial() !== source) continue;
+      const position = primitive.getAttribute('POSITION');
+      const raised = raise(position, primitive.getIndices().getArray(), lift);
+      mesh.addPrimitive(primitive.clone().setMaterial(material)
+        .setAttribute('POSITION', doc.createAccessor().setType('VEC3').setArray(raised).setBuffer(position.getBuffer())));
+      copied++;
+    }
+  }
+  if (copied === 0) throw new Error(`no part in ${name} to copy`);
+}
+
+/**
+ * The points of `position`, each moved `lift` along the mean normal of the triangles round its place. Flat-shaded
+ * parts give each triangle corners of its own, so corners at the same place share one normal and stay joined.
+ */
+function raise(position, indices, lift) {
+  const points = position.getArray();
+  const placeOf = (v) => [0, 1, 2].map((k) => points[v * 3 + k].toFixed(5)).join();
+  const normals = new Map();
+  for (let t = 0; t < indices.length; t += 3) {
+    const [a, b, c] = [0, 1, 2].map((k) => points.subarray(indices[t + k] * 3, indices[t + k] * 3 + 3));
+    const [u, v] = [[0, 1, 2].map((k) => b[k] - a[k]), [0, 1, 2].map((k) => c[k] - a[k])];
+    const n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+    for (let k = 0; k < 3; k++) {
+      const place = placeOf(indices[t + k]);
+      const sum = normals.get(place) ?? [0, 0, 0];
+      normals.set(place, sum.map((value, i) => value + n[i]));
+    }
+  }
+  const raised = new Float32Array(points);
+  for (let v = 0; v < raised.length / 3; v++) {
+    const n = normals.get(placeOf(v));
+    if (!n) continue;
+    const length = Math.hypot(...n) || 1;
+    for (let k = 0; k < 3; k++) raised[v * 3 + k] += (n[k] / length) * lift;
+  }
+  return raised;
+}
