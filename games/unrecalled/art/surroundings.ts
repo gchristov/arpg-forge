@@ -41,7 +41,7 @@ function woodsBeyond(level: Level): Surroundings['scenery'] {
       if (edge === Ground.Water || edge === Ground.Mud) continue;
       const h = hash2(tx, ty, 71);
       if (ty < 0 && tx >= FOUNDRY_SIDE.from && tx <= FOUNDRY_SIDE.to) {
-        // Closer together along the edge itself, so trees and the yard are what stop the salvager, not an unseen line.
+        // Closer together along the edge itself, so trees and the yard are what stop U-7, not an unseen line.
         const at = ty === -1 ? 'edge' : 'out';
         if (h < FOUNDRY_SHARE[at]) scenery.push({ prop: FOUNDRY_BEYOND[Math.floor(hash2(tx, ty, 73) * FOUNDRY_BEYOND.length)]!, x: tx + 0.5, y: ty + 0.5 });
         else if (h < FOUNDRY_SHARE[at] + TREE_SHARE[at]) scenery.push({ prop: Prop.DeadTree, x: tx + 0.5, y: ty + 0.5 });

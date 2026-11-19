@@ -4,7 +4,7 @@ import { SPEAKERS, VOICES } from '../story/voices';
 
 /** Who has a portrait, and how they sit for it. The Foundry's speakers and its screens have no face. */
 const SITTERS: Record<string, Sitter> = {
-  salvager: { model: 'hero', pose: 'Idle' },
+  u7: { model: 'hero', pose: 'Idle' },
   foreman: { model: 'foreman', pose: 'Idle' },
   trader: { model: 'trader', pose: 'Idle' },
   tinker: { model: 'tinker', pose: 'Idle' },
@@ -20,7 +20,7 @@ const BY_NAME: Record<string, string> = {
   [VOICES.mags.name]: 'trader',
   [VOICES.pell.name]: 'tinker',
   [VOICES.orderEngine.name]: 'orderEngine',
-  [VOICES.u7.name]: 'salvager',
+  [VOICES.u7.name]: 'u7',
 };
 
 /** The speakers' portraits, drawn once the models have loaded; until then nobody has one. */
@@ -37,8 +37,8 @@ export class Portraits {
     return sitter ? this.urls[sitter] : undefined;
   }
 
-  /** The portrait for a line in the feed: its speaker's, or the salvager's for their own thoughts. */
+  /** The portrait for a line in the feed: its speaker's, or U-7's for its own thoughts. */
   of(from?: Speaker): string | undefined {
-    return from ? this.ofName(from.name) : this.urls.salvager;
+    return from ? this.ofName(from.name) : this.urls.u7;
   }
 }

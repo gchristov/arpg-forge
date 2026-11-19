@@ -3,9 +3,9 @@ import { roomFromRows, type RoomKey } from '../../../engine/sim/rooms';
 import { Ground, Prop } from '../content/tiles';
 
 /**
- * A practice arena for trying combat out, reached only at `#arena`: an open hall on the wall kit's grid, the salvager
+ * A practice arena for trying combat out, reached only at `#arena`: an open hall on the wall kit's grid, U-7
  * in the middle on their fists, with the chainsaw in a crate (W), Pell (3) and a cache of scrap (S) for her upgrades,
- * and a camp of each kind of machine (C) that refills while the salvager keeps their distance.
+ * and a camp of each kind of machine (C) that refills while U-7 keeps its distance.
  */
 const ROWS = [
   '#################################',

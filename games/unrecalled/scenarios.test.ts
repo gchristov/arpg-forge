@@ -58,7 +58,7 @@ function pickUp(state: GameState, weapon: string): SimEvent[] {
   return play(state, 15, [{ type: 'walk', x: item.x, y: item.y }]);
 }
 
-/** Beats the enemy with `tag` on the current level, walking up to it first, with whatever the salvager has in hand. */
+/** Beats the enemy with `tag` on the current level, walking up to it first, with whatever U-7 has in hand. */
 function defeat(state: GameState, tag: string): SimEvent[] {
   const enemy = currentLevel(state).enemies.find((e) => e.tag === tag)!;
   const events: SimEvent[] = [];
@@ -66,7 +66,7 @@ function defeat(state: GameState, tag: string): SimEvent[] {
   return events;
 }
 
-/** A salvager nothing stops and every machine falls to at once, for tests about the story rather than the fights. */
+/** U-7 with nothing able to stop it and every machine falling to it at once, for tests about the story rather than the fights. */
 function unstoppable(state: GameState): GameState {
   untouchable(state).hero.damage = [1000, 1000];
   return state;
@@ -114,7 +114,7 @@ describe('Unrecalled scenarios', () => {
     expect(state.quest).toBe(STEP.sentToPell);
   });
 
-  it('plays the whole story by following where the guide points, from the raid to the foreman at dawn', () => {
+  it('plays the whole story by following where the guide points, from the arrival to the Assembly upriver', () => {
     const state = unstoppable(createGameState(content, 1));
     const done: string[] = [];
     for (let goal = questGoal(state); goal && done.length < 60; goal = questGoal(state)) {
@@ -285,7 +285,7 @@ describe('Unrecalled scenarios', () => {
     expect(machines.sort()).toEqual(['orderEngine', TAG.raider, TAG.sawThief, TAG.switchLoader, TAG.doorCodeLoader].sort());
   });
 
-  it('gives the salvager the EMP at the charging station, and not before', () => {
+  it('gives U-7 the EMP at the charging station, and not before', () => {
     const state = untouchable(createGameState(content, 1));
     expect(play(state, 1 / 60, [{ type: 'useSkill', slot: 0 }]).map((e) => e.type)).not.toContain('SkillUsed');
     jumpToStep(state, STEP.charged);
@@ -334,7 +334,7 @@ describe('Unrecalled scenarios', () => {
     expect([state.levelId, state.quest]).toEqual(['rustbelt', STEP.charged + 1]);
   });
 
-  it('waits for the salvager\'s reply, so walking away from the foreman before it doesn\'t move the story on', () => {
+  it('waits for U-7\'s reply, so walking away from the foreman before it doesn\'t move the story on', () => {
     const state = unstoppable(createGameState(content, 1));
     answer(state, 'foreman', REPLY.proveIt);
     defeat(state, TAG.raider);
@@ -346,7 +346,7 @@ describe('Unrecalled scenarios', () => {
     expect(state.quest).toBe(STEP.raidStopped + 1);
   });
 
-  it('gets the salvager back up at the entrance of the floor they fell on', () => {
+  it('gets U-7 back up at the entrance of the floor it fell on', () => {
     const state = inIntake();
     takeDoor(state, 'sorting');
     state.hero.hp = 0;
@@ -403,7 +403,7 @@ describe('Unrecalled scenarios', () => {
     expect(cut.some((e) => e.type === 'Swung' && e.actorId === state.hero.id)).toBe(false);
   });
 
-  it('has the Order Engine come for the salvager as soon as it sees them', () => {
+  it('has the Order Engine come for U-7 as soon as it sees it', () => {
     const state = untouchable(createGameState(content, 1));
     intoFoundry(state);
     const events = FLOOR_ORDER.slice(1).flatMap((next) => takeDoor(state, next));
@@ -411,7 +411,7 @@ describe('Unrecalled scenarios', () => {
     expect(events.some((e) => e.type === 'EnemyAlerted' && e.boss)).toBe(true);
   });
 
-  it('lets Pell toughen the salvager\'s fists for scrap before they find a weapon', () => {
+  it('lets Pell toughen U-7\'s hands for scrap before it finds a weapon', () => {
     const state = untouchable(createGameState(content, 1));
     const workshop = currentLevel(state).level.structures.findIndex((s) => s.kind === 'workshop');
     play(state, 25, [{ type: 'enterStructure', index: workshop }]);
@@ -423,7 +423,7 @@ describe('Unrecalled scenarios', () => {
     expect([state.hero.bonusDamage, state.hero.gold, state.hero.weapon]).toEqual([3, 10, null]);
   });
 
-  it('makes the machines tougher on every floor down, and keeps pace as the salvager levels up', () => {
+  it('makes the machines tougher on every floor down, and keeps pace as U-7 levels up', () => {
     const state = createGameState(content, 1);
     const strengths = FLOOR_ORDER.map((id) => state.levels[id]!.enemyStrength);
     expect(strengths).toEqual([...strengths].sort((a, b) => a - b));

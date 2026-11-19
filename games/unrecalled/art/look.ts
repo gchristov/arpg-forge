@@ -27,7 +27,7 @@ const NIGHT: Mood = {
   water: { ground: Ground.Water, flow: { x: 0.5, y: 0 }, deep: 0x0c1c2c, shallow: 0x23506a, glint: 0xa8c8e0 },
 };
 
-/** On the Foundry's floors, the dark hides all the salvager hasn't found yet, machines included. */
+/** On the Foundry's floors, the dark hides all U-7 hasn't found yet, machines included. */
 const FOUND_AS_YOU_GO = 9;
 
 /** Each level's own walls, floor plates and air, so the player always knows where they are. */
@@ -165,7 +165,7 @@ const ACTORS: Record<string, ActorLook> = {
       name: 'hero',
       animations: { idle: 'Idle', move: 'Run', attack: 'Punch', cast: 'Shoot_OneHanded', hit: 'RecieveHit', death: 'Death' },
       armed: {
-        // At rest the chainsaw hangs at the salvager's side; it's held out ahead in both hands while cutting, and
+        // At rest the chainsaw hangs at U-7's side; it's held out ahead in both hands while cutting, and
         // revved with a jab at thin air.
         chainsaw: {
           weapon: { name: 'chainsaw', bone: 'Fist.R', length: 0.65, turn: [0, Math.PI / 2, Math.PI / 2] },
@@ -254,7 +254,7 @@ export const unrecalledLook: Look = {
     props: [Prop.Wall, Prop.WallLow, Prop.WallLight, Prop.WallAlarm], panel: styleOf(levelId).panel, span: 3, front: { name: 'wall-front', height: 0.3 },
     // Every doorway gets the kit's frame, so the ways in and out are clear.
     kit: { ...KIT_CORNERS[styleOf(levelId).panel]!, door: 'door' },
-    // Walls on the camera's side stand full height, cut away round the salvager so they never hide them, though still
+    // Walls on the camera's side stand full height, cut away round U-7 so they never hide it, though still
     // faintly there, so they and the doorways in them show.
     cutaway: { radius: 4.5, opacity: 0.4 },
     partitions: [Prop.Partition],

@@ -126,12 +126,12 @@ function reactToService(npcId: number, index: number, x: number, y: number): voi
   if (dialog.npcId === npcId) story.talk(npcId);
 }
 
-/** Where the salvager was last frame: the place, which level it's on, and how far east. */
+/** Where U-7 was last frame: the place, which level it's on, and how far east. */
 let place: { at: Place; levelId: string; x: number } | null = null;
 
 /**
- * Banners the place the salvager has walked into within a level, such as from the town into the woods. Moving between
- * levels has its own banner, and getting back up after a fall moves the salvager further than a walk does.
+ * Banners the place U-7 has walked into within a level, such as from the town into the woods. Moving between
+ * levels has its own banner, and getting back up after a fall moves U-7 further than a walk does.
  */
 function showPlace(): void {
   const at = placeOf(state, place?.at ?? null);

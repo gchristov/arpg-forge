@@ -11,13 +11,13 @@ const at = (x: number) => {
 };
 
 describe('places', () => {
-  it('names the town, and the woods once the salvager is well into the trees', () => {
+  it('names the town, and the woods once U-7 is well into the trees', () => {
     expect(placeOf(at(22), null).name).toBe('Rustbelt');
     expect(placeOf(at(TOWN_WIDTH + 0.5), null).name).toBe('Rustbelt');
     expect(placeOf(at(TOWN_WIDTH + 3), null)).toBe(WOODS);
   });
 
-  it('keeps the place the salvager was in while they stand about on the treeline', () => {
+  it('keeps the place U-7 was in while it stands about on the treeline', () => {
     const town = placeOf(at(22), null);
     expect(placeOf(at(TOWN_WIDTH + 1), town).name).toBe('Rustbelt');
     expect(placeOf(at(TOWN_WIDTH - 1), WOODS)).toBe(WOODS);

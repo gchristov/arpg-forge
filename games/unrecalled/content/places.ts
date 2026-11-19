@@ -9,10 +9,10 @@ export interface Place {
 /** The dead woods east of the town: part of Rustbelt's map, with a name of its own. */
 export const WOODS: Place = { name: 'The Dead Woods', subtitle: '' };
 
-/** How far past the treeline the salvager walks before the place they're in changes, so it doesn't flicker on the line. */
+/** How far past the treeline U-7 walks before the place it's in changes, so it doesn't flicker on the line. */
 const MARGIN = 1.5;
 
-/** Where the salvager is: their level, or the part of it with a name of its own. `was` is where they were a moment ago. */
+/** Where U-7 is: its level, or the part of it with a name of its own. `was` is where it was a moment ago. */
 export function placeOf(state: GameState, was: Place | null): Place {
   const { level } = currentLevel(state);
   if (state.levelId === 'rustbelt') {

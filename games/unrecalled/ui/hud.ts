@@ -21,7 +21,7 @@ export class Hud {
   private readonly shown = new ShownValues();
   private readonly bannerBox = new Banner({ root: $('banner'), title: $('bannerT'), subtitle: $('bannerS') });
   private readonly feed: MessageFeed;
-  /** Keeps the EMP's button hidden even once the salvager has it, while the scene that gives it plays. */
+  /** Keeps the EMP's button hidden even once U-7 has it, while the scene that gives it plays. */
   empWithheld = false;
 
   constructor(send: (command: Command) => void, feed: FeedOptions) {
@@ -42,7 +42,7 @@ export class Hud {
     bindCommand($('bPatch'), { type: 'heal' }, send);
   }
 
-  /** `place` names where the salvager is: their level, or the named part of it they're in. */
+  /** `place` names where U-7 is: its level, or the named part of it. */
   update(state: GameState, place: string): void {
     const { hero } = state;
     const { shown } = this;
@@ -63,7 +63,7 @@ export class Hud {
     });
     const skill = state.rules.hero.skills[EMP];
     const emp = skill && (skill.fromStep === undefined || reached(state, skill.fromStep)) && !this.empWithheld ? skill : undefined;
-    // Charge only powers the EMP, so neither shows until the salvager has it.
+    // Charge only powers the EMP, so neither shows until U-7 has it.
     shown.set('hasEmp', Boolean(emp), (v) => {
       $('bEmp').hidden = !v;
       ($('chargeFill').parentElement as HTMLElement).hidden = !v;
@@ -103,7 +103,7 @@ export class Hud {
     this.bannerBox.show(title, subtitle, seconds);
   }
 
-  /** A line of the story, shown in its turn: what someone says, or with no speaker, the salvager's own thought. */
+  /** A line of the story, shown in its turn: what someone says, or with no speaker, U-7's own thought. */
   say(text: string, from?: Speaker): void {
     this.feed.add(text, from);
   }
