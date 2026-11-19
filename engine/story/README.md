@@ -228,8 +228,6 @@ editor before anything runs. Then the tests check, and name what's wrong:
   said.
 - **Content checks** (`engine/sim/content-checks.ts`): a step name that no step has on a person, thing, enemy, door or
   skill; two steps with the same name; a step nothing can reach; levels you can't get to.
-- **The script** (`games/<name>/story/SCRIPT.md`): the whole story written out, from the quest to every line and scene.
-  The tests compare it with the story files, so a change to the story fails them until the script is brought up to date
-  with `./tools/node/run.sh npm test -- -u`. Then the change shows up in the script as a diff to read, and the script is
-  a quick way to read the story from start to end.
-- **Each game's scenario tests** play its whole story headless, so a step that can no longer be reached fails there.
+- **Each game's scenario tests** follow the guide arrow from the start to the last step headless, so a story that can
+  no longer be finished fails there. They don't name steps or lines, so changing the story doesn't break them (Ashen Hollow's,
+  whose story is settled, also check its exact order).

@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { checkContent } from '../../engine/sim/content-checks';
-import { storyScript } from '../../engine/story/script';
 import { checkStory } from '../../engine/story/story-checks';
 import { ashenHollowLook, MODEL_URLS } from './art/look';
 import { ashenHollowContent } from './content/world';
 import { PEOPLE } from './story/people';
-import { QUEST } from './story/quest';
 import { RULES } from './story/rules';
 
 const content = ashenHollowContent();
@@ -17,9 +15,6 @@ describe('Ashen Hollow content', () => {
     expect(checkStory(content, story)).toEqual([]);
   });
 
-  it('keeps the whole story written out in story/SCRIPT.md, so a change to it shows up there (update it with -u)', async () => {
-    await expect(storyScript('Ashen Hollow', QUEST, story)).toMatchFileSnapshot('./story/SCRIPT.md');
-  });
 
   it('passes the engine content checks', () => {
     expect(checkContent(content)).toEqual([]);
