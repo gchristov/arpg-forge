@@ -60,6 +60,9 @@ function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, eve
     e.swing += dt / SWING_SECONDS;
     if (e.swing >= 1) e.swing = -1;
   }
+  // Rooted, it can't move of its own accord, though it still turns, attacks and can be knocked back.
+  const rooted = e.rootedFor > 0;
+  e.rootedFor = Math.max(0, e.rootedFor - dt);
   const d = dist(e.x, e.y, hero.x, hero.y);
   const sees = !hero.dead && d < type.aggro && hasLineOfSight(map, e.x, e.y, hero.x, hero.y);
   e.moving = false;
@@ -82,7 +85,7 @@ function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, eve
         e.wanderY = wy;
       }
     }
-    if (dist(e.x, e.y, e.wanderX, e.wanderY) > 0.15) steerTowards(map, e, e.wanderX, e.wanderY, type.speed * WANDER_SPEED_SHARE, dt);
+    if (!rooted && dist(e.x, e.y, e.wanderX, e.wanderY) > 0.15) steerTowards(map, e, e.wanderX, e.wanderY, type.speed * WANDER_SPEED_SHARE, dt);
     return;
   }
 
@@ -97,7 +100,7 @@ function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, eve
       e.path = planRoute(map, e, { x: e.homeX, y: e.homeY });
       e.repathTimer = RETURN_REPATH_SECONDS;
     }
-    if (followPath(map, e, type.speed, dt) || dist(e.x, e.y, e.homeX, e.homeY) < 0.4) {
+    if ((!rooted && followPath(map, e, type.speed, dt)) || dist(e.x, e.y, e.homeX, e.homeY) < 0.4) {
       e.mode = 'idle';
       e.path = null;
       e.wanderX = e.x;
@@ -129,12 +132,11 @@ function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, eve
   if (inRange) {
     e.facingX = lerp(e.facingX, fx, 0.3);
     e.facingY = lerp(e.facingY, fy, 0.3);
-    // An enemy the hero keeps up an attack on, such as cutting into it, is held by it, so it can't back away.
-    const held = hero.engagedId === e.id;
-    if (type.ranged && d < KITE_DISTANCE && !held) steerTowards(map, e, e.x - fx, e.y - fy, type.speed * KITE_SPEED_SHARE, dt);
+    if (type.ranged && d < KITE_DISTANCE && !rooted) steerTowards(map, e, e.x - fx, e.y - fy, type.speed * KITE_SPEED_SHARE, dt);
     if (e.attackCooldown <= 0) e.windUp = 0;
     return;
   }
+  if (rooted) return;
   if (hasLineOfSight(map, e.x, e.y, hero.x, hero.y, e.r)) {
     e.path = null;
     steerTowards(map, e, hero.x, hero.y, type.speed, dt);

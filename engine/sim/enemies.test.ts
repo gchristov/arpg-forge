@@ -106,6 +106,19 @@ describe('abilities', () => {
   });
 });
 
+describe('rooted enemies', () => {
+  it('stay where they are, still turning and attacking, and move again once the root wears off', () => {
+    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'shooter', x: 7.5, y: 5.5 }]);
+    const shooter = enemiesOf(state)[0]!;
+    shooter.rootedFor = 3;
+    const events = run(state, 2.9);
+    expect([shooter.x, shooter.y]).toEqual([7.5, 5.5]);
+    expect(ofType(events, 'ShotFired').length).toBeGreaterThan(0);
+    run(state, 1);
+    expect(shooter.x).toBeGreaterThan(7.6);
+  });
+});
+
 describe('bosses', () => {
   it('is not knocked back by hits', () => {
     const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'lord', x: 6.5, y: 5.5 }]);

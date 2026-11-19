@@ -12,7 +12,7 @@ export const CUT_REPORT_SECONDS = 0.4;
 
 /**
  * Cutting rather than swinging, like Pell's chainsaw: while U-7 holds it against the target, a tick of damage lands
- * every `tickSeconds`, without knockback. Over a second it deals `power` times what swinging every `cooldown` would.
+ * every `tickSeconds`, without knockback, and the blade holds the target where it is, so it can't back away. Over a second it deals `power` times what swinging every `cooldown` would.
  */
 export interface CutSettings {
   tickSeconds: number;
@@ -28,6 +28,8 @@ export const CUT: WeaponAttack<CutSettings> = {
   attack({ state, target, dt, events, settings, memory }) {
     const { hero } = state;
     const melee = meleeOf(state);
+    // Held for this step; the hero moves before enemies do, so it's free again the step the cut stops.
+    target.rootedFor = Math.max(target.rootedFor, dt);
     if (memory.targetId === undefined) {
       Object.assign(memory, { targetId: target.id, untilTick: 0, unreported: 0, crit: 0, untilReport: CUT_REPORT_SECONDS });
     }

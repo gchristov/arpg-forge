@@ -14,8 +14,7 @@ export interface WeaponAttackTurn<Settings> {
 
 /**
  * A weapon's own way of attacking, in place of swinging, such as a chainsaw cutting for as long as it's held against
- * the target. While it attacks, the hero keeps up the attack (`Hero.engagedId`): they're drawn channelling, and the
- * target can't back away. A game that wants one defines it in its extensions and hands it over in its content's
+ * the target. While it attacks, the hero keeps up the attack (`Hero.engagedId`) and is drawn channelling. A game that wants one defines it in its extensions and hands it over in its content's
  * `weaponAttacks`, by the name its weapons use.
  */
 export interface WeaponAttack<Settings = never> {
