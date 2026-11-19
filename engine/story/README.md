@@ -219,12 +219,17 @@ a condition, set and cleared by the `flag` and `unflag` actions.
 
 ## What catches mistakes
 
-Run `./tools/node/run.sh npm test`. The game's content checks (`engine/sim/content-checks.ts`) report, by name:
+Run `./tools/node/run.sh npm test`. Step names in the story files are typed, so a misspelt one is an error in the
+editor before anything runs. Then the tests check, and name what's wrong:
 
-- a step name that no step has, on a person, thing, enemy, door or skill;
-- two steps with the same name;
-- a step nothing can reach: someone to talk to, a thing to use, an enemy to beat or a place to enter that isn't in
-  any level, or a weapon nothing gives;
-- levels you can't get to.
-
-Each game's scenario tests then play its whole story headless, so a step that can no longer be reached fails there.
+- **Story checks** (`engine/story/story-checks.ts`): every step, person, thing, place, skill, reply and game action the
+  story names exists; every reply a quest step waits for is offered by someone (or sent by a scene); every person and
+  thing in the levels has something to say; and no entry comes after one that always applies, where it could never be
+  said.
+- **Content checks** (`engine/sim/content-checks.ts`): a step name that no step has on a person, thing, enemy, door or
+  skill; two steps with the same name; a step nothing can reach; levels you can't get to.
+- **The script** (`games/<name>/story/SCRIPT.md`): the whole story written out, from the quest to every line and scene.
+  The tests compare it with the story files, so a change to the story fails them until the script is brought up to date
+  with `./tools/node/run.sh npm test -- -u`. Then the change shows up in the script as a diff to read, and the script is
+  a quick way to read the story from start to end.
+- **Each game's scenario tests** play its whole story headless, so a step that can no longer be reached fails there.

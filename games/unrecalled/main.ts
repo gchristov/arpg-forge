@@ -20,6 +20,7 @@ import { THINGS } from './story/things';
 import { VOICES } from './story/voices';
 import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
+import type { GameAction } from './extensions/actions';
 import { AssemblyWakes } from './extensions/assembly-wakes';
 import { Hud } from './ui/hud';
 import { Portraits } from './ui/portraits';
@@ -182,7 +183,7 @@ const story = new StoryRunner(RULES, {
     curtain.classList.add('shut');
     requestAnimationFrame(() => requestAnimationFrame(() => curtain.classList.remove('shut')));
   },
-  // Unrecalled's own actions, listed in EXTENSIONS.md.
+  // Unrecalled's own actions, named in extensions/actions.ts and listed in EXTENSIONS.md.
   actions: {
     // The EMP is the charge's gift, so its button waits until the overcharge has burst out.
     withholdEmp: () => {
@@ -198,7 +199,7 @@ const story = new StoryRunner(RULES, {
       $('endThanks').textContent = ENDING.thanks;
       $('end').hidden = false;
     },
-  },
+  } satisfies Record<GameAction, () => void | Promise<void>>,
 });
 
 // Tapping the closing card starts the game again from the beginning.
