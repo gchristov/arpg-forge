@@ -2,7 +2,7 @@ import type { Watch } from '../sim/content';
 import { currentLevel, type Command, type GameState, type SimEvent } from '../sim/state';
 import { holds, type When } from '../sim/story-steps';
 import type { Speaker } from '../ui/message-feed';
-import { until } from './beats';
+import { until, wait } from './beats';
 import type { ConversationView } from './conversation-view';
 import { read, talkTo, type Person, type Talk, type Thing } from './talk';
 
@@ -26,10 +26,15 @@ export type Trigger<Step extends string = string> =
   /** The hero went down. */
   | { fell: true }
   /** The hero bought this service, by its index, from someone of this kind. */
-  | { bought: { from: string; service: number } };
+  | { bought: { from: string; service: number } }
+  /** The game started, from its title. */
+  | { start: true };
 
-/** What a story rule does, in order. `Voice` narrows the speakers to a game's own. */
-export type Action<Step extends string = string, Voice extends string = string> =
+/**
+ * What a story rule does, in order, each waiting for the one before: a scene is a list of these. `Voice` and `Reply`
+ * narrow the speakers and replies to a game's own.
+ */
+export type Action<Step extends string = string, Voice extends string = string, Reply extends string = string> =
   /** Someone says a line in the message box. */
   | { say: string; by: Voice }
   /** The hero thinks a line in the message box. */
@@ -42,20 +47,35 @@ export type Action<Step extends string = string, Voice extends string = string> 
    * Shows a page, or what a thing to read says, closed by `button`; `afterLines` waits until every line in the message
    * box has been read; `then` runs once it's closed.
    */
-  | { show: Talk | { thing: string; button?: string }; afterLines?: boolean; then?: Action<Step, Voice>[] }
+  | { show: Talk | { thing: string; button?: string }; afterLines?: boolean; then?: Action<Step, Voice, Reply>[] }
   /** Uses this thing to read or use on the hero's level, as if tapped. */
   | { use: string }
   | { banner: string; subtitle?: string; seconds?: number; delay?: number }
   | { sound: string }
-  /** One of the game's own actions, by name, from its extensions. */
+  /** Sends a reply to the person of this kind on the hero's level, as if chosen. */
+  | { reply: Reply; to: string }
+  /** The hero uses this skill, by its id, whether or not its button is shown. */
+  | { useSkill: string }
+  /** The picture goes cinematic (letterboxed, no HUD, taps ignored), or comes back. */
+  | { cinematic: boolean }
+  /** The camera jumps to this point, and as far out as `closeness` if given. */
+  | { cut: { x: number; y: number }; closeness?: number }
+  /** The picture fades to black, or up from black. */
+  | { fade: 'out' | 'up' }
+  | { wait: number }
+  /** Waits until every line in the message box has been read. */
+  | { waitForLines: true }
+  /** Waits until the hero is in this level, having arrived. */
+  | { waitUntilIn: string }
+  /** One of the game's own actions, by name, from its extensions; the scene waits for it if it returns a promise. */
   | { run: string };
 
 /** On an event, if `when` holds, do the actions; `once` does them only the first time. */
-export interface Rule<Step extends string = string, Voice extends string = string> {
+export interface Rule<Step extends string = string, Voice extends string = string, Reply extends string = string> {
   on: Trigger<Step>;
   when?: When<Step>;
   once?: boolean;
-  do: Action<Step, Voice>[];
+  do: readonly Action<Step, Voice, Reply>[];
 }
 
 /** What running a story needs from the game. */
@@ -71,8 +91,12 @@ export interface StoryParts<Voice extends string> {
   quiet(): boolean;
   banner(title: string, subtitle: string, seconds: number): void;
   sound(name: string): void;
+  /** Letterboxes the picture and puts the HUD away, or brings them back; for games with scenes. */
+  cinematic?(on: boolean): void;
+  cut?(point: { x: number; y: number }, closeness?: number): void;
+  fade?(how: 'out' | 'up'): void;
   /** The game's own actions, by name. */
-  actions: Record<string, () => void>;
+  actions: Record<string, () => void | Promise<void>>;
 }
 
 /** The things to read or use the rules listen for coming near, for the rules to watch. */
@@ -84,12 +108,19 @@ export const watchFor = (rules: readonly Rule[]): Watch[] =>
  * say on the rules' events. Things it shows that change the game go back as commands.
  */
 export class StoryRunner<Voice extends string> {
-  private readonly done = new Set<Rule>();
+  private readonly done = new Set<Rule<string, Voice>>();
+  /** Whether a scene has the picture, so taps on the world are ignored. */
+  inScene = false;
 
   constructor(
     private readonly rules: readonly Rule<string, Voice>[],
     private readonly parts: StoryParts<Voice>,
   ) {}
+
+  /** The game has started: runs the rules waiting for it, such as an opening scene. */
+  start(): void {
+    this.fire([], { start: true });
+  }
 
   /** Opens what the person with this id says, as things stood at `quest`. */
   talk(npcId: number, quest = this.parts.state.quest): void {
@@ -120,6 +151,11 @@ export class StoryRunner<Voice extends string> {
       const reading = thing && read(thing, state, before);
       if (reading) this.parts.conversation.show(reading);
     }
+    this.fire(fired, null, before);
+  }
+
+  private fire(fired: Rule<string, Voice>[], trigger: Trigger | null, before = this.parts.state.quest): void {
+    if (trigger) fired.push(...this.rules.filter((r) => this.matches(r, trigger)));
     for (const rule of fired) {
       if (rule.once) this.done.add(rule);
       void this.perform(rule.do, before);
@@ -165,7 +201,7 @@ export class StoryRunner<Voice extends string> {
     return Object.keys(on)[0] === Object.keys(t)[0];
   }
 
-  private async perform(actions: readonly Action<string, Voice>[], before: number): Promise<void> {
+  private async perform(actions: readonly Action<string, Voice, string>[], before: number): Promise<void> {
     const { parts } = this;
     const { state } = parts;
     for (const a of actions) {
@@ -188,7 +224,21 @@ export class StoryRunner<Voice extends string> {
         if (a.delay) setTimeout(show, a.delay * 1000);
         else show();
       } else if ('sound' in a) parts.sound(a.sound);
-      else parts.actions[a.run]?.();
+      else if ('reply' in a) {
+        const npc = currentLevel(state).npcs.find((n) => n.kind === a.to);
+        if (npc) parts.send({ type: 'reply', npcId: npc.id, id: a.reply });
+      } else if ('useSkill' in a) {
+        const slot = state.rules.hero.skills.findIndex((skill) => skill.id === a.useSkill);
+        if (slot >= 0) parts.send({ type: 'useSkill', slot });
+      } else if ('cinematic' in a) {
+        this.inScene = a.cinematic;
+        parts.cinematic?.(a.cinematic);
+      } else if ('cut' in a) parts.cut?.(a.cut, a.closeness);
+      else if ('fade' in a) parts.fade?.(a.fade);
+      else if ('wait' in a) await wait(a.wait);
+      else if ('waitForLines' in a) await until(parts.quiet);
+      else if ('waitUntilIn' in a) await until(() => state.levelId === a.waitUntilIn && !state.transition);
+      else await parts.actions[a.run]?.();
     }
   }
 

@@ -13,7 +13,8 @@ The engine runs the story; each game writes its own, in `games/<name>/story/`:
 | `things.ts` | what each thing to read or use shows |
 | `voices.ts` | who speaks in the message box |
 | `rules.ts` | what happens as the story goes: on an event, the lines said, pages shown and the rest |
-| `lines.ts` | the words of the scenes |
+| `scenes.ts` | the scenes: lists of actions played one after another, such as the opening |
+| `lines.ts` | the game's own words around the story, such as the closing card |
 
 Where people, things and enemies are placed is in the game's `levels/`.
 
@@ -159,6 +160,7 @@ the actions in order. `once: true` does it only the first time.
 | `{ alarm: true }` | the alarm sounds |
 | `{ fell: true }` | the hero goes down |
 | `{ bought: { from: 'trader', service: 0 } }` | the hero buys that service from someone of that kind |
+| `{ start: true }` | the game starts from its title (with `when: { at: 'firstStep' }` for a new game only) |
 
 | `do` | Does |
 | --- | --- |
@@ -170,7 +172,34 @@ the actions in order. `once: true` does it only the first time.
 | `{ flag: 'name' }` / `{ unflag: 'name' }` | sets or clears a story flag |
 | `{ banner: 'title', subtitle, seconds, delay }` | a title across the screen |
 | `{ sound: 'name' }` | one of the game's sounds |
-| `{ run: 'name' }` | one of the game's own actions, registered in its `main.ts` |
+| `{ reply: 'name', to: 'kind' }` | sends a reply to that person, as if chosen |
+| `{ useSkill: 'id' }` | the hero uses that skill |
+| `{ cinematic: true }` / `false` | letterboxes the picture, puts the HUD away and ignores taps on the world, or brings them back |
+| `{ cut: { x, y }, closeness }` | the camera jumps there (and that far out) |
+| `{ fade: 'out' }` / `'up'` | the picture fades to black, or up from it |
+| `{ wait: 1.5 }` | waits that many seconds |
+| `{ waitForLines: true }` | waits until every line in the message box has been read |
+| `{ waitUntilIn: 'level' }` | waits until the hero has arrived in that level |
+| `{ run: 'name' }` | one of the game's own actions, listed in its `EXTENSIONS.md` |
+
+Actions run in order, each waiting for the one before, so a scene is just a list of them in `scenes.ts`, and a rule
+plays it with `do: SCENE` (or after a page closes, `then: SCENE`):
+
+```typescript
+export const ARRIVAL: Scene = [
+  { cinematic: true },
+  { say: 'Stop right there. You’re one of them. …', by: 'odell' },
+  { say: 'I left the Foundry. I came to warn you.', by: 'u7' },
+  { waitForLines: true },
+  { cinematic: false },
+  { reply: 'proveIt', to: 'foreman' },
+];
+// rules.ts
+{ on: { start: true }, when: { at: 'arrival' }, do: ARRIVAL },
+```
+
+What only one game does in a scene (the Assembly lighting a storey at a time) is that game's own action, named in the
+`actions` it gives the runner and listed in its `EXTENSIONS.md`.
 
 When a thing is used, it shows what it says, unless a rule on the same event opens a page or a conversation instead:
 that's how using the order terminal at the right step plays its scene rather than its screen.
