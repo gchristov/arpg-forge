@@ -12,7 +12,6 @@ import { SceneRenderer } from '../render/scene-renderer';
 import type { GameContent } from '../sim/content';
 import { createGameState } from '../sim/setup';
 import { jumpToStep, removeEnemies } from '../sim/shortcuts';
-import { stepIndex } from '../sim/story-steps';
 import { currentLevel, type Command, type GameState, type SimEvent } from '../sim/state';
 import { step } from '../sim/step';
 import { ScreenFade } from '../ui/fade';
@@ -93,9 +92,10 @@ export class Game {
     const startLevel = content.levels.some((l) => l.level.id === jumpTo) ? jumpTo : content.startLevel;
     this.state = createGameState(content, (Math.random() * 2 ** 32) >>> 0, startLevel);
     const startStep = params.get('step');
-    // A step by its name or its number: `?step=sawFound` or `?step=5`.
-    if (startStep !== null) {
-      jumpToStep(this.state, /^\d+$/.test(startStep) ? Number(startStep) : stepIndex(this.state.rules.quest, startStep));
+    // A step by its name or its number: `?step=sawFound` or `?step=5`. A name no step has is left alone.
+    const named = this.state.rules.quest.findIndex((s) => s.id === startStep);
+    if (startStep !== null && (/^\d+$/.test(startStep) || named >= 0)) {
+      jumpToStep(this.state, named >= 0 ? named : Number(startStep));
     }
     if (params.has('calm')) removeEnemies(this.state);
     if (debugMode) this.scatterLights(Number(params.get('lights') ?? 0));
