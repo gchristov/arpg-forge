@@ -9,5 +9,6 @@ wants it.
 | `withholdEmp`, `showEmp` (`main.ts`) | Keeping the EMP's button hidden while the overcharge plays, so it's seen before it's explained | story actions the game names |
 | `endCard` (`main.ts`) | The closing card | a story action the game names |
 
-A game adds its own story action by naming it in the `actions` it gives `StoryRunner`, and uses it from its rules or
-scenes as `{ run: 'name' }`; a scene waits for it if it returns a promise.
+A game adds its own story action by naming it in `extensions/actions.ts` (so the story checks know it), doing it in the
+`actions` it gives `StoryRunner` in `main.ts`, and using it from its rules or scenes as `{ run: 'name' }`; a scene
+waits for it if it returns a promise.

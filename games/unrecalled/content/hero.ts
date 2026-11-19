@@ -1,8 +1,8 @@
 import type { AreaSkill, HeroRules } from '../../../engine/sim/content';
 
 /**
- * Hits every machine around the salvager at once and throws them back, for when a floor's alarm brings a crowd. The
- * salvager gets it from U-7's charging station.
+ * Hits every machine around U-7 at once and throws them back, for when a floor's alarm brings a crowd. The
+ * U-7 gets it from its old charging station.
  */
 export const EMP: AreaSkill = {
   type: 'area', id: 'emp',
@@ -10,7 +10,7 @@ export const EMP: AreaSkill = {
 };
 
 /**
- * The salvager's numbers. They fight with their fists until they take back Pell's old chainsaw; the resource is charge,
+ * U-7's numbers. It fights with its hands until it gets Pell's chainsaw back; the resource is charge,
  * for the EMP once they have it, and healing items are patch kits.
  */
 export const HERO: HeroRules = {

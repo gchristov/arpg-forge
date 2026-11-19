@@ -5,7 +5,7 @@ import { createTileMap, setProp, setSolid, tileIndex } from '../../../engine/wor
 import { UPRIVER } from '../story/quest';
 import { Ground, Prop } from '../content/tiles';
 
-// Wide enough that the salvager, set down in its far corner, is out of the picture while the Assembly wakes.
+// Wide enough that U-7, set down in its far corner, is out of the picture while the Assembly wakes.
 const WIDTH = 84;
 const HEIGHT = 68;
 
@@ -32,12 +32,12 @@ export const ASSEMBLY_VIEW = { x: 36, y: 24 };
 /** Where the light from the Assembly's ground floor falls once its windows are lit: along its front. */
 export const ASSEMBLY_LIGHTS: Array<{ x: number; y: number }> = Array.from({ length: 6 }, (_, i) => ({ x: 30.8 + i * 2.1, y: 28.3 }));
 
-/** Where the salvager is set down upriver: far from the Assembly, so only the building is seen. */
+/** Where U-7 is set down upriver: far from the Assembly, so only the building is seen. */
 const OUT_OF_SIGHT = { x: UPRIVER.x, y: UPRIVER.y };
 
 /**
  * Upriver, outside the Assembly, where the story ends: bare ground in the dark round it. The story brings
- * the salvager here, out of sight of it; no door leads in or out.
+ * U-7 here, out of sight of it; no door leads in or out.
  */
 export function buildUpriver(): LevelContent {
   const map = createTileMap(WIDTH, HEIGHT);

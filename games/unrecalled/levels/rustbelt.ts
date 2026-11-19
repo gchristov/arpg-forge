@@ -88,7 +88,7 @@ const riverRow = (x: number): number => 30.5 + Math.sin(x * 0.21) * 1.6 + Math.s
  * Rustbelt, the salvage camp in the Foundry's shadow, as a map built from fixed features and `hash2` and
  * `valueNoise`, so it comes out the same every time. The camp's concrete pad and its dead wind turbine sit in the
  * middle, with paths out to Pell's workshop, Mags's trading post (the way into the Foundry), the old pumphouse and
- * the jetty where the flood left the salvager, and a trail east into the dead woods. Dead trees thicken towards the
+ * the jetty, and a trail east into the dead woods. Dead trees thicken towards the
  * town's edges.
  */
 export function buildRustbelt(): LevelContent {
