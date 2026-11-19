@@ -94,8 +94,11 @@ function signalAlarm(state: GameState, events: SimEvent[]): void {
 }
 
 
+/** The names of the step actions, for quest steps' `does`. */
+export type StepActionName = 'alarmEverything' | 'calmEverything';
+
 /** The step actions: sounding the alarm on every floor, and calming everything, by the names quest steps use. */
-export const STEP_ACTIONS: Record<'alarmEverything' | 'calmEverything', StepAction> = {
+export const STEP_ACTIONS: Record<StepActionName, StepAction> = {
   // From then on every calm machine everywhere comes for U-7 on sight. Signals once, however many floors it reaches.
   alarmEverything(state, events) {
     if (Object.values(state.levels).every(isAlarmed)) return;

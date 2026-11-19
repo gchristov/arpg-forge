@@ -1,5 +1,7 @@
 import type { QuestStep } from '../../../engine/sim/content';
 import { stepNumbers } from '../../../engine/sim/story-steps';
+// Typed, so a misspelt step action is an error in the editor.
+import type { StepActionName } from '../extensions/calm-machines';
 
 /**
  * Unrecalled's quest line. U-7, a Foundry robot, has walked out on the Foundry's new order, to strip the town of
@@ -65,7 +67,7 @@ export const QUEST = [
   { id: 'orderClosed', text: 'Take Odell home.', reachedBy: { type: 'use', id: 'order-terminal' }, inOrder: true },
   { id: 'freed', text: '', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.goHome }, takesHeroTo: BY_THE_FIRE },
   { id: 'ending', text: '', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.upriver }, takesHeroTo: UPRIVER },
-] as const satisfies ReadonlyArray<QuestStep & { text: string }>;
+] as const satisfies ReadonlyArray<QuestStep & { text: string; does?: readonly StepActionName[] }>;
 
 /** Each step's place in the quest line, by name, for the code that compares steps. */
 export const STEP = stepNumbers(QUEST);
