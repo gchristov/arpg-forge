@@ -1,3 +1,4 @@
+import { useAbilities } from './abilities';
 import { createRng } from '../core/rng';
 import type { GameContent, HeroRules } from './content';
 import { spawnCamp, spawnEnemy } from './spawning';
@@ -9,6 +10,7 @@ import { castForStep } from './story-cast';
  * the game's own start level).
  */
 export function createGameState(content: GameContent, seed: number, startLevel = content.startLevel): GameState {
+  useAbilities(content.abilities);
   const state: GameState = {
     rng: createRng(seed),
     time: 0,

@@ -1,3 +1,4 @@
+import { abilityNamed, useAbilities } from './abilities';
 import type { Vec2 } from '../core/math';
 import type { Level } from '../world/level';
 import { inBounds, tileIndex, type TileMap } from '../world/tile-map';
@@ -9,6 +10,7 @@ import type { GameContent, LevelContent } from './content';
  * reach. Returns one message per problem, empty when the content is sound. Every game's tests should run it.
  */
 export function checkContent(content: GameContent): string[] {
+  useAbilities(content.abilities);
   const problems: string[] = [];
   const levels = new Map(content.levels.map((l) => [l.level.id, l]));
   if (levels.size !== content.levels.length) problems.push('two levels share an id');
@@ -27,7 +29,14 @@ export function checkContent(content: GameContent): string[] {
   const skillIds = content.hero.skills.map((s) => s.id);
   if (new Set(skillIds).size !== skillIds.length) problems.push('two hero skills share an id');
   for (const [kind, type] of Object.entries(content.enemies)) {
-    if (type.summon && !content.enemies[type.summon.kind]) problems.push(`enemy "${kind}" summons unknown kind "${type.summon.kind}"`);
+    for (const [name, settings] of Object.entries(type.abilities ?? {})) {
+      const ability = abilityNamed(name);
+      if (!ability) problems.push(`enemy "${kind}" has unknown ability "${name}"`);
+      for (const brought of ability?.bringsIn?.(settings) ?? []) {
+        if (!content.enemies[brought]) problems.push(`enemy "${kind}"'s ${name} brings in unknown kind "${brought}"`);
+      }
+      problems.push(...(ability?.check?.(settings, content) ?? []).map((p) => `enemy "${kind}"'s ${name}: ${p}`));
+    }
   }
   for (const lc of content.levels) {
     for (const c of lc.containers ?? []) {
@@ -181,7 +190,11 @@ function checkQuest(content: GameContent, levels: Map<string, LevelContent>): st
   const enemyKinds = new Set(content.levels.flatMap((l) => [
     ...l.spawns.map((s) => s.kind), ...l.camps.map((c) => c.kind), ...(l.campRespawns?.kinds ?? []),
   ]));
-  for (const type of Object.values(content.enemies)) if (type.summon) enemyKinds.add(type.summon.kind);
+  for (const type of Object.values(content.enemies)) {
+    for (const [name, settings] of Object.entries(type.abilities ?? {})) {
+      for (const brought of abilityNamed(name)?.bringsIn?.(settings) ?? []) enemyKinds.add(brought);
+    }
+  }
   const tags = new Set(content.levels.flatMap((l) => l.spawns.flatMap((s) => (s.tag ? [s.tag] : []))));
   const readableIds = new Set(content.levels.flatMap((l) => (l.readables ?? []).map((r) => r.id)));
   const weaponSources = new Set([

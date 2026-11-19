@@ -33,8 +33,6 @@ export const TEST_ENEMIES: Record<string, EnemyType> = {
   shooter: { ...base, hp: 32, damage: [5, 9], speed: 1.7, range: 6.5, ranged: true, aggro: 8, xp: 22, windUp: 0.55 },
   lord: {
     ...base, hp: 400, damage: [12, 19], speed: 1.75, range: 1.15, aggro: 8, xp: 250, boss: true, radius: 0.46,
-    slam: { everySeconds: [5, 7], reach: 6, radius: 1.7, delay: 1.0, damage: [16, 24] },
-    summon: { belowHealthShare: 0.5, kind: 'brute', count: 3, distance: 1.6 },
   },
 };
 

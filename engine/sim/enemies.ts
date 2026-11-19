@@ -3,11 +3,12 @@ import { int, pick, range } from '../core/rng';
 import { isBlocked } from '../world/collision';
 import { hasLineOfSight } from '../world/line-of-sight';
 import { planRoute } from '../world/pathfinding';
+import { fightWithAbilities } from './abilities';
 import type { EnemyType } from './content';
 import { hurtHero } from './combat';
 import { enemyDamage } from './enemy-strength';
 import { slide } from './knockback';
-import { makeEnemy, spawnCamp } from './spawning';
+import { spawnCamp } from './spawning';
 import { currentLevel, type Enemy, type GameState, type LevelState, type SimEvent } from './state';
 import { followPath, steerTowards } from './walking';
 
@@ -143,7 +144,7 @@ function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, eve
   }
   const fx = (hero.x - e.x) / (d || 1);
   const fy = (hero.y - e.y) / (d || 1);
-  if (type.slam || type.summon) useAbilities(state, ls, e, type, d, dt, events);
+  fightWithAbilities(state, ls, e, type, d, dt, events);
 
   if (e.windUp >= 0) {
     e.facingX = lerp(e.facingX, fx, 0.2);
@@ -195,48 +196,6 @@ function attack(state: GameState, e: Enemy, type: EnemyType, fx: number, fy: num
   events.push({ type: 'Swung', actorId: e.id });
   if (dist(e.x, e.y, hero.x, hero.y) <= type.range + hero.r + e.r + MELEE_GRACE) {
     hurtHero(state, enemyDamage(state, e, int(state.rng, type.damage[0], type.damage[1])), events);
-  }
-}
-
-function useAbilities(
-  state: GameState,
-  ls: LevelState,
-  e: Enemy,
-  type: EnemyType,
-  d: number,
-  dt: number,
-  events: SimEvent[],
-): void {
-  const { hero } = state;
-  const slam = type.slam;
-  if (slam) {
-    e.slamTimer -= dt;
-    if (e.slamTimer <= 0 && d < slam.reach && e.windUp < 0) {
-      e.slamTimer = range(state.rng, slam.everySeconds[0], slam.everySeconds[1]);
-      state.telegraphs.push({ x: hero.x, y: hero.y, radius: slam.radius, elapsed: 0, delay: slam.delay, damage: [enemyDamage(state, e, slam.damage[0]), enemyDamage(state, e, slam.damage[1])] });
-      e.swing = 0;
-      events.push({ type: 'SlamWarned', enemyId: e.id, x: hero.x, y: hero.y });
-    }
-  }
-  const summon = type.summon;
-  if (summon && !e.summoned && e.hp < e.maxHp * summon.belowHealthShare) {
-    e.summoned = true;
-    const summonedIds: number[] = [];
-    const body = state.rules.enemies[summon.kind]!;
-    for (let k = 0; k < summon.count; k++) {
-      const a = (k / summon.count) * Math.PI * 2;
-      const x = e.x + Math.cos(a) * summon.distance;
-      const y = e.y + Math.sin(a) * summon.distance;
-      if (isBlocked(ls.level.map, x, y, body.radius)) continue;
-      const s = makeEnemy(state, summon.kind, x, y, ls.enemyStrength);
-      s.mode = 'chase';
-      s.provoked = true;
-      s.homeX = e.homeX;
-      s.homeY = e.homeY + 2;
-      ls.enemies.push(s);
-      summonedIds.push(s.id);
-    }
-    events.push({ type: 'Summoned', enemyId: e.id, summonedIds });
   }
 }
 

@@ -1,4 +1,6 @@
 import type { EnemyType } from '../../../engine/sim/content';
+import type { SlamSettings } from '../extensions/slam';
+import type { SummonSettings } from '../extensions/summon';
 
 export interface AshenHollowEnemy extends EnemyType {
   name: string;
@@ -27,7 +29,9 @@ export const ENEMIES: Record<string, AshenHollowEnemy> = {
   boss: enemy({
     name: 'The Bone Lord', hp: 420, damage: [12, 19], speed: 1.75, range: 1.15, cooldown: 1.4, windUp: 0.5, aggro: 8,
     xp: 250, drops: { gold: [120, 160], healingChance: 1, extraHealingItems: 1 }, scale: 1.55, boss: true, groupSize: 1,
-    slam: { everySeconds: [5, 7], reach: 6, radius: 1.7, delay: 1.0, damage: [16, 24] },
-    summon: { belowHealthShare: 0.5, kind: 'skeleton', count: 3, distance: 1.6 },
+    abilities: {
+      slam: { everySeconds: [5, 7], reach: 6, radius: 1.7, delay: 1.0, damage: [16, 24] } satisfies SlamSettings,
+      summon: { belowHealthShare: 0.5, kind: 'skeleton', count: 3, distance: 1.6 } satisfies SummonSettings,
+    },
   }),
 };
