@@ -129,8 +129,8 @@ function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, eve
   if (inRange) {
     e.facingX = lerp(e.facingX, fx, 0.3);
     e.facingY = lerp(e.facingY, fy, 0.3);
-    // A machine the hero is cutting into is held by the blade, so it can't back away.
-    const held = hero.cut?.targetId === e.id;
+    // An enemy the hero keeps up an attack on, such as cutting into it, is held by it, so it can't back away.
+    const held = hero.engagedId === e.id;
     if (type.ranged && d < KITE_DISTANCE && !held) steerTowards(map, e, e.x - fx, e.y - fy, type.speed * KITE_SPEED_SHARE, dt);
     if (e.attackCooldown <= 0) e.windUp = 0;
     return;

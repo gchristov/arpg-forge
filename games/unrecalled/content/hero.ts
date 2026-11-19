@@ -1,4 +1,5 @@
 import type { AreaSkill, HeroRules } from '../../../engine/sim/content';
+import type { CutSettings } from '../extensions/cutting';
 
 /**
  * Hits every machine around U-7 at once and throws them back, for when a floor's alarm brings a crowd. The
@@ -33,7 +34,7 @@ export const HERO: HeroRules = {
   },
   weapons: {
     // Keeps cutting for as long as it's in contact, at nearly four times the damage a second of punching.
-    chainsaw: { continuous: { tickSeconds: 0.1, power: 3.7 } },
+    chainsaw: { attack: { cut: { tickSeconds: 0.1, power: 3.7 } satisfies CutSettings } },
   },
   skills: [{ ...EMP, fromStep: 'charged' }],
   heal: { amount: 60, maxItems: 9 },

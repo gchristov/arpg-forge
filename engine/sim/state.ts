@@ -37,8 +37,13 @@ export interface Hero extends Actor {
   swing: Swing;
   /** Whether the current swing has already struck. */
   struck: boolean;
-  /** The continuous melee attack under way, if the hero is cutting into their target. */
-  cut: Cut | null;
+  /**
+   * The enemy the hero is keeping up an attack on with their weapon's own attack, such as cutting into it, or null:
+   * drawn channelling, and the enemy can't back away.
+   */
+  engagedId: number | null;
+  /** What the weapon's own attack keeps between steps, emptied when the hero stops attacking. */
+  attackMemory: Record<string, number>;
   /** The weapon in hand, by its id in the hero's rules, or null for bare hands. */
   weapon: string | null;
   lastHurtAt: number;
@@ -49,17 +54,6 @@ export interface Hero extends Actor {
   interact: { type: 'npc'; npcId: number } | { type: 'container' | 'readable'; index: number } | null;
   /** Melee upgrades bought so far; each one costs more than the last. */
   meleeUpgrades: number;
-}
-
-export interface Cut {
-  targetId: number;
-  /** Seconds until the next tick of damage. */
-  untilTick: number;
-  /** Damage dealt since it was last reported, and whether any of it was a critical hit. */
-  unreported: number;
-  crit: boolean;
-  /** Seconds until the damage dealt so far is reported. */
-  untilReport: number;
 }
 
 export interface Npc extends Actor {

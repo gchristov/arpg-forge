@@ -1,5 +1,6 @@
 import type { EnemyAbility } from './abilities';
 import type { StepAction } from './step-actions';
+import type { WeaponAttack } from './weapon-attacks';
 import type { Level } from '../world/level';
 
 export interface SpawnPoint {
@@ -95,9 +96,8 @@ export type Service =
   | { type: 'restore' }
   | { type: 'sellHealingItem'; price: number }
   /** Each purchase adds `bonus` melee damage and costs `priceStep` more than the last. */
-  | { type: 'upgradeMelee'; basePrice: number; priceStep: number; bonus: number }
-  /** Puts one of the hero's `weapons` in their hand, once. */
-  | { type: 'sellWeapon'; weapon: string; price: number };
+  | { type: 'upgradeMelee'; basePrice: number; priceStep: number; bonus: number };
+;
 
 export interface NpcType {
   services: Service[];
@@ -217,11 +217,15 @@ export interface MeleeRules {
   critChance: number;
   critMultiplier: number;
   knockback: number;
+}
+
+/** A weapon the hero can hold: changes to parts of the bare-handed melee attack, and maybe its own way of attacking. */
+export interface Weapon extends Partial<MeleeRules> {
   /**
-   * Cuts rather than swings, like a chainsaw: while the hero is engaged with the target, a tick of damage lands every
-   * `tickSeconds`, without knockback. Over a second it deals `power` times what swinging every `cooldown` would.
+   * Its own way of attacking, in place of swinging, by name with its settings: an attack a game defines in its
+   * extensions and hands over in its content's `weaponAttacks`.
    */
-  continuous?: { tickSeconds: number; power: number };
+  attack?: Record<string, unknown>;
 }
 
 export interface HeroRules {
@@ -243,7 +247,7 @@ export interface HeroRules {
   /** The bare-handed melee attack. */
   melee: MeleeRules;
   /** Weapons the hero can come to hold, by id, each changing parts of the bare-handed melee attack. */
-  weapons?: Record<string, Partial<MeleeRules>>;
+  weapons?: Record<string, Weapon>;
   /** Skills on top of the melee attack, by slot, each costing resource and with its own cooldown. */
   skills: Skill[];
   heal: { amount: number; maxItems: number };
@@ -275,6 +279,8 @@ export interface GameContent {
   abilities?: Record<string, EnemyAbility<never>>;
   /** The game's own step actions, by the names its quest steps list them under in `does`. */
   stepActions?: Record<string, StepAction>;
+  /** The game's own weapon attacks, by the names its weapons list them under in `attack`. */
+  weaponAttacks?: Record<string, WeaponAttack<never>>;
 }
 
 /** A thing to read or use, by id, that emits `Approached` when the hero comes within `within` tiles of it. */

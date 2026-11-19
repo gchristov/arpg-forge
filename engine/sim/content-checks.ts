@@ -1,5 +1,6 @@
 import { abilityNamed, useAbilities } from './abilities';
 import { useStepActions } from './step-actions';
+import { useWeaponAttacks, weaponAttackNamed } from './weapon-attacks';
 import type { Vec2 } from '../core/math';
 import type { Level } from '../world/level';
 import { inBounds, tileIndex, type TileMap } from '../world/tile-map';
@@ -13,6 +14,7 @@ import type { GameContent, LevelContent } from './content';
 export function checkContent(content: GameContent): string[] {
   useAbilities(content.abilities);
   useStepActions(content.stepActions);
+  useWeaponAttacks(content.weaponAttacks);
   const problems: string[] = [];
   const levels = new Map(content.levels.map((l) => [l.level.id, l]));
   if (levels.size !== content.levels.length) problems.push('two levels share an id');
@@ -71,12 +73,10 @@ export function checkContent(content: GameContent): string[] {
   if (content.enemyGrowthPerHeroLevel !== undefined && content.enemyGrowthPerHeroLevel < 0) {
     problems.push('enemies weaken as the hero levels up');
   }
-  for (const [kind, npc] of Object.entries(content.npcs)) {
-    for (const service of npc.services) {
-      if (service.type === 'sellWeapon' && !content.hero.weapons?.[service.weapon]) {
-        problems.push(`NPC kind "${kind}" sells unknown weapon "${service.weapon}"`);
-      }
-    }
+  for (const [id, weapon] of Object.entries(content.hero.weapons ?? {})) {
+    const named = Object.keys(weapon.attack ?? {});
+    if (named.length > 1) problems.push(`weapon "${id}" has more than one attack of its own`);
+    for (const name of named) if (!weaponAttackNamed(name)) problems.push(`weapon "${id}" has unknown attack "${name}"`);
   }
   return problems;
 }
@@ -206,7 +206,6 @@ function checkQuest(content: GameContent, levels: Map<string, LevelContent>): st
   const readableIds = new Set(content.levels.flatMap((l) => (l.readables ?? []).map((r) => r.id)));
   const weaponSources = new Set([
     ...content.levels.flatMap((l) => (l.containers ?? []).flatMap((c) => (c.weapon ? [c.weapon] : []))),
-    ...Object.values(content.npcs).flatMap((n) => n.services.flatMap((s) => (s.type === 'sellWeapon' ? [s.weapon] : []))),
     ...content.levels.flatMap((l) => l.spawns.flatMap((s) => (s.carries ? [s.carries] : []))),
   ]);
   return content.quest.flatMap((step, i) => {

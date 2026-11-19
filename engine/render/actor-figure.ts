@@ -9,10 +9,7 @@ export type ActorMoment = 'attack' | 'cast' | 'hit';
 type BaseName = 'idle' | 'move' | 'channel' | 'death';
 
 const BLEND_SECONDS = 0.15;
-/** How far, in tiles, a held weapon shakes each way while it cuts. */
-const BUZZ_TILES = 0.012;
-/** How far, in radians, an actor leans into a continuous attack, and how quickly it leans in and back. */
-const CHANNEL_LEAN = 0.18;
+/** How quickly an actor leans into a continuous attack and back. */
 const LEAN_RATE = 10;
 /** Hovering actors bob this many tiles up and down, this many times a second. */
 const BOB_HEIGHT = 0.07;
@@ -109,7 +106,7 @@ export class ActorFigure {
 
   /**
    * Sets the ongoing pose: dying wins over moving, which wins over keeping up a continuous attack, which wins over
-   * idling. While channelling, the actor leans in and a held weapon buzzes. For looks that match their pace, the move
+   * idling. While channelling, the actor leans in and a held weapon buzzes, as far as its look's `channelPose` says. For looks that match their pace, the move
    * animation plays faster or slower to match `speed`, in tiles a second, so its feet don't slide over the ground.
    */
   pose(moving: boolean, dead: boolean, speed?: number, channelling = false): void {
@@ -209,14 +206,14 @@ export class ActorFigure {
   update(frameSeconds: number): void {
     this.mixer?.update(frameSeconds);
     if (this.model) {
-      const lean = this.channelling ? CHANNEL_LEAN : 0;
+      const lean = this.channelling ? this.look.channelPose?.lean ?? 0 : 0;
       this.model.rotation.x += (lean - this.model.rotation.x) * Math.min(1, frameSeconds * LEAN_RATE);
     }
     if (this.held) {
       const { weapon, rest, tilesToBone } = this.held;
       weapon.position.copy(rest);
-      if (this.channelling) {
-        const buzz = BUZZ_TILES * tilesToBone;
+      if (this.channelling && this.look.channelPose) {
+        const buzz = this.look.channelPose.buzz * tilesToBone;
         weapon.position.x += (Math.random() * 2 - 1) * buzz;
         weapon.position.y += (Math.random() * 2 - 1) * buzz;
         weapon.position.z += (Math.random() * 2 - 1) * buzz;

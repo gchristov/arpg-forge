@@ -12,7 +12,7 @@ export function chainsawEngine(s: Synth) {
     update(state: GameState, running: boolean): void {
       const { hero } = state;
       if (!running || hero.dead) drone.set(36, 0, 6, 0.6);
-      else if (hero.cut) drone.set(122, 0.055, 28, 0.15);
+      else if (hero.engagedId !== null) drone.set(122, 0.055, 28, 0.15);
       else if (hero.moving) drone.set(56, 0.026, 12, 0.35);
       else drone.set(44, 0.022, 9, 0.5);
     },
