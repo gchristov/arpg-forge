@@ -26,8 +26,8 @@ export interface Portal {
   stepOut: Vec2;
   /** Shut while any enemy on its level is still standing, so the way on has to be fought for. */
   sealed?: boolean;
-  /** Locked until the quest reaches this step, so the way on waits for the story. */
-  lockedUntilStep?: number;
+  /** Locked until the quest reaches this step, by name, so the way on waits for the story. */
+  lockedUntilStep?: string;
 }
 
 /** A block of a building, `floors` storeys tall, over `width` by `depth` tiles from `x`, `y`. */

@@ -18,7 +18,7 @@ export interface RoomKey {
   light?: Omit<LevelLight, 'x' | 'y' | 'seed'> & { offset?: Vec2; lean?: number };
   /** A way out to another level. The hero starts the room at the tile's centre plus `start`. */
   /** `sealed` keeps it shut while any enemy in the room still stands; `lockedUntilStep` until the quest reaches it. */
-  portal?: { to: string; stepOut: Vec2; start: Vec2; sealed?: boolean; lockedUntilStep?: number };
+  portal?: { to: string; stepOut: Vec2; start: Vec2; sealed?: boolean; lockedUntilStep?: string };
   /** The hero starts here, for a room that's the first level rather than one entered through a portal. */
   heroStart?: boolean;
   /** An enemy of this kind spawns here. */

@@ -128,15 +128,31 @@ describe('checkContent', () => {
     expect(checkContent(c)).toEqual(['cellar: a "brute" carries unknown weapon "axe"']);
   });
 
+  it('finds quest steps named twice, and people, things, enemies and skills naming a step that doesn\'t exist', () => {
+    const c = rooms();
+    c.quest = [{}, { id: 'asked', reachedBy: { type: 'enter', levelId: 'cellar' } }, { id: 'asked' }];
+    home(c).npcs.push({ kind: 'elder', name: 'Elder', x: 2.5, y: 2.5, fromStep: 'freed' });
+    home(c).readables = [{ tx: 1, ty: 1, id: 'sign', untilStep: 'gone' }];
+    home(c).spawns.push({ kind: 'brute', x: 2.5, y: 1.5, fromStep: 'later' });
+    c.hero = { ...c.hero, skills: c.hero.skills.map((s) => ({ ...s, fromStep: 'charged' })) };
+    expect(checkContent(c)).toEqual(expect.arrayContaining([
+      'two quest steps share a name',
+      'home: Elder names quest step "freed", which doesn\'t exist',
+      'home: "sign" names quest step "gone", which doesn\'t exist',
+      'home: a "brute" names quest step "later", which doesn\'t exist',
+    ]));
+    expect(checkContent(c)).toContain(`skill "${c.hero.skills[0]!.id}" names quest step "charged", which doesn't exist`);
+  });
+
   it('finds a container holding an unknown weapon, a door waiting for a step that doesn\'t exist, and quest steps nothing gives', () => {
     const c = rooms();
     c.hero = { ...c.hero, weapons: { saw: { knockback: 0 } } };
     c.levels[1]!.containers = [{ tx: 1, ty: 1, gold: 0, healingItems: 0, weapon: 'axe' }];
-    home(c).level.portals[0]!.lockedUntilStep = 5;
+    home(c).level.portals[0]!.lockedUntilStep = 'opened';
     c.quest = [{}, { reachedBy: { type: 'use', id: 'lever' } }, { reachedBy: { type: 'arm', weapon: 'saw' } }];
     expect(checkContent(c)).toEqual(expect.arrayContaining([
       'cellar: a container holds unknown weapon "axe"',
-      'home: the portal to "cellar" waits for quest step 5, which doesn\'t exist',
+      'home: the portal to "cellar" names quest step "opened", which doesn\'t exist',
       'quest step 1 needs using "lever", which isn\'t in any level',
       'quest step 2 needs the "saw" in hand, which nothing gives',
     ]));

@@ -2,7 +2,7 @@ import { valueNoise } from '../../../engine/core/math';
 import type { LevelContent } from '../../../engine/sim/content';
 import type { BuildingPart, Level, Structure } from '../../../engine/world/level';
 import { createTileMap, inBounds, setProp, setSolid, tileIndex } from '../../../engine/world/tile-map';
-import { STEP, TAG } from '../content/story';
+import { TAG } from '../content/story';
 import { Ground, Prop } from '../content/tiles';
 import { paintPath, scatterWilds } from './wilds';
 import { addWoods, WOODS_TRAIL_ROW, WOODS_WIDTH, woodsTreeChance } from './woods';
@@ -155,9 +155,9 @@ export function buildRustbelt(): LevelContent {
   // dawn. A loader is at the camp's crates as U-7 arrives: a weak one, for its first fight, bare-handed. It fights
   // alone; beating it is what sets every machine off.
   const foreman = { kind: 'foreman', name: 'Foreman Odell', x: 21.5, y: 13.6 };
-  room.npcs.push({ ...foreman, untilStep: STEP.powerOn }, { ...foreman, fromStep: STEP.freed });
-  room.npcs.push({ kind: 'trader', name: 'Mags', x: 19.5, y: 15.5, fromStep: STEP.freed });
-  room.npcs.push({ kind: 'tinker', name: 'Pell', x: 25.5, y: 15.5, fromStep: STEP.freed });
+  room.npcs.push({ ...foreman, untilStep: 'powerOn' }, { ...foreman, fromStep: 'freed' });
+  room.npcs.push({ kind: 'trader', name: 'Mags', x: 19.5, y: 15.5, fromStep: 'freed' });
+  room.npcs.push({ kind: 'tinker', name: 'Pell', x: 25.5, y: 15.5, fromStep: 'freed' });
   room.spawns.push({ kind: 'loader', x: 31.5, y: 13.5, tag: TAG.raider, strength: 0.35, quiet: true });
   for (const [x, y] of [[17, 10], [26, 9], [27, 15], [16, 16], [29, 11], [14, 9], [30, 16]] as const) {
     setProp(map, x, y, Prop.Containers, true);

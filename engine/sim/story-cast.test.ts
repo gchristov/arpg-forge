@@ -20,16 +20,20 @@ function story() {
     levels: [
       room('village', {
         npcs: [
-          { kind: 'elder', name: 'Elder', x: 4.5, y: 2.5, untilStep: 1 },
-          { kind: 'elder', name: 'Elder', x: 4.5, y: 2.5, fromStep: 2 },
+          { kind: 'elder', name: 'Elder', x: 4.5, y: 2.5, untilStep: 'banditBeaten' },
+          { kind: 'elder', name: 'Elder', x: 4.5, y: 2.5, fromStep: 'elderFreed' },
         ],
-        readables: [{ tx: 6, ty: 6, id: 'tracks', fromStep: 1, untilStep: 2 }],
+        readables: [{ tx: 6, ty: 6, id: 'tracks', fromStep: 'banditBeaten', untilStep: 'elderFreed' }],
         spawns: [{ kind: 'brute', x: 3.4, y: 2.5, tag: 'bandit', strength: 0.5 }, { kind: 'brute', x: 15.5, y: 15.5 }],
       }),
-      room('cellar', { npcs: [{ kind: 'elder', name: 'Elder', x: 4.5, y: 2.5, fromStep: 1, untilStep: 2 }] }),
+      room('cellar', { npcs: [{ kind: 'elder', name: 'Elder', x: 4.5, y: 2.5, fromStep: 'banditBeaten', untilStep: 'elderFreed' }] }),
     ],
     startLevel: 'village', hero: TEST_HERO, enemies: TEST_ENEMIES, npcRadius: 0.32, npcs: { elder: { services: [] } },
-    quest: [{}, { reachedBy: { type: 'defeat', tag: 'bandit' } }, { reachedBy: { type: 'talk', npcKind: 'elder' } }],
+    quest: [
+      {},
+      { id: 'banditBeaten', reachedBy: { type: 'defeat', tag: 'bandit' } },
+      { id: 'elderFreed', reachedBy: { type: 'talk', npcKind: 'elder' } },
+    ],
   };
   return createGameState(content, 1);
 }
@@ -64,9 +68,9 @@ describe('story cast', () => {
 
   it('brings an enemy in once the story reaches its step, which drops what it carried for the hero to pick up', () => {
     const content: GameContent = {
-      levels: [room('village', { spawns: [{ kind: 'brute', x: 4.5, y: 2.5, tag: 'thief', fromStep: 1, carries: 'saw', strength: 0.2 }] })],
+      levels: [room('village', { spawns: [{ kind: 'brute', x: 4.5, y: 2.5, tag: 'thief', fromStep: 'asked', carries: 'saw', strength: 0.2 }] })],
       startLevel: 'village', hero: { ...TEST_HERO, weapons: { saw: {} } }, enemies: TEST_ENEMIES, npcRadius: 0.32, npcs: {},
-      quest: [{}, { reachedBy: { type: 'talk', npcKind: 'elder' } }, { reachedBy: { type: 'defeat', tag: 'thief' } }],
+      quest: [{}, { id: 'asked', reachedBy: { type: 'talk', npcKind: 'elder' } }, { reachedBy: { type: 'defeat', tag: 'thief' } }],
     };
     const state = createGameState(content, 1);
     expect(currentLevel(state).enemies).toEqual([]);

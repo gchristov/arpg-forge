@@ -1,6 +1,7 @@
 import { dist } from '../core/math';
 import type { QuestTrigger } from './content';
 import type { Enemy, GameState } from './state';
+import { reached } from './story-steps';
 
 /**
  * Where the hero should head next on the current level: the townsperson to talk to or the enemy to defeat when
@@ -78,7 +79,7 @@ function firstPortalTowards(state: GameState, targets: Set<string>): number | nu
     for (let p = 0; p < portals.length; p++) {
       const { to, lockedUntilStep } = portals[p]!;
       if (firstStep.has(to) || !state.levels[to]) continue;
-      if (lockedUntilStep !== undefined && state.quest < lockedUntilStep) continue;
+      if (lockedUntilStep !== undefined && !reached(state, lockedUntilStep)) continue;
       const first = id === state.levelId ? p : firstStep.get(id)!;
       if (targets.has(to)) return first;
       firstStep.set(to, first);

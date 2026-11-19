@@ -16,6 +16,14 @@ export function checkContent(content: GameContent): string[] {
   for (const lc of content.levels) problems.push(...checkLevel(lc, content, levels).map((p) => `${lc.level.id}: ${p}`));
   problems.push(...unreachableLevels(content, levels));
   problems.push(...checkQuest(content, levels));
+  const named = content.quest.flatMap((s) => (s.id ? [s.id] : []));
+  const stepIds = new Set(named);
+  if (stepIds.size !== named.length) problems.push('two quest steps share a name');
+  for (const skill of content.hero.skills) {
+    if (skill.fromStep !== undefined && !stepIds.has(skill.fromStep)) {
+      problems.push(`skill "${skill.id}" names quest step "${skill.fromStep}", which doesn't exist`);
+    }
+  }
   const skillIds = content.hero.skills.map((s) => s.id);
   if (new Set(skillIds).size !== skillIds.length) problems.push('two hero skills share an id');
   for (const [kind, type] of Object.entries(content.enemies)) {
@@ -28,10 +36,18 @@ export function checkContent(content: GameContent): string[] {
     for (const s of lc.spawns) {
       if (s.carries && !content.hero.weapons?.[s.carries]) problems.push(`${lc.level.id}: a "${s.kind}" carries unknown weapon "${s.carries}"`);
     }
-    for (const p of lc.level.portals) {
-      if (p.lockedUntilStep !== undefined && p.lockedUntilStep >= content.quest.length) {
-        problems.push(`${lc.level.id}: the portal to "${p.to}" waits for quest step ${p.lockedUntilStep}, which doesn't exist`);
-      }
+    const stepNamed = (what: string, id: string | undefined) => {
+      if (id !== undefined && !stepIds.has(id)) problems.push(`${lc.level.id}: ${what} names quest step "${id}", which doesn't exist`);
+    };
+    for (const p of lc.level.portals) stepNamed(`the portal to "${p.to}"`, p.lockedUntilStep);
+    for (const s of lc.spawns) stepNamed(`a "${s.kind}"`, s.fromStep);
+    for (const n of lc.npcs) {
+      stepNamed(n.name, n.fromStep);
+      stepNamed(n.name, n.untilStep);
+    }
+    for (const r of lc.readables ?? []) {
+      stepNamed(`"${r.id}"`, r.fromStep);
+      stepNamed(`"${r.id}"`, r.untilStep);
     }
     const strengths = [lc.enemyStrength, ...lc.camps.map((c) => c.strength)].filter((s) => s !== undefined);
     if (strengths.some((s) => !(s > 0))) problems.push(`${lc.level.id}: enemies there have a strength that isn't above 0`);

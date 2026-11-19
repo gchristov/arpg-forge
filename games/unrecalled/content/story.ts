@@ -1,4 +1,5 @@
 import type { NpcType, QuestStep } from '../../../engine/sim/content';
+import { stepNumbers } from '../../../engine/sim/story-steps';
 import type { Speaker } from '../../../engine/ui/message-feed';
 
 /**
@@ -29,66 +30,48 @@ export const TAG = {
   doorCodeLoader: 'door-code-loader',
 } as const;
 
-/** The quest steps the rest of the game looks for, by what has just happened. */
-export const STEP = {
-  raidAsked: 1,
-  raidStopped: 2,
-  sentToPell: 3,
-  sawAsked: 4,
-  sawFound: 5,
-  sentToMags: 6,
-  codeAsked: 7,
-  loaderDown: 8,
-  powerOn: 9,
-  toldByMags: 10,
-  doorCodeTaken: 12,
-  toldToCharge: 14,
-  atCharger: 15,
-  charged: 16,
-  engineDown: 18,
-  crateOpened: 19,
-  orderAsked: 20,
-  orderClosed: 21,
-  freed: 22,
-  ending: 23,
-} as const;
-
 /** Back in Rustbelt by the fire, where U-7 arrives with Odell. */
 export const BY_THE_FIRE = { levelId: 'rustbelt', x: 22.5, y: 15.5 };
 /** Upriver, outside the Assembly, where the story ends. */
 export const UPRIVER = { levelId: 'upriver', x: 79.5, y: 63.5 };
 
 /** The quest: what the HUD says at each step, and what moves the quest to it. Steps played as scenes say nothing. */
-export const QUEST: Array<QuestStep & { text: string }> = [
-  { text: '' },
-  { text: 'Stop the loader at the crates.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.proveIt } },
+export const QUEST = [
+  { id: 'arrival', text: '' },
+  { id: 'raidAsked', text: 'Stop the loader at the crates.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.proveIt } },
   // Every machine answers to the Foundry: once U-7 has beaten one, all of them know.
-  { text: 'Talk to Odell.', reachedBy: { type: 'defeat', tag: TAG.raider }, alarmsEverything: true },
-  { text: 'Talk to Pell in her workshop.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.seePell } },
-  { text: 'Get Pell’s chainsaw back from the machine in the woods.', reachedBy: { type: 'reply', npcKind: 'tinker', id: REPLY.getSaw } },
-  { text: 'Take the chainsaw back to Pell.', reachedBy: { type: 'arm', weapon: 'chainsaw' } },
-  { text: 'Talk to Mags at the trading post.', reachedBy: { type: 'reply', npcKind: 'tinker', id: REPLY.seeMags } },
-  { text: 'Get the access code from the loader at the turbine.', reachedBy: { type: 'reply', npcKind: 'trader', id: REPLY.switchBack } },
-  { text: 'Enter the access code at the turbine.', reachedBy: { type: 'defeat', tag: TAG.switchLoader } },
+  { id: 'raidStopped', text: 'Talk to Odell.', reachedBy: { type: 'defeat', tag: TAG.raider }, alarmsEverything: true },
+  { id: 'sentToPell', text: 'Talk to Pell in her workshop.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.seePell } },
+  { id: 'sawAsked', text: 'Get Pell’s chainsaw back from the machine in the woods.', reachedBy: { type: 'reply', npcKind: 'tinker', id: REPLY.getSaw } },
+  { id: 'sawFound', text: 'Take the chainsaw back to Pell.', reachedBy: { type: 'arm', weapon: 'chainsaw' } },
+  { id: 'sentToMags', text: 'Talk to Mags at the trading post.', reachedBy: { type: 'reply', npcKind: 'tinker', id: REPLY.seeMags } },
+  { id: 'codeAsked', text: 'Get the access code from the loader at the turbine.', reachedBy: { type: 'reply', npcKind: 'trader', id: REPLY.switchBack } },
+  { id: 'loaderDown', text: 'Enter the access code at the turbine.', reachedBy: { type: 'defeat', tag: TAG.switchLoader } },
   // The terminals are there all along, so using one early mustn't skip ahead.
-  { text: 'Go back to Mags.', reachedBy: { type: 'use', id: 'switch' }, inOrder: true },
-  { text: 'Go through Mags’s back door into the Foundry.', reachedBy: { type: 'reply', npcKind: 'trader', id: REPLY.goIn } },
-  { text: 'Take the access code from the loader.', reachedBy: { type: 'enter', levelId: 'intake' } },
-  { text: 'Make your way to the Control Gallery.', reachedBy: { type: 'defeat', tag: TAG.doorCodeLoader } },
-  { text: 'Find your way to the Control Centre.', reachedBy: { type: 'enter', levelId: 'gallery' } },
-  { text: 'Get your access back.', reachedBy: { type: 'use', id: 'access-terminal' }, inOrder: true },
+  { id: 'powerOn', text: 'Go back to Mags.', reachedBy: { type: 'use', id: 'switch' }, inOrder: true },
+  { id: 'toldByMags', text: 'Go through Mags’s back door into the Foundry.', reachedBy: { type: 'reply', npcKind: 'trader', id: REPLY.goIn } },
+  { id: 'inIntake', text: 'Take the access code from the loader.', reachedBy: { type: 'enter', levelId: 'intake' } },
+  { id: 'doorCodeTaken', text: 'Make your way to the Control Gallery.', reachedBy: { type: 'defeat', tag: TAG.doorCodeLoader } },
+  { id: 'inGallery', text: 'Find your way to the Control Centre.', reachedBy: { type: 'enter', levelId: 'gallery' } },
+  { id: 'toldToCharge', text: 'Get your access back.', reachedBy: { type: 'use', id: 'access-terminal' }, inOrder: true },
   // Using the station shows its screen; plugging in uses it again, which restores U-7's access.
-  { text: 'Plug in at the charging station.', reachedBy: { type: 'use', id: 'charging-station' } },
-  { text: 'Go down to the Control Centre and free Odell.', reachedBy: { type: 'use', id: 'charging-station' } },
-  { text: 'Deactivate the Order Engine.', reachedBy: { type: 'enter', levelId: 'control' } },
+  { id: 'atCharger', text: 'Plug in at the charging station.', reachedBy: { type: 'use', id: 'charging-station' } },
+  { id: 'charged', text: 'Go down to the Control Centre and free Odell.', reachedBy: { type: 'use', id: 'charging-station' } },
+  { id: 'inControl', text: 'Deactivate the Order Engine.', reachedBy: { type: 'enter', levelId: 'control' } },
   // The machines stop where they stand and wait for orders.
-  { text: 'Find Odell.', reachedBy: { type: 'kill', enemyKind: 'orderEngine' }, calmsEverything: true },
-  { text: 'Talk to Odell.', reachedBy: { type: 'use', id: 'crate' } },
-  { text: 'Cancel the order at the order terminal.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.giveOrder } },
-  { text: 'Take Odell home.', reachedBy: { type: 'use', id: 'order-terminal' }, inOrder: true },
-  { text: '', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.goHome }, takesHeroTo: BY_THE_FIRE },
-  { text: '', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.upriver }, takesHeroTo: UPRIVER },
-];
+  { id: 'engineDown', text: 'Find Odell.', reachedBy: { type: 'kill', enemyKind: 'orderEngine' }, calmsEverything: true },
+  { id: 'crateOpened', text: 'Talk to Odell.', reachedBy: { type: 'use', id: 'crate' } },
+  { id: 'orderAsked', text: 'Cancel the order at the order terminal.', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.giveOrder } },
+  { id: 'orderClosed', text: 'Take Odell home.', reachedBy: { type: 'use', id: 'order-terminal' }, inOrder: true },
+  { id: 'freed', text: '', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.goHome }, takesHeroTo: BY_THE_FIRE },
+  { id: 'ending', text: '', reachedBy: { type: 'reply', npcKind: 'foreman', id: REPLY.upriver }, takesHeroTo: UPRIVER },
+] as const satisfies ReadonlyArray<QuestStep & { text: string }>;
+
+/** Each step's place in the quest line, by name, for the code that compares steps. */
+export const STEP = stepNumbers(QUEST);
+
+/** The name of a quest step. */
+export type StepId = keyof typeof STEP;
 
 export const NPCS: Record<string, NpcType> = {
   foreman: { services: [] },

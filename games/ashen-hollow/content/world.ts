@@ -22,6 +22,6 @@ export function ashenHollowContent(): GameContent {
     enemies: ENEMIES,
     npcRadius: 0.32,
     npcs: NPCS,
-    quest: QUEST.map((s) => (s.reachedBy ? { reachedBy: s.reachedBy } : {})),
+    quest: QUEST.map(({ text: _text, ...step }) => step),
   };
 }

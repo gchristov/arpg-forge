@@ -11,7 +11,7 @@ import { currentLevel, type SimEvent } from '../../engine/sim/state';
 import { DialogBox } from '../../engine/ui/dialog-box';
 import { ashenHollowLook, MODEL_URLS } from './art/look';
 import { ashenHollowSounds } from './audio/sounds';
-import { BOSS_DEFEATED_STEP, dialogueFor, NPCS } from './content/story';
+import { dialogueFor, NPCS, STEP } from './content/story';
 import { ashenHollowContent } from './content/world';
 import { Hud } from './ui/hud';
 
@@ -126,7 +126,7 @@ function playSounds(events: SimEvent[]): void {
         break;
       }
       case 'QuestAdvanced':
-        if (e.step === BOSS_DEFEATED_STEP) sfx.level();
+        if (e.step === STEP.bossDefeated) sfx.level();
         break;
     }
   }
@@ -180,7 +180,7 @@ function react(events: SimEvent[]): void {
         else labels.text(e.x, e.y, 30 * PX, '+1 potion', '#ff8a96', 13);
         break;
       case 'QuestAdvanced':
-        if (e.step === BOSS_DEFEATED_STEP) {
+        if (e.step === STEP.bossDefeated) {
           setTimeout(() => hud.banner('The Bone Lord is destroyed', 'Ashen Hollow is safe. The wilds still stir.', 4.5), 600);
         }
         break;
