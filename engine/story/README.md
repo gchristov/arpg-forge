@@ -12,7 +12,8 @@ The engine runs the story; each game writes its own, in `games/<name>/story/`:
 | `people.ts` | what each person says, and the services they offer |
 | `things.ts` | what each thing to read or use shows |
 | `voices.ts` | who speaks in the message box |
-| `lines.ts` | the lines said as the story goes: thoughts, announcements, scenes |
+| `rules.ts` | what happens as the story goes: on an event, the lines said, pages shown and the rest |
+| `lines.ts` | the words of the scenes |
 
 Where people, things and enemies are placed is in the game's `levels/`.
 
@@ -135,10 +136,49 @@ switch: {
 `screen: true` prints it like a terminal; without it, it's something written and shows at once. Using something that
 moves the story on shows what it said just before.
 
+## Rules: what happens as the story goes
+
+Everything else that happens in the story is a rule in `rules.ts`: **on** an event, **when** a condition holds, **do**
+the actions in order. `once: true` does it only the first time.
+
+```typescript
+{ on: { reached: 'loaderDown' }, do: [{ think: 'Got it. The turbine’s access code.' }] },
+{ on: { enter: 'intake' }, once: true, do: [{ say: 'U-7 DETECTED INSIDE THE FACILITY. ALARM SYSTEMS ACTIVE.', by: 'foundry' }] },
+{ on: { near: 'charging-station' }, once: true, do: [{ think: 'My old charging station. …' }] },
+{ on: { enter: 'control' }, once: true, when: { until: 'engineDown' }, do: [{ say: 'U-7. You came back. …', by: 'orderEngine' }] },
+{ on: { reached: 'orderClosed' }, do: [{ show: GIVING_THE_ORDER, then: [{ talk: 'foreman' }] }] },
+```
+
+| `on` | Happens when |
+| --- | --- |
+| `{ reached: 'step' }` | the quest reaches the step |
+| `{ enter: 'level' }` | the hero walks into the level (not getting back up in it) |
+| `{ near: 'thing', within: 4 }` | the hero comes within that many tiles of the thing (2.5 if not given), each time they come near |
+| `{ read: 'thing' }` | the hero reads or uses the thing |
+| `{ lockedDoor: true }` | the hero walks into a door the story keeps locked, once each time |
+| `{ alarm: true }` | the alarm sounds |
+| `{ fell: true }` | the hero goes down |
+| `{ bought: { from: 'trader', service: 0 } }` | the hero buys that service from someone of that kind |
+
+| `do` | Does |
+| --- | --- |
+| `{ say: 'text', by: 'voice' }` | someone says a line in the message box, by their voice in `voices.ts` |
+| `{ think: 'text' }` | the hero thinks a line |
+| `{ talk: 'kind' }` | opens what the person of that kind on the hero's level says |
+| `{ show: page, then: [...] }` | shows a page (or `{ thing: 'id', button: 'Plug in' }`: what a thing says, with its own button); `afterLines: true` waits for the message box to empty first; `then` runs once it's closed |
+| `{ use: 'thing' }` | uses the thing, as if tapped |
+| `{ flag: 'name' }` / `{ unflag: 'name' }` | sets or clears a story flag |
+| `{ banner: 'title', subtitle, seconds, delay }` | a title across the screen |
+| `{ sound: 'name' }` | one of the game's sounds |
+| `{ run: 'name' }` | one of the game's own actions, registered in its `main.ts` |
+
+When a thing is used, it shows what it says, unless a rule on the same event opens a page or a conversation instead:
+that's how using the order terminal at the right step plays its scene rather than its screen.
+
 ## Story flags
 
 For what the story remembers that isn't a step, such as "has gone down since last patched up": `{ flag: 'wentDown' }` in
-a condition. The game sets and clears a flag with the `setFlag` command.
+a condition, set and cleared by the `flag` and `unflag` actions.
 
 ## Changing the story
 

@@ -5,24 +5,22 @@ import { Game } from '../../engine/game/game';
 import { PX } from '../../engine/game/world-view';
 import { servicePrice } from '../../engine/sim/interaction';
 import { currentLevel, type RefusalReason, type SimEvent } from '../../engine/sim/state';
+import { until } from '../../engine/story/beats';
 import { ConversationView } from '../../engine/story/conversation-view';
-import { read, talkTo } from '../../engine/story/talk';
+import { StoryRunner } from '../../engine/story/story-runner';
 import { DialogBox } from '../../engine/ui/dialog-box';
 import { PRINTING, SPEAKING } from '../../engine/ui/typewriter';
 import { MODEL_URLS, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
-import {
-  AFTER_READING, ALARM, ARRIVAL, CHARGED, CHARGING, ENDING, ENGINE_SAYS, GIVING_THE_ORDER, HOMECOMING, levelUp, LOCKED,
-  MACHINE_SCANS, ON_ENTERING, ON_NEARING, scrapDropped, STEP_LINES,
-} from './story/lines';
+import { ARRIVAL, ASSEMBLY, CHARGED, ENDING, HOMECOMING, levelUp, MACHINE_SCANS, scrapDropped } from './story/lines';
 import { NPCS, PEOPLE } from './story/people';
-import { BY_THE_FIRE, REPLY, STEP, UPRIVER } from './story/quest';
+import { BY_THE_FIRE, REPLY, UPRIVER } from './story/quest';
+import { RULES } from './story/rules';
 import { THINGS } from './story/things';
 import { VOICES, type Line } from './story/voices';
 import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
-import { until } from './ui/beats';
 import { Ending } from './ui/ending';
 import { Homecoming } from './ui/homecoming';
 import { EMP, Hud } from './ui/hud';
@@ -90,12 +88,6 @@ const REFUSALS: Record<RefusalReason, string> = {
 
 const kindOf = (enemyId: number): string | undefined => currentLevel(state).enemies.find((e) => e.id === enemyId)?.kind;
 
-/** The floors whose speakers have already greeted the salvager. */
-const greeted = new Set<string>();
-
-/** Whether the Foundry has announced the line breach. */
-let breachAnnounced = false;
-
 /** Shows conversations and readings in the dialogue box, with a portrait for people and every page kept in the log. */
 const conversation = new ConversationView(dialog, {
   send: (command) => game.send(command),
@@ -113,13 +105,6 @@ const conversation = new ConversationView(dialog, {
   },
 });
 
-/** Opens what a townsperson says, by their kind. */
-function showDialogue(npcId: number, kind: string): void {
-  const person = PEOPLE[kind];
-  const talk = person && talkTo(person, state);
-  if (talk) conversation.show(talk, npcId);
-}
-
 /** The speaker's face beside a page of dialogue; signs and screens have none. */
 function showPortrait(url: string | undefined): void {
   const picture = $('dlgPic') as HTMLImageElement;
@@ -128,68 +113,9 @@ function showPortrait(url: string | undefined): void {
   if (url) picture.src = url;
 }
 
-/** How long after the last locked-door event a new one counts as walking into the door again. */
-const LOCKED_AGAIN_MS = 2500;
-let lastLocked = -Infinity;
-
 const say = (lines: Line[] | undefined): void => {
   for (const line of lines ?? []) hud.say(line.text, line.from);
 };
-
-/** Opens what Odell has to say, wherever he is. */
-function talkToOdell(): void {
-  const foreman = currentLevel(state).npcs.find((n) => n.kind === 'foreman');
-  if (foreman) showDialogue(foreman.id, foreman.kind);
-}
-
-/** What reading something says, or the scene it starts: the charging station, the crate and the order terminal. */
-function showReading(id: string, events: SimEvent[]): void {
-  const reached = events.flatMap((e) => (e.type === 'QuestAdvanced' ? [e.step] : []));
-  // Opening the crate lets Odell out, and he speaks at once.
-  if (reached.includes(STEP.crateOpened)) {
-    talkToOdell();
-    return;
-  }
-  const thing = THINGS[id];
-  if (!thing) return;
-  // Worded as it was when it was used, before using it moved the story on.
-  const before = Math.min(state.quest, ...reached.map((step) => step - 1));
-  if (reached.includes(STEP.atCharger)) {
-    // The EMP is the charge's gift, so it shows once the scene is over. The screen waits for the salvager's thought on
-    // coming near, which a page opening at once would put away. Plugging in uses the station again, which authorises
-    // U-7 and opens the door down.
-    hud.empWithheld = true;
-    const station = currentLevel(state).readables.findIndex((r) => r.id === id);
-    const plugIn = read(thing, state, before, 'Plug in');
-    const plugInAgain = () => game.send({ type: 'read', index: station });
-    void until(() => hud.quiet).then(() => plugIn && conversation.show(plugIn, null, plugInAgain));
-  } else if (reached.includes(STEP.charged)) conversation.show(CHARGING, null, () => void chargeUp());
-  else if (reached.includes(STEP.orderClosed)) conversation.show(GIVING_THE_ORDER, null, talkToOdell);
-  else {
-    const reading = read(thing, state, before);
-    if (reading) conversation.show(reading);
-  }
-  const thought = AFTER_READING[id];
-  if (thought && !thoughtsHad.has(id)) say([{ text: thought }]);
-  thoughtsHad.add(id);
-}
-
-/** Things the salvager has already had their thought about. */
-const thoughtsHad = new Set<string>();
-
-/** How near, in tiles, the salvager comes to something before thinking about it. */
-const NEARING = 2.5;
-
-/** The salvager's thought on first coming near something that has one. */
-function thinkNearby(): void {
-  for (const r of currentLevel(state).readables) {
-    const thought = ON_NEARING[r.id];
-    if (!thought || thoughtsHad.has(r.id)) continue;
-    if (Math.hypot(state.hero.x - (r.tx + 0.5), state.hero.y - (r.ty + 0.5)) > NEARING) continue;
-    thoughtsHad.add(r.id);
-    say([{ text: thought }]);
-  }
-}
 
 /**
  * After plugging in: U-7 lets the Foundry believe it has come back, then the charge kept for it bursts out of its own
@@ -201,15 +127,6 @@ async function chargeUp(): Promise<void> {
   game.send({ type: 'useSkill', slot: EMP });
   hud.empWithheld = false;
   say([CHARGED.burst]);
-}
-
-/** Steps whose lines wait for the scene that reaches them. */
-const AFTER_SCENE: number[] = [STEP.ending];
-
-/** What happens in the world as the story moves on. */
-function reachStep(step: number): void {
-  if (step === STEP.freed) void homecoming.play(HOMECOMING);
-  if (!AFTER_SCENE.includes(step)) say(STEP_LINES[step]);
 }
 
 /** Where the camera rests while the town welcomes the foreman home: on the fire and the people round it. */
@@ -250,16 +167,6 @@ async function arrive(): Promise<void> {
   if (foreman) game.send({ type: 'reply', npcId: foreman.id, id: REPLY.proveIt });
 }
 
-/** Whether the Order Engine has greeted the salvager yet. */
-let engineSpoke = false;
-
-/** The Order Engine speaks the moment the salvager walks into its hall, if it's still standing. */
-function greetFromEngine(): void {
-  if (engineSpoke || !currentLevel(state).enemies.some((e) => e.kind === 'orderEngine' && !e.dead)) return;
-  engineSpoke = true;
-  say([ENGINE_SAYS]);
-}
-
 /** After a purchase: getting patched up closes the dialogue, other services refresh it with the new prices. */
 function reactToService(npcId: number, index: number, x: number, y: number): void {
   const npc = currentLevel(state).npcs.find((n) => n.id === npcId);
@@ -267,12 +174,11 @@ function reactToService(npcId: number, index: number, x: number, y: number): voi
   if (!service) return;
   if (service.type === 'restore') {
     labels.text(x, y, 46 * PX, 'Patched up', '#7ae08a', 15);
-    game.send({ type: 'setFlag', flag: 'wentDown', on: false });
     dialog.close();
     return;
   }
   if (service.type === 'upgradeMelee') labels.text(x, y, 46 * PX, 'Upgraded', '#e8c870', 15);
-  if (dialog.npcId === npcId) showDialogue(npcId, npc.kind);
+  if (dialog.npcId === npcId) story.talk(npcId);
 }
 
 /** Where the salvager was last frame: the place, which level it's on, and how far east. */
@@ -307,13 +213,34 @@ const ending = new Ending(game, {
     sfx.slam();
     sfx.siren();
   },
-  online: () => say(STEP_LINES[STEP.ending]),
+  online: () => say(ASSEMBLY),
   quiet: () => hud.quiet,
   card: () => {
     $('endT').textContent = ENDING.title;
     $('endS').textContent = ENDING.subtitle;
     $('endThanks').textContent = ENDING.thanks;
     $('end').hidden = false;
+  },
+});
+
+/** Unrecalled's story: what people say, what things show, and its rules (`story/`). */
+const story = new StoryRunner(RULES, {
+  state,
+  send: (command) => game.send(command),
+  conversation,
+  people: PEOPLE,
+  things: THINGS,
+  voices: VOICES,
+  say: (text, from) => hud.say(text, from),
+  quiet: () => hud.quiet,
+  banner: (title, subtitle, seconds) => hud.banner(title, subtitle, seconds),
+  sound: () => {},
+  actions: {
+    // The EMP is the charge's gift, so its button shows once the overcharge has burst out.
+    withholdEmp: () => (hud.empWithheld = true),
+    overcharge: () => void chargeUp(),
+    homecoming: () => void homecoming.play(HOMECOMING),
+    ending: () => ending.play(performance.now()),
   },
 });
 
@@ -397,18 +324,13 @@ function playSounds(events: SimEvent[]): void {
 /** Unrecalled's words and banners for the rules' events; the engine shows the rest in the world. */
 function react(events: SimEvent[]): void {
   playSounds(events);
+  story.react(events);
   for (const e of events) {
     switch (e.type) {
       case 'EnteredLevel': {
         const { level } = currentLevel(state);
-        if (e.levelId === UPRIVER.levelId) ending.play(performance.now());
-        else if (!state.hero.dead && events.every((other) => other.type !== 'HeroRespawned')) {
-          hud.banner(level.name, level.subtitle, 2);
-          greetFromEngine();
-          // The speakers greet each floor once, on the way down.
-          if (!greeted.has(e.levelId)) say(ON_ENTERING[e.levelId] && [ON_ENTERING[e.levelId]!]);
-          greeted.add(e.levelId);
-        }
+        const walkedIn = !state.hero.dead && events.every((other) => other.type !== 'HeroRespawned');
+        if (walkedIn && e.levelId !== UPRIVER.levelId) hud.banner(level.name, level.subtitle, 2);
         break;
       }
       case 'EnemyDamaged': {
@@ -419,18 +341,6 @@ function react(events: SimEvent[]): void {
       case 'EnemyRecognised': {
         const kind = kindOf(e.enemyId);
         if (kind && unrecalledLook.actor(kind).scanner) labels.text(e.x, e.y, 70 * PX * view.scaleOf(kind), MACHINE_SCANS, '#ff8a6a', 15);
-        break;
-      }
-      // The line is breached once, when U-7 beats its first machine; every machine hears it at once.
-      case 'LevelAlarmed':
-        if (!breachAnnounced) hud.say(ALARM, VOICES.foundry);
-        breachAnnounced = true;
-        break;
-      case 'PortalLocked': {
-        // Standing in a locked doorway repeats the event; the thought comes once each time the salvager walks into it.
-        const now = performance.now();
-        if (now - lastLocked > LOCKED_AGAIN_MS) hud.say(LOCKED);
-        lastLocked = now;
         break;
       }
       case 'HeroHurt':
@@ -449,20 +359,9 @@ function react(events: SimEvent[]): void {
         if (e.kind === 'gold') labels.text(e.x, e.y, 30 * PX, `+${e.amount} scrap`, '#e8c870', 13);
         else if (e.kind === 'healingItem') labels.text(e.x, e.y, 30 * PX, '+1 patch kit', '#7ae08a', 13);
         break;
-      case 'Read':
-        showReading(e.id, events);
-        break;
-      case 'QuestAdvanced':
-        reachStep(e.step);
-        break;
       case 'HeroDied':
-        // Mags remarks on it until she next patches U-7 up.
-        game.send({ type: 'setFlag', flag: 'wentDown', on: true });
         dialog.close();
         hud.hideBanner();
-        break;
-      case 'Talked':
-        showDialogue(e.npcId, e.kind);
         break;
       case 'ServiceUsed':
         reactToService(e.npcId, e.service, e.x, e.y);
@@ -478,7 +377,6 @@ game.run({
   react,
   update: (s) => {
     showPlace();
-    thinkNearby();
     hud.update(s, place!.at.name);
     chainsaw.update(s, playing);
     ending.update(performance.now());

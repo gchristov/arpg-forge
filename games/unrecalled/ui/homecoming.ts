@@ -1,5 +1,5 @@
 import type { Line } from '../story/voices';
-import { until, wait } from './beats';
+import { until, wait } from '../../../engine/story/beats';
 
 /** What the homecoming needs from the game to play out. */
 export interface HomecomingParts {

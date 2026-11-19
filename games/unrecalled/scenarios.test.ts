@@ -185,9 +185,19 @@ describe('Unrecalled scenarios', () => {
     const depot = currentLevel(state).level.structures.findIndex((s) => s.kind === 'tradingPost');
     play(state, 25, [{ type: 'enterStructure', index: depot }]);
     play(state, 1);
+    // Steps back from the door before and after: walking into a locked door is told once each time.
     const tryDoor = (to: string) => {
       const door = currentLevel(state).level.portals.find((p) => p.to === to)!;
-      return play(state, 25, [{ type: 'walkInto', tx: door.tx, ty: door.ty }]).filter((e) => e.type === 'PortalLocked').length;
+      const { start } = currentLevel(state).level;
+      const dx = start.x - door.tx - 0.5;
+      const dy = start.y - door.ty - 0.5;
+      const away = Math.hypot(dx, dy);
+      const back = { x: door.tx + 0.5 + (dx / away) * 1.5, y: door.ty + 0.5 + (dy / away) * 1.5 };
+      play(state, 4, [{ type: 'walk', ...back }]);
+      const tried = play(state, 25, [{ type: 'walkInto', tx: door.tx, ty: door.ty }]);
+      const told = tried.filter((e) => e.type === 'PortalLocked').length;
+      play(state, 4, [{ type: 'walk', ...back }]);
+      return told;
     };
     expect(tryDoor('intake')).toBeGreaterThan(0);
     jumpToStep(state, STEP.powerOn);

@@ -29,13 +29,15 @@ describe('sealed portals', () => {
 });
 
 describe('locked portals', () => {
-  it('stay locked until the quest reaches their step, saying so, then let the hero through', () => {
+  it('stay locked until the quest reaches their step, saying so once each time the hero walks in, then let the hero through', () => {
     const state = arena(OPEN_ROOM, { x: 2.5, y: 2.5 });
     state.rules.quest = [{}, { id: 'powered', reachedBy: { type: 'use', id: 'breaker' } }];
     currentLevel(state).level.portals.push({ tx: 2, ty: 5, to: 'home', stepOut: { x: 0, y: 1 }, lockedUntilStep: 'powered' });
     const events = run(state, 4, [{ type: 'walkInto', tx: 2, ty: 5 }]);
     expect(state.levelId).toBe('arena');
-    expect(ofType(events, 'PortalLocked')[0]).toEqual({ type: 'PortalLocked', to: 'home', x: 2.5, y: 5.5 });
+    expect(ofType(events, 'PortalLocked')).toEqual([{ type: 'PortalLocked', to: 'home', x: 2.5, y: 5.5 }]);
+    run(state, 2, [{ type: 'walk', x: 2.5, y: 2.5 }]);
+    expect(ofType(run(state, 4, [{ type: 'walkInto', tx: 2, ty: 5 }]), 'PortalLocked')).toHaveLength(1);
     state.quest = 1;
     run(state, 6, [{ type: 'walkInto', tx: 2, ty: 5 }]);
     expect(state.levelId).toBe('home');

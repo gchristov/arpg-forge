@@ -11,6 +11,9 @@ export const VOICES = {
   u7: { name: 'U-7', voice: 'person' },
 } satisfies Record<string, Speaker>;
 
+/** The name of a voice. */
+export type VoiceId = keyof typeof VOICES;
+
 /** A line in the message box. */
 export interface Line {
   text: string;

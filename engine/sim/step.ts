@@ -6,6 +6,7 @@ import { updateItems } from './loot';
 import { separateBodies } from './separation';
 import { placeAt } from './setup';
 import { currentLevel, type GameState, type SimEvent, type StepInput } from './state';
+import { noticeApproaches } from './approach';
 import { reached } from './story-steps';
 import { travel } from './travel';
 
@@ -30,6 +31,7 @@ export function step(state: GameState, input: StepInput, dt: number): SimEvent[]
     for (const command of input.commands) applyCommand(state, command, events);
     updateHeroMovement(state, input.held, dt, events);
     enterPortalUnderHero(state, events);
+    noticeApproaches(state, events);
   }
   updateEnemies(state, dt, events);
   updateNpcs(state);
@@ -62,12 +64,16 @@ function enterPortalUnderHero(state: GameState, events: SimEvent[]): void {
   const tx = Math.floor(state.hero.x);
   const ty = Math.floor(state.hero.y);
   const portal = level.portals.find((p) => p.tx === tx && p.ty === ty);
+  const doorway = `${level.id}:${tx}:${ty}`;
+  if (state.inLockedDoor !== doorway) state.inLockedDoor = null;
   if (!portal) return;
   const destination = state.levels[portal.to];
   if (!destination) return;
   if (portal.lockedUntilStep !== undefined && !reached(state, portal.lockedUntilStep)) {
-    state.portalCooldown = SEALED_REMINDER_SECONDS;
-    events.push({ type: 'PortalLocked', to: portal.to, x: portal.tx + 0.5, y: portal.ty + 0.5 });
+    if (state.inLockedDoor !== doorway) {
+      events.push({ type: 'PortalLocked', to: portal.to, x: portal.tx + 0.5, y: portal.ty + 0.5 });
+    }
+    state.inLockedDoor = doorway;
     return;
   }
   if (portal.sealed && currentLevel(state).enemies.some((e) => !e.dead)) {
