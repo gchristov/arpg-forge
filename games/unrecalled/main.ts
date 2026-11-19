@@ -161,7 +161,8 @@ function showReading(id: string, events: SimEvent[]): void {
     hud.empWithheld = true;
     const station = currentLevel(state).readables.findIndex((r) => r.id === id);
     const plugIn = read(thing, state, before, 'Plug in');
-    void until(() => hud.quiet).then(() => plugIn && conversation.show(plugIn, null, () => game.send({ type: 'read', index: station })));
+    const plugInAgain = () => game.send({ type: 'read', index: station });
+    void until(() => hud.quiet).then(() => plugIn && conversation.show(plugIn, null, plugInAgain));
   } else if (reached.includes(STEP.charged)) conversation.show(CHARGING, null, () => void chargeUp());
   else if (reached.includes(STEP.orderClosed)) conversation.show(GIVING_THE_ORDER, null, talkToOdell);
   else {
