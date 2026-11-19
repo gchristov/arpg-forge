@@ -108,6 +108,8 @@
             "Torso",
             "Shoulder.L",
             "Shoulder.R",
+            "UpperArm.L",
+            "UpperArm.R",
             "Hips",
             "UpperLeg.L",
             "UpperLeg.R"
