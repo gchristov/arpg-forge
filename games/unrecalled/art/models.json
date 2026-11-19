@@ -103,13 +103,6 @@
         },
         {
           "material": "Skin",
-          "into": "Dome",
-          "bones": [
-            "Head"
-          ]
-        },
-        {
-          "material": "Skin",
           "into": "Shell",
           "bones": [
             "Torso",
@@ -170,14 +163,9 @@
       },
       "paint": {
         "Skin": {
-          "colour": "#b9c2cc",
-          "opacity": 0.28,
-          "roughness": 0.25
-        },
-        "Dome": {
-          "colour": "#e4eaf0",
-          "opacity": 0.55,
-          "roughness": 0.15
+          "colour": "#f2f4f6",
+          "opacity": 0.18,
+          "roughness": 0.1
         },
         "Shell": {
           "colour": "#c9d0d8",
