@@ -1,7 +1,7 @@
 import { valueNoise } from '../../../engine/core/math';
 import type { LevelContent } from '../../../engine/sim/content';
 import { inBounds, setProp, setSolid, tileIndex } from '../../../engine/world/tile-map';
-import { TAG } from '../content/story';
+import { TAG } from '../story/quest';
 import { Ground, Prop } from '../content/tiles';
 import { paintPath } from './wilds';
 

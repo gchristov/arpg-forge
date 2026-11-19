@@ -94,6 +94,10 @@ export function applyCommand(state: GameState, command: Command, events: SimEven
     case 'reply':
       reply(state, command.npcId, command.id, events);
       break;
+    case 'setFlag':
+      if (command.on) state.flags[command.flag] = true;
+      else delete state.flags[command.flag];
+      break;
   }
 }
 

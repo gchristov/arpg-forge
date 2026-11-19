@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { checkContent } from '../../engine/sim/content-checks';
 import { MODEL_URLS, unrecalledLook } from './art/look';
-import { dialogueFor, QUEST, READABLE_IDS, STEP } from './content/story';
+import { PEOPLE } from './story/people';
+import { QUEST, STEP } from './story/quest';
+import { THINGS } from './story/things';
 import { unrecalledContent } from './content/world';
 
 const content = unrecalledContent();
@@ -16,10 +18,11 @@ describe('Unrecalled content', () => {
     const scenes: number[] = [0, STEP.freed, STEP.ending];
     expect(QUEST.every((step, at) => step.text || scenes.includes(at))).toBe(true);
     const kinds = content.levels.flatMap((l) => l.npcs.map((n) => n.kind));
-    expect(kinds.filter((kind) => !dialogueFor(kind, 0, 0, null))).toEqual([]);
-    const ids = content.levels.flatMap((l) => (l.readables ?? []).map((r) => r.id));
-    expect(ids.filter((id) => !READABLE_IDS.includes(id))).toEqual([]);
-    expect(READABLE_IDS.filter((id) => !ids.includes(id))).toEqual([]);
+    expect(kinds.filter((kind) => !PEOPLE[kind])).toEqual([]);
+    // Odell's crate shows nothing: opening it lets him out, and he speaks.
+    const ids = content.levels.flatMap((l) => (l.readables ?? []).map((r) => r.id)).filter((id) => id !== 'crate');
+    expect(ids.filter((id) => !THINGS[id])).toEqual([]);
+    expect(Object.keys(THINGS).filter((id) => !ids.includes(id))).toEqual([]);
   });
 
   it('puts a panel beside every door the story keeps locked, saying what opens it', () => {

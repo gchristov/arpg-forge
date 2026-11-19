@@ -190,6 +190,8 @@ export interface GameState {
   };
   /** Index of the current quest step. */
   quest: number;
+  /** The story's flags that are set, by name: what the story remembers that isn't a step, such as "has gone down". */
+  flags: Record<string, true>;
   levels: Record<string, LevelState>;
   levelId: string;
   startLevelId: string;
@@ -220,7 +222,9 @@ export type Command =
   | { type: 'read'; index: number }
   | { type: 'useService'; npcId: number; service: number }
   /** The player chose a reply, by its id, in a conversation with this NPC. */
-  | { type: 'reply'; npcId: number; id: string };
+  | { type: 'reply'; npcId: number; id: string }
+  /** Sets or clears one of the story's flags. */
+  | { type: 'setFlag'; flag: string; on: boolean };
 
 export interface StepInput {
   commands: Command[];

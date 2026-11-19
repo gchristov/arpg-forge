@@ -2,7 +2,7 @@ import { valueNoise } from '../../../engine/core/math';
 import type { LevelContent } from '../../../engine/sim/content';
 import type { BuildingPart, Level } from '../../../engine/world/level';
 import { createTileMap, setProp, setSolid, tileIndex } from '../../../engine/world/tile-map';
-import { UPRIVER } from '../content/story';
+import { UPRIVER } from '../story/quest';
 import { Ground, Prop } from '../content/tiles';
 
 // Wide enough that the salvager, set down in its far corner, is out of the picture while the Assembly wakes.

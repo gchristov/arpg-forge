@@ -3,7 +3,8 @@ import { buildInterior, INTERIOR_IDS } from '../levels/interiors';
 import { generateVillage } from '../levels/village';
 import { ENEMIES } from './enemies';
 import { HERO } from './hero';
-import { NPCS, QUEST } from './story';
+import { NPCS } from '../story/people';
+import { QUEST } from '../story/quest';
 
 /** Ashen Hollow as the rules see it: the village and its four interiors. */
 export function ashenHollowContent(): GameContent {

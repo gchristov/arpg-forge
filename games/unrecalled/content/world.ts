@@ -6,7 +6,8 @@ import { buildRustbelt } from '../levels/rustbelt';
 import { buildUpriver } from '../levels/upriver';
 import { ENEMIES } from './enemies';
 import { HERO } from './hero';
-import { NPCS, QUEST } from './story';
+import { NPCS } from '../story/people';
+import { QUEST } from '../story/quest';
 
 /**
  * Unrecalled as the rules see it: Rustbelt, its buildings and the dead woods to its east, and the Foundry's four floors

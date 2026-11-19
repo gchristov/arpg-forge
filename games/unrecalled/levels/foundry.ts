@@ -1,6 +1,6 @@
 import type { LevelContent, NpcPlacement } from '../../../engine/sim/content';
 import { roomFromRows, type RoomKey } from '../../../engine/sim/rooms';
-import { TAG, type StepId } from '../content/story';
+import { TAG, type StepId } from '../story/quest';
 import { Ground, Prop } from '../content/tiles';
 
 /**
