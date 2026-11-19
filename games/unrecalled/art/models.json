@@ -111,7 +111,15 @@
           "Pole",
           "Foot",
           "Bone"
-        ]
+        ],
+        "wires": {
+          "colours": [
+            "#b8352a",
+            "#2f6db5"
+          ],
+          "thickness": 0.035,
+          "apart": 0.13
+        }
       },
       "core": {
         "bone": "Torso",
@@ -121,6 +129,13 @@
           "size": 2.2,
           "opacity": 0.25
         }
+      },
+      "brain": {
+        "bone": "Head",
+        "colour": "#8a95a3",
+        "size": 1.05,
+        "up": 0.85,
+        "back": 0.3
       },
       "paint": {
         "Skin": {
@@ -141,6 +156,11 @@
         "Halo": {
           "glow": "#ffa53a",
           "glowStrength": 2
+        },
+        "Synapse": {
+          "colour": "#ffd29a",
+          "glow": "#ffa53a",
+          "glowStrength": 4
         }
       }
     },

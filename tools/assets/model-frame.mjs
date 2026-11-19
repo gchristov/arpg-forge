@@ -5,15 +5,15 @@ import { linear } from './model-parts.mjs';
 
 const SIDES = 8;
 
-/** A tube of `radius` from y = 0 to y = `length`, open at the ends, which the joints cover. */
-function tube(radius, length) {
+/** A tube of `radius` from y = 0 to y = `length`, open at the ends, which the joints cover, moved `ox` and `oz` aside. */
+function tube(radius, length, ox = 0, oz = 0) {
   const positions = [];
   const normals = [];
   const indices = [];
   for (let i = 0; i <= SIDES; i++) {
     const a = (i / SIDES) * Math.PI * 2;
     const [x, z] = [Math.cos(a), Math.sin(a)];
-    positions.push(x * radius, 0, z * radius, x * radius, length, z * radius);
+    positions.push(ox + x * radius, 0, oz + z * radius, ox + x * radius, length, oz + z * radius);
     normals.push(x, 0, z, x, 0, z);
   }
   for (let i = 0; i < SIDES; i++) {
@@ -75,9 +75,12 @@ const bonesOf = (doc) => new Set(doc.getRoot().listSkins().flatMap((skin) => ski
 /**
  * Runs a rod of `thickness` (a share of its length) along every bone to each child bone, with a ball at each joint,
  * drawn in a new material called `material` of `colour`. Bones whose names contain any of `skip` are left bare.
+ * `wires` runs a cable of each colour alongside every rod, `thickness` of the rod's length across and `apart` of it
+ * out from the rod, in materials called Wire.0, Wire.1 and so on.
  */
-export function addFrame(doc, { material: name, colour, thickness, skip = [] }) {
+export function addFrame(doc, { material: name, colour, thickness, skip = [], wires }) {
   const material = doc.createMaterial(name).setBaseColorFactor([...linear(colour), 1]).setMetallicFactor(0.9).setRoughnessFactor(0.35);
+  const wireMaterials = (wires?.colours ?? []).map((c, i) => doc.createMaterial(`Wire.${i}`).setBaseColorFactor([...linear(c), 1]).setRoughnessFactor(0.5));
   const bones = bonesOf(doc);
   const bare = (bone) => skip.some((part) => bone.getName().includes(part));
   let rods = 0;
@@ -91,6 +94,13 @@ export function addFrame(doc, { material: name, colour, thickness, skip = [] }) 
       const radius = length * thickness;
       bone.addChild(doc.createNode(`${name}.${bone.getName()}`).setMesh(meshOf(doc, tube(radius, length), material)).setRotation(turnUpTo(to)));
       child.addChild(doc.createNode(`${name}.${child.getName()}.joint`).setMesh(meshOf(doc, ball(radius * 1.8), material)));
+      wireMaterials.forEach((wire, i) => {
+        // Spread round the rod, each cable on its own side of it.
+        const a = (i / wireMaterials.length) * Math.PI * 2 + 0.6;
+        const out = length * wires.apart;
+        const cable = tube(length * wires.thickness, length, Math.cos(a) * out, Math.sin(a) * out);
+        bone.addChild(doc.createNode(`Wire.${i}.${bone.getName()}`).setMesh(meshOf(doc, cable, wire)).setRotation(turnUpTo(to)));
+      });
       rods++;
     }
   }
@@ -115,4 +125,29 @@ export function addCore(doc, { bone: boneName, colour, size, halo }) {
   const core = doc.createNode('Core').setMesh(meshOf(doc, ball(radius, 8), glowing('Core', 1))).setTranslation([0, radius * 0.6, radius * 0.9]);
   bone.addChild(core);
   if (halo) core.addChild(doc.createNode('Core.halo').setMesh(meshOf(doc, ball(radius * halo.size, 8), glowing('Halo', halo.opacity))));
+}
+
+/**
+ * Fits a machine's brain into `bone` (a head): two metal lobes of `colour`, `size` of the bone's length across, a
+ * `back` share of it behind the bone and `up` above it, studded with glowing nodes in a material called Synapse.
+ */
+export function addBrain(doc, { bone: boneName, colour, size, up = 0.5, back = 0.1 }) {
+  const bone = [...bonesOf(doc)].find((b) => b.getName() === boneName);
+  if (!bone) throw new Error(`no bone ${boneName} for the brain`);
+  const child = bone.listChildren().find((c) => bonesOf(doc).has(c));
+  const length = child ? Math.hypot(...child.getTranslation()) : 1;
+  const lobe = doc.createMaterial('Brain').setBaseColorFactor([...linear(colour), 1]).setMetallicFactor(0.8).setRoughnessFactor(0.4);
+  const synapse = doc.createMaterial('Synapse').setBaseColorFactor([1, 1, 1, 1]);
+  const radius = (length * size) / 2;
+  const brain = doc.createNode('Brain').setTranslation([0, length * up, -length * back]);
+  bone.addChild(brain);
+  for (const side of [-1, 1]) {
+    brain.addChild(doc.createNode(`Brain.lobe.${side}`).setMesh(meshOf(doc, ball(radius, 8), lobe))
+      .setTranslation([side * radius * 0.48, 0, 0]).setScale([0.62, 0.78, 1]));
+  }
+  // Nodes over the top and sides of the lobes, where they show through the skull.
+  const spots = [[0.5, 0.75, 0.3], [-0.5, 0.75, 0.3], [0.85, 0.3, -0.3], [-0.85, 0.3, -0.3], [0.3, 0.85, -0.5], [-0.3, 0.85, -0.5]];
+  spots.forEach(([x, y, z], i) => {
+    brain.addChild(doc.createNode(`Synapse.${i}`).setMesh(meshOf(doc, ball(radius * 0.11, 4), synapse)).setTranslation([x * radius * 0.85, y * radius * 0.85, z * radius * 0.85]));
+  });
 }

@@ -20,8 +20,9 @@
 //
 // A character's parts can be changed by material (tools/assets/model-parts.mjs): `split` moves part of one material
 // into a copy of it, such as a faceplate off a body, and `paint` repaints parts, making them see-through or glow.
-// `frame` and `core` build a machine's insides along its skeleton (tools/assets/model-frame.mjs). They run in that
-// order: split, frame, core, then paint, so the new parts can be painted too.
+// `frame` (with its `wires`), `core` and `brain` build a machine's insides along its skeleton
+// (tools/assets/model-frame.mjs). They run in that order: split, frame, core, brain, then paint, so the new parts can
+// be painted too.
 //
 // Downloads are cached in tools/assets/cache (gitignored). The output goes in a `models/` folder beside the manifest.
 import { execFileSync } from 'node:child_process';
@@ -33,7 +34,7 @@ import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import { dedup, meshopt, prune, quantize, resample, textureCompress } from '@gltf-transform/functions';
 import { MeshoptEncoder } from 'meshoptimizer';
 import sharp from 'sharp';
-import { addCore, addFrame } from './model-frame.mjs';
+import { addBrain, addCore, addFrame } from './model-frame.mjs';
 import { paintParts, splitPart } from './model-parts.mjs';
 
 const manifestPath = process.argv[2];
@@ -196,6 +197,7 @@ for (const model of manifest.models) {
   for (const rule of model.split ?? []) splitPart(doc, rule);
   if (model.frame) addFrame(doc, model.frame);
   if (model.core) addCore(doc, model.core);
+  if (model.brain) addBrain(doc, model.brain);
   if (model.paint) paintParts(doc, model.paint);
   if (model.textures?.dropDetailMaps) {
     for (const material of root.listMaterials()) {
