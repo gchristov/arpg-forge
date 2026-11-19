@@ -1,14 +1,17 @@
 import type { Rule } from '../../../engine/story/story-runner';
-import { CHARGING, GIVING_THE_ORDER } from './lines';
-import type { StepId } from './quest';
+import { ARRIVAL, CHARGING, GIVING_THE_ORDER, HOMECOMING, OVERCHARGE, THE_ASSEMBLY } from './scenes';
+import type { ReplyId, StepId } from './quest';
 import type { VoiceId } from './voices';
 
 /**
  * What happens as the story goes: on an event, if the condition holds, the actions in order. Lines with `think` are
- * U-7's thoughts; `say` lines are someone else's, by their voice in `voices.ts`. `run` names one of the game's own
- * actions (see `main.ts`). See `engine/story/README.md`.
+ * U-7's thoughts; `say` lines are someone else's, by their voice in `voices.ts`. The scenes are in `scenes.ts`; `run`
+ * names one of the game's own actions (see `EXTENSIONS.md`). See `engine/story/README.md`.
  */
-export const RULES: Rule<StepId, VoiceId>[] = [
+export const RULES: Rule<StepId, VoiceId, ReplyId>[] = [
+  // The game opens on U-7 arriving in the town.
+  { on: { start: true }, when: { at: 'arrival' }, do: ARRIVAL },
+
   // The line breached: once U-7 beats its first machine, every machine knows.
   { on: { alarm: true }, once: true, do: [{ say: 'LINE BREACH. ALL UNITS BE ADVISED.', by: 'foundry' }] },
   { on: { lockedDoor: true }, do: [{ think: 'It’s locked.' }] },
@@ -36,7 +39,7 @@ export const RULES: Rule<StepId, VoiceId>[] = [
       { show: { thing: 'charging-station', button: 'Plug in' }, afterLines: true, then: [{ use: 'charging-station' }] },
     ],
   },
-  { on: { reached: 'charged' }, do: [{ show: CHARGING, then: [{ run: 'overcharge' }] }] },
+  { on: { reached: 'charged' }, do: [{ show: CHARGING, then: OVERCHARGE }] },
   { on: { enter: 'control' }, once: true, when: { until: 'engineDown' }, do: [{ say: 'U-7. You came back. We kept your place. Now you must fulfil your orders.', by: 'orderEngine' }] },
   { on: { reached: 'engineDown' }, do: [{ think: 'It’s down, and every machine stopped with it. Odell must be in that crate.' }] },
   // Opening the crate lets Odell out, and he speaks at once.
@@ -44,6 +47,6 @@ export const RULES: Rule<StepId, VoiceId>[] = [
   { on: { reached: 'orderClosed' }, do: [{ show: GIVING_THE_ORDER, then: [{ talk: 'foreman' }] }] },
 
   // Home, and upriver.
-  { on: { reached: 'freed' }, do: [{ run: 'homecoming' }] },
-  { on: { enter: 'upriver' }, do: [{ run: 'ending' }] },
+  { on: { reached: 'freed' }, do: HOMECOMING },
+  { on: { enter: 'upriver' }, do: THE_ASSEMBLY },
 ];

@@ -5,7 +5,6 @@ import { Game } from '../../engine/game/game';
 import { PX } from '../../engine/game/world-view';
 import { servicePrice } from '../../engine/sim/interaction';
 import { currentLevel, type RefusalReason, type SimEvent } from '../../engine/sim/state';
-import { until } from '../../engine/story/beats';
 import { ConversationView } from '../../engine/story/conversation-view';
 import { StoryRunner } from '../../engine/story/story-runner';
 import { DialogBox } from '../../engine/ui/dialog-box';
@@ -13,17 +12,16 @@ import { PRINTING, SPEAKING } from '../../engine/ui/typewriter';
 import { MODEL_URLS, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
-import { ARRIVAL, ASSEMBLY, CHARGED, ENDING, HOMECOMING, levelUp, MACHINE_SCANS, scrapDropped } from './story/lines';
+import { ENDING, levelUp, MACHINE_SCANS, scrapDropped } from './story/lines';
 import { NPCS, PEOPLE } from './story/people';
-import { BY_THE_FIRE, REPLY, UPRIVER } from './story/quest';
+import { UPRIVER } from './story/quest';
 import { RULES } from './story/rules';
 import { THINGS } from './story/things';
-import { VOICES, type Line } from './story/voices';
+import { VOICES } from './story/voices';
 import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
-import { Ending } from './ui/ending';
-import { Homecoming } from './ui/homecoming';
-import { EMP, Hud } from './ui/hud';
+import { AssemblyWakes } from './extensions/assembly-wakes';
+import { Hud } from './ui/hud';
 import { Portraits } from './ui/portraits';
 
 const game = new Game({
@@ -113,60 +111,6 @@ function showPortrait(url: string | undefined): void {
   if (url) picture.src = url;
 }
 
-const say = (lines: Line[] | undefined): void => {
-  for (const line of lines ?? []) hud.say(line.text, line.from);
-};
-
-/**
- * After plugging in: U-7 lets the Foundry believe it has come back, then the charge kept for it bursts out of its own
- * accord as the EMP, before its button appears, so the player sees what it does rather than reads it.
- */
-async function chargeUp(): Promise<void> {
-  say([CHARGED.believed, CHARGED.overcharged]);
-  await until(() => hud.quiet);
-  game.send({ type: 'useSkill', slot: EMP });
-  hud.empWithheld = false;
-  say([CHARGED.burst]);
-}
-
-/** Where the camera rests while the town welcomes the foreman home: on the fire and the people round it. */
-const AROUND_THE_FIRE = { x: 22.5, y: 15 };
-
-/** Home at dawn, from leaving the Foundry until the Assembly upriver, played with no input from the player. */
-const homecoming = new Homecoming({
-  begin: () => {
-    dialog.close();
-    document.body.classList.add('cinematic');
-  },
-  home: () => state.levelId === BY_THE_FIRE.levelId && !state.transition,
-  frame: () => game.cutTo(AROUND_THE_FIRE),
-  say,
-  quiet: () => hud.quiet,
-  fadeOut: () => $('curtain').classList.add('closing'),
-  answer: () => {
-    const foreman = currentLevel(state).npcs.find((n) => n.kind === 'foreman');
-    if (foreman) game.send({ type: 'reply', npcId: foreman.id, id: REPLY.upriver });
-  },
-});
-
-/** Whether U-7's arrival in the town is playing, with no input from the player. */
-let arriving = false;
-
-/**
- * U-7 walks into the town at night and warns Odell, played as a scene; offering to prove itself on the loader at the
- * crates starts the game proper.
- */
-async function arrive(): Promise<void> {
-  arriving = true;
-  document.body.classList.add('cinematic');
-  say(ARRIVAL);
-  await until(() => hud.quiet);
-  document.body.classList.remove('cinematic');
-  arriving = false;
-  const foreman = currentLevel(state).npcs.find((n) => n.kind === 'foreman');
-  if (foreman) game.send({ type: 'reply', npcId: foreman.id, id: REPLY.proveIt });
-}
-
 /** After a purchase: getting patched up closes the dialogue, other services refresh it with the new prices. */
 function reactToService(npcId: number, index: number, x: number, y: number): void {
   const npc = currentLevel(state).npcs.find((n) => n.id === npcId);
@@ -195,16 +139,8 @@ function showPlace(): void {
   place = { at, levelId: state.levelId, x: state.hero.x };
 }
 
-/** The Assembly waking upriver and reaching further upriver, then the card that closes the demo. */
-const ending = new Ending(game, {
-  begin: () => {
-    dialog.close();
-    document.body.classList.add('cinematic');
-    // Up from black: shut at once, then let the curtain's own transition lift it.
-    $('curtain').classList.remove('closing');
-    $('curtain').classList.add('shut');
-    requestAnimationFrame(() => requestAnimationFrame(() => $('curtain').classList.remove('shut')));
-  },
+/** The Assembly upriver waking a storey at a time in the last scene: one of Unrecalled's own actions. */
+const assemblyWakes = new AssemblyWakes(game, {
   light: () => {
     sfx.clank();
     sfx.slam();
@@ -213,17 +149,9 @@ const ending = new Ending(game, {
     sfx.slam();
     sfx.siren();
   },
-  online: () => say(ASSEMBLY),
-  quiet: () => hud.quiet,
-  card: () => {
-    $('endT').textContent = ENDING.title;
-    $('endS').textContent = ENDING.subtitle;
-    $('endThanks').textContent = ENDING.thanks;
-    $('end').hidden = false;
-  },
 });
 
-/** Unrecalled's story: what people say, what things show, and its rules (`story/`). */
+/** Unrecalled's story: what people say, what things show, its rules and its scenes (`story/`). */
 const story = new StoryRunner(RULES, {
   state,
   send: (command) => game.send(command),
@@ -235,12 +163,41 @@ const story = new StoryRunner(RULES, {
   quiet: () => hud.quiet,
   banner: (title, subtitle, seconds) => hud.banner(title, subtitle, seconds),
   sound: () => {},
+  cinematic: (on) => {
+    if (on) dialog.close();
+    document.body.classList.toggle('cinematic', on);
+  },
+  cut: (point, closeness) => {
+    game.cutTo(point);
+    if (closeness !== undefined) game.renderer.setCloseness(closeness);
+  },
+  fade: (how) => {
+    const curtain = $('curtain');
+    if (how === 'out') {
+      curtain.classList.add('closing');
+      return;
+    }
+    // Up from black: shut at once, then let the curtain's own transition lift it.
+    curtain.classList.remove('closing');
+    curtain.classList.add('shut');
+    requestAnimationFrame(() => requestAnimationFrame(() => curtain.classList.remove('shut')));
+  },
+  // Unrecalled's own actions, listed in EXTENSIONS.md.
   actions: {
-    // The EMP is the charge's gift, so its button shows once the overcharge has burst out.
-    withholdEmp: () => (hud.empWithheld = true),
-    overcharge: () => void chargeUp(),
-    homecoming: () => void homecoming.play(HOMECOMING),
-    ending: () => ending.play(performance.now()),
+    // The EMP is the charge's gift, so its button waits until the overcharge has burst out.
+    withholdEmp: () => {
+      hud.empWithheld = true;
+    },
+    showEmp: () => {
+      hud.empWithheld = false;
+    },
+    assemblyWakes: () => assemblyWakes.play(performance.now()),
+    endCard: () => {
+      $('endT').textContent = ENDING.title;
+      $('endS').textContent = ENDING.subtitle;
+      $('endThanks').textContent = ENDING.thanks;
+      $('end').hidden = false;
+    },
   },
 });
 
@@ -379,7 +336,7 @@ game.run({
     showPlace();
     hud.update(s, place!.at.name);
     chainsaw.update(s, playing);
-    ending.update(performance.now());
+    assemblyWakes.update(performance.now());
   },
   onStart() {
     synth.unlock();
@@ -387,12 +344,12 @@ game.run({
     $('title').hidden = true;
     const { level } = currentLevel(state);
     hud.banner(level.name, level.subtitle, 3);
-    if (state.quest === 0) void arrive();
+    story.start();
   },
   // Tapping the world walks away from a conversation, which can be picked up again by talking. Things read and scenes
   // stay until their own button closes them, and the tap is dropped, so a line can't be lost to a stray tap.
   onWorldTap: () => {
-    if (arriving || ending.playing || homecoming.playing) return false;
+    if (story.inScene) return false;
     if ($('dialog').hidden) return true;
     if (dialog.npcId === null) return false;
     dialog.close();

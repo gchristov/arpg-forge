@@ -26,7 +26,10 @@ function setUp(rules: Rule[]) {
     quiet: () => true,
     banner: (title) => said.push(`[${title}]`),
     sound: (name) => said.push(`(${name})`),
-    actions: { cheer: () => said.push('hooray') },
+    actions: { cheer: () => void said.push('hooray') },
+    cinematic: (on) => said.push(on ? '[cinema]' : '[play]'),
+    cut: (point, closeness) => said.push(`cut ${point.x},${point.y} ${closeness}`),
+    fade: (how) => said.push(`fade ${how}`),
   });
   return { state, runner, said, shown, sent };
 }
@@ -90,5 +93,19 @@ describe('story runner', () => {
     expect(shown[0]!.talk.pages[0]!.text).toBe('Hello.');
     runner.react([{ type: 'HeroDied' } as SimEvent, { type: 'ServiceUsed', npcId: 77, service: 0, x: 0, y: 0 } as SimEvent]);
     expect(sent).toEqual([{ type: 'setFlag', flag: 'hurt', on: true }, { type: 'setFlag', flag: 'hurt', on: false }]);
+  });
+
+  it('plays a scene on starting the game: cinematic, camera, fade, a reply and a skill, ignoring taps while it plays', () => {
+    const { runner, said, sent } = setUp([
+      {
+        on: { start: true },
+        when: { at: 'start' },
+        do: [{ cinematic: true }, { cut: { x: 3, y: 4 }, closeness: 0.5 }, { fade: 'up' }, { reply: 'yes', to: 'elder' }, { useSkill: 'bolt' }],
+      },
+    ]);
+    runner.start();
+    expect(said).toEqual(['[cinema]', 'cut 3,4 0.5', 'fade up']);
+    expect(runner.inScene).toBe(true);
+    expect(sent).toEqual([{ type: 'reply', npcId: 77, id: 'yes' }, { type: 'useSkill', slot: 0 }]);
   });
 });

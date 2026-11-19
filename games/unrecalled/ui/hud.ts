@@ -8,7 +8,7 @@ import { ENEMIES } from '../content/enemies';
 import { QUEST } from '../story/quest';
 
 /** The EMP's skill slot. */
-export const EMP = 0;
+const EMP = 0;
 
 const $ = (id: string): HTMLElement => document.getElementById(id)!;
 
