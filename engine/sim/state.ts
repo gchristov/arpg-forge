@@ -1,7 +1,9 @@
 import type { Vec2 } from '../core/math';
 import type { Rng } from '../core/rng';
 import type { Level } from '../world/level';
-import type { Camp, CampRespawns, Container, EnemySpawn, EnemyType, HeroRules, NpcPlacement, NpcType, QuestStep, Readable } from './content';
+import type {
+  Camp, CampRespawns, Container, EnemySpawn, EnemyType, HeroRules, NpcPlacement, NpcType, QuestStep, Readable, Watch,
+} from './content';
 import type { Walker } from './walking';
 
 export interface Actor extends Walker {
@@ -187,11 +189,16 @@ export interface GameState {
     npcs: Record<string, NpcType>;
     quest: QuestStep[];
     enemyGrowthPerHeroLevel?: number;
+    watch: Watch[];
   };
   /** Index of the current quest step. */
   quest: number;
   /** The story's flags that are set, by name: what the story remembers that isn't a step, such as "has gone down". */
   flags: Record<string, true>;
+  /** The watched things the hero is within reach of, as `level:id:within`, so each approach is told once. */
+  near: string[];
+  /** The locked doorway the hero is standing in, as `level:tx:ty`, so walking into it is told once. */
+  inLockedDoor: string | null;
   levels: Record<string, LevelState>;
   levelId: string;
   startLevelId: string;
@@ -250,7 +257,10 @@ export type SimEvent =
   | { type: 'LevelCleared'; levelId: string }
   | { type: 'PortalSealed'; x: number; y: number }
   /** The hero stepped onto a door the story hasn't opened yet. */
+  /** The hero walked into a doorway the story keeps locked; told once each time. */
   | { type: 'PortalLocked'; to: string; x: number; y: number }
+  /** The hero came within `within` tiles of a watched thing to read or use. */
+  | { type: 'Approached'; id: string; within: number }
   /** A weapon came into the hero's hand, bought or found. */
   | { type: 'Armed'; weapon: string; x: number; y: number }
   | { type: 'EnemyGaveUp'; enemyId: number; boss: boolean }

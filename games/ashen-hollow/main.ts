@@ -9,12 +9,12 @@ import { PX } from '../../engine/game/world-view';
 import { servicePrice } from '../../engine/sim/interaction';
 import { currentLevel, type SimEvent } from '../../engine/sim/state';
 import { ConversationView } from '../../engine/story/conversation-view';
-import { talkTo } from '../../engine/story/talk';
+import { StoryRunner } from '../../engine/story/story-runner';
 import { DialogBox } from '../../engine/ui/dialog-box';
 import { ashenHollowLook, MODEL_URLS } from './art/look';
 import { ashenHollowSounds } from './audio/sounds';
 import { NPCS, PEOPLE } from './story/people';
-import { STEP } from './story/quest';
+import { RULES } from './story/rules';
 import { ashenHollowContent } from './content/world';
 import { Hud } from './ui/hud';
 
@@ -128,9 +128,6 @@ function playSounds(events: SimEvent[]): void {
         else sfx.chest();
         break;
       }
-      case 'QuestAdvanced':
-        if (e.step === STEP.bossDefeated) sfx.level();
-        break;
     }
   }
 }
@@ -138,6 +135,7 @@ function playSounds(events: SimEvent[]): void {
 /** Ashen Hollow's text, banners and dialogue for the rules' events; the engine shows the rest in the world. */
 function react(events: SimEvent[]): void {
   playSounds(events);
+  story.react(events);
   for (const e of events) {
     switch (e.type) {
       case 'EnteredLevel': {
@@ -172,20 +170,12 @@ function react(events: SimEvent[]): void {
       case 'LevelUp':
         hud.banner(`Level ${e.level}`, 'Stronger, and fully healed.');
         break;
-      case 'Talked':
-        showDialogue(e.npcId, e.questBefore);
-        break;
       case 'ServiceUsed':
         reactToService(e.npcId, e.service, e.x, e.y);
         break;
       case 'PickedUp':
         if (e.kind === 'gold') labels.text(e.x, e.y, 30 * PX, `+${e.amount} gold`, '#ffd25a', 13);
         else labels.text(e.x, e.y, 30 * PX, '+1 potion', '#ff8a96', 13);
-        break;
-      case 'QuestAdvanced':
-        if (e.step === STEP.bossDefeated) {
-          setTimeout(() => hud.banner('The Bone Lord is destroyed', 'Ashen Hollow is safe. The wilds still stir.', 4.5), 600);
-        }
         break;
       case 'HeroDied':
         dialog.close();
@@ -211,13 +201,20 @@ const conversation = new ConversationView(dialog, {
   pace: () => undefined,
 });
 
-/** Opens what someone says, as things stood at `questBefore`, before talking to them moved the story on. */
-function showDialogue(npcId: number, questBefore: number): void {
-  const npc = currentLevel(state).npcs.find((n) => n.id === npcId);
-  const person = npc && PEOPLE[npc.kind];
-  const talk = person && talkTo(person, state, questBefore);
-  if (talk) conversation.show(talk, npcId);
-}
+/** Ashen Hollow's story: what people say, and its rules (`story/`). */
+const story = new StoryRunner(RULES, {
+  state,
+  send: (command) => game.send(command),
+  conversation,
+  people: PEOPLE,
+  things: {},
+  voices: {},
+  say: () => {},
+  quiet: () => true,
+  banner: (title, subtitle, seconds) => hud.banner(title, subtitle, seconds),
+  sound: (name) => (sfx as unknown as Record<string, (() => void) | undefined>)[name]?.(),
+  actions: {},
+});
 
 /** After a purchase: resting closes the dialogue, other services refresh it with the new prices. */
 function reactToService(npcId: number, index: number, x: number, y: number): void {
@@ -230,7 +227,7 @@ function reactToService(npcId: number, index: number, x: number, y: number): voi
     return;
   }
   if (service.type === 'upgradeMelee') labels.text(x, y, 46 * PX, 'Blade honed', '#ffd25a', 15);
-  if (dialog.npcId === npcId) showDialogue(npcId, state.quest);
+  if (dialog.npcId === npcId) story.talk(npcId);
 }
 
 game.run({

@@ -15,7 +15,7 @@ Stage 1 of the roadmap is done: the engine is built, and Ashen Hollow runs on it
 - `engine/game` runs a game: `Game` owns the fixed-rate loop, turns taps, held pointers and keys into commands, draws the state and shows the rules' events in the world (animations, markers, flashes, explosions, moving between levels). A game's `main.ts` creates a `Game` from its content, look and models, and adds what it names or words through `GameHooks`: sounds, text, banners, dialogue and its HUD.
 - `engine/story/README.md` explains how a game's story works and how to change it; keep it up to date with every change to how stories work.
 - `games/<name>/` a game: `story/` (its quest, who says what, things to read; see `engine/story/README.md`), `levels/`, `content/`, `art/`, `main.ts` and `index.html`.
-- `engine/story/` what any game's story is written in, and shows it: people and things to read as tables (`talk.ts`), shown in the dialogue box (`conversation-view.ts`).
+- `engine/story/` what any game's story is written in, and runs it: people and things to read as tables (`talk.ts`), shown in the dialogue box (`conversation-view.ts`), and story rules, on an event do actions (`story-runner.ts`).
 - `tools/<name>/` Docker-based tools; `tests/` architecture tests; `scripts/` repo settings.
 
 ## Commands

@@ -275,4 +275,12 @@ export interface GameContent {
   quest: QuestStep[];
   /** Every enemy grows this share stronger, in health and damage, for each level the hero gains. None if not given. */
   enemyGrowthPerHeroLevel?: number;
+  /** Things to read or use whose approach the story listens for, and how near, in tiles, counts as approaching. */
+  watch?: Watch[];
+}
+
+/** A thing to read or use, by id, that emits `Approached` when the hero comes within `within` tiles of it. */
+export interface Watch {
+  id: string;
+  within: number;
 }

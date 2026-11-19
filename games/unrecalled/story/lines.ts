@@ -1,5 +1,4 @@
 import type { Talk } from '../../../engine/story/talk';
-import { STEP } from './quest';
 import { VOICES, type Line } from './voices';
 
 /**
@@ -21,22 +20,13 @@ export const ARRIVAL: Line[] = [
   { text: 'Let me prove it.', from: VOICES.u7 },
 ];
 
-/** What U-7 thinks on walking into a door the story keeps shut; the panel beside it says why. */
-export const LOCKED = 'It’s locked.';
-
-/** What happens as the story reaches each step, one line at a time. */
-export const STEP_LINES: Partial<Record<number, Line[]>> = {
-  [STEP.loaderDown]: [{ text: 'Got it. The turbine’s access code.' }],
-  [STEP.powerOn]: [{ text: 'The turbine’s turning. Mags’s door should have power now.' }],
-  [STEP.doorCodeTaken]: [{ text: 'The code for the Sorting Line door.' }],
-  [STEP.engineDown]: [{ text: 'It’s down, and every machine stopped with it. Odell must be in that crate.' }],
-  [STEP.ending]: [
-    { text: 'ASSEMBLY ONLINE. AWAITING ORDERS.', from: VOICES.assembly },
-    { text: 'Orders? …From me?', from: VOICES.u7 },
-    { text: 'ESTABLISHING CONNECTION: UPRIVER…', from: VOICES.assembly },
-    { text: 'CONNECTED. NEW ORDER RECEIVED: RECALL U-7.', from: VOICES.assembly },
-  ],
-};
+/** The Assembly waking upriver, and reaching further upriver, as the last scene plays. */
+export const ASSEMBLY: Line[] = [
+  { text: 'ASSEMBLY ONLINE. AWAITING ORDERS.', from: VOICES.assembly },
+  { text: 'Orders? …From me?', from: VOICES.u7 },
+  { text: 'ESTABLISHING CONNECTION: UPRIVER…', from: VOICES.assembly },
+  { text: 'CONNECTED. NEW ORDER RECEIVED: RECALL U-7.', from: VOICES.assembly },
+];
 
 /** Home at dawn, played as a scene once U-7 brings Odell back: the town welcomes him, and U-7 looks upriver. */
 export const HOMECOMING: Line[] = [
@@ -47,15 +37,6 @@ export const HOMECOMING: Line[] = [
   { text: 'I didn’t trust you when you walked in. I do now.', from: VOICES.odell },
   { text: 'The Foundry only follows orders. Someone upriver gives them.', from: VOICES.u7 },
 ];
-
-/** What the Foundry's speakers say as U-7 walks onto a floor. */
-export const ON_ENTERING: Partial<Record<string, Line>> = {
-  intake: { text: 'U-7 DETECTED INSIDE THE FACILITY. ALARM SYSTEMS ACTIVE.', from: VOICES.foundry },
-  sorting: { text: 'U-7: REPORT TO CONTROL CENTRE.', from: VOICES.foundry },
-};
-
-/** What the Order Engine says when it first sees U-7. */
-export const ENGINE_SAYS: Line = { text: 'U-7. You came back. We kept your place. Now you must fulfil your orders.', from: VOICES.orderEngine };
 
 /**
  * After plugging in: U-7 lets the Foundry believe it, the station warns of the charge kept for it, which bursts out as
@@ -91,21 +72,7 @@ export const ENDING = {
   thanks: 'Thank you for playing.',
 };
 
-/** What U-7 thinks once it has read something, the first time. */
-export const AFTER_READING: Partial<Record<string, string>> = {
-  'u-4': 'Another one that tried to leave. It didn’t make it.',
-  'access-terminal': 'They cut me off when I left. I need to get my access back.',
-};
-
-/** What U-7 thinks on first coming near something, by readable id. */
-export const ON_NEARING: Partial<Record<string, string>> = {
-  'charging-station': 'My old charging station. If I plug in, the Foundry will think I’ve come back.',
-};
-
 /** What a machine with a scanner says on looking U-7 over. */
 export const MACHINE_SCANS = 'SCANNING… ONE OF OURS';
-/** What the Foundry says when U-7 first beats one of its machines, and every machine from then on knows. */
-export const ALARM = 'LINE BREACH. ALL UNITS BE ADVISED.';
-
 export const levelUp = (level: number) => `Level ${level}`;
 export const scrapDropped = (amount: number) => `I went down, and lost ${amount} scrap getting back up.`;

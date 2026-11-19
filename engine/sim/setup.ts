@@ -16,9 +16,12 @@ export function createGameState(content: GameContent, seed: number, startLevel =
     rules: {
       hero: content.hero, enemies: content.enemies, npcRadius: content.npcRadius, npcs: content.npcs, quest: content.quest,
       ...(content.enemyGrowthPerHeroLevel === undefined ? {} : { enemyGrowthPerHeroLevel: content.enemyGrowthPerHeroLevel }),
+      watch: content.watch ?? [],
     },
     quest: 0,
     flags: {},
+    near: [],
+    inLockedDoor: null,
     levels: {},
     levelId: startLevel,
     startLevelId: content.startLevel,
