@@ -9,7 +9,7 @@ import { ConversationView } from '../../engine/story/conversation-view';
 import { StoryRunner } from '../../engine/story/story-runner';
 import { DialogBox } from '../../engine/ui/dialog-box';
 import { PRINTING, SPEAKING } from '../../engine/ui/typewriter';
-import { MODEL_URLS, unrecalledLook } from './art/look';
+import { MODEL_URLS, SCAN_COLOUR, SCANNER_EYES, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import { ENDING, levelUp, MACHINE_SCANS, scrapDropped } from './story/lines';
@@ -22,6 +22,7 @@ import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
 import type { GameAction } from './extensions/actions';
 import { AssemblyWakes } from './extensions/assembly-wakes';
+import { MachineScans } from './extensions/machine-scans';
 import { Hud } from './ui/hud';
 import { Portraits } from './ui/portraits';
 
@@ -85,7 +86,10 @@ const REFUSALS: Record<RefusalReason, string> = {
   fullHealth: 'Already patched up',
 };
 
-const kindOf = (enemyId: number): string | undefined => currentLevel(state).enemies.find((e) => e.id === enemyId)?.kind;
+const kindOf = (enemyId: number | undefined): string | undefined => currentLevel(state).enemies.find((e) => e.id === enemyId)?.kind;
+/** Whether the machine with this id looks U-7 over with a beam when it recognises it. */
+const scans = (enemyId: number | undefined): boolean => enemyId !== undefined && SCANNER_EYES[kindOf(enemyId) ?? ''] !== undefined;
+const machineScans = new MachineScans(game, unrecalledLook, SCANNER_EYES, SCAN_COLOUR);
 
 /** Shows conversations and readings in the dialogue box, with a portrait for people and every page kept in the log. */
 const conversation = new ConversationView(dialog, {
@@ -248,14 +252,12 @@ function playSounds(events: SimEvent[]): void {
       case 'ShotFired':
         sfx.pew();
         break;
-      case 'EnemyRecognised':
-        if (kindOf(e.enemyId) && unrecalledLook.actor(kindOf(e.enemyId)!).scanner) sfx.scan();
+      case 'Signal':
+        if (e.name === 'alarm') sfx.siren();
+        if (e.name === 'recognised' && scans(e.enemyId)) sfx.scan();
         break;
       case 'EnemyAlerted':
         sfx.beep();
-        break;
-      case 'LevelAlarmed':
-        sfx.siren();
         break;
       case 'SlamLanded':
         sfx.slam();
@@ -296,9 +298,9 @@ function react(events: SimEvent[]): void {
         labels.text(e.x, e.y, 40 * PX * (kind ? view.scaleOf(kind) : 1), String(e.amount), e.crit ? '#ffd070' : '#dfe7ee', e.crit ? 20 : 15);
         break;
       }
-      case 'EnemyRecognised': {
+      case 'Signal': {
         const kind = kindOf(e.enemyId);
-        if (kind && unrecalledLook.actor(kind).scanner) labels.text(e.x, e.y, 70 * PX * view.scaleOf(kind), MACHINE_SCANS, '#ff8a6a', 15);
+        if (e.name === 'recognised' && kind && scans(e.enemyId)) labels.text(e.x, e.y, 70 * PX * view.scaleOf(kind), MACHINE_SCANS, '#ff8a6a', 15);
         break;
       }
       case 'HeroHurt':
@@ -339,6 +341,7 @@ game.run({
     chainsaw.update(s, playing);
     assemblyWakes.update(performance.now());
   },
+  draw: (alpha) => machineScans.draw(alpha),
   onStart() {
     synth.unlock();
     playing = true;

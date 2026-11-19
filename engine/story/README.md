@@ -44,7 +44,8 @@ A step can also:
 
 - `inOrder: true`: only be reached from the step just before it, for a trigger the hero can meet early (using a
   terminal that's there all along).
-- `calmsEverything: true` / `alarmsEverything: true`: calm every enemy, or set every enemy on the hero.
+- `does: ['name']`: do the game's own step actions on reaching it, such as Unrecalled's `alarmEverything` (see the
+  game's `EXTENSIONS.md`).
 - `takesHeroTo: { levelId, x, y }`: move the hero there, for example home after a rescue.
 
 Steps can be skipped (killing the boss before reaching the step that asks for it still counts), except replies and
@@ -157,7 +158,7 @@ the actions in order. `once: true` does it only the first time.
 | `{ near: 'thing', within: 4 }` | the hero comes within that many tiles of the thing (2.5 if not given), each time they come near |
 | `{ read: 'thing' }` | the hero reads or uses the thing |
 | `{ lockedDoor: true }` | the hero walks into a door the story keeps locked, once each time |
-| `{ alarm: true }` | the alarm sounds |
+| `{ signal: 'name' }` | the game's extensions send that signal, such as Unrecalled's `alarm` (see the game's `EXTENSIONS.md`) |
 | `{ fell: true }` | the hero goes down |
 | `{ bought: { from: 'trader', service: 0 } }` | the hero buys that service from someone of that kind |
 | `{ start: true }` | the game starts from its title (with `when: { at: 'firstStep' }` for a new game only) |
@@ -222,7 +223,7 @@ a condition, set and cleared by the `flag` and `unflag` actions.
 Run `./tools/node/run.sh npm test`. Step names in the story files are typed, so a misspelt one is an error in the
 editor before anything runs. Then the tests check, and name what's wrong:
 
-- **Story checks** (`engine/story/story-checks.ts`): every step, person, thing, place, skill, reply and game action the
+- **Story checks** (`engine/story/story-checks.ts`): every step, person, thing, place, skill, reply, game action and signal the
   story names exists; every reply a quest step waits for is offered by someone (or sent by a scene); every person and
   thing in the levels has something to say; and no entry comes after one that always applies, where it could never be
   said.

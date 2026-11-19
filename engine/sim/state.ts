@@ -88,12 +88,6 @@ export interface Enemy extends Actor {
   deadFor: number;
   /** What its abilities keep between steps, by name. */
   memory: Record<string, number>;
-  /** Whether a calm enemy has seen the hero yet, so it recognises them only once. */
-  recognised: boolean;
-  /** Whether a calm enemy has been hit, called by one hit nearby or seen the hero during an alarm: it no longer takes the hero for one of its own. */
-  provoked: boolean;
-  /** Progress through looking the hero over on recognising them, from 0 to 1, or -1 when not scanning. */
-  scan: number;
   /** How fast it's sliding from a knock-back, in tiles a second. */
   slideX: number;
   slideY: number;
@@ -103,8 +97,6 @@ export interface Enemy extends Actor {
   tag?: string;
   /** A weapon of the hero's it drops when defeated. */
   carries?: string;
-  /** Fighting it doesn't sound the alarm. */
-  quiet?: boolean;
 }
 
 export interface Projectile {
@@ -160,8 +152,8 @@ export interface LevelState {
   readablePlacements: Readable[];
   /** Enemies the story hasn't brought in yet, each turning up once the quest reaches its `fromStep`. */
   storySpawns: EnemySpawn[];
-  /** Whether the level's alarm is sounding: from the first fight with its calm enemies until the story calms everything. */
-  alarmed: boolean;
+  /** What a game's extensions keep on the level, such as whether its alarm is sounding, starting empty. */
+  memory: Record<string, number>;
   camps: Camp[];
   campRespawns?: CampRespawns;
   campTimer: number;
@@ -250,9 +242,8 @@ export type SimEvent =
   | { type: 'EnemyDamaged'; enemyId: number; amount: number; crit: boolean; x: number; y: number }
   | { type: 'EnemyKilled'; enemyId: number; kind: string; x: number; y: number; boss: boolean }
   | { type: 'EnemyAlerted'; enemyId: number; boss: boolean }
-  /** A calm enemy saw the hero and let them be. */
-  | { type: 'EnemyRecognised'; enemyId: number; x: number; y: number }
-  | { type: 'LevelAlarmed'; levelId: string }
+  /** Something a game's extensions report, by name, for its story, sounds and labels, such as an alarm sounding. */
+  | { type: 'Signal'; name: string; x: number; y: number; enemyId?: number }
   /** The last enemy on the level fell. */
   | { type: 'LevelCleared'; levelId: string }
   | { type: 'PortalSealed'; x: number; y: number }

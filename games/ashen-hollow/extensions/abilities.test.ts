@@ -44,7 +44,7 @@ describe('the Bone Lord\'s abilities', () => {
     expect(ofType(events, 'HeroHurt').filter((h) => h.amount >= 16)).toHaveLength(0);
   });
 
-  it('summons three chasing helpers once, below half health, already provoked so they never take the hero for one of their own', () => {
+  it('summons three chasing helpers once, below half health', () => {
     const { state, lord } = bossFight({ summon: SUMMON });
     lord.mode = 'chase';
     lord.hp = 150;
@@ -53,7 +53,7 @@ describe('the Bone Lord\'s abilities', () => {
     expect(summoned).toHaveLength(1);
     expect(summoned[0]!.summonedIds).toHaveLength(3);
     const helpers = currentLevel(state).enemies.filter((e) => e.kind === 'brute');
-    expect(helpers.every((h) => h.mode === 'chase' && h.provoked)).toBe(true);
+    expect(helpers.every((h) => h.mode === 'chase')).toBe(true);
     run(state, 0.5);
     expect(currentLevel(state).enemies.filter((e) => e.kind === 'brute')).toHaveLength(3);
   });

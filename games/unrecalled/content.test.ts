@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { checkContent } from '../../engine/sim/content-checks';
 import { checkStory } from '../../engine/story/story-checks';
 import { GAME_ACTIONS } from './extensions/actions';
+import { SIGNALS } from './extensions/calm-machines';
 import { MODEL_URLS, unrecalledLook } from './art/look';
 import { PEOPLE } from './story/people';
 import { RULES } from './story/rules';
@@ -16,7 +17,7 @@ describe('Unrecalled content', () => {
   });
 
   // Odell's crate shows nothing: opening it lets him out, and he speaks.
-  const story = { people: PEOPLE, things: THINGS, rules: RULES, actions: GAME_ACTIONS, showsNothing: ['crate'] };
+  const story = { people: PEOPLE, things: THINGS, rules: RULES, actions: GAME_ACTIONS, signals: SIGNALS, showsNothing: ['crate'] };
 
   it('passes the story checks: every name it uses exists, every reply waited for is offered, every entry can be said', () => {
     expect(checkStory(content, story)).toEqual([]);

@@ -37,6 +37,11 @@ export interface GameHooks {
   react(events: SimEvent[]): void;
   /** Called every frame after drawing, for example to update the HUD. */
   update(state: GameState): void;
+  /**
+   * Called every frame while the world is drawn, for a game drawing its own things in it: `alpha` is how far the frame
+   * is between the last two steps, for drawing moving things where they are now.
+   */
+  draw?(alpha: number): void;
   /** Called when play starts, after the title screen. */
   onStart?(): void;
   /**
@@ -174,6 +179,7 @@ export class Game {
       : 1;
     const t1 = performance.now();
     this.view.draw(alpha, frameSeconds, loop.stepSeconds);
+    this.hooks?.draw?.(alpha);
     const heroX = lerp(state.hero.prevX, state.hero.x, alpha);
     const heroY = lerp(state.hero.prevY, state.hero.y, alpha);
     renderer.follow(this.cameraFocus?.x ?? heroX, this.cameraFocus?.y ?? heroY, frameSeconds, this.cutting);

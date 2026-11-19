@@ -1,4 +1,5 @@
 import { useAbilities } from './abilities';
+import { useStepActions } from './step-actions';
 import { createRng } from '../core/rng';
 import type { GameContent, HeroRules } from './content';
 import { spawnCamp, spawnEnemy } from './spawning';
@@ -11,6 +12,7 @@ import { castForStep } from './story-cast';
  */
 export function createGameState(content: GameContent, seed: number, startLevel = content.startLevel): GameState {
   useAbilities(content.abilities);
+  useStepActions(content.stepActions);
   const state: GameState = {
     rng: createRng(seed),
     time: 0,
@@ -40,7 +42,7 @@ export function createGameState(content: GameContent, seed: number, startLevel =
       containers: (lc.containers ?? []).map((c) => ({ ...c, opened: false })),
       readables: [], readablePlacements: lc.readables ?? [],
       storySpawns: lc.spawns.filter((s) => s.fromStep),
-      alarmed: false,
+      memory: {},
       ...(lc.campRespawns ? { campRespawns: lc.campRespawns } : {}),
       campTimer: lc.campRespawns?.everySeconds ?? 0,
       enemyStrength: lc.enemyStrength ?? 1,

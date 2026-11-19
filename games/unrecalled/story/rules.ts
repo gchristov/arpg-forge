@@ -13,7 +13,7 @@ export const RULES: Rule<StepId, VoiceId, ReplyId>[] = [
   { on: { start: true }, when: { at: 'arrival' }, do: ARRIVAL },
 
   // The line breached: once U-7 beats its first machine, every machine knows.
-  { on: { alarm: true }, once: true, do: [{ say: 'LINE BREACH. ALL UNITS BE ADVISED.', by: 'foundry' }] },
+  { on: { signal: 'alarm' }, once: true, do: [{ say: 'LINE BREACH. ALL UNITS BE ADVISED.', by: 'foundry' }] },
   { on: { lockedDoor: true }, do: [{ think: 'It’s locked.' }] },
   // Mags remarks on U-7 going down until she next patches it up.
   { on: { fell: true }, do: [{ flag: 'wentDown' }] },

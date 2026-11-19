@@ -1,4 +1,4 @@
-import { type AbilityTurn, useAbilities } from './abilities';
+import { type AbilityTurn, type IdleChoice, useAbilities } from './abilities';
 import { describe, expect, it } from 'vitest';
 import { dist } from '../core/math';
 import { currentLevel } from './state';
@@ -80,6 +80,30 @@ describe('abilities', () => {
     expect(turns[0]).toEqual({ setting: 7, turn: 1 });
     expect(turns.at(-1)!.turn).toBe(turns.length);
   });
+
+  it('can keep an idle enemy busy, where it stands, or unseeing, wandering past the hero, or let it go on as usual', () => {
+    const choices: Record<string, IdleChoice> = { busy: 'busy', unseeing: 'unseeing', usual: 'asUsual' };
+    useAbilities({ choose: { idle: ({ settings }: AbilityTurn<IdleChoice>) => settings } });
+    const modes = Object.values(choices).map((choice) => {
+      const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'brute', x: 7.5, y: 5.5 }]);
+      state.rules.enemies = { ...state.rules.enemies, brute: { ...state.rules.enemies.brute!, abilities: { choose: choice } } };
+      run(state, 3);
+      const brute = enemiesOf(state)[0]!;
+      return { mode: brute.mode, stayed: brute.x === 7.5 && brute.y === 5.5 };
+    });
+    expect(modes).toEqual([{ mode: 'idle', stayed: true }, { mode: 'idle', stayed: false }, { mode: 'chase', stayed: false }]);
+  });
+
+  it('hear when an enemy that lists them is hurt, and act once a step after every enemy has moved', () => {
+    const heard = { hurt: 0, after: 0 };
+    useAbilities({ listen: { hurt: () => void heard.hurt++, afterEnemies: () => void heard.after++ } });
+    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'dummy', x: 6.5, y: 5.5 }, { kind: 'dummy', x: 8.5, y: 5.5 }]);
+    state.rules.enemies = { ...state.rules.enemies, dummy: { ...state.rules.enemies.dummy!, abilities: { listen: {} } } };
+    const events = run(state, 10 / 60, [{ type: 'attack', enemyId: enemiesOf(state)[0]!.id }]);
+    expect(heard.hurt).toBe(ofType(events, 'EnemyDamaged').length);
+    expect(heard.hurt).toBeGreaterThan(0);
+    expect(heard.after).toBe(10);
+  });
 });
 
 describe('bosses', () => {
@@ -101,81 +125,5 @@ describe('bodies', () => {
     run(state, 0.5);
     const dummy = enemiesOf(state)[0]!;
     expect(dist(state.hero.x, state.hero.y, dummy.x, dummy.y)).toBeGreaterThan(0.5);
-  });
-});
-
-describe('calm enemies', () => {
-  it('go about their work beside the hero, recognising them once', () => {
-    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'worker', x: 7.5, y: 5.5 }]);
-    const events = run(state, 5);
-    expect(ofType(events, 'EnemyRecognised')).toHaveLength(1);
-    expect(ofType(events, 'HeroHurt')).toHaveLength(0);
-    expect(enemiesOf(state)[0]!.mode).toBe('idle');
-  });
-
-  it('stop, turn to the hero and look them over when they first see them, then go back to work', () => {
-    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'worker', x: 8.5, y: 5.5 }]);
-    const worker = enemiesOf(state)[0]!;
-    worker.facingX = 1;
-    worker.facingY = 0;
-    run(state, 0.6);
-    expect(worker.scan).toBeGreaterThan(0);
-    expect([worker.x, worker.y]).toEqual([8.5, 5.5]);
-    expect(worker.facingX).toBeLessThan(-0.9);
-    run(state, 1);
-    expect(worker.scan).toBe(-1);
-  });
-
-  it('turn on the hero together once one of them is hit, near ones in its sight at once, and the rest on sight from then on', () => {
-    const state = arena(Array.from({ length: 6 }, () => '.'.repeat(40)), { x: 3.5, y: 2.5 }, [
-      { kind: 'worker', x: 4.5, y: 2.5 }, { kind: 'worker', x: 9.5, y: 2.5 }, { kind: 'worker', x: 36.5, y: 2.5 },
-    ]);
-    const [struck, near, far] = enemiesOf(state);
-    const events = run(state, 0.5, [{ type: 'attack', enemyId: struck!.id }]);
-    expect(ofType(events, 'LevelAlarmed')).toHaveLength(1);
-    expect(currentLevel(state).alarmed).toBe(true);
-    expect([struck!.mode, near!.mode, far!.mode]).toEqual(['chase', 'chase', 'idle']);
-    struck!.dead = near!.dead = true;
-    state.hero.x = state.hero.prevX = 33.5;
-    const later = run(state, 1);
-    expect(far!.mode).toBe('chase');
-    expect(ofType(later, 'EnemyRecognised')).toHaveLength(0);
-    expect(currentLevel(state).alarmed).toBe(true);
-    expect(ofType(later, 'LevelAlarmed')).toHaveLength(0);
-  });
-
-  it('keep taking the hero for one of their own while they fight a quiet one, which sounds no alarm', () => {
-    const state = arena(Array.from({ length: 6 }, () => '.'.repeat(40)), { x: 3.5, y: 2.5 }, [
-      { kind: 'worker', x: 4.5, y: 2.5 }, { kind: 'worker', x: 36.5, y: 2.5 },
-    ]);
-    const [quiet, far] = enemiesOf(state);
-    quiet!.quiet = true;
-    const events = run(state, 1, [{ type: 'attack', enemyId: quiet!.id }]);
-    expect(quiet!.mode).toBe('chase');
-    expect(ofType(events, 'LevelAlarmed')).toHaveLength(0);
-    quiet!.dead = true;
-    state.hero.x = state.hero.prevX = 33.5;
-    run(state, 1);
-    expect(far!.mode).toBe('idle');
-  });
-
-  it('keep working behind a wall while the room next door fights, then come for the hero once they see them', () => {
-    const rows = ['.....#.....', '.....#.....', '...........'];
-    const state = arena(rows, { x: 1.5, y: 1.5 }, [{ kind: 'worker', x: 2.5, y: 1.5 }, { kind: 'worker', x: 7.5, y: 1.5 }]);
-    const [struck, nextDoor] = enemiesOf(state);
-    run(state, 0.5, [{ type: 'attack', enemyId: struck!.id }]);
-    expect([struck!.mode, nextDoor!.mode]).toEqual(['chase', 'idle']);
-    struck!.dead = true;
-    state.hero.x = state.hero.prevX = 7.5;
-    state.hero.y = state.hero.prevY = 2.5;
-    run(state, 0.5);
-    expect(nextDoor!.mode).toBe('chase');
-  });
-
-  it('leave other enemies as they were, without alarming the level', () => {
-    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'dummy', x: 6.5, y: 5.5 }]);
-    const events = run(state, 0.5, [{ type: 'attack', enemyId: enemiesOf(state)[0]!.id }]);
-    expect(ofType(events, 'EnemyDamaged').length).toBeGreaterThan(0);
-    expect(ofType(events, 'LevelAlarmed')).toHaveLength(0);
   });
 });

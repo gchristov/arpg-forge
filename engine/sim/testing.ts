@@ -28,7 +28,6 @@ export const TEST_HERO: HeroRules = {
 const base = { cooldown: 1, windUp: 0.3, groupSize: 3, radius: 0.3, drops: { gold: [3, 9] as [number, number], healingChance: 0 } };
 export const TEST_ENEMIES: Record<string, EnemyType> = {
   brute: { ...base, hp: 30, damage: [4, 7], speed: 2.4, range: 0.85, aggro: 6, xp: 12 },
-  worker: { ...base, hp: 30, damage: [4, 7], speed: 2.4, range: 0.85, aggro: 6, xp: 12, calm: true },
   dummy: { ...base, hp: 1000, damage: [1, 1], speed: 0, range: 0, aggro: 0, xp: 0 },
   shooter: { ...base, hp: 32, damage: [5, 9], speed: 1.7, range: 6.5, ranged: true, aggro: 8, xp: 22, windUp: 0.55 },
   lord: {

@@ -21,8 +21,8 @@ export type Trigger<Step extends string = string> =
   | { read: string }
   /** The hero walked into a door the story keeps locked. */
   | { lockedDoor: true }
-  /** The alarm sounded. */
-  | { alarm: true }
+  /** The game's extensions signalled this, such as an alarm sounding (see the game's `EXTENSIONS.md`). */
+  | { signal: string }
   /** The hero went down. */
   | { fell: true }
   /** The hero bought this service, by its index, from someone of this kind. */
@@ -176,8 +176,8 @@ export class StoryRunner<Voice extends string> {
         return { read: e.id };
       case 'PortalLocked':
         return { lockedDoor: true };
-      case 'LevelAlarmed':
-        return { alarm: true };
+      case 'Signal':
+        return { signal: e.name };
       case 'HeroDied':
         return { fell: true };
       case 'ServiceUsed': {
@@ -197,6 +197,7 @@ export class StoryRunner<Voice extends string> {
     if ('enter' in on) return 'enter' in t && t.enter === on.enter;
     if ('near' in on) return 'near' in t && t.near === on.near && t.within === (on.within ?? NEAR);
     if ('read' in on) return 'read' in t && t.read === on.read;
+    if ('signal' in on) return 'signal' in t && t.signal === on.signal;
     if ('bought' in on) return 'bought' in t && t.bought.from === on.bought.from && t.bought.service === on.bought.service;
     return Object.keys(on)[0] === Object.keys(t)[0];
   }

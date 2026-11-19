@@ -2,6 +2,7 @@ import type { LevelContent, NpcPlacement } from '../../../engine/sim/content';
 import { roomFromRows, type RoomKey } from '../../../engine/sim/rooms';
 import { TAG, type StepId } from '../story/quest';
 import { Ground, Prop } from '../content/tiles';
+import { ALARM_MARK } from '../extensions/calm-machines';
 
 /**
  * The Foundry, floor by floor: for now each floor is one plain hall, going deeper through a door in the back wall (U)
@@ -151,7 +152,7 @@ const onBelt = (prop: number): RoomKey => ({ ...solid(prop), ground: Ground.Belt
 const KEY: Record<string, RoomKey> = {
   '.': {},
   '#': { prop: Prop.Wall, frontProp: Prop.WallLow, solid: true },
-  B: { prop: Prop.WallAlarm, solid: true, light: { radius: 6, intensity: 2, colour: 'alarm', flicker: 0, lean: 0.7, alarm: true } },
+  B: { prop: Prop.WallAlarm, solid: true, light: { radius: 6, intensity: 2, colour: 'alarm', flicker: 0, lean: 0.7, onlyWhen: ALARM_MARK, pulse: true } },
   Y: { ...solid(Prop.Cradle), readable: 'charging-station', light: { radius: 2.6, intensity: 0.8, colour: 'cyan', flicker: 0.2 } },
   K: { ...solid(Prop.Computer), readable: 'intake-door-panel', light: { radius: 2.4, intensity: 0.8, colour: 'alarm', flicker: 0.4 } },
   P: { ...solid(Prop.Computer), readable: 'access-terminal', light: { radius: 2.4, intensity: 0.8, colour: 'alarm', flicker: 0.4 } },

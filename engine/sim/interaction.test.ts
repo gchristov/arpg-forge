@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { advanceQuest } from './interaction';
 import { dropItem } from './loot';
 import { currentLevel, type GameState, type SimEvent } from './state';
+import { useStepActions } from './step-actions';
 import { arena, ofType, OPEN_ROOM, run } from './testing';
 
 function withNpc(state: GameState, kind: string, x: number, y: number): number {
@@ -191,36 +192,16 @@ describe('quest', () => {
   });
 });
 
-describe('quest steps that calm everything', () => {
-  it('end every alarm and send calm enemies back to work', () => {
-    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'worker', x: 6.5, y: 5.5 }, { kind: 'worker', x: 9.5, y: 5.5 }]);
-    state.rules.quest = [{}, { reachedBy: { type: 'kill', enemyKind: 'worker' }, calmsEverything: true }];
-    const [first, second] = currentLevel(state).enemies;
-    first!.hp = 1;
-    run(state, 1, [{ type: 'attack', enemyId: first!.id }]);
-    expect(state.quest).toBe(1);
-    expect(currentLevel(state).alarmed).toBe(false);
-    expect(second!.mode).toBe('idle');
-    const events = run(state, 3);
-    expect(ofType(events, 'HeroHurt')).toHaveLength(0);
-  });
-});
-
-describe('quest steps that alarm everything', () => {
-  it('sound the alarm on every level once, so calm enemies anywhere come for the hero on sight', () => {
-    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'worker', x: 6.5, y: 5.5 }, { kind: 'worker', x: 9.5, y: 5.5 }]);
-    state.rules.quest = [{}, { reachedBy: { type: 'kill', enemyKind: 'worker' }, alarmsEverything: true }];
-    const here = currentLevel(state);
-    const elsewhere = { ...here, enemies: [], alarmed: false, level: { ...here.level, id: 'elsewhere' } };
-    state.levels.elsewhere = elsewhere;
-    const [first, second] = here.enemies;
-    first!.quiet = true;
-    first!.hp = 1;
-    const events = run(state, 1, [{ type: 'attack', enemyId: first!.id }]);
-    expect(state.quest).toBe(1);
-    expect([here.alarmed, elsewhere.alarmed]).toEqual([true, true]);
-    expect(ofType(events, 'LevelAlarmed')).toHaveLength(1);
+describe('quest steps that do something', () => {
+  it('do the step actions they name, once, on being reached', () => {
+    const done: string[] = [];
+    useStepActions({ ring: () => void done.push('ring'), sing: () => void done.push('sing') });
+    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'brute', x: 6.5, y: 5.5 }]);
+    state.rules.quest = [{}, { reachedBy: { type: 'kill', enemyKind: 'brute' }, does: ['ring', 'sing'] }];
+    const brute = currentLevel(state).enemies[0]!;
+    brute.hp = 1;
+    run(state, 1, [{ type: 'attack', enemyId: brute.id }]);
     run(state, 1);
-    expect(second!.mode).toBe('chase');
+    expect([state.quest, done]).toEqual([1, ['ring', 'sing']]);
   });
 });

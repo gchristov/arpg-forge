@@ -1,5 +1,4 @@
 import { lerp } from '../core/math';
-import { scanStrength, type ScanView } from '../render/scan-beams';
 import type { Look } from '../render/look';
 import type { SceneRenderer } from '../render/scene-renderer';
 import { questGoal, type QuestGoal } from '../sim/quest-goal';
@@ -50,8 +49,6 @@ const WEAPON_NAME_HEIGHT = 0.45;
 const TAPPABLE_RANGE = 7;
 /** How far over a prop's top its "!" floats, in tiles. */
 const MARK_ABOVE = 0.6;
-/** A scan lights the ground round the body it looks over this far, this brightly at its height. */
-const SCAN_GLOW = { radius: 1.4, intensity: 0.9 };
 /**
  * The arrow to the next goal hides this close to it, in tiles: nearer for a doorway, which is the end of the way on,
  * than for someone to talk to or fight, who is plain to see by then.
@@ -83,11 +80,6 @@ export class WorldView {
   /** The goal as last worked out, kept until the quest or level changes; an actor goal follows the actor. */
   private goal: { quest: number; levelId: string; at: QuestGoal | null } | null = null;
   private readonly guideColours: { arrow: string; name: string } | null;
-  private readonly scanColour: number;
-  /** Reused each frame for the machines scanning the hero. */
-  private readonly scans: ScanView[] = Array.from({ length: 6 }, () => ({
-    fromX: 0, fromY: 0, fromHeight: 0, x: 0, y: 0, height: 0, radius: 0, progress: 0,
-  }));
 
   constructor(
     private readonly state: GameState,
@@ -98,7 +90,6 @@ export class WorldView {
     private readonly project: Project,
   ) {
     const { guide } = look.effects;
-    this.scanColour = look.effects.scan ?? look.effects.skill;
     this.guideColours = guide ? { arrow: cssColour(guide.arrow), name: cssColour(guide.name) } : null;
   }
 
@@ -237,8 +228,7 @@ export class WorldView {
         renderer.glow(lerp(e.prevX, e.x, alpha), lerp(e.prevY, e.y, alpha), 2.2, look.effects.bossLight, 0.6 * this.sight.of(e.id));
       }
     }
-    renderer.setAlarmed(ls.alarmed);
-    this.showScans(alpha);
+    renderer.showLevelMemory(ls.memory);
     if (look.effects.lightning !== undefined) this.crackleProjectiles(alpha, look.effects.lightning);
     renderer.effects.showProjectiles(state.projectiles, alpha);
     renderer.effects.showTelegraphs(state.telegraphs);
@@ -345,28 +335,6 @@ export class WorldView {
     );
     const light = this.look.actor(actor.kind).light;
     if (light && fade > 0) this.renderer.glow(x, y, light.radius, light.colour, light.intensity * fade);
-  }
-
-  /** Beams from machines looking the hero over, for enemies whose look has a scanner. */
-  private showScans(alpha: number): void {
-    const { state, look } = this;
-    const hero = look.actor(state.hero.kind);
-    let count = 0;
-    for (const e of currentLevel(state).enemies) {
-      const scanner = look.actor(e.kind).scanner;
-      if (e.scan < 0 || e.dead || !scanner || this.sight.of(e.id) < 0.5 || count >= this.scans.length) continue;
-      const s = this.scans[count++]!;
-      s.fromX = lerp(e.prevX, e.x, alpha);
-      s.fromY = lerp(e.prevY, e.y, alpha);
-      s.fromHeight = scanner.eyeHeight;
-      s.x = lerp(state.hero.prevX, state.hero.x, alpha);
-      s.y = lerp(state.hero.prevY, state.hero.y, alpha);
-      s.height = hero.height;
-      s.radius = hero.radius * 1.3;
-      s.progress = e.scan;
-      this.renderer.glow(s.x, s.y, SCAN_GLOW.radius, this.scanColour, SCAN_GLOW.intensity * scanStrength(e.scan));
-    }
-    this.renderer.effects.showScans(this.scans, count);
   }
 
   /**

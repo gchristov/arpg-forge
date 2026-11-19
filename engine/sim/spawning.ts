@@ -10,7 +10,6 @@ export function spawnEnemy(state: GameState, ls: LevelState, spawn: EnemySpawn):
   const enemy = makeEnemy(state, spawn.kind, spawn.x, spawn.y, spawn.strength ?? ls.enemyStrength);
   if (spawn.tag) enemy.tag = spawn.tag;
   if (spawn.carries) enemy.carries = spawn.carries;
-  if (spawn.quiet) enemy.quiet = true;
   ls.enemies.push(enemy);
 }
 
@@ -26,7 +25,7 @@ export function makeEnemy(state: GameState, kind: string, x: number, y: number, 
     homeX: x, homeY: y, hp, maxHp: hp, mode: 'idle',
     attackCooldown: range(state.rng, 0.4, 1), windUp: -1, swing: -1,
     wanderTimer: range(state.rng, 1, 4), wanderX: x, wanderY: y, repathTimer: 0,
-    dead: false, deadFor: 0, memory: {}, recognised: false, provoked: false, scan: -1, slideX: 0, slideY: 0,
+    dead: false, deadFor: 0, memory: {}, slideX: 0, slideY: 0,
     strength: own,
   };
 }
