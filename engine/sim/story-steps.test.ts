@@ -35,4 +35,12 @@ describe('story steps', () => {
     expect(holds(at(2), { from: 'asked', until: 'done', not: { holding: 'saw' } })).toBe(true);
     expect(holds(at(2, 'saw'), { from: 'asked', until: 'done', not: { holding: 'saw' } })).toBe(false);
   });
+
+  it('checks the story\'s flags, and can be asked about another step than the current one', () => {
+    const state = at(2);
+    expect(holds(state, { flag: 'wentDown' })).toBe(false);
+    state.flags.wentDown = true;
+    expect(holds(state, { flag: 'wentDown' })).toBe(true);
+    expect([holds(state, { at: 'asked' }), holds(state, { at: 'asked' }, 1)]).toEqual([false, true]);
+  });
 });

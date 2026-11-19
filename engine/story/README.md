@@ -4,8 +4,17 @@ A game's story is a **quest line**: an ordered list of named steps. The game is 
 forward when the next step's trigger happens, and never moves back. Everything else in the story hangs off those step
 names: who is where, which doors are open, which enemies have turned up, which skills the hero has.
 
-The engine runs the story; each game writes its own. For Unrecalled the story is in `games/unrecalled/content/story.ts`
-and the places in `games/unrecalled/levels/`.
+The engine runs the story; each game writes its own, in `games/<name>/story/`:
+
+| File | Holds |
+| --- | --- |
+| `quest.ts` | the quest line, the replies the story waits for, the tags of the enemies it needs beaten |
+| `people.ts` | what each person says, and the services they offer |
+| `things.ts` | what each thing to read or use shows |
+| `voices.ts` | who speaks in the message box |
+| `lines.ts` | the lines said as the story goes: thoughts, announcements, scenes |
+
+Where people, things and enemies are placed is in the game's `levels/`.
 
 ## The quest line
 
@@ -59,15 +68,77 @@ room.npcs.push({ kind: 'trader', name: 'Mags', x: 19.5, y: 15.5, fromStep: 'free
 ## Conditions
 
 Anything that depends on the story uses one condition, `When` (`engine/sim/story-steps.ts`). Every part given must
-hold:
+hold, and a step name that doesn't exist is a type error in the game's story files:
 
 ```typescript
 { from: 'sawAsked' }                    // at or after sawAsked
 { until: 'powerOn' }                    // before powerOn
 { at: 'sawFound' }                      // exactly at sawFound
 { holding: 'chainsaw' }                 // with the chainsaw in hand (null: bare hands)
+{ flag: 'wentDown' }                    // a story flag is set
 { from: 'sawAsked', not: { holding: 'chainsaw' } }
 ```
+
+## People
+
+What each person says is a list, in `people.ts`, by the kind of person (`foreman`, `trader`, …). When the hero talks to
+them, the **first entry whose condition holds** is said, so put the specific ones first and the one with no condition,
+said otherwise, last:
+
+```typescript
+tinker: {
+  title: 'Pell the Tinker',
+  services: [
+    { label: 'Toughen your hands (+3 damage)', service: 0, tag: '{price} scrap', when: { holding: null } },
+    { label: 'Sharpen the chain (+3 damage)', service: 0, tag: '{price} scrap', when: { not: { holding: null } } },
+  ],
+  says: [
+    {
+      at: 'sentToPell',
+      pages: [
+        { text: 'A Foundry robot in my workshop. …' },
+        { text: 'Get it back and it’s yours. …', options: [{ label: '“I’ll get it back.”', reply: REPLY.getSaw }] },
+      ],
+    },
+    { until: 'sentToPell', text: 'A Foundry robot in my workshop? Talk to Odell by the fire first.' },
+    { text: 'It went east into the woods. Your hands will do for it.', services: true },
+  ],
+},
+```
+
+- An entry is one page (`text`, with `options`) or several (`pages`). Any button on a page but the last moves on to
+  the next page.
+- A button with a `reply` sends it: that's how the story waits for the hero's answer (a quest step `reachedBy` that
+  reply). Its name comes from `REPLY` in `quest.ts`.
+- `services: true` adds the person's service buttons. A service is bought by its index in `NPCS`, and `{price}` in its
+  `tag` shows what it costs.
+- A button's `when` offers it only while that holds.
+- When a page has nothing that closes it, a leave button is added: "Leave", or the person's own `leave`.
+- A conversation that the story moves on (talking to someone to reach a step) is worded as things stood before it.
+
+## Things to read or use
+
+What each thing shows is a list in `things.ts`, by the thing's id in the levels, chosen the same way, first match first:
+
+```typescript
+switch: {
+  title: 'Turbine',
+  screen: true,
+  says: [
+    { from: 'powerOn', text: 'STATUS: ACTIVE.' },
+    { at: 'loaderDown', text: 'ACCESS GRANTED. STATUS: ACTIVE.' },
+    { text: 'ACCESS DENIED.' },
+  ],
+},
+```
+
+`screen: true` prints it like a terminal; without it, it's something written and shows at once. Using something that
+moves the story on shows what it said just before.
+
+## Story flags
+
+For what the story remembers that isn't a step, such as "has gone down since last patched up": `{ flag: 'wentDown' }` in
+a condition. The game sets and clears a flag with the `setFlag` command.
 
 ## Changing the story
 

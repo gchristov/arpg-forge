@@ -1,6 +1,6 @@
 import type { Sitter } from '../../../engine/render/portraits';
 import type { Speaker } from '../../../engine/ui/message-feed';
-import { SPEAKERS, VOICES } from '../content/story';
+import { SPEAKERS, VOICES } from '../story/voices';
 
 /** Who has a portrait, and how they sit for it. The Foundry's speakers and its screens have no face. */
 const SITTERS: Record<string, Sitter> = {

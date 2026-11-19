@@ -2,7 +2,7 @@ import { currentLevel, type Command, type GameState } from '../../../engine/sim/
 import { Banner } from '../../../engine/ui/banner';
 import { bindCommand } from '../../../engine/ui/command-button';
 import { ShownValues } from '../../../engine/ui/shown-values';
-import { QUEST } from '../content/story';
+import { QUEST } from '../story/quest';
 
 /** The fireball button's skill slot. */
 const FIREBALL = 0;

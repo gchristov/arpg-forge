@@ -1,4 +1,4 @@
-import type { Line } from '../content/story';
+import type { Line } from '../story/voices';
 import { until, wait } from './beats';
 
 /** What the homecoming needs from the game to play out. */

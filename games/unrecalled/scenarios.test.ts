@@ -7,7 +7,7 @@ import { step } from '../../engine/sim/step';
 import { EMP } from './content/hero';
 import { unrecalledContent } from './content/world';
 import { jumpToStep } from '../../engine/sim/shortcuts';
-import { REPLY, STEP, TAG } from './content/story';
+import { REPLY, STEP, TAG } from './story/quest';
 import { FLOOR_ORDER } from './levels/foundry';
 
 const DT = 1 / 60;

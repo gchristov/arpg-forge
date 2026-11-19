@@ -8,10 +8,13 @@ import { Game } from '../../engine/game/game';
 import { PX } from '../../engine/game/world-view';
 import { servicePrice } from '../../engine/sim/interaction';
 import { currentLevel, type SimEvent } from '../../engine/sim/state';
+import { ConversationView } from '../../engine/story/conversation-view';
+import { talkTo } from '../../engine/story/talk';
 import { DialogBox } from '../../engine/ui/dialog-box';
 import { ashenHollowLook, MODEL_URLS } from './art/look';
 import { ashenHollowSounds } from './audio/sounds';
-import { dialogueFor, NPCS, STEP } from './content/story';
+import { NPCS, PEOPLE } from './story/people';
+import { STEP } from './story/quest';
 import { ashenHollowContent } from './content/world';
 import { Hud } from './ui/hud';
 
@@ -196,30 +199,24 @@ function react(events: SimEvent[]): void {
   }
 }
 
-/** Opens an NPC's dialogue, with each service's price and whether the hero can afford it. */
+/** Shows what people say in the dialogue box, with each service's price and whether the hero can afford it. */
+const conversation = new ConversationView(dialog, {
+  send: (command) => game.send(command),
+  price: (npcId, index) => {
+    const npc = currentLevel(state).npcs.find((n) => n.id === npcId);
+    const service = npc && NPCS[npc.kind]?.services[index];
+    return service ? servicePrice(state.hero, service) : 0;
+  },
+  money: () => state.hero.gold,
+  pace: () => undefined,
+});
+
+/** Opens what someone says, as things stood at `questBefore`, before talking to them moved the story on. */
 function showDialogue(npcId: number, questBefore: number): void {
   const npc = currentLevel(state).npcs.find((n) => n.id === npcId);
-  const d = npc && dialogueFor(npc.kind, questBefore, state.quest);
-  if (!npc || !d) return;
-  const services = NPCS[npc.kind]?.services ?? [];
-  dialog.open(
-    d.title,
-    d.text,
-    d.options.map((o) => {
-      const service = o.service === undefined ? undefined : services[o.service];
-      const price = service ? servicePrice(state.hero, service) : 0;
-      return {
-        label: o.label,
-        ...(o.tag ? { tag: o.tag(price) } : {}),
-        disabled: state.hero.gold < price,
-        onChoose: () => {
-          if (o.service === undefined) dialog.close();
-          else game.send({ type: 'useService', npcId, service: o.service });
-        },
-      };
-    }),
-    npcId,
-  );
+  const person = npc && PEOPLE[npc.kind];
+  const talk = person && talkTo(person, state, questBefore);
+  if (talk) conversation.show(talk, npcId);
 }
 
 /** After a purchase: resting closes the dialogue, other services refresh it with the new prices. */

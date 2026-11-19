@@ -5,7 +5,7 @@ import { bindCommand } from '../../../engine/ui/command-button';
 import { type FeedOptions, MessageFeed, type Speaker } from '../../../engine/ui/message-feed';
 import { ShownValues } from '../../../engine/ui/shown-values';
 import { ENEMIES } from '../content/enemies';
-import { QUEST } from '../content/story';
+import { QUEST } from '../story/quest';
 
 /** The EMP's skill slot. */
 export const EMP = 0;

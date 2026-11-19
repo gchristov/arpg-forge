@@ -2,19 +2,22 @@ import type { QuestStep } from './content';
 import type { GameState } from './state';
 
 /**
- * When something in a game's story applies, by the quest's named steps and what the hero holds. Every field given must
- * hold; none given always holds.
+ * When something in a game's story applies, by the quest's named steps, the story's flags and what the hero holds.
+ * Every field given must hold; none given always holds. `Step` narrows the step names to a game's own, so a misspelt
+ * one is a type error.
  */
-export interface When {
+export interface When<Step extends string = string> {
   /** At or after this step. */
-  from?: string;
+  from?: Step;
   /** Before this step. */
-  until?: string;
+  until?: Step;
   /** Exactly at this step. */
-  at?: string;
+  at?: Step;
+  /** This story flag is set. */
+  flag?: string;
   /** This weapon in hand, or null for bare hands. */
   holding?: string | null;
-  not?: When;
+  not?: When<Step>;
 }
 
 const indexes = new WeakMap<readonly QuestStep[], Map<string, number>>();
@@ -34,13 +37,18 @@ export function stepIndex(steps: readonly QuestStep[], id: string): number {
 /** Whether the quest has reached the step named `id`. */
 export const reached = (state: GameState, id: string): boolean => state.quest >= stepIndex(state.rules.quest, id);
 
-export function holds(state: GameState, when: When): boolean {
+/**
+ * Whether `when` holds, with the quest at `quest`: the current step, unless asked about another, such as the step
+ * before something moved it on.
+ */
+export function holds(state: GameState, when: When, quest = state.quest): boolean {
   const steps = state.rules.quest;
-  if (when.from !== undefined && state.quest < stepIndex(steps, when.from)) return false;
-  if (when.until !== undefined && state.quest >= stepIndex(steps, when.until)) return false;
-  if (when.at !== undefined && state.quest !== stepIndex(steps, when.at)) return false;
+  if (when.from !== undefined && quest < stepIndex(steps, when.from)) return false;
+  if (when.until !== undefined && quest >= stepIndex(steps, when.until)) return false;
+  if (when.at !== undefined && quest !== stepIndex(steps, when.at)) return false;
+  if (when.flag !== undefined && !state.flags[when.flag]) return false;
   if (when.holding !== undefined && state.hero.weapon !== when.holding) return false;
-  return !when.not || !holds(state, when.not);
+  return !when.not || !holds(state, when.not, quest);
 }
 
 /**

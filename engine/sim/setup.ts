@@ -18,6 +18,7 @@ export function createGameState(content: GameContent, seed: number, startLevel =
       ...(content.enemyGrowthPerHeroLevel === undefined ? {} : { enemyGrowthPerHeroLevel: content.enemyGrowthPerHeroLevel }),
     },
     quest: 0,
+    flags: {},
     levels: {},
     levelId: startLevel,
     startLevelId: content.startLevel,

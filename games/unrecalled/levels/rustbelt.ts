@@ -2,7 +2,7 @@ import { valueNoise } from '../../../engine/core/math';
 import type { LevelContent } from '../../../engine/sim/content';
 import type { BuildingPart, Level, Structure } from '../../../engine/world/level';
 import { createTileMap, inBounds, setProp, setSolid, tileIndex } from '../../../engine/world/tile-map';
-import { TAG } from '../content/story';
+import { TAG } from '../story/quest';
 import { Ground, Prop } from '../content/tiles';
 import { paintPath, scatterWilds } from './wilds';
 import { addWoods, WOODS_TRAIL_ROW, WOODS_WIDTH, woodsTreeChance } from './woods';

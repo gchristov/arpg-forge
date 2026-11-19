@@ -5,16 +5,21 @@ import { Game } from '../../engine/game/game';
 import { PX } from '../../engine/game/world-view';
 import { servicePrice } from '../../engine/sim/interaction';
 import { currentLevel, type RefusalReason, type SimEvent } from '../../engine/sim/state';
+import { ConversationView } from '../../engine/story/conversation-view';
+import { read, talkTo } from '../../engine/story/talk';
 import { DialogBox } from '../../engine/ui/dialog-box';
 import { PRINTING, SPEAKING } from '../../engine/ui/typewriter';
 import { MODEL_URLS, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import {
-  AFTER_READING, ALARM, ARRIVAL, BY_THE_FIRE, CHARGED, CHARGING, dialogueFor, ENDING, ENGINE_SAYS, GIVING_THE_ORDER,
-  HOMECOMING, levelUp, LOCKED, MACHINE_SCANS, NPCS, ON_ENTERING, ON_NEARING, readingFor, REPLY, UPRIVER, scrapDropped,
-  STEP, STEP_LINES, VOICES, type Dialogue, type Line,
-} from './content/story';
+  AFTER_READING, ALARM, ARRIVAL, CHARGED, CHARGING, ENDING, ENGINE_SAYS, GIVING_THE_ORDER, HOMECOMING, levelUp, LOCKED,
+  MACHINE_SCANS, ON_ENTERING, ON_NEARING, scrapDropped, STEP_LINES,
+} from './story/lines';
+import { NPCS, PEOPLE } from './story/people';
+import { BY_THE_FIRE, REPLY, STEP, UPRIVER } from './story/quest';
+import { THINGS } from './story/things';
+import { VOICES, type Line } from './story/voices';
 import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
 import { until } from './ui/beats';
@@ -91,48 +96,28 @@ const greeted = new Set<string>();
 /** Whether the Foundry has announced the line breach. */
 let breachAnnounced = false;
 
-/** Times the salvager has gone down, for the trader to remark on. */
-let deaths = 0;
+/** Shows conversations and readings in the dialogue box, with a portrait for people and every page kept in the log. */
+const conversation = new ConversationView(dialog, {
+  send: (command) => game.send(command),
+  price: (npcId, index) => {
+    const npc = currentLevel(state).npcs.find((n) => n.id === npcId);
+    const service = npc && NPCS[npc.kind]?.services[index];
+    return service ? servicePrice(state.hero, service) : 0;
+  },
+  money: () => state.hero.gold,
+  pace: (talk) => (talk.screen ? PRINTING : talk.written ? null : SPEAKING),
+  onPage: (talk, text) => {
+    hud.remember(text, { name: talk.title, voice: 'page' });
+    showPortrait(talk.screen || talk.written ? undefined : portraits.ofName(talk.title));
+    $('dialog').classList.toggle('screen', Boolean(talk.screen));
+  },
+});
 
-/** Opens a townsperson's dialogue, by their kind. */
+/** Opens what a townsperson says, by their kind. */
 function showDialogue(npcId: number, kind: string): void {
-  const d = dialogueFor(kind, state.quest, deaths, state.hero.weapon);
-  if (d) present(d, { npcId, kind });
-}
-
-/**
- * Shows a page of dialogue, with each service's price and whether the salvager can afford it. A reply leads to the
- * next page; the last closes it and runs `then`.
- */
-function present(d: Dialogue, npc?: { npcId: number; kind: string }, then?: () => void): void {
-  const services = npc ? NPCS[npc.kind]?.services ?? [] : [];
-  hud.remember(d.text, { name: d.title, voice: 'page' });
-  showPortrait(d.medium ? undefined : portraits.ofName(d.title));
-  $('dialog').classList.toggle('screen', d.medium === 'screen');
-  dialog.open(
-    d.title,
-    d.text,
-    d.options.map((o) => {
-      const service = o.service === undefined ? undefined : services[o.service];
-      const price = service ? servicePrice(state.hero, service) : 0;
-      return {
-        label: o.label,
-        ...(o.tag ? { tag: o.tag(price) } : {}),
-        disabled: state.hero.gold < price,
-        onChoose: () => {
-          if (o.reply && npc) game.send({ type: 'reply', npcId: npc.npcId, id: o.reply });
-          if (o.service !== undefined && npc) game.send({ type: 'useService', npcId: npc.npcId, service: o.service });
-          else if (o.next) present(o.next, npc, then);
-          else {
-            dialog.close();
-            then?.();
-          }
-        },
-      };
-    }),
-    npc?.npcId ?? null,
-    d.medium === 'screen' ? PRINTING : d.medium === 'written' ? null : SPEAKING,
-  );
+  const person = PEOPLE[kind];
+  const talk = person && talkTo(person, state);
+  if (talk) conversation.show(talk, npcId);
 }
 
 /** The speaker's face beside a page of dialogue; signs and screens have none. */
@@ -141,13 +126,6 @@ function showPortrait(url: string | undefined): void {
   picture.hidden = !url;
   $('dialog').classList.toggle('pictured', Boolean(url));
   if (url) picture.src = url;
-}
-
-/** Pages of dialogue one after another, then `then`. */
-function playScene(pages: Dialogue[], then?: () => void): void {
-  const [first, ...rest] = pages;
-  if (first) present(first, undefined, () => playScene(rest, then));
-  else then?.();
 }
 
 /** How long after the last locked-door event a new one counts as walking into the door again. */
@@ -172,26 +150,24 @@ function showReading(id: string, events: SimEvent[]): void {
     talkToOdell();
     return;
   }
+  const thing = THINGS[id];
+  if (!thing) return;
   // Worded as it was when it was used, before using it moved the story on.
-  const reading = readingFor(id, Math.min(state.quest, ...reached.map((step) => step - 1)));
-  if (!reading) return;
-  const page: Dialogue = {
-    title: reading.title,
-    text: reading.text,
-    options: [{ label: 'Close' }],
-    medium: reading.screen ? 'screen' : 'written',
-  };
+  const before = Math.min(state.quest, ...reached.map((step) => step - 1));
   if (reached.includes(STEP.atCharger)) {
     // The EMP is the charge's gift, so it shows once the scene is over. The screen waits for the salvager's thought on
     // coming near, which a page opening at once would put away. Plugging in uses the station again, which authorises
     // U-7 and opens the door down.
     hud.empWithheld = true;
     const station = currentLevel(state).readables.findIndex((r) => r.id === id);
-    const plugIn = { ...page, options: [{ label: 'Plug in' }] };
-    void until(() => hud.quiet).then(() => playScene([plugIn], () => game.send({ type: 'read', index: station })));
-  } else if (reached.includes(STEP.charged)) playScene(CHARGING, () => void chargeUp());
-  else if (reached.includes(STEP.orderClosed)) playScene(GIVING_THE_ORDER, talkToOdell);
-  else present(page);
+    const plugIn = read(thing, state, before, 'Plug in');
+    void until(() => hud.quiet).then(() => plugIn && conversation.show(plugIn, null, () => game.send({ type: 'read', index: station })));
+  } else if (reached.includes(STEP.charged)) conversation.show(CHARGING, null, () => void chargeUp());
+  else if (reached.includes(STEP.orderClosed)) conversation.show(GIVING_THE_ORDER, null, talkToOdell);
+  else {
+    const reading = read(thing, state, before);
+    if (reading) conversation.show(reading);
+  }
   const thought = AFTER_READING[id];
   if (thought && !thoughtsHad.has(id)) say([{ text: thought }]);
   thoughtsHad.add(id);
@@ -290,7 +266,7 @@ function reactToService(npcId: number, index: number, x: number, y: number): voi
   if (!service) return;
   if (service.type === 'restore') {
     labels.text(x, y, 46 * PX, 'Patched up', '#7ae08a', 15);
-    deaths = 0;
+    game.send({ type: 'setFlag', flag: 'wentDown', on: false });
     dialog.close();
     return;
   }
@@ -479,7 +455,8 @@ function react(events: SimEvent[]): void {
         reachStep(e.step);
         break;
       case 'HeroDied':
-        deaths++;
+        // Mags remarks on it until she next patches U-7 up.
+        game.send({ type: 'setFlag', flag: 'wentDown', on: true });
         dialog.close();
         hud.hideBanner();
         break;
