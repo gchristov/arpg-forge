@@ -114,11 +114,14 @@ describe('checkContent', () => {
     ]));
   });
 
-  it('finds a vendor selling a weapon the hero can\'t hold', () => {
+  it('finds a weapon with an attack no game has made available, or more than one attack', () => {
     const c = rooms();
-    c.hero = { ...c.hero, weapons: { saw: { knockback: 0 } } };
-    c.npcs = { smith: { services: [{ type: 'sellWeapon', weapon: 'saw', price: 10 }, { type: 'sellWeapon', weapon: 'axe', price: 10 }] } };
-    expect(checkContent(c)).toEqual(['NPC kind "smith" sells unknown weapon "axe"']);
+    c.weaponAttacks = { press: { attack: () => {} } };
+    c.hero = { ...c.hero, weapons: { saw: { attack: { cut: {} } }, vice: { attack: { press: {}, grip: {} } } } };
+    expect(checkContent(c)).toEqual(expect.arrayContaining([
+      'weapon "saw" has unknown attack "cut"',
+      'weapon "vice" has more than one attack of its own',
+    ]));
   });
 
   it('finds an enemy carrying a weapon the hero can\'t hold, and counts one it can as a way to get it', () => {

@@ -22,6 +22,7 @@ import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
 import type { GameAction } from './extensions/actions';
 import { AssemblyWakes } from './extensions/assembly-wakes';
+import { CutSpray } from './extensions/cut-spray';
 import { MachineScans } from './extensions/machine-scans';
 import { Hud } from './ui/hud';
 import { Portraits } from './ui/portraits';
@@ -90,6 +91,7 @@ const kindOf = (enemyId: number | undefined): string | undefined => currentLevel
 /** Whether the machine with this id looks U-7 over with a beam when it recognises it. */
 const scans = (enemyId: number | undefined): boolean => enemyId !== undefined && SCANNER_EYES[kindOf(enemyId) ?? ''] !== undefined;
 const machineScans = new MachineScans(game, unrecalledLook, SCANNER_EYES, SCAN_COLOUR);
+const cutSpray = new CutSpray(game, unrecalledLook);
 
 /** Shows conversations and readings in the dialogue box, with a portrait for people and every page kept in the log. */
 const conversation = new ConversationView(dialog, {
@@ -341,7 +343,10 @@ game.run({
     chainsaw.update(s, playing);
     assemblyWakes.update(performance.now());
   },
-  draw: (alpha) => machineScans.draw(alpha),
+  draw: (alpha, frameSeconds) => {
+    machineScans.draw(alpha);
+    cutSpray.draw(frameSeconds);
+  },
   onStart() {
     synth.unlock();
     playing = true;

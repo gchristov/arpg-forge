@@ -99,8 +99,6 @@ export function servicePrice(hero: Hero, service: Service): number {
       return service.price;
     case 'upgradeMelee':
       return service.basePrice + hero.meleeUpgrades * service.priceStep;
-    case 'sellWeapon':
-      return service.price;
   }
 }
 
@@ -109,7 +107,6 @@ export function useService(state: GameState, npcId: number, index: number, event
   const npc = currentLevel(state).npcs.find((n) => n.id === npcId);
   const service = npc && state.rules.npcs[npc.kind]?.services[index];
   if (!service || hero.dead) return;
-  if (service.type === 'sellWeapon' && hero.weapon === service.weapon) return;
   const price = servicePrice(hero, service);
   if (hero.gold < price) return;
   hero.gold -= price;
@@ -125,11 +122,8 @@ export function useService(state: GameState, npcId: number, index: number, event
       hero.bonusDamage += service.bonus;
       hero.meleeUpgrades++;
       break;
-    case 'sellWeapon':
-      break;
   }
   events.push({ type: 'ServiceUsed', npcId, service: index, x: hero.x, y: hero.y });
-  if (service.type === 'sellWeapon') arm(state, service.weapon, hero.x, hero.y, events);
 }
 
 /** A reply chosen in a conversation with an NPC on the current level, which can move the quest on. */

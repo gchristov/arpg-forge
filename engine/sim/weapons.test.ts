@@ -1,41 +1,43 @@
 import { describe, expect, it } from 'vitest';
-import { useService } from './interaction';
 import { currentLevel } from './state';
 import { arena, ofType, OPEN_ROOM, run } from './testing';
+import { useWeaponAttacks, type WeaponAttackTurn } from './weapon-attacks';
 import { meleeOf } from './weapons';
 
 describe('weapons', () => {
-  it("fights bare-handed until a weapon is in hand, then with the weapon's attack", () => {
-    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'brute', x: 6.3, y: 5.5 }]);
-    state.rules.hero = { ...state.rules.hero, weapons: { saw: { continuous: { tickSeconds: 0.1, power: 2 } } } };
-    const brute = currentLevel(state).enemies[0]!;
-    brute.hp = brute.maxHp = 1000;
-    expect(meleeOf(state).continuous).toBeUndefined();
-    const swung = run(state, 2, [{ type: 'attack', enemyId: brute.id }]);
-    expect(ofType(swung, 'Swung').some((s) => s.actorId === state.hero.id)).toBe(true);
-    state.hero.weapon = 'saw';
-    expect(meleeOf(state).continuous).toEqual({ tickSeconds: 0.1, power: 2 });
-    expect(meleeOf(state).reach).toBe(state.rules.hero.melee.reach);
-    run(state, 1);
-    expect(state.hero.cut).not.toBeNull();
+  it("fights bare-handed until a weapon is in hand, then with its numbers in place of bare hands' own", () => {
+    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 });
+    state.rules.hero = { ...state.rules.hero, weapons: { club: { reach: 2 } } };
+    expect(meleeOf(state)).toBe(state.rules.hero.melee);
+    state.hero.weapon = 'club';
+    expect(meleeOf(state)).toEqual({ ...state.rules.hero.melee, reach: 2 });
   });
 
-  it('sells a weapon once, for its price, and puts it in hand', () => {
-    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 });
-    state.rules.hero = { ...state.rules.hero, weapons: { saw: { knockback: 0 } } };
-    state.rules.npcs = { smith: { services: [{ type: 'sellWeapon', weapon: 'saw', price: 60 }] } };
-    const ls = currentLevel(state);
-    ls.npcs.push({ id: 99, kind: 'smith', name: 'Smith', x: 6, y: 5.5, prevX: 6, prevY: 5.5, r: 0.3, facingX: 0, facingY: 1, moving: false, path: null, placement: 0 });
-    state.hero.gold = 50;
-    useService(state, 99, 0, []);
-    expect(state.hero.weapon).toBeNull();
-    state.hero.gold = 100;
-    const events: Parameters<typeof useService>[3] = [];
-    useService(state, 99, 0, events);
-    expect([state.hero.weapon, state.hero.gold]).toEqual(['saw', 40]);
-    useService(state, 99, 0, events);
-    expect(state.hero.gold).toBe(40);
-    expect(ofType(events, 'ServiceUsed')).toHaveLength(1);
+  it("attacks with a weapon's own attack rather than swinging, keeping it up on the target until the hero walks off", () => {
+    const turns: Array<{ target: number; setting: number; turn: number }> = [];
+    let stops = 0;
+    useWeaponAttacks({
+      press: {
+        attack: ({ target, settings, memory }: WeaponAttackTurn<{ setting: number }>) => {
+          memory.turn = (memory.turn ?? 0) + 1;
+          turns.push({ target: target.id, setting: settings.setting, turn: memory.turn });
+        },
+        stop: () => void stops++,
+      },
+    });
+    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'dummy', x: 6.3, y: 5.5 }]);
+    state.rules.hero = { ...state.rules.hero, weapons: { press: { attack: { press: { setting: 3 } } } } };
+    const dummy = currentLevel(state).enemies[0]!;
+    const swung = run(state, 1, [{ type: 'attack', enemyId: dummy.id }]);
+    expect(ofType(swung, 'Swung').some((s) => s.actorId === state.hero.id)).toBe(true);
+    expect(turns).toHaveLength(0);
+    state.hero.weapon = 'press';
+    const pressed = run(state, 1);
+    expect(ofType(pressed, 'Swung').some((s) => s.actorId === state.hero.id)).toBe(false);
+    expect(turns[0]).toEqual({ target: dummy.id, setting: 3, turn: 1 });
+    expect(state.hero.engagedId).toBe(dummy.id);
+    run(state, 0.5, [{ type: 'walk', x: 1.5, y: 1.5 }]);
+    expect([state.hero.engagedId, state.hero.attackMemory, stops]).toEqual([null, {}, 1]);
   });
 
   it('puts a weapon found in a container in hand, says so, and moves the quest on', () => {

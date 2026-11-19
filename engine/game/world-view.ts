@@ -28,16 +28,9 @@ const DOME_SPARKS = [2, 4] as const;
 /** Skill projectiles fly at this height, and throw off an arc on about this share of frames. */
 const PROJECTILE_HEIGHT = 0.52;
 const CRACKLE_CHANCE = 0.75;
-/** The screen rumbles this strongly while the hero cuts, under the jolt of being hit. */
-const CUT_RUMBLE = 0.1;
-/**
- * While the hero cuts into something that spatters, droplets spurt off about this often, from this share of its height,
- * a burst on this share of spurts; a kill throws this many at once.
- */
-const SPRAY_SECONDS = 0.065;
-const SPRAY_HEIGHT = 0.45;
-const SPRAY_BURST = 0.16;
+/** A kill throws this many droplets at once, from this share of its height, if what was killed spatters. */
 const GUSH_DROPLETS = 13;
+const SPRAY_HEIGHT = 0.45;
 /** Each chimney puffs this often. */
 const SMOKE_SECONDS = 1.6;
 /** Townspeople's names show within this many tiles of the hero. */
@@ -72,8 +65,6 @@ export class WorldView {
   /** What the hero has found of each level, and so which enemies show; the rest stays dark until found. */
   private readonly exploration = new Exploration();
   private exploredLevel = '';
-  /** Seconds until the next droplets fly off what the hero is cutting. */
-  private untilSpray = 0;
   readonly sight = new EnemySight();
   private readonly aim = { x: 0, y: 0 };
   private readonly goalPoint = { x: 0, y: 0 };
@@ -184,7 +175,6 @@ export class WorldView {
     const { renderer, state, labels, look } = this;
     this.puffChimneys();
     this.animateWindUps();
-    this.showCut(frameSeconds);
     for (const [id, left] of this.flashes) {
       if (left - frameSeconds <= 0) this.flashes.delete(id);
       else this.flashes.set(id, left - frameSeconds);
@@ -329,7 +319,7 @@ export class WorldView {
       String(actor.id), actor.kind, x, y, actor.facingX, actor.facingY,
       {
         moving: actor.moving, dead: Boolean(actor.dead), flash: (this.flashes.get(actor.id) ?? 0) > 0 ? 1 : 0, fade, speed,
-        channelling: actor === this.state.hero && this.state.hero.cut !== null,
+        channelling: actor === this.state.hero && this.state.hero.engagedId !== null,
         armed: actor === this.state.hero ? this.state.hero.weapon : null,
       },
     );
@@ -434,32 +424,6 @@ export class WorldView {
           PROJECTILE_HEIGHT + (Math.random() - 0.5) * 0.6, colour, 0.05 + Math.random() * 0.07,
         );
       }
-    }
-  }
-
-  /**
-   * While the hero cuts, the screen rumbles, and droplets fly off what's being cut if it spatters: out of the cut,
-   * back past the blade and to the sides.
-   */
-  private showCut(frameSeconds: number): void {
-    const { hero } = this.state;
-    if (hero.cut) this.renderer.shake(CUT_RUMBLE);
-    const e = hero.cut && currentLevel(this.state).enemies.find((en) => en.id === hero.cut!.targetId);
-    const look = e && this.look.actor(e.kind);
-    if (!e || !look?.spatter) {
-      this.untilSpray = 0;
-      return;
-    }
-    this.untilSpray -= frameSeconds;
-    const d = Math.hypot(e.x - hero.x, e.y - hero.y) || 1;
-    while (this.untilSpray <= 0) {
-      // Spurts come unevenly: often one drop, sometimes none, now and then a burst.
-      this.untilSpray += SPRAY_SECONDS * (0.4 + Math.random() * 1.2);
-      const count = Math.random() < SPRAY_BURST ? 3 + Math.floor(Math.random() * 3) : Math.floor(Math.random() * 2.2);
-      // Thrown back out of the cut rather than on through the body, which would hide it.
-      const x = e.x - ((e.x - hero.x) / d) * e.r;
-      const y = e.y - ((e.y - hero.y) / d) * e.r;
-      this.renderer.spatter.spray(x, y, look.height * SPRAY_HEIGHT, (hero.x - e.x) / d, (hero.y - e.y) / d, look.spatter.colour, count, 1.6);
     }
   }
 

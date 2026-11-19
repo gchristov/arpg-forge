@@ -1,5 +1,6 @@
 import { useAbilities } from './abilities';
 import { useStepActions } from './step-actions';
+import { useWeaponAttacks } from './weapon-attacks';
 import { createRng } from '../core/rng';
 import type { GameContent, HeroRules } from './content';
 import { spawnCamp, spawnEnemy } from './spawning';
@@ -13,6 +14,7 @@ import { castForStep } from './story-cast';
 export function createGameState(content: GameContent, seed: number, startLevel = content.startLevel): GameState {
   useAbilities(content.abilities);
   useStepActions(content.stepActions);
+  useWeaponAttacks(content.weaponAttacks);
   const state: GameState = {
     rng: createRng(seed),
     time: 0,
@@ -66,7 +68,7 @@ function newHero(rules: HeroRules): Hero {
     hp: rules.health, maxHp: rules.health, resource: rules.resource, maxResource: rules.resource,
     level: 1, xp: 0, xpNext: rules.xpForLevel2, gold: 0, healingItems: rules.healingItems,
     damage: [...rules.damage], bonusDamage: 0,
-    attackCooldown: 0, skillCooldowns: rules.skills.map(() => 0), swing: -1, struck: true, cut: null, weapon: null,
+    attackCooldown: 0, skillCooldowns: rules.skills.map(() => 0), swing: -1, struck: true, engagedId: null, attackMemory: {}, weapon: null,
     lastHurtAt: -Infinity, dead: false, targetId: null, repathTimer: 0,
     interact: null, meleeUpgrades: 0,
   };

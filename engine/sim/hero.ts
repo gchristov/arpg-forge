@@ -4,7 +4,7 @@ import { hasLineOfSight } from '../world/line-of-sight';
 import { planRoute } from '../world/pathfinding';
 import { tileIndex } from '../world/tile-map';
 import { burst, damageEnemy, findEnemy, nearestEnemy } from './combat';
-import { cut, stopCutting } from './cutting';
+import { attacksItsOwnWay, attackWithWeapon, stopWeaponAttack } from './weapon-attacks';
 import { meleeOf } from './weapons';
 import { reached } from './story-steps';
 import { reply, updateInteraction, useService, walkToContainer, walkToNpc, walkToReadable } from './interaction';
@@ -246,11 +246,11 @@ export function updateHeroTimers(state: GameState, dt: number, events: SimEvent[
   }
 }
 
-/** Walking, or chasing and attacking the target: swinging at it, or cutting into it with a continuous attack. */
+/** Walking, or chasing and attacking the target: swinging at it, or with the weapon in hand's own attack. */
 export function updateHeroMovement(state: GameState, held: { x: number; y: number } | null, dt: number, events: SimEvent[]): void {
   const { hero } = state;
   if (hero.dead) {
-    stopCutting(state, events);
+    stopWeaponAttack(state, events);
     return;
   }
   const { map } = currentLevel(state).level;
@@ -262,14 +262,14 @@ export function updateHeroMovement(state: GameState, held: { x: number; y: numbe
     }
   }
   if (hero.targetId === null) {
-    stopCutting(state, events);
+    stopWeaponAttack(state, events);
     followPath(map, hero, hero.speed, dt);
     updateInteraction(state, events);
     return;
   }
   const e = findEnemy(state, hero.targetId);
   if (!e) {
-    stopCutting(state, events);
+    stopWeaponAttack(state, events);
     hero.targetId = null;
     hero.moving = false;
     return;
@@ -281,11 +281,11 @@ export function updateHeroMovement(state: GameState, held: { x: number; y: numbe
     hero.moving = false;
     hero.facingX = lerp(hero.facingX, (e.x - hero.x) / d, 0.4);
     hero.facingY = lerp(hero.facingY, (e.y - hero.y) / d, 0.4);
-    if (melee.continuous) cut(state, e, dt, events);
+    if (attacksItsOwnWay(state)) attackWithWeapon(state, e, dt, events);
     else if (hero.attackCooldown <= 0 && hero.swing < 0) startSwing(state, events);
     return;
   }
-  stopCutting(state, events);
+  stopWeaponAttack(state, events);
   if (hasLineOfSight(map, hero.x, hero.y, e.x, e.y, hero.r)) {
     hero.path = null;
     steerTowards(map, hero, e.x, e.y, hero.speed, dt);

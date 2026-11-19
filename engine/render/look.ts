@@ -104,6 +104,11 @@ export interface ActorLook {
   scale?: number;
   /** Tiles above the ground the model floats, for flying machines and spirits. */
   hover?: number;
+  /**
+   * How it keeps up a continuous attack, such as cutting with a chainsaw, besides its `channel` animation: how far, in
+   * radians, it leans in, and how far, in tiles, a held weapon shakes each way. Neither if not given.
+   */
+  channelPose?: { lean: number; buzz: number };
   /** A light the actor carries, such as a lantern or a glowing eye, which fades as it dies. */
   light?: { colour: number; radius: number; intensity: number };
   /**
