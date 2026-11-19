@@ -56,8 +56,9 @@ export interface GameHooks {
  * into commands. The rules wait until `start`, typically from a title screen, and models load meanwhile.
  *
  * With `?debug` in the page URL it shows frame timings and exposes `window.game` (`state`, `send`, `start`) for
- * scripted checks. `#<level id>` starts in that level, `?step=N` (or the step's name) at step N of the story, `?calm` with no enemies,
- * `?debug&lights=N` scatters N extra lights and `?debug&resolution=N` draws N pixels per screen point.
+ * scripted checks. `#<level id>` starts in that level, `?step=N` (or the step's name) at step N of the story,
+ * `?noEnemies` with no enemies, `?debug&lights=N` scatters N extra lights and `?debug&resolution=N` draws N pixels per
+ * screen point.
  */
 export class Game {
   readonly state: GameState;
@@ -102,7 +103,7 @@ export class Game {
     if (startStep !== null && (/^\d+$/.test(startStep) || named >= 0)) {
       jumpToStep(this.state, named >= 0 ? named : Number(startStep));
     }
-    if (params.has('calm')) removeEnemies(this.state);
+    if (params.has('noEnemies')) removeEnemies(this.state);
     if (debugMode) this.scatterLights(Number(params.get('lights') ?? 0));
     const fade = new ScreenFade(document.body, FADE_SECONDS);
     this.view = new WorldView(this.state, this.renderer, setup.look, this.labels, fade, this.project);

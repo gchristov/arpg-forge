@@ -216,12 +216,12 @@ a condition, set and cleared by the `flag` and `unflag` actions.
   to steps by name.
 - **Rename a step:** rename it everywhere it's used (search for `'oldName'`).
 - **Remove a step:** remove it, then anything still naming it is reported by the checks below.
-- **Try a step:** start the game there with `?step=<name>`, e.g. `/unrecalled/?step=inIntake&calm#intake`.
+- **Try a step:** start the game there with `?step=<name>`, e.g. `/unrecalled/?step=inIntake&noEnemies#intake`.
 
 ## What catches mistakes
 
-Run `./tools/node/run.sh npm test`. Step names in the story files are typed, so a misspelt one is an error in the
-editor before anything runs. Then the tests check, and name what's wrong:
+Run `./tools/node/run.sh npm test`. Step names in the story files are typed, and so are the step actions a quest step
+`does`, so a misspelt one is an error in the editor before anything runs. Then the tests check, and name what's wrong:
 
 - **Story checks** (`engine/story/story-checks.ts`): every step, person, thing, place, skill, reply, game action and signal the
   story names exists; every reply a quest step waits for is offered by someone (or sent by a scene); every person and
