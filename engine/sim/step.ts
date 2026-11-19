@@ -6,6 +6,7 @@ import { updateItems } from './loot';
 import { separateBodies } from './separation';
 import { placeAt } from './setup';
 import { currentLevel, type GameState, type SimEvent, type StepInput } from './state';
+import { reached } from './story-steps';
 import { travel } from './travel';
 
 const PORTAL_COOLDOWN_SECONDS = 0.7;
@@ -64,7 +65,7 @@ function enterPortalUnderHero(state: GameState, events: SimEvent[]): void {
   if (!portal) return;
   const destination = state.levels[portal.to];
   if (!destination) return;
-  if (portal.lockedUntilStep !== undefined && state.quest < portal.lockedUntilStep) {
+  if (portal.lockedUntilStep !== undefined && !reached(state, portal.lockedUntilStep)) {
     state.portalCooldown = SEALED_REMINDER_SECONDS;
     events.push({ type: 'PortalLocked', to: portal.to, x: portal.tx + 0.5, y: portal.ty + 0.5 });
     return;

@@ -1,10 +1,10 @@
 import type { StorySpan } from './content';
 import { spawnEnemy } from './spawning';
 import type { GameState, LevelState, Npc } from './state';
+import { holds, reached } from './story-steps';
 
 /** Whether the story is at a step where something with this span is in the world. */
-export const inStory = (state: GameState, span: StorySpan): boolean =>
-  state.quest >= (span.fromStep ?? 0) && state.quest < (span.untilStep ?? Infinity);
+export const inStory = (state: GameState, span: StorySpan): boolean => holds(state, { from: span.fromStep, until: span.untilStep });
 
 /**
  * Puts the townspeople and the things to read where the story has them at its current step, and takes away those it
@@ -14,7 +14,7 @@ export const inStory = (state: GameState, span: StorySpan): boolean =>
 export function castForStep(state: GameState): void {
   for (const ls of Object.values(state.levels)) {
     castNpcs(state, ls);
-    const due = ls.storySpawns.filter((s) => state.quest >= s.fromStep!);
+    const due = ls.storySpawns.filter((s) => reached(state, s.fromStep!));
     for (const spawn of due) spawnEnemy(state, ls, spawn);
     if (due.length) ls.storySpawns = ls.storySpawns.filter((s) => !due.includes(s));
     const readables = ls.readablePlacements.filter((r) => inStory(state, r));

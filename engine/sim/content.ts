@@ -12,8 +12,8 @@ export interface EnemySpawn extends SpawnPoint {
   tag?: string;
   /** Its own strength, in place of its level's `enemyStrength`. */
   strength?: number;
-  /** The quest step it turns up at; there from the start if not given. */
-  fromStep?: number;
+  /** The quest step it turns up at, by name; there from the start if not given. */
+  fromStep?: string;
   /** One of the hero's weapons, dropped on the ground when it's defeated, for the hero to pick up. */
   carries?: string;
   /** Fighting it doesn't sound the level's alarm, so the calm enemies around it keep taking the hero for one of their own. */
@@ -21,12 +21,12 @@ export interface EnemySpawn extends SpawnPoint {
 }
 
 /**
- * The quest steps something is in the world for: from `fromStep` until just before `untilStep`. Always there if
- * neither is given.
+ * The quest steps something is in the world for, by name: from `fromStep` until just before `untilStep`. Always there
+ * if neither is given.
  */
 export interface StorySpan {
-  fromStep?: number;
-  untilStep?: number;
+  fromStep?: string;
+  untilStep?: string;
 }
 
 /** A townsperson, where they stand while the story has them there. */
@@ -122,6 +122,8 @@ export type QuestTrigger =
  * step can be skipped but never undone.
  */
 export interface QuestStep {
+  /** Its name, for the content that refers to it; only steps something refers to need one. */
+  id?: string;
   reachedBy?: QuestTrigger;
   /** Reaching this step ends every level's alarm, and calm enemies everywhere go back to their work. */
   calmsEverything?: boolean;
@@ -207,8 +209,8 @@ export interface AreaSkill extends BurstDamage {
 }
 
 /** A skill the hero can use, by engine type. Games pick and tune these; new types are added here as games need them. */
-/** A skill the hero only has from a quest step on, such as one the story gives them; from the start if not given. */
-export type Skill = (ProjectileSkill | AreaSkill) & { fromStep?: number };
+/** A skill the hero only has from a quest step on, by name, such as one the story gives them; from the start if not given. */
+export type Skill = (ProjectileSkill | AreaSkill) & { fromStep?: string };
 
 /** The hero's numbers. Neutral names: "resource" is what skills cost, "healing items" are drunk or used to heal. */
 export interface MeleeRules {

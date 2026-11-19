@@ -1,7 +1,7 @@
 import { valueNoise } from '../../../engine/core/math';
 import type { LevelContent } from '../../../engine/sim/content';
 import { inBounds, setProp, setSolid, tileIndex } from '../../../engine/world/tile-map';
-import { STEP, TAG } from '../content/story';
+import { TAG } from '../content/story';
 import { Ground, Prop } from '../content/tiles';
 import { paintPath } from './wilds';
 
@@ -83,7 +83,7 @@ export function addWoods(room: LevelContent, reserve: (x: number, y: number, w: 
   prop(42, 8, Prop.Pylon);
   prop(44, 8, Prop.Computer);
   room.readables!.push({ tx: x0 + 44, ty: 8, id: 'switch' });
-  room.spawns.push({ kind: 'loader', x: x0 + 43.5, y: 10.5, tag: TAG.switchLoader, strength: TURBINE_LOADER_STRENGTH, fromStep: STEP.codeAsked });
+  room.spawns.push({ kind: 'loader', x: x0 + 43.5, y: 10.5, tag: TAG.switchLoader, strength: TURBINE_LOADER_STRENGTH, fromStep: 'codeAsked' });
   light(44, 8, 'cyan', 4);
   prop(45, 13, Prop.Crate);
   prop(37, 9, Prop.Truck);
@@ -95,7 +95,7 @@ export function addWoods(room: LevelContent, reserve: (x: number, y: number, w: 
   light(42, 15, 'molten', 11);
 
   // Where the trail forks, not far into the woods, the crawler that took Pell's chainsaw, once she asks for it back.
-  room.spawns.push({ kind: 'crawler', x: x0 + 13.5, y: 18.5, tag: TAG.sawThief, strength: SAW_THIEF_STRENGTH, fromStep: STEP.sawAsked, carries: 'chainsaw' });
+  room.spawns.push({ kind: 'crawler', x: x0 + 13.5, y: 18.5, tag: TAG.sawThief, strength: SAW_THIEF_STRENGTH, fromStep: 'sawAsked', carries: 'chainsaw' });
 
   // The sawmill yard: cut logs long gone, what they were loaded on left behind.
   for (const [x, y] of [[29, 22], [30, 24]] as const) prop(x, y, Prop.Cargo);

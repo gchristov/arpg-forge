@@ -51,7 +51,7 @@ export interface GameHooks {
  * into commands. The rules wait until `start`, typically from a title screen, and models load meanwhile.
  *
  * With `?debug` in the page URL it shows frame timings and exposes `window.game` (`state`, `send`, `start`) for
- * scripted checks. `#<level id>` starts in that level, `?step=N` at step N of the story, `?calm` with no enemies,
+ * scripted checks. `#<level id>` starts in that level, `?step=N` (or the step's name) at step N of the story, `?calm` with no enemies,
  * `?debug&lights=N` scatters N extra lights and `?debug&resolution=N` draws N pixels per screen point.
  */
 export class Game {
@@ -91,7 +91,12 @@ export class Game {
     const jumpTo = location.hash.slice(1);
     const startLevel = content.levels.some((l) => l.level.id === jumpTo) ? jumpTo : content.startLevel;
     this.state = createGameState(content, (Math.random() * 2 ** 32) >>> 0, startLevel);
-    if (params.has('step')) jumpToStep(this.state, Number(params.get('step')) || 0);
+    const startStep = params.get('step');
+    // A step by its name or its number: `?step=sawFound` or `?step=5`. A name no step has is left alone.
+    const named = this.state.rules.quest.findIndex((s) => s.id === startStep);
+    if (startStep !== null && (/^\d+$/.test(startStep) || named >= 0)) {
+      jumpToStep(this.state, named >= 0 ? named : Number(startStep));
+    }
     if (params.has('calm')) removeEnemies(this.state);
     if (debugMode) this.scatterLights(Number(params.get('lights') ?? 0));
     const fade = new ScreenFade(document.body, FADE_SECONDS);

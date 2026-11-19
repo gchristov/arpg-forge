@@ -1,6 +1,6 @@
 import type { LevelContent, NpcPlacement } from '../../../engine/sim/content';
 import { roomFromRows, type RoomKey } from '../../../engine/sim/rooms';
-import { STEP, TAG } from '../content/story';
+import { TAG, type StepId } from '../content/story';
 import { Ground, Prop } from '../content/tiles';
 
 /**
@@ -15,7 +15,7 @@ import { Ground, Prop } from '../content/tiles';
 interface FloorSpec {
   name: string;
   /** The quest step from which the way deeper opens. */
-  deeperFromStep?: number;
+  deeperFromStep?: StepId;
   /** One machine the story needs beaten, by its kind on this floor. */
   tagged?: { kind: string; tag: string };
   /** Townspeople the story brings here. */
@@ -34,7 +34,7 @@ const STRENGTH: Record<FloorId, number> = { intake: 1, sorting: 1.15, gallery: 1
 const FLOORS = {
   intake: {
     name: 'Intake',
-    deeperFromStep: STEP.doorCodeTaken, tagged: { kind: 'loader', tag: TAG.doorCodeLoader }, lamps: { L: 'cyan', A: 'amber' },
+    deeperFromStep: 'doorCodeTaken', tagged: { kind: 'loader', tag: TAG.doorCodeLoader }, lamps: { L: 'cyan', A: 'amber' },
     rows: [
       '#################################',
       '#################################',
@@ -86,7 +86,7 @@ const FLOORS = {
     ],
   },
   gallery: {
-    name: 'Control Gallery', deeperFromStep: STEP.charged, lamps: { L: 'alarm', A: 'alarm' },
+    name: 'Control Gallery', deeperFromStep: 'charged', lamps: { L: 'alarm', A: 'alarm' },
     rows: [
       '#################################',
       '#################################',
@@ -113,7 +113,7 @@ const FLOORS = {
   },
   control: {
     name: 'Control Centre',
-    npcs: [{ kind: 'foreman', name: 'Foreman Odell', x: 16.5, y: 4.6, fromStep: STEP.crateOpened, untilStep: STEP.freed }], lamps: { L: 'amber', A: 'molten' },
+    npcs: [{ kind: 'foreman', name: 'Foreman Odell', x: 16.5, y: 4.6, fromStep: 'crateOpened', untilStep: 'freed' }], lamps: { L: 'amber', A: 'molten' },
     rows: [
       '#################################',
       '#################################',
@@ -209,6 +209,6 @@ export function buildFloor(id: FloorId): LevelContent {
   floor.npcs.push(...(npcs ?? []));
   // The crate stays shut until the Order Engine is down, and once it's open there's nothing more to it.
   const crate = floor.readables?.find((r) => r.id === 'crate');
-  if (crate) Object.assign(crate, { fromStep: STEP.engineDown, untilStep: STEP.crateOpened });
+  if (crate) Object.assign(crate, { fromStep: 'engineDown', untilStep: 'crateOpened' });
   return floor;
 }

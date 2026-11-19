@@ -1,3 +1,4 @@
+import { reached } from '../../../engine/sim/story-steps';
 import { currentLevel, type Command, type GameState } from '../../../engine/sim/state';
 import { Banner } from '../../../engine/ui/banner';
 import { bindCommand } from '../../../engine/ui/command-button';
@@ -61,7 +62,7 @@ export class Hud {
       $('bPatch').classList.toggle('off', v <= 0);
     });
     const skill = state.rules.hero.skills[EMP];
-    const emp = skill && state.quest >= (skill.fromStep ?? 0) && !this.empWithheld ? skill : undefined;
+    const emp = skill && (skill.fromStep === undefined || reached(state, skill.fromStep)) && !this.empWithheld ? skill : undefined;
     // Charge only powers the EMP, so neither shows until the salvager has it.
     shown.set('hasEmp', Boolean(emp), (v) => {
       $('bEmp').hidden = !v;

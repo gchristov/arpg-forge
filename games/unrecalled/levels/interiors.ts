@@ -1,6 +1,5 @@
 import type { LevelContent } from '../../../engine/sim/content';
 import { roomFromRows, type RoomKey } from '../../../engine/sim/rooms';
-import { STEP } from '../content/story';
 import { Ground, Prop } from '../content/tiles';
 
 /**
@@ -111,7 +110,7 @@ const KEY: Record<string, RoomKey> = {
   k: { ...solid(Prop.Computer), light: { radius: 2.2, intensity: 0.6, colour: 'cyan', flicker: 0.6 } },
   S: { ...solid(Prop.Cache), container: { gold: 35, healingItems: 1 } },
   G: {
-    portal: { to: 'intake', stepOut: { x: 0, y: 0.9 }, start: { x: 0, y: 0.9 }, lockedUntilStep: STEP.toldByMags },
+    portal: { to: 'intake', stepOut: { x: 0, y: 0.9 }, start: { x: 0, y: 0.9 }, lockedUntilStep: 'toldByMags' },
     light: { radius: 2.2, intensity: 0.8, colour: 'amber', flicker: 0.2, offset: { x: 0, y: 0.7 } },
   },
   U: { prop: Prop.Stairs, portal: { to: 'depotOffice', stepOut: { x: 0, y: 0.9 }, start: { x: 0, y: 0.9 } } },
@@ -121,8 +120,8 @@ const KEY: Record<string, RoomKey> = {
   },
   // Mags and Pell are at work until the story calls them out to the fire.
   Q: { ...solid(Prop.Computer), readable: 'back-door-panel', light: { radius: 2.2, intensity: 0.6, colour: 'amber', flicker: 0.4 } },
-  '2': { npc: { kind: 'trader', name: 'Mags', untilStep: STEP.freed } },
-  '3': { npc: { kind: 'tinker', name: 'Pell', untilStep: STEP.freed } },
+  '2': { npc: { kind: 'trader', name: 'Mags', untilStep: 'freed' } },
+  '3': { npc: { kind: 'tinker', name: 'Pell', untilStep: 'freed' } },
 };
 
 export function buildInterior(id: InteriorId): LevelContent {

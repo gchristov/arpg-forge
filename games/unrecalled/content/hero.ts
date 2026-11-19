@@ -1,5 +1,4 @@
 import type { AreaSkill, HeroRules } from '../../../engine/sim/content';
-import { STEP } from './story';
 
 /**
  * Hits every machine around the salvager at once and throws them back, for when a floor's alarm brings a crowd. The
@@ -36,7 +35,7 @@ export const HERO: HeroRules = {
     // Keeps cutting for as long as it's in contact, at nearly four times the damage a second of punching.
     chainsaw: { continuous: { tickSeconds: 0.1, power: 3.7 } },
   },
-  skills: [{ ...EMP, fromStep: STEP.charged }],
+  skills: [{ ...EMP, fromStep: 'charged' }],
   heal: { amount: 60, maxItems: 9 },
   attackAssistRange: 7,
   deathGoldLoss: 0.5,

@@ -1,15 +1,16 @@
 import type { NpcType, QuestStep } from '../../../engine/sim/content';
+import { stepNumbers } from '../../../engine/sim/story-steps';
 
 /** The quest line: what the HUD says at each step, and what moves the quest to it. */
-export const QUEST: Array<QuestStep & { text: string }> = [
-  { text: 'Speak to Elder Maren in the square.' },
-  { text: 'Clear the Old Crypt, east past the graveyard.', reachedBy: { type: 'talk', npcKind: 'elder' } },
-  { text: 'Find the Bone Lord in the crypt’s north chamber.', reachedBy: { type: 'enter', levelId: 'crypt' } },
-  { text: 'The Bone Lord is dead. Hunt what’s left in the wilds.', reachedBy: { type: 'kill', enemyKind: 'boss' } },
-];
+export const QUEST = [
+  { id: 'start', text: 'Speak to Elder Maren in the square.' },
+  { id: 'sentToCrypt', text: 'Clear the Old Crypt, east past the graveyard.', reachedBy: { type: 'talk', npcKind: 'elder' } },
+  { id: 'inCrypt', text: 'Find the Bone Lord in the crypt’s north chamber.', reachedBy: { type: 'enter', levelId: 'crypt' } },
+  { id: 'bossDefeated', text: 'The Bone Lord is dead. Hunt what’s left in the wilds.', reachedBy: { type: 'kill', enemyKind: 'boss' } },
+] as const satisfies ReadonlyArray<QuestStep & { text: string }>;
 
-/** The quest step reached by killing the Bone Lord. */
-export const BOSS_DEFEATED_STEP = 3;
+/** Each step's place in the quest line, by name, for the code that compares steps. */
+export const STEP = stepNumbers(QUEST);
 
 export const NPCS: Record<string, NpcType> = {
   elder: { services: [] },
@@ -36,9 +37,9 @@ export function dialogueFor(kind: string, questBefore: number, quest: number): D
   switch (kind) {
     case 'elder': {
       const text =
-        quest >= BOSS_DEFEATED_STEP
+        quest >= STEP.bossDefeated
           ? 'You did what no one else would. Rest well. The goblins in the woods will keep you sharp.'
-          : questBefore === 0
+          : questBefore === STEP.start
             ? 'Thank the old gods, a sword arm. Something woke beneath the Old Crypt, east past the graveyard. Bones walk at night. Put the Bone Lord back in the ground.'
             : 'The Old Crypt lies east, beyond the graves. Rest at the Sleeping Boar if you need it, and see the smith about that blade.';
       return { title: 'Elder Maren', text, options: [{ label: 'I’ll go' }] };

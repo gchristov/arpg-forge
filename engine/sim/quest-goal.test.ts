@@ -108,8 +108,8 @@ describe('questGoal', () => {
   });
 
   it('never leads through a door the story keeps locked', () => {
-    const state = game([{}, { reachedBy: { type: 'enter', levelId: 'crypt' } }]);
-    state.levels.town!.level.portals[1]!.lockedUntilStep = 1;
+    const state = game([{}, { id: 'inCrypt', reachedBy: { type: 'enter', levelId: 'crypt' } }]);
+    state.levels.town!.level.portals[1]!.lockedUntilStep = 'inCrypt';
     expect(questGoal(state)).toEqual({ x: 1.5, y: 0.5 });
   });
 });
