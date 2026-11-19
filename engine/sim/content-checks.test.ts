@@ -149,11 +149,11 @@ describe('checkContent', () => {
     c.hero = { ...c.hero, weapons: { saw: { knockback: 0 } } };
     c.levels[1]!.containers = [{ tx: 1, ty: 1, gold: 0, healingItems: 0, weapon: 'axe' }];
     home(c).level.portals[0]!.lockedUntilStep = 'opened';
-    c.quest = [{}, { reachedBy: { type: 'use', id: 'lever' } }, { reachedBy: { type: 'arm', weapon: 'saw' } }];
+    c.quest = [{}, { id: 'leverPulled', reachedBy: { type: 'use', id: 'lever' } }, { reachedBy: { type: 'arm', weapon: 'saw' } }];
     expect(checkContent(c)).toEqual(expect.arrayContaining([
       'cellar: a container holds unknown weapon "axe"',
       'home: the portal to "cellar" names quest step "opened", which doesn\'t exist',
-      'quest step 1 needs using "lever", which isn\'t in any level',
+      'quest step "leverPulled" needs using "lever", which isn\'t in any level',
       'quest step 2 needs the "saw" in hand, which nothing gives',
     ]));
   });

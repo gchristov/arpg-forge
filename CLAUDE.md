@@ -13,6 +13,7 @@ Stage 1 of the roadmap is done: the engine is built, and Ashen Hollow runs on it
 - `engine/core` maths, seeded random generator, fixed-rate loop. `engine/world` tile maps, levels, collision, pathfinding, line of sight. `engine/sim` the rules. These three are pure: no browser, Three.js or clock (`tests/architecture.test.ts` enforces it).
 - `engine/render` Three.js scene and the `Look` interface a game implements; `engine/input` pointer, keys and gamepad.
 - `engine/game` runs a game: `Game` owns the fixed-rate loop, turns taps, held pointers and keys into commands, draws the state and shows the rules' events in the world (animations, markers, flashes, explosions, moving between levels). A game's `main.ts` creates a `Game` from its content, look and models, and adds what it names or words through `GameHooks`: sounds, text, banners, dialogue and its HUD.
+- `engine/story/README.md` explains how a game's story works and how to change it; keep it up to date with every change to how stories work.
 - `games/<name>/` a game: `levels/`, `content/`, `art/`, `main.ts` and `index.html`.
 - `tools/<name>/` Docker-based tools; `tests/` architecture tests; `scripts/` repo settings.
 

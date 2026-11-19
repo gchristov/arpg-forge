@@ -192,14 +192,15 @@ function checkQuest(content: GameContent, levels: Map<string, LevelContent>): st
   return content.quest.flatMap((step, i) => {
     const trigger = step.reachedBy;
     if (!trigger) return [];
+    const named = step.id ? `"${step.id}"` : String(i);
     if ((trigger.type === 'talk' || trigger.type === 'reply') && !npcKinds.has(trigger.npcKind)) {
-      return [`quest step ${i} needs talking to "${trigger.npcKind}", who isn't in any level`];
+      return [`quest step ${named} needs talking to "${trigger.npcKind}", who isn't in any level`];
     }
-    if (trigger.type === 'enter' && !levels.has(trigger.levelId)) return [`quest step ${i} needs entering "${trigger.levelId}", which doesn't exist`];
-    if (trigger.type === 'kill' && !enemyKinds.has(trigger.enemyKind)) return [`quest step ${i} needs killing a "${trigger.enemyKind}", which never appears`];
-    if (trigger.type === 'defeat' && !tags.has(trigger.tag)) return [`quest step ${i} needs defeating "${trigger.tag}", which never appears`];
-    if (trigger.type === 'use' && !readableIds.has(trigger.id)) return [`quest step ${i} needs using "${trigger.id}", which isn't in any level`];
-    if (trigger.type === 'arm' && !weaponSources.has(trigger.weapon)) return [`quest step ${i} needs the "${trigger.weapon}" in hand, which nothing gives`];
+    if (trigger.type === 'enter' && !levels.has(trigger.levelId)) return [`quest step ${named} needs entering "${trigger.levelId}", which doesn't exist`];
+    if (trigger.type === 'kill' && !enemyKinds.has(trigger.enemyKind)) return [`quest step ${named} needs killing a "${trigger.enemyKind}", which never appears`];
+    if (trigger.type === 'defeat' && !tags.has(trigger.tag)) return [`quest step ${named} needs defeating "${trigger.tag}", which never appears`];
+    if (trigger.type === 'use' && !readableIds.has(trigger.id)) return [`quest step ${named} needs using "${trigger.id}", which isn't in any level`];
+    if (trigger.type === 'arm' && !weaponSources.has(trigger.weapon)) return [`quest step ${named} needs the "${trigger.weapon}" in hand, which nothing gives`];
     return [];
   });
 }
