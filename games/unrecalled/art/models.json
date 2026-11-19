@@ -108,20 +108,16 @@
             "Torso",
             "Shoulder.L",
             "Shoulder.R",
-            "UpperArm.L",
-            "UpperArm.R",
             "Hips",
             "UpperLeg.L",
-            "UpperLeg.R",
-            "LowerLeg.L",
-            "LowerLeg.R"
+            "UpperLeg.R"
           ]
         }
       ],
       "frame": {
         "material": "Frame",
         "colour": "#3a4049",
-        "thickness": 0.15,
+        "thickness": 0.08,
         "skip": [
           "end",
           "Pole",
@@ -133,8 +129,8 @@
             "#2a2f36",
             "#d08a3a"
           ],
-          "thickness": 0.06,
-          "apart": 0.17
+          "thickness": 0.035,
+          "apart": 0.11
         }
       },
       "core": {
