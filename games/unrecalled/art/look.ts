@@ -164,8 +164,12 @@ const ACTORS: Record<string, ActorLook> = {
     colour: 0x9a8a70, height: 1.2, radius: 0.24, seenThrough: 0x8ae8ff,
     // Leaning into a cut, the chainsaw buzzing in its hands.
     channelPose: { lean: 0.18, buzz: 0.012 },
+    // The core in U-7's chest lights the ground round it.
+    light: { colour: 0xffa53a, radius: 1.2, intensity: 0.5 },
     model: {
       name: 'hero',
+      // U-7's see-through body (the model's Skin, round its faceplate and hands) shows its mesh.
+      wireframe: { material: 'Skin', colour: 0xd8dee6, opacity: 0.3 },
       animations: { idle: 'Idle', move: 'Run', attack: 'Punch', cast: 'Shoot_OneHanded', hit: 'RecieveHit', death: 'Death' },
       armed: {
         // At rest the chainsaw hangs at U-7's side; it's held out ahead in both hands while cutting, and

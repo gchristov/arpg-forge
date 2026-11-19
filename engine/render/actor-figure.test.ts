@@ -284,3 +284,60 @@ describe('ActorFigure weapon', () => {
     expect(size.x).toBeCloseTo(0.6);
   });
 });
+
+describe('ActorFigure parts with looks of their own', () => {
+  /** A figure of one box in `material`, with an optional wireframe look. */
+  function partFigure(material: THREE.Material, wireframe?: { material: string; colour: number; opacity: number }): ActorFigure {
+    const scene = new THREE.Group();
+    scene.add(new THREE.Mesh(new THREE.BoxGeometry(), material));
+    const template: ModelTemplate = { scene, animations: [new THREE.AnimationClip('Idle', 1, [])], height: 1 };
+    const library = { get: () => template, instantiate: () => scene.clone() } as unknown as ModelLibrary;
+    const look: ActorLook = {
+      colour: 0, height: 1, radius: 0.3, model: { name: 'm', animations: { idle: 'Idle' }, ...(wireframe ? { wireframe } : {}) },
+    };
+    return new ActorFigure(look, library);
+  }
+  const meshesOf = (f: ActorFigure) => {
+    const meshes: THREE.Mesh[] = [];
+    f.root.traverse((o) => o instanceof THREE.Mesh && meshes.push(o));
+    return meshes;
+  };
+
+  it('keeps a see-through part see-through, and fades it from there', () => {
+    const f = partFigure(new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.3 }));
+    const shell = meshesOf(f)[0]!.material as THREE.MeshStandardMaterial;
+    f.setLookOf(0, 1);
+    expect(shell.opacity).toBeCloseTo(0.3);
+    expect(shell.transparent).toBe(true);
+    f.setLookOf(0, 0.5);
+    expect(shell.opacity).toBeCloseTo(0.15);
+  });
+
+  it('keeps a glowing part glowing, lighting it further when hit and settling back after', () => {
+    const f = partFigure(new THREE.MeshStandardMaterial({ emissive: 0x804020 }));
+    const core = meshesOf(f)[0]!.material as THREE.MeshStandardMaterial;
+    const glow = core.emissive.clone();
+    f.setLookOf(0, 1);
+    expect(core.emissive.equals(glow)).toBe(true);
+    f.setLookOf(1, 1);
+    expect(core.emissive.r).toBeGreaterThan(glow.r);
+    f.setLookOf(0, 1);
+    expect(core.emissive.equals(glow)).toBe(true);
+  });
+
+  it('draws the edges of the named part as lines over it, fading with the actor', () => {
+    const shellMaterial = new THREE.MeshStandardMaterial();
+    shellMaterial.name = 'Shell';
+    const f = partFigure(shellMaterial, { material: 'Shell', colour: 0xd8dee6, opacity: 0.45 });
+    const [shell, lines] = meshesOf(f);
+    expect(lines!.geometry).toBe(shell!.geometry);
+    const wire = lines!.material as THREE.MeshBasicMaterial;
+    expect(wire.wireframe).toBe(true);
+    f.setLookOf(0, 0.5);
+    expect(wire.opacity).toBeCloseTo(0.225);
+  });
+
+  it('draws no lines when no part has the named material', () => {
+    expect(meshesOf(partFigure(new THREE.MeshStandardMaterial(), { material: 'Shell', colour: 0, opacity: 1 }))).toHaveLength(1);
+  });
+});

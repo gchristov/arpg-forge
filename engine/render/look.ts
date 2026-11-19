@@ -124,6 +124,8 @@ export interface ActorLook {
     animations: ActorAnimations;
     /** Multiplies the model's colours, for example to turn a rogue into a goblin. */
     tint?: number;
+    /** Draws the edges of the part in this material as lines over it, such as the mesh of a see-through body. */
+    wireframe?: { material: string; colour: number; opacity: number };
     /**
      * A separate weapon model held in the right hand: by name, one made to sit on a `handslot.r` bone as it is, or a
      * `HeldWeapon` fitted to another bone.

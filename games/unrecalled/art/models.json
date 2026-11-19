@@ -37,7 +37,7 @@
     {
       "name": "hero",
       "pack": "characters",
-      "path": "Ultimate Animated Character Pack - Nov 2019/FBX/Worker_Male.fbx",
+      "path": "Ultimate Animated Character Pack - Nov 2019/FBX/BaseCharacter.fbx",
       "animations": [
         "Idle",
         "Run",
@@ -81,6 +81,66 @@
           "UpperLeg.R": "DEF-thigh.R",
           "LowerLeg.R": "DEF-shin.R",
           "Foot.R": "DEF-foot.R"
+        }
+      },
+      "split": [
+        {
+          "material": "Skin",
+          "into": "Faceplate",
+          "bones": [
+            "Head"
+          ],
+          "front": 0.45,
+          "below": 0.8
+        },
+        {
+          "material": "Skin",
+          "into": "Faceplate",
+          "bones": [
+            "Fist.L",
+            "Fist.R"
+          ]
+        }
+      ],
+      "frame": {
+        "material": "Frame",
+        "colour": "#3a4049",
+        "thickness": 0.11,
+        "skip": [
+          "end",
+          "Pole",
+          "Foot",
+          "Bone"
+        ]
+      },
+      "core": {
+        "bone": "Torso",
+        "colour": "#ffa53a",
+        "size": 0.28,
+        "halo": {
+          "size": 2.2,
+          "opacity": 0.25
+        }
+      },
+      "paint": {
+        "Skin": {
+          "colour": "#b9c2cc",
+          "opacity": 0.28,
+          "roughness": 0.25
+        },
+        "Faceplate": {
+          "colour": "#e9c2a6"
+        },
+        "Face": {
+          "colour": "#2b2420"
+        },
+        "Core": {
+          "glow": "#ffa53a",
+          "glowStrength": 6
+        },
+        "Halo": {
+          "glow": "#ffa53a",
+          "glowStrength": 2
         }
       }
     },
@@ -359,7 +419,15 @@
       "path": "Ultimate Animated Character Pack - Nov 2019/FBX/OldClassy_Male.fbx",
       "animations": [
         "Idle"
-      ]
+      ],
+      "paint": {
+        "Skin": {
+          "colour": "#d39a7a"
+        },
+        "Face": {
+          "colour": "#2b2420"
+        }
+      }
     },
     {
       "name": "trader",
@@ -367,7 +435,15 @@
       "path": "Ultimate Animated Character Pack - Nov 2019/FBX/Casual2_Female.fbx",
       "animations": [
         "Idle"
-      ]
+      ],
+      "paint": {
+        "Skin": {
+          "colour": "#e2b08f"
+        },
+        "Face": {
+          "colour": "#2b2420"
+        }
+      }
     },
     {
       "name": "tinker",
@@ -375,7 +451,15 @@
       "path": "Ultimate Animated Character Pack - Nov 2019/FBX/Casual3_Female.fbx",
       "animations": [
         "Idle"
-      ]
+      ],
+      "paint": {
+        "Skin": {
+          "colour": "#f1c9ab"
+        },
+        "Face": {
+          "colour": "#2b2420"
+        }
+      }
     },
     {
       "name": "post",
