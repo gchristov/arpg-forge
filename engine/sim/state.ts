@@ -39,7 +39,7 @@ export interface Hero extends Actor {
   struck: boolean;
   /**
    * The enemy the hero is keeping up an attack on with their weapon's own attack, such as cutting into it, or null:
-   * drawn channelling, and the enemy can't back away.
+   * the hero is drawn channelling.
    */
   engagedId: number | null;
   /** What the weapon's own attack keeps between steps, emptied when the hero stops attacking. */
@@ -82,6 +82,8 @@ export interface Enemy extends Actor {
   deadFor: number;
   /** What its abilities keep between steps, by name. */
   memory: Record<string, number>;
+  /** Seconds it can't move of its own accord, such as held by a weapon cutting into it; 0 when free. */
+  rootedFor: number;
   /** How fast it's sliding from a knock-back, in tiles a second. */
   slideX: number;
   slideY: number;
