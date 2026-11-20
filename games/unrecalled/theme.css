@@ -89,6 +89,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 #banner .s{font:500 16px/1.4 var(--body);color:var(--muted);margin-top:10px;text-shadow:0 1px 6px #000}
 #dialog p{margin:0 0 12px}
 #dialog .choices{display:flex;gap:8px;justify-content:flex-end}
+#dialog .choices[hidden]{display:none}
 #dialog .choices button{font:600 14px/1 var(--body);color:var(--ink);background:transparent;border:1px solid #3a4a58;border-radius:6px;padding:10px 14px}
 #dialog .choices em{font-style:normal;color:var(--muted);margin-left:8px}
 #end{position:fixed;inset:0;cursor:pointer;display:grid;place-items:center;text-align:center;padding:24px 16px;background:radial-gradient(ellipse at 50% 40%,rgba(20,40,52,.6),rgba(4,6,8,.96) 70%);z-index:6}
