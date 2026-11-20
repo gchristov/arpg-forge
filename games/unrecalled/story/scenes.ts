@@ -22,9 +22,9 @@ const ASSEMBLY_CLOSENESS = 0.55;
  */
 export const ARRIVAL: Scene = [
   { cinematic: true },
-  { say: 'Stop right there. You’re one of them. Come to take what’s left?', by: 'odell' },
+  { say: 'Stop right there. You’re from the Foundry. Come to take what’s left?', by: 'odell' },
   { say: 'I left the Foundry. I came to warn you.', by: 'u7' },
-  { say: 'Warn us? They come down every night already. Scrap, tools, last week the chapel bell.', by: 'odell' },
+  { say: 'Warn us? Your machines raid us every night already. Scrap, tools, last week the chapel bell.', by: 'odell' },
   { say: 'That was only the start. Our new order is to strip the whole town for parts.', by: 'u7' },
   { say: 'The whole town… And why should I believe a Foundry machine? … Look, there’s one of yours at the crates right now.', by: 'odell' },
   { say: 'Let me prove it.', by: 'u7' },
@@ -33,24 +33,26 @@ export const ARRIVAL: Scene = [
   { reply: 'proveIt', to: 'foreman' },
 ];
 
-/** Plugging into the charging station: the screen restores U-7's access. */
-export const CHARGING: Talk = {
+/** Plugged into the charging station: U-7 breaks into the Foundry's network, overrides its access and unlocks its EMP. */
+export const OVERRIDE: Talk = {
   title: 'U-7 charging station',
   screen: true,
-  pages: [{ text: 'U-7 RETURNED. ACCESS RESTORED.', options: [{ label: '…' }] }],
+  pages: [
+    { text: 'U-7 CONNECTED. ACCESS: REVOKED.', options: [{ label: 'Override access' }] },
+    { text: 'OVERRIDE ACCEPTED. ACCESS: RESTORED.', options: [{ label: 'Unlock weapon systems' }] },
+    { text: 'EMP: UNLOCKED.', options: [{ label: 'Test the EMP' }] },
+  ],
 };
 
 /**
- * After plugging in: U-7 lets the Foundry believe it has come back, then the charge kept for it bursts out of its own
- * accord as the EMP, before its button appears, so the player sees what it does rather than reads it.
+ * Once the screen closes, the EMP bursts out before its button appears, so the player sees what it does rather than
+ * reads it, and the Foundry notices.
  */
-export const OVERCHARGE: Scene = [
-  { think: 'Let them think so.' },
-  { say: 'OVERCHARGE DETECTED.', by: 'foundry' },
-  { waitForLines: true },
+export const FIRST_EMP: Scene = [
   { useSkill: 'emp' },
   { run: 'showEmp' },
-  { think: 'Good. I still have my old EMP blast.' },
+  { think: 'Good. My EMP blast is back.' },
+  { say: 'UNAUTHORISED OVERRIDE DETECTED.', by: 'foundry' },
 ];
 
 /** Cancelling the Foundry's order at the order terminal, page by page. */
@@ -74,7 +76,7 @@ export const HOMECOMING: Scene = [
   { wait: 1.6 },
   { say: 'Odell! You stubborn old goat. You’re alive!', by: 'mags' },
   { say: 'Takes more than a Foundry to keep me in a box.', by: 'odell' },
-  { say: 'Brought home by one of them. Never thought I’d see it.', by: 'mags' },
+  { say: 'Brought home by a Foundry robot. Never thought I’d see it.', by: 'mags' },
   { say: 'I could use a couple of these machines in the workshop, you know.', by: 'pell' },
   { say: 'I didn’t trust you when you walked in. I do now.', by: 'odell' },
   { say: 'The Foundry only follows orders. Someone upriver gives them.', by: 'u7' },

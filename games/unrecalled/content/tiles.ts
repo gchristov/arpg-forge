@@ -2,7 +2,6 @@
 export const Ground = {
   Plate: 1,
   Grime: 2,
-  Belt: 3,
   Dirt: 4,
   Mud: 5,
   Water: 6,

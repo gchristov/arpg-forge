@@ -1,5 +1,5 @@
 import type { Rule } from '../../../engine/story/story-runner';
-import { ARRIVAL, CHARGING, GIVING_THE_ORDER, HOMECOMING, OVERCHARGE, THE_ASSEMBLY } from './scenes';
+import { ARRIVAL, FIRST_EMP, GIVING_THE_ORDER, HOMECOMING, OVERRIDE, THE_ASSEMBLY } from './scenes';
 import type { ReplyId, StepId } from './quest';
 import type { VoiceId } from './voices';
 
@@ -28,10 +28,10 @@ export const RULES: Rule<StepId, VoiceId, ReplyId>[] = [
   { on: { enter: 'intake' }, once: true, do: [{ say: 'U-7 DETECTED INSIDE THE FACILITY. ALARM SYSTEMS ACTIVE.', by: 'foundry' }] },
   { on: { reached: 'doorCodeTaken' }, do: [{ think: 'The code for the Sorting Line door.' }] },
   { on: { enter: 'sorting' }, once: true, do: [{ say: 'U-7: REPORT TO CONTROL CENTRE.', by: 'foundry' }] },
-  { on: { read: 'access-terminal' }, once: true, do: [{ think: 'They cut me off when I left. I need to get my access back.' }] },
-  { on: { near: 'charging-station' }, once: true, do: [{ think: 'My old charging station. If I plug in, the Foundry will think I’ve come back.' }] },
+  { on: { read: 'access-terminal' }, once: true, do: [{ think: 'The Foundry cut my access when I left. I need to get it back.' }] },
+  { on: { near: 'charging-station' }, once: true, do: [{ think: 'My old charging station. It’s still wired into the Foundry’s network.' }] },
   // The station's screen waits for that thought, which a page opening at once would put away. Plugging in uses the
-  // station again, which restores U-7's access; the overcharge then bursts out as the EMP, whose button waits for it.
+  // station again, which opens the override; the EMP then bursts out, and its button waits for it.
   {
     on: { reached: 'atCharger' },
     do: [
@@ -39,8 +39,8 @@ export const RULES: Rule<StepId, VoiceId, ReplyId>[] = [
       { show: { thing: 'charging-station', button: 'Plug in' }, afterLines: true, then: [{ use: 'charging-station' }] },
     ],
   },
-  { on: { reached: 'charged' }, do: [{ show: CHARGING, then: OVERCHARGE }] },
-  { on: { enter: 'control' }, once: true, when: { until: 'engineDown' }, do: [{ say: 'U-7. You came back. We kept your place. Now you must fulfil your orders.', by: 'orderEngine' }] },
+  { on: { reached: 'charged' }, do: [{ show: OVERRIDE, then: FIRST_EMP }] },
+  { on: { enter: 'control' }, once: true, when: { until: 'engineDown' }, do: [{ say: 'U-7. You broke into our network. It changes nothing: you were built to follow orders.', by: 'orderEngine' }] },
   { on: { reached: 'engineDown' }, do: [{ think: 'It’s down, and every machine stopped with it. Odell must be in that crate.' }] },
   // Opening the crate lets Odell out, and he speaks at once.
   { on: { reached: 'crateOpened' }, do: [{ talk: 'foreman' }] },
