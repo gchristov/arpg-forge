@@ -25,7 +25,8 @@ export const ARRIVAL: Scene = [
   { say: 'Stop right there. You’re from the Foundry. Come to take what’s left?', by: 'odell' },
   { say: 'I left the Foundry. I came to warn you.', by: 'u7' },
   { say: 'Warn us? Your machines raid us every night already. Scrap, tools, last week the chapel bell.', by: 'odell' },
-  { say: 'That was only the start. Our new order is to strip the whole town for parts.', by: 'u7' },
+  { say: 'That was only the start. The Foundry melts scrap down to build machines, and it’s run out.', by: 'u7' },
+  { say: 'Nobody cancelled the order. Next, it strips the whole town.', by: 'u7' },
   { say: 'The whole town… And why should I believe a Foundry machine? … Look, there’s one of yours at the crates right now.', by: 'odell' },
   { say: 'Let me prove it.', by: 'u7' },
   { waitForLines: true },
@@ -60,7 +61,7 @@ export const GIVING_THE_ORDER: Talk = {
   title: 'Order terminal',
   screen: true,
   pages: [
-    { text: 'ORDER: STRIP THE TOWN FOR PARTS. STATUS: AWAITING INSTRUCTIONS.', options: [{ label: 'Return all items to the town' }] },
+    { text: 'ORDER: BUILD MACHINES. SCRAP SOURCE: RUSTBELT. STATUS: AWAITING INSTRUCTIONS.', options: [{ label: 'Cancel the order' }] },
     { text: 'ORDER CANCELLED. RETURNING ALL ITEMS.', options: [{ label: 'Close' }] },
   ],
 };
