@@ -36,10 +36,12 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 @keyframes newObjective{0%,30%{color:#ffe0a0;text-shadow:0 0 12px rgba(255,190,100,.7),0 1px 3px #000}}
 /* Conversations and the lines said during play share one box at the foot of the screen, and look the same in it. */
 #feed,#dialog{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 96px);transform:translateX(-50%);width:min(440px,calc(100% - 32px))}
-#feed{pointer-events:none;display:grid}
-#feed .line,#dialog{font:500 16px/1.45 var(--body);color:var(--ink);background:rgba(10,14,18,.9);border:1px solid #3a4a58;border-left:3px solid var(--signal);border-radius:6px;padding:14px 16px;box-sizing:border-box;min-height:94px}
+#feed{pointer-events:none;display:grid;align-items:end}
+#feed .line,#dialog{font:500 16px/1.45 var(--body);color:var(--ink);background:rgba(10,14,18,.9);border:1px solid #3a4a58;border-left:3px solid var(--signal);border-radius:6px;padding:14px 16px;box-sizing:border-box;min-height:99px}
 #feed .line{grid-area:1/1;transition:opacity .4s;animation:feedIn .3s ease-out}
 #feed .line.gone{opacity:0}
+/* A line put away as the next comes in goes at once, so the box starts afresh at the new line's size. */
+#feed .line.gone:not(:last-child){display:none}
 #feed .line b,#dialog .t{display:block;font:700 12px/1 var(--body);letter-spacing:.16em;text-transform:uppercase;color:var(--signal);margin-bottom:10px}
 #feed .line.own{font-style:italic;color:#c8d4dc;border-left-color:var(--muted)}
 /* Machines (the Foundry's speakers, the Order Engine, every terminal and panel) print in one code style. */
@@ -56,7 +58,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 #feed .line.pictured img,#dialog img{width:64px;height:64px;border-radius:6px;background:radial-gradient(circle at 50% 35%,#a9b6c2,#4a5866 75%);border:1px solid #6a7a88;object-fit:cover}
 #dialog.pictured .choices{grid-column:1/-1}
 @media (max-width:440px){#feed .line.pictured,#dialog.pictured{grid-template-columns:52px 1fr;column-gap:12px}#feed .line.pictured img,#dialog img{width:52px;height:52px}}
-@keyframes feedIn{from{opacity:0;transform:translateY(-4px)}}
+@keyframes feedIn{from{opacity:0}}
 @media (prefers-reduced-motion:reduce){#quest.new,#feed .line{animation:none}}
 .stats{display:grid;justify-items:end;gap:4px;font:600 14px/1 var(--body);text-shadow:0 1px 3px #000}
 #scrap{color:#e8c870}
