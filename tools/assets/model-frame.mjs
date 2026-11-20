@@ -41,7 +41,7 @@ function ball(radius, rings = 6) {
     for (let s = 0; s < SIDES; s++) {
       const a = r * (SIDES + 1) + s;
       const b = a + SIDES + 1;
-      indices.push(a, b, a + 1, a + 1, b, b + 1);
+      indices.push(a, a + 1, b, a + 1, b + 1, b);
     }
   }
   return { positions, normals, indices };
@@ -144,13 +144,18 @@ export function addBrain(doc, { bone: boneName, colour, size, up = 0.5, back = 0
   const radius = (length * size) / 2;
   const brain = doc.createNode('Brain').setTranslation([0, length * up, -length * back]);
   bone.addChild(brain);
+  const lobeShape = [0.62, 0.78, 1];
+  const lobeAt = (side) => side * radius * 0.48;
   for (const side of [-1, 1]) {
     brain.addChild(doc.createNode(`Brain.lobe.${side}`).setMesh(meshOf(doc, ball(radius, 8), lobe))
-      .setTranslation([side * radius * 0.48, 0, 0]).setScale([0.62, 0.78, 1]));
+      .setTranslation([lobeAt(side), 0, 0]).setScale(lobeShape));
   }
-  // Nodes over the top and sides of the lobes, where they show through the skull.
-  const spots = [[0.5, 0.75, 0.3], [-0.5, 0.75, 0.3], [0.85, 0.3, -0.3], [-0.85, 0.3, -0.3], [0.3, 0.85, -0.5], [-0.3, 0.85, -0.5]];
+  // Nodes on the top and outer sides of the lobes, each the way given from its lobe's centre, half sunk into it.
+  const spots = [[0.3, 0.9, 0.3], [-0.3, 0.9, 0.3], [0.9, 0.4, -0.2], [-0.9, 0.4, -0.2], [0.2, 0.9, -0.5], [-0.2, 0.9, -0.5]];
   spots.slice(0, nodes).forEach(([x, y, z], i) => {
-    brain.addChild(doc.createNode(`Synapse.${i}`).setMesh(meshOf(doc, ball(radius * nodeSize, 4), synapse)).setTranslation([x * radius * 0.85, y * radius * 0.85, z * radius * 0.85]));
+    const away = Math.hypot(x, y, z);
+    const surface = [x, y, z].map((v, k) => (v / away) * lobeShape[k] * radius);
+    brain.addChild(doc.createNode(`Synapse.${i}`).setMesh(meshOf(doc, ball(radius * nodeSize, 4), synapse))
+      .setTranslation([lobeAt(Math.sign(x)) + surface[0], surface[1], surface[2]]));
   });
 }

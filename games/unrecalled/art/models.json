@@ -144,10 +144,10 @@
         "colour": "#ffa53a",
         "size": 0.45,
         "halo": {
-          "size": 2.2,
-          "opacity": 0.25
+          "size": 1.5,
+          "opacity": 0.4
         },
-        "out": 1.6
+        "out": 0.2
       },
       "brain": {
         "bone": "Head",
@@ -164,6 +164,14 @@
         "lift": 0.015
       },
       "paint": {
+        "Core": {
+          "glow": "#ffa53a",
+          "glowStrength": 3
+        },
+        "Halo": {
+          "glow": "#ffa53a",
+          "glowStrength": 2
+        },
         "Skin": {
           "colour": "#f2f4f6",
           "opacity": 0.18,
