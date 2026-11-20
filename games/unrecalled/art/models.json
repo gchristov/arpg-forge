@@ -126,6 +126,10 @@
           "Foot",
           "Bone"
         ],
+        "reach": [
+          "LowerLeg.L",
+          "LowerLeg.R"
+        ],
         "wires": {
           "colours": [
             "#2a2f36",

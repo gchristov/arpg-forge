@@ -74,11 +74,12 @@ const bonesOf = (doc) => new Set(doc.getRoot().listSkins().flatMap((skin) => ski
 
 /**
  * Runs a rod of `thickness` (a share of its length) along every bone to each child bone, with a ball at each joint,
- * drawn in a new material called `material` of `colour`. Bones whose names contain any of `skip` are left bare.
+ * drawn in a new material called `material` of `colour`. Bones whose names contain any of `skip` are left bare, except
+ * that the bones named in `reach` run a rod to their end bone too, such as a shin that has no foot below it.
  * `wires` runs a cable of each colour alongside every rod, `thickness` of the rod's length across and `apart` of it
  * out from the rod, in materials called Wire.0, Wire.1 and so on.
  */
-export function addFrame(doc, { material: name, colour, thickness, skip = [], wires }) {
+export function addFrame(doc, { material: name, colour, thickness, skip = [], reach = [], wires }) {
   const material = doc.createMaterial(name).setBaseColorFactor([...linear(colour), 1]).setMetallicFactor(0.9).setRoughnessFactor(0.35);
   const wireMaterials = (wires?.colours ?? []).map((c, i) => doc.createMaterial(`Wire.${i}`).setBaseColorFactor([...linear(c), 1]).setRoughnessFactor(0.5));
   const bones = bonesOf(doc);
@@ -87,7 +88,8 @@ export function addFrame(doc, { material: name, colour, thickness, skip = [], wi
   for (const bone of bones) {
     if (bare(bone)) continue;
     for (const child of bone.listChildren()) {
-      if (!bones.has(child) || bare(child)) continue;
+      const toEnd = reach.includes(bone.getName()) && child.getName() === `${bone.getName()}_end`;
+      if (!bones.has(child) || (bare(child) && !toEnd)) continue;
       const to = child.getTranslation();
       const length = Math.hypot(...to);
       if (length < 1e-6) continue;
