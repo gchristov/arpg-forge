@@ -38,8 +38,8 @@ export const THINGS: Record<string, Thing<StepId>> = {
     screen: true,
     says: [
       { from: 'orderClosed', text: 'ORDER CANCELLED. RETURNING ALL ITEMS.' },
-      { from: 'engineDown', text: 'ORDER: BUILD MACHINES. SCRAP SOURCE: RUSTBELT. STATUS: AWAITING INSTRUCTIONS.' },
-      { text: 'ORDER: BUILD MACHINES. SCRAP SOURCE: RUSTBELT. STATUS: IN PROGRESS.' },
+      { from: 'engineDown', text: 'ORDER: STRIP RUSTBELT FOR SCRAP. STATUS: AWAITING INSTRUCTIONS.' },
+      { text: 'ORDER: STRIP RUSTBELT FOR SCRAP. STATUS: IN PROGRESS.' },
     ],
   },
   'charging-station': {
