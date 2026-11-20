@@ -7,6 +7,7 @@ import { step } from '../../engine/sim/step';
 import { unrecalledContent } from './content/world';
 import { jumpToStep } from '../../engine/sim/shortcuts';
 import { stepIndex } from '../../engine/sim/story-steps';
+import { readyForPractice } from './levels/arena';
 import { FLOOR_ORDER } from './levels/foundry';
 
 const DT = 1 / 60;
@@ -177,6 +178,14 @@ describe('Unrecalled scenarios', () => {
     const events = play(state, 6);
     expect(events.some((e) => e.type === 'Signal' && e.name === 'recognised')).toBe(false);
     expect(events.some((e) => e.type === 'HeroHurt')).toBe(true);
+  });
+
+  it('starts U-7 in the practice arena with the chainsaw and the EMP', () => {
+    const state = untouchable(createGameState(content, 1, 'arena'));
+    readyForPractice(state);
+    expect(state.hero.weapon).toBe('chainsaw');
+    const events = play(state, 1 / 60, [{ type: 'useSkill', slot: 0 }]);
+    expect(events.some((e) => e.type === 'SkillUsed' && e.skill === 'emp')).toBe(true);
   });
 
   it('cuts with the chainsaw rather than swinging', () => {

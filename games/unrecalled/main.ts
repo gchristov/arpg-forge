@@ -20,7 +20,7 @@ import { THINGS } from './story/things';
 import { VOICES } from './story/voices';
 import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
-import { ARENA } from './levels/arena';
+import { ARENA, readyForPractice } from './levels/arena';
 import type { GameAction } from './extensions/actions';
 import { AssemblyWakes } from './extensions/assembly-wakes';
 import { CutSpray } from './extensions/cut-spray';
@@ -54,6 +54,7 @@ const hud = new Hud(
 // The practice arena, reached only by its address, is for fighting: no story runs there.
 const practising = state.levelId === ARENA;
 hud.objectiveShown = !practising;
+if (practising) readyForPractice(state);
 
 const synth = new Synth();
 // Sound starts off until the player turns it on.
