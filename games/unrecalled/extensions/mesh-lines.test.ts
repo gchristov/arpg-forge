@@ -16,7 +16,7 @@ describe('meshLines', () => {
     return meshes;
   };
 
-  it('draws the edges of the named part as lines over it, sharing its shape', () => {
+  it('draws the named part as lines alone, sharing its shape', () => {
     const model = modelIn('Mesh');
     const kept: THREE.Material[] = [];
     meshLines({ material: 'Mesh', colour: 0xeef3f8, opacity: 0.5 })(model, (m) => kept.push(m));
@@ -24,6 +24,8 @@ describe('meshLines', () => {
     expect(lines!.geometry).toBe(part!.geometry);
     expect((lines!.material as THREE.MeshBasicMaterial).wireframe).toBe(true);
     expect(kept).toEqual([lines!.material]);
+    expect(part!.visible).toBe(false);
+    expect(lines!.visible).toBe(true);
   });
 
   it('draws no lines when no part has the named material', () => {
@@ -31,6 +33,7 @@ describe('meshLines', () => {
     const kept: THREE.Material[] = [];
     meshLines({ material: 'Mesh', colour: 0, opacity: 1 })(model, (m) => kept.push(m));
     expect(meshesOf(model)).toHaveLength(1);
+    expect(meshesOf(model)[0]!.visible).toBe(true);
     expect(kept).toHaveLength(0);
   });
 });

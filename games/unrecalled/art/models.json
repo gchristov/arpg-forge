@@ -202,9 +202,6 @@
         "Wire.1": {
           "glow": "#d08a3a",
           "glowStrength": 1
-        },
-        "Mesh": {
-          "opacity": 0
         }
       }
     },

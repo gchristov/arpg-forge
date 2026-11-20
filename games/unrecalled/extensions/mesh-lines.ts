@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 
 /**
- * Draws the edges of every part of a model in the named material as lines over it, such as the fine mesh over U-7's
- * shell. Each line twin shares its part's shape and skeleton, so it bends with it.
+ * Draws every part of a model in the named material as lines alone, such as the fine mesh over U-7's shell, drawn from
+ * a copy of the shell raised off it. The part itself is hidden; each line twin shares its shape and skeleton, so it
+ * bends with it.
  */
 export function meshLines({ material: name, colour, opacity }: { material: string; colour: number; opacity: number }) {
   return (model: THREE.Object3D, keep: (material: THREE.Material) => void): void => {
@@ -26,6 +27,7 @@ export function meshLines({ material: name, colour, opacity }: { material: strin
       // Skinned twins are posed by bones the culling doesn't follow.
       twin.frustumCulled = false;
       mesh.parent?.add(twin);
+      mesh.visible = false;
     }
   };
 }

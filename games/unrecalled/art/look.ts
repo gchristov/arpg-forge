@@ -169,7 +169,7 @@ const ACTORS: Record<string, ActorLook> = {
     light: { colour: 0xffa53a, radius: 1.2, intensity: 0.5 },
     model: {
       name: 'hero',
-      // A fine mesh over U-7's silver shell, drawn from a copy of it raised off its surface (the model's Mesh).
+      // A fine mesh over U-7's silver shell, drawn as lines from a copy of it raised off its surface (the model's Mesh).
       dress: meshLines({ material: 'Mesh', colour: 0xeef3f8, opacity: 0.5 }),
       animations: { idle: 'Idle', move: 'Run', attack: 'Punch', cast: 'Shoot_OneHanded', hit: 'RecieveHit', death: 'Death' },
       armed: {
