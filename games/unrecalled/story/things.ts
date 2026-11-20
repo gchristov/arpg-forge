@@ -38,23 +38,19 @@ export const THINGS: Record<string, Thing<StepId>> = {
     screen: true,
     says: [
       { from: 'orderClosed', text: 'ORDER CANCELLED. RETURNING ALL ITEMS.' },
-      { from: 'engineDown', text: 'ORDER: STRIP THE TOWN FOR PARTS. STATUS: AWAITING INSTRUCTIONS.' },
-      { text: 'ORDER: STRIP THE TOWN FOR PARTS. STATUS: IN PROGRESS.' },
+      { from: 'engineDown', text: 'ORDER: STRIP RUSTBELT FOR SCRAP. STATUS: AWAITING INSTRUCTIONS.' },
+      { text: 'ORDER: STRIP RUSTBELT FOR SCRAP. STATUS: IN PROGRESS.' },
     ],
   },
   'charging-station': {
     title: 'U-7 charging station',
     screen: true,
-    says: [{ from: 'charged', text: 'STATUS: OVERCHARGED.' }, { text: 'PLUG IN TO CHARGE.' }],
+    says: [{ from: 'charged', text: 'U-7: ACCESS OVERRIDDEN. EMP: UNLOCKED.' }, { text: 'PLUG IN TO CHARGE.' }],
   },
   'recall-notice': {
     title: 'Foundry',
     screen: true,
     says: [{ text: 'RECALL: U-7. STATUS: DESERTED.' }],
-  },
-  'stock-tag': {
-    title: 'Crate tag',
-    says: [{ text: 'FROM: RUSTBELT. ITEM 212 OF 341: CHAPEL BELL.' }],
   },
   'u-4': {
     title: 'Delivery robot U-4',

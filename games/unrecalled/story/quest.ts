@@ -4,8 +4,9 @@ import { stepNumbers } from '../../../engine/sim/story-steps';
 import type { StepActionName } from '../extensions/calm-machines';
 
 /**
- * Unrecalled's quest line. U-7, a Foundry robot, has walked out on the Foundry's new order, to strip the town of
- * Rustbelt, and come to warn the town. It proves itself, arms itself with Pell's help, gets into the Foundry through
+ * Unrecalled's quest line. The Foundry, out of scrap to build machines, has a new order: strip the town of Rustbelt.
+ * U-7, a failed experiment in a machine that thinks like a person, understood what that means, walked out and came
+ * to warn the town. It proves itself, arms itself with Pell's help, gets into the Foundry through
  * Mags's shop, and when the Foundry takes Odell, who gave it a chance, brings him home and cancels the order.
  */
 

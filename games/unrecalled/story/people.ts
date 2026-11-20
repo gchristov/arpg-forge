@@ -34,16 +34,16 @@ export const PEOPLE: Record<string, Person<StepId, ReplyId>> = {
       // Out of the crate: where the Foundry's orders are given.
       {
         at: 'crateOpened',
-        text: 'You came for me. … When that big machine fell, every one of them stopped. They’re waiting for orders, and the orders come from that terminal.',
-        options: [{ label: '“Then I’ll give them one.”', reply: REPLY.giveOrder }],
+        text: 'You came for me. … When that big machine fell, every machine in here stopped. Now they’re waiting for orders, and the orders come from that terminal.',
+        options: [{ label: '“Then I’ll give the order.”', reply: REPLY.giveOrder }],
       },
       // The order cancelled: the machines carry the town's things back, and U-7 takes him home.
       {
         at: 'orderClosed',
-        text: 'They’re bringing everything back. They listen to you now.',
+        text: 'The machines are bringing everything back. They listen to you now.',
         options: [{ label: '“Come on. Let’s go home.”', reply: REPLY.goHome }],
       },
-      { at: 'orderAsked', text: 'The terminal. Tell them what to do.' },
+      { at: 'orderAsked', text: 'The terminal. Tell the machines what to do.' },
       { from: 'codeAsked', text: 'The turbine’s at the logging camp. Switch it back and we’ll have lights again too.' },
       { at: 'sentToMags', text: 'Mags’s back door. If anyone knows a way in, it’s her.' },
       { at: 'sawFound', text: 'That’s Pell’s saw. She’ll want to see it back.' },
@@ -75,7 +75,7 @@ export const PEOPLE: Record<string, Person<StepId, ReplyId>> = {
         at: 'powerOn',
         pages: [
           {
-            text: 'They came the moment the power came back. Looking for you. When they couldn’t find you, they took Odell instead, through my back door.',
+            text: 'Foundry machines came through the moment the power came back, looking for you. When they couldn’t find you, they took Odell instead, through my back door.',
             options: [{ label: '“Then I’m going in.”', reply: REPLY.goIn }],
           },
           { text: 'The door’s open. Bring him home.', options: [{ label: 'On my way' }] },
@@ -111,7 +111,7 @@ export const PEOPLE: Record<string, Person<StepId, ReplyId>> = {
         options: [{ label: '“I’ll talk to Mags.”', reply: REPLY.seeMags }],
       },
       { until: 'sentToPell', text: 'A Foundry robot in my workshop? Talk to Odell by the fire first.' },
-      { from: 'toldByMags', text: 'They took Odell? Then go. And keep that chain running.', services: true },
+      { from: 'toldByMags', text: 'The machines took Odell? Then go. And keep that chain running.', services: true },
       { at: 'powerOn', text: 'The lights are back. Go and tell Mags.', services: true },
       { from: 'codeAsked', text: 'The logging camp is past where you found my saw, deeper in the woods.', services: true },
       { at: 'sentToMags', text: 'Mags’s trading post is across the square.', services: true },

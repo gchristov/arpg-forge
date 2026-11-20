@@ -198,7 +198,7 @@ const story = new StoryRunner(RULES, {
   },
   // Unrecalled's own actions, named in extensions/actions.ts and listed in EXTENSIONS.md.
   actions: {
-    // The EMP is the charge's gift, so its button waits until the overcharge has burst out.
+    // The EMP's button waits until it has burst out once, after the override.
     withholdEmp: () => {
       hud.empWithheld = true;
     },

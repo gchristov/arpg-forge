@@ -72,7 +72,7 @@ const FLOORS = {
       '###...........................###',
       '###...........................###',
       '##A...........................###',
-      '###........R..................###',
+      '###...........................###',
       '###...........................###',
       '###...........................###',
       '##A...........................###',
@@ -147,7 +147,6 @@ export type FloorId = keyof typeof FLOORS;
 export const FLOOR_ORDER: FloorId[] = ['intake', 'sorting', 'gallery', 'control'];
 
 const solid = (prop: number): RoomKey => ({ prop, solid: true });
-const onBelt = (prop: number): RoomKey => ({ ...solid(prop), ground: Ground.Belt });
 
 const KEY: Record<string, RoomKey> = {
   '.': {},
@@ -159,7 +158,6 @@ const KEY: Record<string, RoomKey> = {
   T: { ...solid(Prop.Computer), readable: 'recall-notice', light: { radius: 2.4, intensity: 0.8, colour: 'amber', flicker: 0.4 } },
   Z: { ...solid(Prop.Crate), readable: 'crate', light: { radius: 2.6, intensity: 0.8, colour: 'cyan', flicker: 0.2 } },
   O: { ...solid(Prop.Computer), readable: 'order-terminal', light: { radius: 2.4, intensity: 0.8, colour: 'amber', flicker: 0.4 } },
-  R: { ...onBelt(Prop.Crate), readable: 'stock-tag' },
   x: { spawn: 'loader' },
   E: { spawn: 'orderEngine' },
 };

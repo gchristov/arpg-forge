@@ -6,7 +6,7 @@ wants it.
 | Extension | What it is | Plugged in through |
 | --- | --- | --- |
 | `assemblyWakes` (`extensions/assembly-wakes.ts`) | The Assembly upriver lighting a storey at a time and coming awake, in the last scene | a story action the game names, `{ run: 'assemblyWakes' }` |
-| `withholdEmp`, `showEmp` (`main.ts`) | Keeping the EMP's button hidden while the overcharge plays, so it's seen before it's explained | story actions the game names |
+| `withholdEmp`, `showEmp` (`main.ts`) | Keeping the EMP's button hidden until it has burst out after the override, so it's seen before it's explained | story actions the game names |
 | `endCard` (`main.ts`) | The closing card | a story action the game names |
 | `calm` (`extensions/calm-machines.ts`) | The machines take U-7 for one of their own, looking it over once, until one is hit; that sounds the floor's alarm, on every floor of its building, and from then on they come for U-7 on sight. Fighting the raider at the crates sounds no alarm. In the practice arena the machines come for U-7 from the start. | an enemy ability (`idle`, `hurt`, `afterEnemies`), listed on the machines' kinds as `abilities: { calm: {} }`; the alarm is a mark in each floor's memory |
 | `alarmEverything`, `calmEverything` (`extensions/calm-machines.ts`) | Sounding the alarm on every floor, and calming every machine everywhere | step actions, named in a quest step's `does` |

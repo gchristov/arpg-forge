@@ -258,11 +258,6 @@ export const unrecalledLook: Look = {
       case Ground.Pad:
         // An old concrete pad, stained and cracked.
         return hsl(212, 8, 36 + soft * 5 + h * 2 - (h > 0.93 ? 6 : 0));
-      case Ground.Belt: {
-        // Slats across the belt, with a worn amber edge every few tiles.
-        const v = Math.round(255 * (tx % 2 === 0 ? 0.09 : 0.12));
-        return tx % 6 === 0 ? 0x4a3a1c : (v << 16) | (v << 8) | Math.round(v * 1.1);
-      }
       default: {
         const checker = (tx + ty) % 2 === 0 ? 0.03 : 0;
         const l = kind === Ground.Grime ? 0.14 : 0.2;
