@@ -170,10 +170,10 @@
           "roughness": 0.1
         },
         "Shell": {
-          "colour": "#c9d0d8",
+          "colour": "#6a7581",
           "opacity": 1,
           "metalness": 0.1,
-          "roughness": 0.45
+          "roughness": 0.2
         },
         "Faceplate": {
           "colour": "#f6e2d0",
