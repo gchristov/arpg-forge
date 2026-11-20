@@ -198,8 +198,9 @@ for (const model of manifest.models) {
   if (model.frame) addFrame(doc, model.frame);
   if (model.core) addCore(doc, model.core);
   if (model.brain) addBrain(doc, model.brain);
-  if (model.raisedCopy) addRaisedCopy(doc, model.raisedCopy);
   if (model.paint) paintParts(doc, model.paint);
+  // After painting, so the copy is painted as its part is.
+  if (model.raisedCopy) addRaisedCopy(doc, model.raisedCopy);
   if (model.textures?.dropDetailMaps) {
     for (const material of root.listMaterials()) {
       material.setNormalTexture(null);
