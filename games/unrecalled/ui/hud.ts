@@ -23,6 +23,8 @@ export class Hud {
   private readonly feed: MessageFeed;
   /** Keeps the EMP's button hidden even once U-7 has it, while the scene that gives it plays. */
   empWithheld = false;
+  /** Whether the objective shows at the top left: not in the practice arena, where no story runs. */
+  objectiveShown = true;
 
   constructor(send: (command: Command) => void, feed: FeedOptions) {
     this.feed = new MessageFeed($('feed'), feed);
@@ -87,7 +89,7 @@ export class Hud {
     // The boss bar takes the top of the screen while the fight lasts; the objective is the boss anyway.
     shown.set('bossShown', Boolean(boss), (v) => {
       $('bossbar').hidden = !v;
-      ($('top').querySelector('.objective') as HTMLElement).hidden = v;
+      ($('top').querySelector('.objective') as HTMLElement).hidden = v || !this.objectiveShown;
     });
     if (boss) {
       shown.set('bossName', ENEMIES[boss.kind]!.name, (v) => ($('bossName').textContent = v));

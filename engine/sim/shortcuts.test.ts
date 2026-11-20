@@ -19,7 +19,7 @@ describe('shortcuts', () => {
 
   it('takes away an enemy defeated on the way, whether it has turned up yet or not, with what it carried in hand', () => {
     const state = withQuest([{}, { id: 'guardDown', reachedBy: { type: 'defeat', tag: 'guard' } }, { reachedBy: { type: 'defeat', tag: 'thief' } }]);
-    const ls = state.levels.arena!;
+    const ls = state.levels.testRoom!;
     ls.enemies[0]!.tag = 'guard';
     ls.storySpawns.push({ kind: 'brute', x: 4, y: 4, tag: 'thief', fromStep: 'guardDown', carries: 'saw' });
     jumpToStep(state, 2);
@@ -28,15 +28,15 @@ describe('shortcuts', () => {
 
   it('takes a weapon off the ground when a step on the way was reached by picking it up', () => {
     const state = withQuest([{}, { reachedBy: { type: 'arm', weapon: 'saw' } }]);
-    state.levels.arena!.items.push({ kind: 'weapon', amount: 1, weapon: 'saw', x: 4, y: 4, z: 0, vz: 0 });
+    state.levels.testRoom!.items.push({ kind: 'weapon', amount: 1, weapon: 'saw', x: 4, y: 4, z: 0, vz: 0 });
     jumpToStep(state, 1);
-    expect([state.levels.arena!.items.length, state.hero.weapon]).toEqual([0, 'saw']);
+    expect([state.levels.testRoom!.items.length, state.hero.weapon]).toEqual([0, 'saw']);
   });
 
   it('takes away the enemy whose kill reached a step on the way', () => {
     const state = withQuest([{}, { reachedBy: { type: 'kill', enemyKind: 'brute' } }]);
     jumpToStep(state, 1);
-    expect(state.levels.arena!.enemies).toEqual([]);
+    expect(state.levels.testRoom!.enemies).toEqual([]);
   });
 
   it('keeps a jump within the story', () => {
@@ -55,7 +55,7 @@ describe('shortcuts', () => {
 
   it('takes every enemy out and stops camps refilling', () => {
     const state = withQuest([{}]);
-    state.levels.arena!.campRespawns = { everySeconds: 1, maxAlive: 3, minHeroDistance: 0, kinds: ['brute'] };
+    state.levels.testRoom!.campRespawns = { everySeconds: 1, maxAlive: 3, minHeroDistance: 0, kinds: ['brute'] };
     removeEnemies(state);
     expect(Object.values(state.levels).every((ls) => ls.enemies.length === 0 && !ls.campRespawns)).toBe(true);
   });

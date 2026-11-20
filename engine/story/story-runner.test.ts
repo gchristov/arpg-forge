@@ -9,8 +9,8 @@ import type { Talk } from './talk';
 function setUp(rules: Rule[]) {
   const state: GameState = arena(OPEN_ROOM, { x: 2.5, y: 2.5 });
   state.rules.quest = [{ id: 'start' }, { id: 'asked' }, { id: 'done' }];
-  state.levels.arena!.readables.push({ tx: 4, ty: 4, id: 'sign' });
-  state.levels.arena!.npcs.push({ ...state.hero, id: 77, kind: 'elder', name: 'Elder', placement: 0 } as never);
+  state.levels.testRoom!.readables.push({ tx: 4, ty: 4, id: 'sign' });
+  state.levels.testRoom!.npcs.push({ ...state.hero, id: 77, kind: 'elder', name: 'Elder', placement: 0 } as never);
   const said: string[] = [];
   const shown: Array<{ talk: Talk; then?: () => void }> = [];
   const sent: Command[] = [];
@@ -46,15 +46,15 @@ describe('story runner', () => {
   });
 
   it('does a `once` rule only the first time', () => {
-    const { runner, said } = setUp([{ on: { enter: 'arena' }, once: true, do: [{ think: 'New place.' }] }]);
-    runner.react([{ type: 'EnteredLevel', levelId: 'arena' }]);
-    runner.react([{ type: 'EnteredLevel', levelId: 'arena' }]);
+    const { runner, said } = setUp([{ on: { enter: 'testRoom' }, once: true, do: [{ think: 'New place.' }] }]);
+    runner.react([{ type: 'EnteredLevel', levelId: 'testRoom' }]);
+    runner.react([{ type: 'EnteredLevel', levelId: 'testRoom' }]);
     expect(said).toEqual(['New place.']);
   });
 
   it('doesn\'t count getting back up in a level as walking into it', () => {
-    const { runner, said } = setUp([{ on: { enter: 'arena' }, do: [{ think: 'New place.' }] }]);
-    runner.react([{ type: 'HeroRespawned', goldLost: 0 } as SimEvent, { type: 'EnteredLevel', levelId: 'arena' }]);
+    const { runner, said } = setUp([{ on: { enter: 'testRoom' }, do: [{ think: 'New place.' }] }]);
+    runner.react([{ type: 'HeroRespawned', goldLost: 0 } as SimEvent, { type: 'EnteredLevel', levelId: 'testRoom' }]);
     expect(said).toEqual([]);
   });
 

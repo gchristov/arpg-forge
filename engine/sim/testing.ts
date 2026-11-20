@@ -43,7 +43,7 @@ export function arena(rows: string[], start: { x: number; y: number }, enemies: 
   const content: GameContent = {
     levels: [
       { level: level('home', ['....', '....'], { x: 1.5, y: 1.5 }), spawns: [], camps: [], npcs: [] },
-      { level: level('arena', rows, start), spawns: enemies, camps: [], npcs: [] },
+      { level: level('testRoom', rows, start), spawns: enemies, camps: [], npcs: [] },
     ],
     startLevel: 'home',
     hero: TEST_HERO,
@@ -52,7 +52,7 @@ export function arena(rows: string[], start: { x: number; y: number }, enemies: 
     npcs: {},
     quest: [{}],
   };
-  return createGameState(content, seed, 'arena');
+  return createGameState(content, seed, 'testRoom');
 }
 
 export const OPEN_ROOM = Array.from({ length: 20 }, () => '.'.repeat(20));
