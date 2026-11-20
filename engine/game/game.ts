@@ -6,7 +6,6 @@ import type { Platform } from '../platform/platform';
 import { webPlatform } from '../platform/web';
 import { DebugOverlay } from '../render/debug-overlay';
 import type { Look } from '../render/look';
-import { drawPortraits, type Sitter } from '../render/portraits';
 import { ModelLibrary } from '../render/models';
 import { SceneRenderer } from '../render/scene-renderer';
 import type { GameContent } from '../sim/content';
@@ -108,7 +107,7 @@ export class Game {
     const fade = new ScreenFade(document.body, FADE_SECONDS);
     this.view = new WorldView(this.state, this.renderer, setup.look, this.labels, fade, this.project);
 
-    if (debugMode) Object.assign(window, { game: { state: this.state, send: (c: Command) => this.send(c), start: () => this.start(), portraits: (s: Record<string, Sitter>) => this.portraits(s) } });
+    if (debugMode) Object.assign(window, { game: { state: this.state, send: (c: Command) => this.send(c), start: () => this.start() } });
     // 1 heals, 2 and space attack, and 3 onwards use the skills in order.
     bindKeys({
       '1': () => this.send({ type: 'heal' }),
@@ -150,10 +149,10 @@ export class Game {
     this.cutting = true;
   }
 
-  /** Head-and-shoulders pictures of the sitters, as image URLs by name, once the models have loaded. */
-  async portraits(sitters: Record<string, Sitter>): Promise<Record<string, string>> {
+  /** The game's models once they have loaded, for a game to draw them in its own ways, such as speakers' portraits. */
+  async loadedModels(): Promise<ModelLibrary> {
     await this.modelsLoaded;
-    return drawPortraits(this.models, sitters);
+    return this.models;
   }
 
   /** Starts play once the models have loaded. */

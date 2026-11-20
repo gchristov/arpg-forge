@@ -20,6 +20,7 @@ import { THINGS } from './story/things';
 import { VOICES } from './story/voices';
 import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
+import { drawPortraits } from './ui/portrait-drawing';
 import { ARENA, readyForPractice } from './levels/arena';
 import type { GameAction } from './extensions/actions';
 import { AssemblyWakes } from './extensions/assembly-wakes';
@@ -38,7 +39,7 @@ const game = new Game({
 const { state, labels, view, platform } = game;
 const $ = (id: string): HTMLElement => document.getElementById(id)!;
 const dialog = new DialogBox({ root: $('dialog'), title: $('dlgT'), text: $('dlgP'), choices: $('dlgO') }, SPEAKING);
-const portraits = new Portraits((sitters) => game.portraits(sitters));
+const portraits = new Portraits(async (sitters) => drawPortraits(await game.loadedModels(), sitters));
 const hud = new Hud(
   (command) => {
     if (command.type === 'attackNearest') dialog.close();

@@ -164,21 +164,26 @@ const robot = (
 const shell = meshLines({ material: 'Mesh', colour: 0xaab4be, opacity: 0.3 });
 const glass = glassShine({ material: 'Skin', strength: 0.6 });
 
+/**
+ * What the game adds to U-7's model, in the world and in its portrait: a fine mesh over its steel shell, drawn as lines
+ * from a copy of it raised off its surface (the model's Mesh), and a glare on the see-through glass of the rest of it
+ * (its Skin).
+ */
+export const dressHero = (model: THREE.Object3D, keep: (material: THREE.Material) => void): void => {
+  shell(model, keep);
+  glass(model, keep);
+};
+
 const ACTORS: Record<string, ActorLook> = {
   hero: {
     colour: 0x9a8a70, height: 1.2, radius: 0.24, seenThrough: 0x8ae8ff,
     // Leaning into a cut, the chainsaw buzzing in its hands.
     channelPose: { lean: 0.18, buzz: 0.012 },
     // The core in U-7's waist lights the ground round it.
-    light: { colour: 0xffa53a, radius: 1.2, intensity: 0.5 },
+    light: { colour: 0xffa53a, radius: 1.6, intensity: 0.9 },
     model: {
       name: 'hero',
-      // A fine mesh over U-7's steel shell, drawn as lines from a copy of it raised off its surface (the model's Mesh),
-      // and a glare on the see-through glass of the rest of it (its Skin).
-      dress: (model, keep) => {
-        shell(model, keep);
-        glass(model, keep);
-      },
+      dress: dressHero,
       animations: { idle: 'Idle', move: 'Run', attack: 'Punch', cast: 'Shoot_OneHanded', hit: 'RecieveHit', death: 'Death' },
       armed: {
         // At rest the chainsaw hangs at U-7's side; it's held out ahead in both hands while cutting, and

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { ModelLibrary } from './models';
+import type { ModelLibrary } from '../../../engine/render/models';
 
 /** Who sits for a portrait: a model from the library, posed in an animation's first frame. */
 export interface Sitter {
@@ -9,6 +9,8 @@ export interface Sitter {
   show?: number;
   /** Radians the model turns from facing the camera, for a three-quarter view. */
   turn?: number;
+  /** What the game adds to the model as it does in the world, such as U-7's mesh lines and glass glare. */
+  dress?: (model: THREE.Object3D, keep: (material: THREE.Material) => void) => void;
 }
 
 const DEFAULT_SHOW = 0.45;
@@ -42,8 +44,9 @@ export function drawPortraits(models: ModelLibrary, sitters: Record<string, Sitt
     if (!template || !figure) continue;
     posed(figure, template.animations, sitter.pose);
     figure.traverse((o) => {
-      if (o instanceof THREE.Mesh) o.material = Array.isArray(o.material) ? o.material.map((m) => m.clone()) : o.material.clone();
+      if (o instanceof THREE.Mesh) o.material = Array.isArray(o.material) ? o.material.map(matteCopy) : matteCopy(o.material);
     });
+    sitter.dress?.(figure, () => {});
     figure.rotation.y = sitter.turn ?? DEFAULT_TURN;
     scene.add(figure);
     figure.updateMatrixWorld(true);
@@ -70,4 +73,11 @@ function posed(figure: THREE.Object3D, animations: THREE.AnimationClip[], pose: 
   const mixer = new THREE.AnimationMixer(figure);
   mixer.clipAction(clip).play();
   mixer.update(0);
+}
+
+/** A copy of a material without metal: metallic surfaces only look right with an environment map, and turn dark without one. */
+function matteCopy(material: THREE.Material): THREE.Material {
+  const copy = material.clone();
+  if (copy instanceof THREE.MeshStandardMaterial) copy.metalness = 0;
+  return copy;
 }
