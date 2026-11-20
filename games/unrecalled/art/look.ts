@@ -170,7 +170,7 @@ const ACTORS: Record<string, ActorLook> = {
     // Leaning into a cut, the chainsaw buzzing in its hands.
     channelPose: { lean: 0.18, buzz: 0.012 },
     // The core in U-7's waist lights the ground round it.
-    light: { colour: 0xffa53a, radius: 1.2, intensity: 0.5 },
+    light: { colour: 0xffa53a, radius: 1.6, intensity: 0.9 },
     model: {
       name: 'hero',
       // A fine mesh over U-7's steel shell, drawn as lines from a copy of it raised off its surface (the model's Mesh),

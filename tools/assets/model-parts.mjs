@@ -109,7 +109,8 @@ export function splitPart(doc, { material: name, into, bones, front = 0, below =
 export function addRaisedCopy(doc, { material: name, into, lift }) {
   const source = doc.getRoot().listMaterials().find((m) => m.getName() === name);
   if (!source) throw new Error(`no material ${name} to copy`);
-  const material = source.clone().setName(into);
+  // Marked as a copy, so it isn't merged back into its part when identical materials are merged.
+  const material = source.clone().setName(into).setExtras({ ...source.getExtras(), raisedCopyOf: name });
   let copied = 0;
   for (const mesh of doc.getRoot().listMeshes()) {
     for (const primitive of mesh.listPrimitives()) {
