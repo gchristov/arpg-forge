@@ -53,7 +53,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 @keyframes blink{50%{opacity:0}}
 /* Whoever is speaking looks out from the box's left. */
 #feed .line.pictured,#dialog.pictured{display:grid;grid-template-columns:64px 1fr;column-gap:14px;align-items:start}
-#feed .line.pictured img,#dialog img{width:64px;height:64px;border-radius:6px;background:radial-gradient(circle at 50% 35%,#2a3a48,#0c1116 75%);border:1px solid #3a4a58;object-fit:cover}
+#feed .line.pictured img,#dialog img{width:64px;height:64px;border-radius:6px;background:radial-gradient(circle at 50% 35%,#a9b6c2,#4a5866 75%);border:1px solid #6a7a88;object-fit:cover}
 #dialog.pictured .choices{grid-column:1/-1}
 @media (max-width:440px){#feed .line.pictured,#dialog.pictured{grid-template-columns:52px 1fr;column-gap:12px}#feed .line.pictured img,#dialog img{width:52px;height:52px}}
 @keyframes feedIn{from{opacity:0;transform:translateY(-4px)}}

@@ -1,3 +1,4 @@
+import type * as THREE from 'three';
 import type { Level } from '../world/level';
 import type { Fit } from './model-instancing';
 
@@ -124,6 +125,11 @@ export interface ActorLook {
     animations: ActorAnimations;
     /** Multiplies the model's colours, for example to turn a rogue into a goblin. */
     tint?: number;
+    /**
+     * Adds the game's own pieces to the model once it's built, such as lines drawn over one of its parts. Materials
+     * handed to `keep` flash when the actor is hit and fade with it.
+     */
+    dress?: (model: THREE.Object3D, keep: (material: THREE.Material) => void) => void;
     /**
      * A separate weapon model held in the right hand: by name, one made to sit on a `handslot.r` bone as it is, or a
      * `HeldWeapon` fitted to another bone.

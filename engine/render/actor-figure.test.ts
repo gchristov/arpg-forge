@@ -284,3 +284,55 @@ describe('ActorFigure weapon', () => {
     expect(size.x).toBeCloseTo(0.6);
   });
 });
+
+describe('ActorFigure parts with looks of their own', () => {
+  /** A figure of one box in `material`, dressed by the game if `dress` is given. */
+  function partFigure(material: THREE.Material, dress?: NonNullable<ActorLook['model']>['dress']): ActorFigure {
+    const scene = new THREE.Group();
+    scene.add(new THREE.Mesh(new THREE.BoxGeometry(), material));
+    const template: ModelTemplate = { scene, animations: [new THREE.AnimationClip('Idle', 1, [])], height: 1 };
+    const library = { get: () => template, instantiate: () => scene.clone() } as unknown as ModelLibrary;
+    const look: ActorLook = {
+      colour: 0, height: 1, radius: 0.3, model: { name: 'm', animations: { idle: 'Idle' }, ...(dress ? { dress } : {}) },
+    };
+    return new ActorFigure(look, library);
+  }
+  const meshesOf = (f: ActorFigure) => {
+    const meshes: THREE.Mesh[] = [];
+    f.root.traverse((o) => o instanceof THREE.Mesh && meshes.push(o));
+    return meshes;
+  };
+
+  it('keeps a see-through part see-through, and fades it from there', () => {
+    const f = partFigure(new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.3 }));
+    const shell = meshesOf(f)[0]!.material as THREE.MeshStandardMaterial;
+    f.setLookOf(0, 1);
+    expect(shell.opacity).toBeCloseTo(0.3);
+    expect(shell.transparent).toBe(true);
+    f.setLookOf(0, 0.5);
+    expect(shell.opacity).toBeCloseTo(0.15);
+  });
+
+  it('keeps a glowing part glowing, lighting it further when hit and settling back after', () => {
+    const f = partFigure(new THREE.MeshStandardMaterial({ emissive: 0x804020 }));
+    const core = meshesOf(f)[0]!.material as THREE.MeshStandardMaterial;
+    const glow = core.emissive.clone();
+    f.setLookOf(0, 1);
+    expect(core.emissive.equals(glow)).toBe(true);
+    f.setLookOf(1, 1);
+    expect(core.emissive.r).toBeGreaterThan(glow.r);
+    f.setLookOf(0, 1);
+    expect(core.emissive.equals(glow)).toBe(true);
+  });
+
+  it("flashes and fades the game's own pieces with the actor", () => {
+    const piece = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.4 });
+    const f = partFigure(new THREE.MeshStandardMaterial(), (model, keep) => {
+      keep(piece);
+      model.add(new THREE.Mesh(new THREE.BoxGeometry(), piece));
+    });
+    expect(meshesOf(f)).toHaveLength(2);
+    f.setLookOf(0, 0.5);
+    expect(piece.opacity).toBeCloseTo(0.2);
+  });
+});

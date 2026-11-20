@@ -37,7 +37,7 @@
     {
       "name": "hero",
       "pack": "characters",
-      "path": "Ultimate Animated Character Pack - Nov 2019/FBX/Worker_Male.fbx",
+      "path": "Ultimate Animated Character Pack - Nov 2019/FBX/BaseCharacter.fbx",
       "animations": [
         "Idle",
         "Run",
@@ -81,6 +81,127 @@
           "UpperLeg.R": "DEF-thigh.R",
           "LowerLeg.R": "DEF-shin.R",
           "Foot.R": "DEF-foot.R"
+        }
+      },
+      "split": [
+        {
+          "material": "Skin",
+          "into": "Faceplate",
+          "bones": [
+            "Head"
+          ],
+          "front": 0.45,
+          "below": 0.72
+        },
+        {
+          "material": "Skin",
+          "into": "Faceplate",
+          "bones": [
+            "Fist.L",
+            "Fist.R"
+          ]
+        },
+        {
+          "material": "Skin",
+          "into": "Shell",
+          "bones": [
+            "Torso",
+            "Shoulder.L",
+            "Shoulder.R",
+            "UpperArm.L",
+            "UpperArm.R",
+            "Hips",
+            "UpperLeg.L",
+            "UpperLeg.R"
+          ]
+        }
+      ],
+      "frame": {
+        "material": "Frame",
+        "colour": "#3a4049",
+        "thickness": 0.08,
+        "skip": [
+          "end",
+          "Pole",
+          "Foot",
+          "Bone"
+        ],
+        "reach": [
+          "LowerLeg.L",
+          "LowerLeg.R"
+        ],
+        "wires": {
+          "colours": [
+            "#2a2f36",
+            "#d08a3a"
+          ],
+          "thickness": 0.035,
+          "apart": 0.11
+        }
+      },
+      "core": {
+        "bone": "Abdomen",
+        "colour": "#ffa53a",
+        "size": 0.45,
+        "halo": {
+          "size": 2.2,
+          "opacity": 0.25
+        },
+        "out": 1.6
+      },
+      "brain": {
+        "bone": "Head",
+        "colour": "#b4bcc5",
+        "size": 1.05,
+        "up": 0.85,
+        "back": 0.3,
+        "nodes": 4,
+        "nodeSize": 0.17
+      },
+      "raisedCopy": {
+        "material": "Shell",
+        "into": "Mesh",
+        "lift": 0.015
+      },
+      "paint": {
+        "Skin": {
+          "colour": "#f2f4f6",
+          "opacity": 0.18,
+          "roughness": 0.1
+        },
+        "Shell": {
+          "colour": "#c9d0d8",
+          "opacity": 1,
+          "metalness": 0.1,
+          "roughness": 0.45
+        },
+        "Faceplate": {
+          "colour": "#f6e2d0",
+          "glow": "#6a5a4c"
+        },
+        "Face": {
+          "colour": "#2b2420"
+        },
+        "Brain": {
+          "metalness": 0.2,
+          "roughness": 0.4
+        },
+        "Core": {
+          "glow": "#ffa53a",
+          "glowStrength": 3.5
+        },
+        "Halo": {
+          "glow": "#ffa53a",
+          "glowStrength": 1.5
+        },
+        "Synapse": {
+          "colour": "#ffd29a",
+          "glow": "#ffa53a",
+          "glowStrength": 2
+        },
+        "Wire.1": {
+          "glow": "#d08a3a",
+          "glowStrength": 1
         }
       }
     },
@@ -359,7 +480,15 @@
       "path": "Ultimate Animated Character Pack - Nov 2019/FBX/OldClassy_Male.fbx",
       "animations": [
         "Idle"
-      ]
+      ],
+      "paint": {
+        "Skin": {
+          "colour": "#d39a7a"
+        },
+        "Face": {
+          "colour": "#2b2420"
+        }
+      }
     },
     {
       "name": "trader",
@@ -367,7 +496,15 @@
       "path": "Ultimate Animated Character Pack - Nov 2019/FBX/Casual2_Female.fbx",
       "animations": [
         "Idle"
-      ]
+      ],
+      "paint": {
+        "Skin": {
+          "colour": "#e2b08f"
+        },
+        "Face": {
+          "colour": "#2b2420"
+        }
+      }
     },
     {
       "name": "tinker",
@@ -375,7 +512,15 @@
       "path": "Ultimate Animated Character Pack - Nov 2019/FBX/Casual3_Female.fbx",
       "animations": [
         "Idle"
-      ]
+      ],
+      "paint": {
+        "Skin": {
+          "colour": "#f1c9ab"
+        },
+        "Face": {
+          "colour": "#2b2420"
+        }
+      }
     },
     {
       "name": "post",

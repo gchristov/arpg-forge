@@ -31,6 +31,11 @@ export class ActorFigure {
   /** The frame the actor was last placed in. */
   seen = 0;
   private readonly materials: FlashableMaterial[] = [];
+  /**
+   * How each material looks of its own, before any flash or fade: a see-through part stays as see-through and a
+   * glowing part keeps glowing.
+   */
+  private readonly ownLooks = new Map<FlashableMaterial, { opacity: number; transparent: boolean; emissive: THREE.Color | null }>();
   /** The outline drawn where the actor is hidden, if its look has one. */
   private readonly seenThrough: THREE.MeshBasicMaterial | null = null;
   private readonly mixer: THREE.AnimationMixer | null = null;
@@ -102,6 +107,7 @@ export class ActorFigure {
     });
     this.setBase('idle');
     this.addSeenThrough();
+    look.model.dress?.(model, (material) => this.keep(material));
   }
 
   /**
@@ -139,9 +145,14 @@ export class ActorFigure {
   /** `flash` from 0 to 1 lights the actor up; `fade` from 1 to 0 fades it out. */
   setLookOf(flash: number, fade: number): void {
     for (const m of this.materials) {
-      m.emissive?.setScalar(flash * 0.8);
-      m.opacity = fade;
-      m.transparent = fade < 1;
+      const own = this.ownLooks.get(m);
+      if (m.emissive) {
+        if (own?.emissive) m.emissive.copy(own.emissive);
+        else m.emissive.setScalar(0);
+        m.emissive.addScalar(flash * 0.8);
+      }
+      m.opacity = (own?.opacity ?? 1) * fade;
+      m.transparent = Boolean(own?.transparent) || fade < 1;
     }
     if (this.hovering) this.hovering.shadow.material.opacity = 0.45 * fade;
     if (this.seenThrough) this.seenThrough.opacity = SEEN_THROUGH_OPACITY * fade;
@@ -307,14 +318,24 @@ export class ActorFigure {
     if (tint && own.color) own.color.multiply(tint);
     // Metallic surfaces only look right with an environment map; under the scene's lamps they turn dark.
     if (own instanceof THREE.MeshStandardMaterial) own.metalness = 0;
-    this.materials.push(own);
+    this.keep(own);
     return own;
+  }
+
+  /** Adds a material to those that flash and fade, remembering how it looks of its own. */
+  private keep(material: FlashableMaterial): void {
+    this.materials.push(material);
+    this.ownLooks.set(material, {
+      opacity: material.opacity,
+      transparent: material.transparent,
+      emissive: material.emissive ? material.emissive.clone() : null,
+    });
   }
 
   private buildCapsule(): void {
     const { look } = this;
     const material = new THREE.MeshLambertMaterial({ color: look.colour });
-    this.materials.push(material);
+    this.keep(material);
     const body = new THREE.Mesh(new THREE.CapsuleGeometry(look.radius, look.height - look.radius * 2, 4, 12), material);
     body.position.y = look.height / 2;
     const nose = new THREE.Mesh(new THREE.ConeGeometry(look.radius * 0.35, look.radius * 0.9, 8).rotateX(Math.PI / 2), material);
