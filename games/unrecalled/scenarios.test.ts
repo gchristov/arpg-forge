@@ -172,6 +172,13 @@ describe('Unrecalled scenarios', () => {
     expect(pack.filter((e) => hit.has(e.id)).every((e) => e.mode === 'chase')).toBe(true);
   });
 
+  it('sends the practice arena\'s machines straight at U-7, without looking it over', () => {
+    const state = createGameState(content, 1, 'arena');
+    const events = play(state, 6);
+    expect(events.some((e) => e.type === 'Signal' && e.name === 'recognised')).toBe(false);
+    expect(events.some((e) => e.type === 'HeroHurt')).toBe(true);
+  });
+
   it('cuts with the chainsaw rather than swinging', () => {
     const state = untouchable(createGameState(content, 1, 'arena'));
     state.hero.weapon = 'chainsaw';

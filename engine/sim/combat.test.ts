@@ -201,7 +201,7 @@ describe('death and respawn', () => {
     run(state, 6);
     expect(state.hero.dead).toBe(true);
     run(state, 1 / 60, [{ type: 'respawn' }]);
-    expect(state.levelId).toBe('arena');
+    expect(state.levelId).toBe('testRoom');
     expect(state.hero).toMatchObject({ dead: false, x: 3.5, y: 5.5 });
   });
 });

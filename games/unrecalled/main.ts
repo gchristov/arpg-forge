@@ -20,6 +20,7 @@ import { THINGS } from './story/things';
 import { VOICES } from './story/voices';
 import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
+import { ARENA } from './levels/arena';
 import type { GameAction } from './extensions/actions';
 import { AssemblyWakes } from './extensions/assembly-wakes';
 import { CutSpray } from './extensions/cut-spray';
@@ -49,6 +50,10 @@ const hud = new Hud(
     paceOf: (from) => (from?.voice === 'foundry' ? PRINTING : SPEAKING),
   },
 );
+
+// The practice arena, reached only by its address, is for fighting: no story runs there.
+const practising = state.levelId === ARENA;
+hud.objectiveShown = !practising;
 
 const synth = new Synth();
 // Sound starts off until the player turns it on.
@@ -286,7 +291,7 @@ function playSounds(events: SimEvent[]): void {
 /** Unrecalled's words and banners for the rules' events; the engine shows the rest in the world. */
 function react(events: SimEvent[]): void {
   playSounds(events);
-  story.react(events);
+  if (!practising) story.react(events);
   for (const e of events) {
     switch (e.type) {
       case 'EnteredLevel': {
@@ -353,7 +358,7 @@ game.run({
     $('title').hidden = true;
     const { level } = currentLevel(state);
     hud.banner(level.name, level.subtitle, 3);
-    story.start();
+    if (!practising) story.start();
   },
   // Tapping the world walks away from a conversation, which can be picked up again by talking. Things read and scenes
   // stay until their own button closes them, and the tap is dropped, so a line can't be lost to a stray tap.

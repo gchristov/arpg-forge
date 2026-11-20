@@ -3,6 +3,7 @@ import type { EnemyAbility } from '../../../engine/sim/abilities';
 import { type GameState, type LevelState, type SimEvent } from '../../../engine/sim/state';
 import type { StepAction } from '../../../engine/sim/step-actions';
 import { hasLineOfSight } from '../../../engine/world/line-of-sight';
+import { ARENA } from '../levels/arena';
 import { TAG } from '../story/quest';
 
 /**
@@ -29,7 +30,8 @@ const QUIET_TAGS: readonly string[] = [TAG.raider];
 /** The mark in a floor's memory while its alarm sounds, which its alarm lights and air wait for. */
 export const ALARM_MARK = 'alarmed';
 
-const isAlarmed = (level: LevelState): boolean => Boolean(level.memory[ALARM_MARK]);
+/** Whether a floor's machines come for U-7 on sight: while its alarm sounds, and always in the practice arena. */
+const isAlarmed = (level: LevelState): boolean => Boolean(level.memory[ALARM_MARK]) || level.level.id === ARENA;
 
 /**
  * What a calm machine keeps in its memory: whether it has `recognised` U-7 yet, whether it's been `provoked` (hit,
