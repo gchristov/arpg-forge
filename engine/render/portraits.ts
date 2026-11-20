@@ -42,7 +42,7 @@ export function drawPortraits(models: ModelLibrary, sitters: Record<string, Sitt
     if (!template || !figure) continue;
     posed(figure, template.animations, sitter.pose);
     figure.traverse((o) => {
-      if (o instanceof THREE.Mesh) o.material = Array.isArray(o.material) ? o.material.map((m) => m.clone()) : o.material.clone();
+      if (o instanceof THREE.Mesh) o.material = Array.isArray(o.material) ? o.material.map(matteCopy) : matteCopy(o.material);
     });
     figure.rotation.y = sitter.turn ?? DEFAULT_TURN;
     scene.add(figure);
@@ -70,4 +70,11 @@ function posed(figure: THREE.Object3D, animations: THREE.AnimationClip[], pose: 
   const mixer = new THREE.AnimationMixer(figure);
   mixer.clipAction(clip).play();
   mixer.update(0);
+}
+
+/** A copy of a material without metal: metallic surfaces only look right with an environment map, and turn dark without one. */
+function matteCopy(material: THREE.Material): THREE.Material {
+  const copy = material.clone();
+  if (copy instanceof THREE.MeshStandardMaterial) copy.metalness = 0;
+  return copy;
 }
