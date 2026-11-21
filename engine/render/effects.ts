@@ -88,7 +88,7 @@ export class Effects {
   private readonly decals: Decal[] = [];
   private readonly puffs: Puff[] = [];
 
-  constructor(scene: THREE.Scene, colours: EffectColours) {
+  constructor(scene: THREE.Scene, colours: EffectColours, cameraElevation: number) {
     const skillGeometry = new THREE.SphereGeometry(0.15, 12, 8);
     const skillMaterial = new THREE.MeshBasicMaterial({ color: colours.skill });
     const shotGeometry = new THREE.CylinderGeometry(0.025, 0.025, 0.55, 6).rotateX(Math.PI / 2);
@@ -117,7 +117,7 @@ export class Effects {
     }
     this.lightning = new Lightning(scene);
     this.domes = new EnergyDomes(scene);
-    this.goalArrow = colours.guide ? new GoalArrow(scene, colours.guide.arrow) : null;
+    this.goalArrow = colours.guide ? new GoalArrow(scene, colours.guide.arrow, cameraElevation) : null;
     for (let i = 0; i < POOL_SIZE; i++) {
       this.skillShots.push(hidden(scene, new THREE.Mesh(skillGeometry, skillMaterial)));
       this.shots.push(hidden(scene, new THREE.Mesh(shotGeometry, shotMaterial)));

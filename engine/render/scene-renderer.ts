@@ -9,10 +9,10 @@ import { Effects } from './effects';
 import { Flames, type FlameSpot } from './flames';
 import { blendedGround } from './ground-blend';
 import { kitBuilding, type StoreyWindows } from './kit-building';
-import { ELEVATION } from './camera-angle';
+import { elevationOf } from './camera-angle';
 import { LightMap, type SurfaceFade } from './light-map';
 import { Mist } from './mist';
-import type { Look, Mood, PropLook, Surroundings, WallFixture, WallLook, WaterLook } from './look';
+import type { CameraLook, Look, Mood, PropLook, Surroundings, WallFixture, WallLook, WaterLook } from './look';
 import { fitMatrix, instancedModel, modelSize, panelFit, panelScale } from './model-instancing';
 import { ModelLibrary, texturesOf, type ModelTemplate } from './models';
 import { playDistances, shadeArea, shadeAt } from './shade-map';
@@ -25,6 +25,7 @@ const TILE_PIXELS = 64;
 /** The hero sits a little below the centre of the screen, so more of what's ahead is visible. */
 const HERO_SCREEN_OFFSET_PX = 24;
 const CAMERA_FOLLOW_RATE = 7;
+const ORTHOGRAPHIC_DISTANCE = 60;
 /** Forward rendering pays for every light on every pixel, so only the closest few level lights are lit. */
 /** Glows reach this many times a level light's radius, and shine this many times its intensity. */
 const GLOW_REACH = 1.5;
@@ -42,17 +43,17 @@ const DOOR_RISE = 1.15;
 /** The turn about the vertical that points a kit corner's two arms, +x and +z, along the given map directions. */
 const KIT_CORNER_TURN: Record<string, number> = { '1,1': 0, '1,-1': Math.PI / 2, '-1,-1': Math.PI, '-1,1': (3 * Math.PI) / 2 };
 
-const VIEW_DIRECTION = new THREE.Vector3(
-  Math.cos(ELEVATION) / Math.SQRT2,
-  Math.sin(ELEVATION),
-  Math.cos(ELEVATION) / Math.SQRT2,
-);
-
-/** Draws a level and its actors with Three.js under a fixed isometric camera. World tile (x, y) is at (x, 0, y). */
+/** Draws a level and its actors with Three.js under the game's fixed camera. World tile (x, y) is at (x, 0, y). */
 export class SceneRenderer {
   private readonly renderer: THREE.WebGLRenderer;
   private readonly scene = new THREE.Scene();
-  private readonly camera = new THREE.OrthographicCamera();
+  private readonly camera: THREE.OrthographicCamera | THREE.PerspectiveCamera;
+  private readonly elevation: number;
+  private readonly closeness: number;
+  /** From where the camera looks towards where it stands. */
+  private readonly viewDirection: THREE.Vector3;
+  /** How far the camera stands back from where it looks. */
+  private cameraDistance = ORTHOGRAPHIC_DISTANCE;
   private readonly ambient = new THREE.AmbientLight();
   private readonly fill = new THREE.HemisphereLight();
   private readonly moon = new THREE.DirectionalLight();
@@ -103,8 +104,18 @@ export class SceneRenderer {
   constructor(
     canvas: HTMLCanvasElement,
     private readonly look: Look,
-    private readonly models = new ModelLibrary(),
+    private readonly models: ModelLibrary,
+    cameraLook: CameraLook,
   ) {
+    const fieldOfView = cameraLook.fieldOfView ?? 0;
+    this.camera = fieldOfView > 0 ? new THREE.PerspectiveCamera(fieldOfView) : new THREE.OrthographicCamera();
+    this.elevation = elevationOf(cameraLook);
+    this.closeness = cameraLook.closeness ?? 1;
+    this.viewDirection = new THREE.Vector3(
+      Math.cos(this.elevation) / Math.SQRT2,
+      Math.sin(this.elevation),
+      Math.cos(this.elevation) / Math.SQRT2,
+    );
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, stencil: true });
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -128,7 +139,7 @@ export class SceneRenderer {
     const reflections = new THREE.PMREMGenerator(this.renderer);
     this.scene.environment = reflections.fromScene(new RoomEnvironment(), 0.04).texture;
     reflections.dispose();
-    this.effects = new Effects(this.scene, look.effects);
+    this.effects = new Effects(this.scene, look.effects, this.elevation);
     this.spatter = new Spatter(this.scene);
   }
 
@@ -148,11 +159,17 @@ export class SceneRenderer {
     this.height = height;
     this.renderer.setPixelRatio(Math.min(2, pixelRatio));
     this.renderer.setSize(width, height, false);
-    const zoom = clamp(Math.min(width, height) / 430, 0.78, 1.3);
+    const zoom = clamp(Math.min(width, height) / 430, 0.78, 1.3) * this.closeness;
     this.pixelsPerUnit = (TILE_PIXELS * zoom) / Math.SQRT2;
     const halfW = width / 2 / this.pixelsPerUnit;
     const halfH = height / 2 / this.pixelsPerUnit;
-    Object.assign(this.camera, { left: -halfW, right: halfW, top: halfH, bottom: -halfH, near: 0.1, far: 200 });
+    if (this.camera instanceof THREE.PerspectiveCamera) {
+      // Far enough back that the ground where it looks is framed as without perspective.
+      this.cameraDistance = halfH / Math.tan((this.camera.fov * Math.PI) / 360);
+      Object.assign(this.camera, { aspect: width / height, near: Math.max(0.5, this.cameraDistance - 40), far: this.cameraDistance + 80 });
+    } else {
+      Object.assign(this.camera, { left: -halfW, right: halfW, top: halfH, bottom: -halfH, near: 0.1, far: 200 });
+    }
     this.camera.updateProjectionMatrix();
   }
 
@@ -205,7 +222,7 @@ export class SceneRenderer {
     this.structures = this.buildStructures(level);
     for (const mesh of this.structures) this.levelGroup.add(mesh);
     this.levelGroup.traverse((o) => this.lightUp(o, true));
-    this.mist = mood.mist ? new Mist(level.map.width, level.map.height, mood.mist, this.lightMap.uniforms) : null;
+    this.mist = mood.mist ? new Mist(level.map.width, level.map.height, mood.mist, this.lightMap.uniforms, this.elevation) : null;
     if (this.mist) this.levelGroup.add(this.mist.group);
     // Flames give their own light, so they stay out of the light map.
     this.flames = new Flames(this.flameSpots(level));
@@ -418,7 +435,7 @@ export class SceneRenderer {
   }
 
   private placeCamera(): void {
-    this.camera.position.copy(this.target).addScaledVector(VIEW_DIRECTION, 60);
+    this.camera.position.copy(this.target).addScaledVector(this.viewDirection, this.cameraDistance);
     this.camera.lookAt(this.target);
     this.camera.updateMatrixWorld();
     this.cameraUp.setFromMatrixColumn(this.camera.matrixWorld, 1);
@@ -562,7 +579,7 @@ export class SceneRenderer {
     if (look.kit) return { meshes: this.buildKitWalls(level, look, look.kit, panel, kinds), kinds };
     // Cut away round the hero, front walls stand full height like back walls; otherwise they're drawn low.
     const front = look.cutaway ? panel : look.front && this.models.get(look.front.name);
-    this.lightMap.setCutaway(look.cutaway?.radius ?? null, { x: VIEW_DIRECTION.x, y: VIEW_DIRECTION.z }, look.cutaway?.opacity);
+    this.lightMap.setCutaway(look.cutaway?.radius ?? null, { x: this.viewDirection.x, y: this.viewDirection.z }, look.cutaway?.opacity);
     const backs: THREE.Matrix4[] = [];
     const fronts: THREE.Matrix4[] = [];
     // A panel stands just behind its edge, on the wall's side; turned to face the camera, it's moved back over by its
@@ -660,7 +677,7 @@ export class SceneRenderer {
         }
       }
     }
-    this.lightMap.setCutaway(look.cutaway?.radius ?? null, { x: VIEW_DIRECTION.x, y: VIEW_DIRECTION.z }, look.cutaway?.opacity);
+    this.lightMap.setCutaway(look.cutaway?.radius ?? null, { x: this.viewDirection.x, y: this.viewDirection.z }, look.cutaway?.opacity);
     const meshes = pieces.flatMap(({ template, placements, front }) => {
       if (!template || !placements.length) return [];
       const made = instancedModel(template, new THREE.Matrix4(), placements);

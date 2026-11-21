@@ -4,6 +4,7 @@ import { bindKeys } from '../input/keys';
 import { PointerInput } from '../input/pointer';
 import type { Platform } from '../platform/platform';
 import { webPlatform } from '../platform/web';
+import { cameraFromQuery, ISOMETRIC_CAMERA } from '../render/camera-angle';
 import { DebugOverlay } from '../render/debug-overlay';
 import type { Look } from '../render/look';
 import { ModelLibrary } from '../render/models';
@@ -84,7 +85,8 @@ export class Game {
   constructor(setup: GameSetup) {
     const params = new URLSearchParams(location.search);
     const debugMode = params.has('debug');
-    this.renderer = new SceneRenderer(setup.canvas, setup.look, this.models);
+    const camera = cameraFromQuery(setup.look.camera ?? ISOMETRIC_CAMERA, params);
+    this.renderer = new SceneRenderer(setup.canvas, setup.look, this.models, camera);
     this.modelsLoaded = this.models.load(setup.models);
     this.pointer = new PointerInput(setup.canvas);
     this.labels = new WorldLabels(document.body);

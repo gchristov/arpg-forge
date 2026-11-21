@@ -192,6 +192,8 @@ export const SCANNER_EYES: Readonly<Record<string, number>> = { loader: 0.75, se
 export const SCAN_COLOUR = 0xff3a2a;
 
 export const unrecalledLook: Look = {
+  // Close to the action, tilted far enough towards the horizon to see what lies ahead, with perspective for depth.
+  camera: { pitch: 42, fieldOfView: 40, closeness: 1.5 },
   effects: {
     skill: 0x8ae8ff, shot: 0xffd070, telegraph: 0xff7a3a, items: { gold: 0xd8c070, healingItem: 0x50d070, weapon: 0xe0782a },
     walkMarker: 0x9ad8e8, targetMarker: 0xff7a3a,

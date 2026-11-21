@@ -306,7 +306,19 @@ export interface EffectsLook {
   slam: BurstLook;
 }
 
+/** How the camera looks at the world. */
+export interface CameraLook {
+  /** Degrees above the ground the camera looks down: 30 gives the classic 2:1 isometric look, more shows more of the ground. */
+  pitch: number;
+  /** The vertical field of view in degrees, for perspective; without it, or at 0, the camera draws without perspective. */
+  fieldOfView?: number;
+  /** How close the camera stands: 1 when a tile is 64 pixels wide on a typical screen, more to see the world larger. */
+  closeness?: number;
+}
+
 export interface Look {
+  /** The classic 2:1 isometric camera when not given. */
+  camera?: CameraLook;
   effects: EffectsLook;
   mood(levelId: string): Mood;
   groundColour(kind: number, tx: number, ty: number, levelId: string): number;
