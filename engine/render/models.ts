@@ -3,6 +3,7 @@ import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { mergeCharacter } from './merge-character';
+import { SharedTextures } from './shared-textures';
 
 /** A loaded model, ready to be copied for each actor or prop that uses it. */
 export interface ModelTemplate {
@@ -19,18 +20,28 @@ export interface ModelTemplate {
 export class ModelLibrary {
   private readonly templates = new Map<string, ModelTemplate>();
   private readonly loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+  private readonly sharedTextures = new SharedTextures();
 
   /** Loads every model; resolves once all have loaded or failed. Failed models fall back to simple shapes. */
   async load(urls: Record<string, string>): Promise<void> {
     await Promise.all(
       Object.entries(urls).map(async ([name, url]) => {
         try {
-          this.templates.set(name, toTemplate(await this.loader.loadAsync(url)));
+          const gltf = await this.loader.loadAsync(url);
+          await this.sharedTextures.share(gltf);
+          this.templates.set(name, toTemplate(gltf));
         } catch (error) {
           console.warn(`Model ${name} failed to load`, error);
         }
       }),
     );
+  }
+
+  /** Every texture the loaded models use, to send to the GPU before play. */
+  textures(): THREE.Texture[] {
+    const found = new Set<THREE.Texture>();
+    for (const template of this.templates.values()) template.scene.traverse((o) => texturesOf(o, found));
+    return [...found];
   }
 
   get(name: string): ModelTemplate | undefined {
@@ -65,4 +76,13 @@ function toTemplate(gltf: GLTF): ModelTemplate {
   });
   const box = new THREE.Box3().setFromObject(gltf.scene);
   return { scene: gltf.scene, animations: gltf.animations, height: Math.max(0.001, box.max.y - box.min.y) };
+}
+
+/** Adds the textures of an object's materials to `found`. */
+export function texturesOf(object: THREE.Object3D, found: Set<THREE.Texture>): void {
+  const materials = (object as THREE.Mesh).material;
+  if (!materials) return;
+  for (const material of [materials].flat()) {
+    for (const value of Object.values(material)) if (value instanceof THREE.Texture) found.add(value);
+  }
 }

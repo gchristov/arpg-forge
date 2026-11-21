@@ -5,15 +5,16 @@ Every asset that ships with the game, where it comes from and its licence. All o
 | Asset | Source | Licence |
 | --- | --- | --- |
 | Alegreya Sans font | Juan Pablo del Peral (Huerta Tipográfica), via `@fontsource/alegreya-sans` | SIL Open Font License 1.1 |
-| U-7 (the hero), and Rustbelt's Odell, Mags and Pell | Quaternius, [Ultimate Animated Character Pack](https://opengameart.org/content/animated-characters-pack) | CC0 1.0 |
-| U-7's run, rest and death, and how they hold, cut and rev with the chainsaw | Quaternius, [Universal Animation Library, Standard](https://opengameart.org/content/universal-animation-library) | CC0 1.0 |
+| U-7 (the hero), and the heads and hair of Rustbelt's Odell, Mags and Pell | Quaternius, [Universal Base Characters](https://quaternius.itch.io/universal-base-characters) | CC0 1.0 |
+| Odell's, Mags's and Pell's clothes | Quaternius, [Modular Character Outfits – Fantasy](https://quaternius.itch.io/modular-character-outfits-fantasy) | CC0 1.0 |
+| How U-7 and Rustbelt's people stand, and U-7's run, death, and how it holds, cuts and revs with the chainsaw | Quaternius, [Universal Animation Library, Standard](https://opengameart.org/content/universal-animation-library) | CC0 1.0 |
 | U-7's chainsaw | loafbrr_1, [Chainsaw](https://opengameart.org/content/chainsaw-1) | CC0 1.0 |
 | The Order Engine | Quaternius, [Animated Mech Pack](https://opengameart.org/content/animated-mech-pack) | CC0 1.0 |
 | Crawlers, loaders and sentries; chairs, salvage caches, the fire barrel, crates, barrels, lockers, shelves and desks | Quaternius, [Sci-Fi Essentials Kit](https://opengameart.org/content/sci-fi-essentials-kit) | CC0 1.0 |
-| Rustbelt's dead wind turbine, container stacks and cargo, the workshop's scaffold and truck, the trading post's crane and rooftop cargo, the workshop's solar panels and the pumphouse's pump rig, darkened and dulled to look weathered | Kay Lousberg, [KayKit Space Base Bits](https://kaylousberg.itch.io/space-base-bits) | CC0 1.0 |
+| Rustbelt's dead wind turbine, container stacks and cargo, the workshop's scaffold and truck, the trading post's crane and rooftop cargo, the workshop's solar panels and the pumphouse's pump rig | Kay Lousberg, [KayKit Space Base Bits](https://kaylousberg.itch.io/space-base-bits) | CC0 1.0 |
 | Rustbelt's dead trees, rocks, weeds and pebbles | Quaternius, [Stylized Nature MegaKit, Standard](https://opengameart.org/content/stylized-nature-megakit) | CC0 1.0 |
-| Walls, floor plates, door frames, pipe columns, Rustbelt's buildings (weathered) with their railings, its lamp and jetty posts, the depot's stairs, the cradle, computers, wall lamps, alarm beacons and smelting tanks | Quaternius, [Modular Sci-Fi MegaKit, Standard](https://opengameart.org/content/modular-sci-fi-megakit) | CC0 1.0 |
+| Walls, floor plates, door frames, pipe columns, Rustbelt's buildings with their railings, its lamp and jetty posts, the depot's stairs, the cradle, computers, wall lamps, alarm beacons and smelting tanks | Quaternius, [Modular Sci-Fi MegaKit, Standard](https://opengameart.org/content/modular-sci-fi-megakit) | CC0 1.0 |
 
-The models in `models/` are built from those packs by `tools/assets/build-models.sh` using `models.json`, which pins each pack's commit or zip checksum and lists the parts, animations and texture sizes kept. FBX models are converted to glTF with Blender first, which also retargets animations borrowed from another rig and decimates the dead trees.
+The models in `models/` are built from those packs by `tools/assets/build-models.sh` using `models.json`, which pins each pack's commit or zip checksum and lists the parts, animations and texture sizes kept. The people are put together first by `people/make.sh`, from the two character packs downloaded by hand from itch.io, where alone they're published. FBX models are converted to glTF with Blender first, which also retargets animations borrowed from another rig and decimates the dead trees.
 
 There are no sounds yet.

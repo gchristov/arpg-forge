@@ -110,8 +110,8 @@ export function kitBuilding(
 
   const roof = models.get(kit.roof);
   if (roof) {
-    const size = modelSize(roof);
-    const fit = fitMatrix(roof, { type: 'box', width: kit.span, height: size.y * k, depth: kit.span });
+    // Fitted by its footprint, keeping its proportions: a flat plate has no height of its own to stretch.
+    const fit = fitMatrix(roof, { type: 'footprint', width: kit.span, depth: kit.span });
     add(instancedModel(roof, fit, layout.roof.map((p) => new THREE.Matrix4()
       .makeTranslation(p.x, blockHeight(p.floors), p.y)
       .multiply(new THREE.Matrix4().makeScale(p.width / kit.span, 1, p.depth / kit.span)))));

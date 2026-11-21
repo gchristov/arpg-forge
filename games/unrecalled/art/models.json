@@ -9,10 +9,6 @@
       "sha256": "4ca9acbc7a13e7baa48e24c4853b779889b7ab21587004c36668826e705c8a10",
       "textures": "Modular SciFi MegaKit[Standard]/Textures"
     },
-    "characters": {
-      "zip": "https://opengameart.org/sites/default/files/ultimate_animated_character_pack_by_quaternius.zip",
-      "sha256": "0295062cbc72da52ee804f39ac38694901a40458011f9b2638fc7ef13ed509da"
-    },
     "mechs": {
       "zip": "https://opengameart.org/sites/default/files/animated_mech_pack_-_march_2021.zip",
       "sha256": "14102eade586a04191fc96a4bf52bc511b91d3e90d76a87e8e621095b8d0ea26",
@@ -31,13 +27,16 @@
     "chainsaw": {
       "zip": "https://opengameart.org/sites/default/files/chainsaw_fbx_gltf_blend_textures_0.zip",
       "sha256": "d3ae1cf5a4977ba35612cf5df2a0187d66efdc9285cd2adaeb4183db1095fec7"
+    },
+    "people": {
+      "made": "games/unrecalled/art/people/make.sh"
     }
   },
   "models": [
     {
       "name": "hero",
-      "pack": "characters",
-      "path": "Ultimate Animated Character Pack - Nov 2019/FBX/BaseCharacter.fbx",
+      "pack": "people",
+      "path": "People/u7.glb",
       "animations": [
         "Idle",
         "Run",
@@ -49,168 +48,8 @@
         "PunchCross",
         "IdleLoop"
       ],
-      "borrow": {
-        "pack": "animations",
-        "path": "Animation Library[Standard]/Godot/AnimationLibrary_Godot_Standard.glb",
-        "pose": "A_TPose",
-        "animations": {
-          "Run": "Sprint_Loop",
-          "Death": "Death01",
-          "PistolIdle": "Pistol_Idle_Loop",
-          "PunchCross": "Punch_Cross",
-          "IdleLoop": "Idle_Loop"
-        },
-        "bones": {
-          "Body": "DEF-hips",
-          "Hips": "DEF-spine.001",
-          "Abdomen": "DEF-spine.002",
-          "Torso": "DEF-spine.003",
-          "Neck": "DEF-neck",
-          "Head": "DEF-head",
-          "Shoulder.L": "DEF-shoulder.L",
-          "UpperArm.L": "DEF-upper_arm.L",
-          "LowerArm.L": "DEF-forearm.L",
-          "Fist.L": "DEF-hand.L",
-          "Shoulder.R": "DEF-shoulder.R",
-          "UpperArm.R": "DEF-upper_arm.R",
-          "LowerArm.R": "DEF-forearm.R",
-          "Fist.R": "DEF-hand.R",
-          "UpperLeg.L": "DEF-thigh.L",
-          "LowerLeg.L": "DEF-shin.L",
-          "Foot.L": "DEF-foot.L",
-          "UpperLeg.R": "DEF-thigh.R",
-          "LowerLeg.R": "DEF-shin.R",
-          "Foot.R": "DEF-foot.R"
-        }
-      },
-      "split": [
-        {
-          "material": "Skin",
-          "into": "Faceplate",
-          "bones": [
-            "Head"
-          ],
-          "front": 0.45,
-          "below": 0.72
-        },
-        {
-          "material": "Skin",
-          "into": "Faceplate",
-          "bones": [
-            "Fist.L",
-            "Fist.R"
-          ]
-        },
-        {
-          "material": "Skin",
-          "into": "Shell",
-          "bones": [
-            "Torso",
-            "Shoulder.L",
-            "Shoulder.R",
-            "UpperArm.L",
-            "UpperArm.R",
-            "Hips",
-            "UpperLeg.L",
-            "UpperLeg.R"
-          ]
-        }
-      ],
-      "frame": {
-        "material": "Frame",
-        "colour": "#3a4049",
-        "thickness": 0.08,
-        "skip": [
-          "end",
-          "Pole",
-          "Foot",
-          "Bone"
-        ],
-        "reach": [
-          "LowerLeg.L",
-          "LowerLeg.R"
-        ],
-        "wires": {
-          "colours": [
-            "#2a2f36",
-            "#d08a3a"
-          ],
-          "thickness": 0.035,
-          "apart": 0.11
-        }
-      },
-      "core": {
-        "bone": "Abdomen",
-        "colour": "#ffa53a",
-        "size": 0.45,
-        "halo": {
-          "size": 1.5,
-          "opacity": 0.4
-        },
-        "out": 0.2
-      },
-      "brain": {
-        "bone": "Head",
-        "colour": "#b4bcc5",
-        "size": 0.9,
-        "up": 0.85,
-        "back": 0.2,
-        "nodes": 4,
-        "nodeSize": 0.17
-      },
-      "raisedCopy": {
-        "material": "Shell",
-        "into": "Mesh",
-        "lift": 0.015
-      },
-      "paint": {
-        "Core": {
-          "glow": "#ffa53a",
-          "glowStrength": 3
-        },
-        "Halo": {
-          "glow": "#ffa53a",
-          "glowStrength": 2
-        },
-        "Skin": {
-          "colour": "#f2f4f6",
-          "opacity": 0.18,
-          "roughness": 0.1
-        },
-        "Shell": {
-          "colour": "#8a95a1",
-          "opacity": 1,
-          "metalness": 0.1,
-          "roughness": 0.2
-        },
-        "Faceplate": {
-          "colour": "#f6e2d0",
-          "glow": "#6a5a4c"
-        },
-        "Face": {
-          "colour": "#2b2420"
-        },
-        "Brain": {
-          "metalness": 0.2,
-          "roughness": 0.4
-        },
-        "Core": {
-          "glow": "#ffa53a",
-          "glowStrength": 3.5
-        },
-        "Halo": {
-          "glow": "#ffa53a",
-          "glowStrength": 1.5
-        },
-        "Synapse": {
-          "colour": "#ffd29a",
-          "glow": "#ffa53a",
-          "glowStrength": 2
-        },
-        "Wire.1": {
-          "glow": "#d08a3a",
-          "glowStrength": 1
-        }
+      "textures": {
+        "maxSize": 1024
       }
     },
     {
@@ -225,8 +64,7 @@
         "TurnOff"
       ],
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -241,8 +79,7 @@
         "TurnOff"
       ],
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -255,8 +92,7 @@
         "Hit"
       ],
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -264,8 +100,7 @@
       "pack": "essentials",
       "path": "glTF/Prop_Crate.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -273,8 +108,7 @@
       "pack": "essentials",
       "path": "glTF/Prop_Barrel1.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -282,8 +116,7 @@
       "pack": "essentials",
       "path": "glTF/Prop_Locker.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -291,8 +124,7 @@
       "pack": "essentials",
       "path": "glTF/Prop_Shelves_WideTall.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -300,8 +132,7 @@
       "pack": "essentials",
       "path": "glTF/Prop_Desk_Medium.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -309,8 +140,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Columns/Column_Pipes.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -318,8 +148,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Props/Prop_Computer.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -335,7 +164,7 @@
         "Death"
       ],
       "textures": {
-        "maxSize": 512
+        "maxSize": 1024
       }
     },
     {
@@ -343,8 +172,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallBand_Straight.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -352,8 +180,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/ShortWall_MetalPlates_Straight.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -361,8 +188,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Props/Prop_Light_Wide.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -370,8 +196,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Props/Prop_Barrel_Large.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -379,8 +204,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Platforms/Door_Frame_Square.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -388,8 +212,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Columns/Column_Hollow.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -397,8 +220,7 @@
       "pack": "essentials",
       "path": "glTF/Prop_Chair.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -406,8 +228,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallAstra_Straight.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -415,8 +236,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallWindow_Straight.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -424,8 +244,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallAstra_Straight_Divided.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -433,8 +252,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Platforms/Platform_3Plates.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -442,8 +260,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Platforms/Platform_Metal2.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -451,8 +268,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Platforms/Platform_DarkPlates.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -460,8 +276,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Platforms/Platform_Squares.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -469,8 +284,7 @@
       "pack": "essentials",
       "path": "glTF/Prop_Chest.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -478,56 +292,40 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Props/Prop_Light_Small.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
       "name": "foreman",
-      "pack": "characters",
-      "path": "Ultimate Animated Character Pack - Nov 2019/FBX/OldClassy_Male.fbx",
+      "pack": "people",
+      "path": "People/odell.glb",
       "animations": [
         "Idle"
       ],
-      "paint": {
-        "Skin": {
-          "colour": "#d39a7a"
-        },
-        "Face": {
-          "colour": "#2b2420"
-        }
+      "textures": {
+        "maxSize": 1024
       }
     },
     {
       "name": "trader",
-      "pack": "characters",
-      "path": "Ultimate Animated Character Pack - Nov 2019/FBX/Casual2_Female.fbx",
+      "pack": "people",
+      "path": "People/mags.glb",
       "animations": [
         "Idle"
       ],
-      "paint": {
-        "Skin": {
-          "colour": "#e2b08f"
-        },
-        "Face": {
-          "colour": "#2b2420"
-        }
+      "textures": {
+        "maxSize": 1024
       }
     },
     {
       "name": "tinker",
-      "pack": "characters",
-      "path": "Ultimate Animated Character Pack - Nov 2019/FBX/Casual3_Female.fbx",
+      "pack": "people",
+      "path": "People/pell.glb",
       "animations": [
         "Idle"
       ],
-      "paint": {
-        "Skin": {
-          "colour": "#f1c9ab"
-        },
-        "Face": {
-          "colour": "#2b2420"
-        }
+      "textures": {
+        "maxSize": 1024
       }
     },
     {
@@ -535,8 +333,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Columns/Column_Astra.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -544,8 +341,7 @@
       "pack": "essentials",
       "path": "glTF/Prop_Barrel2_Open.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -553,8 +349,7 @@
       "pack": "nature",
       "path": "FBX/DeadTree_1.fbx",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       },
       "decimate": 0.2
     },
@@ -563,8 +358,7 @@
       "pack": "nature",
       "path": "FBX/DeadTree_2.fbx",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       },
       "decimate": 0.2
     },
@@ -573,8 +367,7 @@
       "pack": "nature",
       "path": "FBX/DeadTree_4.fbx",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       },
       "decimate": 0.2
     },
@@ -583,8 +376,7 @@
       "pack": "nature",
       "path": "glTF/Rock_Medium_1.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -592,8 +384,7 @@
       "pack": "nature",
       "path": "glTF/Rock_Medium_2.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -601,8 +392,7 @@
       "pack": "nature",
       "path": "glTF/Rock_Medium_3.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -610,8 +400,7 @@
       "pack": "nature",
       "path": "glTF/Grass_Wispy_Tall.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -619,8 +408,7 @@
       "pack": "nature",
       "path": "glTF/Grass_Wispy_Short.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -628,8 +416,7 @@
       "pack": "nature",
       "path": "glTF/Pebble_Round_2.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -637,12 +424,7 @@
       "pack": "spacebase",
       "path": "Assets/gltf/windturbine_tall.gltf",
       "textures": {
-        "maxSize": 256,
-        "recolour": {
-          "brightness": 0.62,
-          "saturation": 0.45,
-          "hue": -8
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -650,12 +432,7 @@
       "pack": "spacebase",
       "path": "Assets/gltf/containers_A.gltf",
       "textures": {
-        "maxSize": 256,
-        "recolour": {
-          "brightness": 0.62,
-          "saturation": 0.45,
-          "hue": -8
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -663,12 +440,7 @@
       "pack": "spacebase",
       "path": "Assets/gltf/containers_B.gltf",
       "textures": {
-        "maxSize": 256,
-        "recolour": {
-          "brightness": 0.62,
-          "saturation": 0.45,
-          "hue": -8
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -676,12 +448,7 @@
       "pack": "spacebase",
       "path": "Assets/gltf/containers_C.gltf",
       "textures": {
-        "maxSize": 256,
-        "recolour": {
-          "brightness": 0.62,
-          "saturation": 0.45,
-          "hue": -8
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -689,12 +456,7 @@
       "pack": "spacebase",
       "path": "Assets/gltf/cargo_A_stacked.gltf",
       "textures": {
-        "maxSize": 256,
-        "recolour": {
-          "brightness": 0.62,
-          "saturation": 0.45,
-          "hue": -8
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -702,13 +464,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallAstra_Straight.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true,
-        "recolour": {
-          "brightness": 1.6,
-          "saturation": 0.6,
-          "hue": -6
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -716,13 +472,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallAstra_Straight_Window.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true,
-        "recolour": {
-          "brightness": 1.6,
-          "saturation": 0.6,
-          "hue": -6
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -730,13 +480,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallBand_Straight.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true,
-        "recolour": {
-          "brightness": 1.6,
-          "saturation": 0.6,
-          "hue": -6
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -744,13 +488,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallBand_Straight_Broken.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true,
-        "recolour": {
-          "brightness": 1.6,
-          "saturation": 0.6,
-          "hue": -6
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -758,13 +496,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallWindow_Straight.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true,
-        "recolour": {
-          "brightness": 1.6,
-          "saturation": 0.6,
-          "hue": -6
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -772,13 +504,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/TopPlastic_Straight.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true,
-        "recolour": {
-          "brightness": 1.6,
-          "saturation": 0.6,
-          "hue": -6
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -786,13 +512,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Columns/Column_Simple.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true,
-        "recolour": {
-          "brightness": 1.6,
-          "saturation": 0.6,
-          "hue": -6
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -800,13 +520,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Platforms/Platform_3Plates.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true,
-        "recolour": {
-          "brightness": 1.6,
-          "saturation": 0.6,
-          "hue": -6
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -814,13 +528,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Platforms/Door_Frame_Square.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true,
-        "recolour": {
-          "brightness": 1.6,
-          "saturation": 0.6,
-          "hue": -6
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -828,13 +536,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Props/Prop_Vent_Big.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true,
-        "recolour": {
-          "brightness": 1.6,
-          "saturation": 0.6,
-          "hue": -6
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -842,13 +544,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Props/Prop_Fan_Small.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true,
-        "recolour": {
-          "brightness": 1.6,
-          "saturation": 0.6,
-          "hue": -6
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -856,13 +552,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Props/Prop_Rail_4.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true,
-        "recolour": {
-          "brightness": 1.6,
-          "saturation": 0.6,
-          "hue": -6
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -870,8 +560,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Platforms/Platform_Stairs_2.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -879,12 +568,7 @@
       "pack": "spacebase",
       "path": "Assets/gltf/structure_tall.gltf",
       "textures": {
-        "maxSize": 256,
-        "recolour": {
-          "brightness": 0.62,
-          "saturation": 0.45,
-          "hue": -8
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -892,12 +576,7 @@
       "pack": "spacebase",
       "path": "Assets/gltf/spacetruck.gltf",
       "textures": {
-        "maxSize": 256,
-        "recolour": {
-          "brightness": 0.62,
-          "saturation": 0.45,
-          "hue": -8
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -905,12 +584,7 @@
       "pack": "spacebase",
       "path": "Assets/gltf/roofmodule_solarpanels.gltf",
       "textures": {
-        "maxSize": 256,
-        "recolour": {
-          "brightness": 0.62,
-          "saturation": 0.45,
-          "hue": -8
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -918,12 +592,7 @@
       "pack": "spacebase",
       "path": "Assets/gltf/roofmodule_cargo_A.gltf",
       "textures": {
-        "maxSize": 256,
-        "recolour": {
-          "brightness": 0.62,
-          "saturation": 0.45,
-          "hue": -8
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -931,12 +600,7 @@
       "pack": "spacebase",
       "path": "Assets/gltf/cargodepot_A.gltf",
       "textures": {
-        "maxSize": 256,
-        "recolour": {
-          "brightness": 0.62,
-          "saturation": 0.45,
-          "hue": -8
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -944,12 +608,7 @@
       "pack": "spacebase",
       "path": "Assets/gltf/drill_structure.gltf",
       "textures": {
-        "maxSize": 256,
-        "recolour": {
-          "brightness": 0.62,
-          "saturation": 0.45,
-          "hue": -8
-        }
+        "maxSize": 1024
       }
     },
     {
@@ -957,8 +616,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/TopCables_Straight_Hanging.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       },
       "keepMaterials": [
         "MI_Trim_03_Cables_Blue"
@@ -969,8 +627,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallBand_Corner_Square_Inner.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -978,8 +635,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallBand_Corner_Square_Outer.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -987,8 +643,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallAstra_Corner_Square_Inner.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -996,8 +651,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallAstra_Corner_Square_Outer.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -1005,8 +659,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallWindow_Corner_Square_Inner.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -1014,8 +667,7 @@
       "pack": "megakit",
       "path": "Modular SciFi MegaKit[Standard]/glTF/Walls/WallWindow_Corner_Square_Outer.gltf",
       "textures": {
-        "maxSize": 512,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     },
     {
@@ -1023,8 +675,7 @@
       "pack": "chainsaw",
       "path": "GLTF/Chainsaw.gltf",
       "textures": {
-        "maxSize": 256,
-        "dropDetailMaps": true
+        "maxSize": 1024
       }
     }
   ]

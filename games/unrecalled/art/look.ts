@@ -2,50 +2,36 @@ import * as THREE from 'three';
 import { hash2, valueNoise } from '../../../engine/core/math';
 import type { ActorLook, BuildingKit, Look, Mood, PropLook, StructureLook } from '../../../engine/render/look';
 import { Ground, Prop } from '../content/tiles';
-import { surroundingsOf } from './surroundings';
-import { ALARM_MARK } from '../extensions/calm-machines';
-import { meshLines } from '../extensions/mesh-lines';
-import { glassShine } from '../extensions/glass-shine';
 
-/** Unrecalled's look: Quaternius people and machines, cold workshop light against furnace glow. */
+/**
+ * Unrecalled's look, for now its base: every model drawn as its kit made it, under plain light. The game's own look
+ * goes on top of this a layer at a time.
+ */
 
 const colour = new THREE.Color();
-const hsl = (h: number, s: number, l: number): number => colour.setHSL(h / 360, s / 100, l / 100).getHex();
 
-// Indoors, wall tops and the cables over them fade into the dark above head height.
-const foundry = (ambient: number, sky: number): Mood => ({
-  background: 0x050505, ambient, ambientIntensity: 0.5, ambientWhen: { mark: ALARM_MARK, colour: 0x5a1c18 }, heroLightRadius: 4.6, heightFade: { from: 0.8, to: 2.0 },
-  fill: { sky, ground: 0x201810, intensity: 0.55 },
-});
-
-/** Night over the camp: a cold moon behind the pylon, so the town has shadows the Foundry doesn't. */
-const NIGHT: Mood = {
-  background: 0x06080c, ambient: 0x3a4250, ambientIntensity: 0.7, heroLightRadius: 4.6,
-  moon: { colour: 0xa8bcd8, intensity: 0.95 },
-  groundGrain: 0.7,
-  fill: { sky: 0xb8c8e0, ground: 0x201a14, intensity: 0.55 },
-  // River mist, cold under the moon and warm round the fire and lamps.
-  mist: { colour: 0x8494aa, density: 0.85 },
-  // The river runs east under the moon, dark in its troughs with cold light on its ripples.
-  water: { ground: Ground.Water, flow: { x: 0.5, y: 0 }, deep: 0x0c1c2c, shallow: 0x23506a, glint: 0xa8c8e0 },
+/** Plain, even light, like a model viewer's, on every level. */
+const PLAIN_LIGHT: Mood = {
+  background: 0x22262c, ambient: 0x000000, ambientIntensity: 0, heroLightRadius: 0.001, reflections: 1,
+  moon: { colour: 0xffffff, intensity: 2.2 },
+  fill: { sky: 0xdfe7ee, ground: 0x3a3f46, intensity: 0.8 },
 };
 
-/** On the Foundry's floors, the dark hides all U-7 hasn't found yet, machines included. */
-const FOUND_AS_YOU_GO = 9;
+const hsl = (h: number, s: number, l: number): number => colour.setHSL(h / 360, s / 100, l / 100).getHex();
 
-/** Each level's own walls, floor plates and air, so the player always knows where they are. */
-const FLOOR_STYLES: Record<string, { panel: string; plate: string | null; mood: Mood }> = {
-  rustbelt: { panel: 'wall', plate: null, mood: NIGHT },
-  workshop: { panel: 'wall', plate: 'floor-metal', mood: foundry(0x40362a, 0xf0d8b8) },
-  tradingPost: { panel: 'wall-astra', plate: 'floor-plates', mood: foundry(0x3e382e, 0xf0e0c8) },
-  pumphouse: { panel: 'wall-divided', plate: 'floor-dark', mood: foundry(0x262c30, 0xc8d4e0) },
-  depotOffice: { panel: 'wall-window', plate: 'floor-metal', mood: foundry(0x3e3a32, 0xf0e4cc) },
-  intake: { panel: 'wall', plate: 'floor-plates', mood: { ...foundry(0x343a40, 0xd8e4f0), sightRange: FOUND_AS_YOU_GO } },
-  sorting: { panel: 'wall-astra', plate: 'floor-metal', mood: { ...foundry(0x3a3428, 0xf0e0c0), sightRange: FOUND_AS_YOU_GO } },
-  gallery: { panel: 'wall-window', plate: 'floor-dark', mood: { ...foundry(0x3a2a2c, 0xf0c8c8), sightRange: FOUND_AS_YOU_GO } },
-  arena: { panel: 'wall', plate: 'floor-plates', mood: foundry(0x343a40, 0xd8e4f0) },
-  upriver: { panel: 'wall', plate: null, mood: { ...NIGHT, water: undefined } },
-  control: { panel: 'wall-divided', plate: 'floor-squares', mood: { ...foundry(0x3a2c22, 0xf0d0b0), sightRange: FOUND_AS_YOU_GO } },
+/** Each level's own walls and floor plates, so the player always knows where they are. */
+const FLOOR_STYLES: Record<string, { panel: string; plate: string | null }> = {
+  rustbelt: { panel: 'wall', plate: null },
+  workshop: { panel: 'wall', plate: 'floor-metal' },
+  tradingPost: { panel: 'wall-astra', plate: 'floor-plates' },
+  pumphouse: { panel: 'wall-divided', plate: 'floor-dark' },
+  depotOffice: { panel: 'wall-window', plate: 'floor-metal' },
+  intake: { panel: 'wall', plate: 'floor-plates' },
+  sorting: { panel: 'wall-astra', plate: 'floor-metal' },
+  gallery: { panel: 'wall-window', plate: 'floor-dark' },
+  arena: { panel: 'wall', plate: 'floor-plates' },
+  upriver: { panel: 'wall', plate: null },
+  control: { panel: 'wall-divided', plate: 'floor-squares' },
 };
 /** Each wall style's corner pieces, from the same kit, so walls turn in the style they're built in. */
 const KIT_CORNERS: Record<string, { inner: string; outer: string }> = {
@@ -102,7 +88,7 @@ const PROPS: Partial<Record<number, PropLook>> = {
   [Prop.Computer]: { shape: 'box', width: 0.6, height: 0.9, colour: 0x2a3a4a, emissive: 0x0a4050, model: tall('computer', 0.95) },
 };
 
-/** The town's buildings, put together from the Foundry's own wall kit, weathered, as salvage from it would be. */
+/** The town's buildings, put together from the Foundry's own wall kit, as salvage from it would be. */
 const TOWN_KIT: BuildingKit = {
   span: 2,
   wall: ['town-wall-astra'],
@@ -122,15 +108,15 @@ const building = (wall: number, kit: Partial<BuildingKit>): StructureLook => ({
   wall, roof: 0x3a3028, wallHeight: 2.5, roofHeight: 0.2, kit: { ...TOWN_KIT, ...kit },
 });
 
-// Each building has its own paint and its own clutter on the roof, so the town doesn't read as one building three times.
+// Each building has its own clutter on the roof, so the town doesn't read as one building three times.
 const STRUCTURES: Record<string, StructureLook> = {
-  workshop: building(0x4a4038, { sign: 0x6ad8ff, tint: 0xe0a078, roofProps: [{ name: 'solar-roof', width: 1.8 }, 'roof-vent'] }),
+  workshop: building(0x4a4038, { sign: 0x6ad8ff, roofProps: [{ name: 'solar-roof', width: 1.8 }, 'roof-vent'] }),
   tradingPost: building(0x4a4038, {
-    wall: ['town-wall-band', 'town-wall-band-broken'], window: 'town-window', tint: 0x90c8bc,
+    wall: ['town-wall-band', 'town-wall-band-broken'], window: 'town-window',
     roofProps: [{ name: 'cargo-roof', width: 1.8 }, 'roof-fan'],
   }),
   pumphouse: building(0x3a4048, {
-    tint: 0xa0b0c8, roofProps: [{ name: 'tank', width: 1.1 }, 'roof-vent'],
+    roofProps: [{ name: 'tank', width: 1.1 }, 'roof-vent'],
     wall: ['town-wall-band-broken'],
     window: 'town-window',
     inside: 0x2a3a40,
@@ -140,71 +126,48 @@ const STRUCTURES: Record<string, StructureLook> = {
   // The Assembly, upriver, where the Foundry's machines are made, U-7 among them: dark windows and no sign, since its
   // lights only come on, storey by storey, as the story ends.
   assembly: building(0x34383e, {
-    tint: 0x8a909a, wall: ['town-wall-band', 'town-wall-astra'], window: 'town-window-astra',
+    wall: ['town-wall-band', 'town-wall-astra'], window: 'town-window-astra',
     roofProps: [{ name: 'tank', width: 1.1 }, { name: 'cargo-roof', width: 1.8 }, 'roof-fan'],
     inside: 0x050608, glass: { material: 'M_Glass', colour: 0xffc070, light: 'amber', dark: true }, sign: undefined,
   }),
 };
-
-const LIGHTS: Record<string, number> = { cyan: 0x6ad8ff, amber: 0xffa040, molten: 0xff6a20, alarm: 0xff3a2a, hazard: 0xffc840 };
 
 const robot = (
   name: string,
   height: number,
   animations: NonNullable<ActorLook['model']>['animations'],
   scale = 1,
-  tint?: number,
 ): ActorLook => ({
   colour: 0x8a8a8a, height, radius: 0.3 * scale, scale,
   // Machines bleed oil when cut into, and leave a puddle of it where they fall.
   spatter: { colour: 0x16110b },
-  model: { name, animations, matchPace: true, ...(tint === undefined ? {} : { tint }) },
+  model: { name, animations, matchPace: true },
 });
-
-const shell = meshLines({ material: 'Mesh', colour: 0xaab4be, opacity: 0.3 });
-const glass = glassShine({ material: 'Skin', strength: 0.6 });
-
-/**
- * What the game adds to U-7's model, in the world and in its portrait: a fine mesh over its steel shell, drawn as lines
- * from a copy of it raised off its surface (the model's Mesh), and a glare on the see-through glass of the rest of it
- * (its Skin).
- */
-export const dressHero = (model: THREE.Object3D, keep: (material: THREE.Material) => void): void => {
-  shell(model, keep);
-  glass(model, keep);
-};
 
 const ACTORS: Record<string, ActorLook> = {
   hero: {
-    colour: 0x9a8a70, height: 1.2, radius: 0.24, seenThrough: 0x8ae8ff,
+    colour: 0x9a8a70, height: 1.2, radius: 0.24,
     // Leaning into a cut, the chainsaw buzzing in its hands.
     channelPose: { lean: 0.18, buzz: 0.012 },
-    // The core in U-7's waist lights the ground round it.
-    light: { colour: 0xffa53a, radius: 1.6, intensity: 0.9 },
     model: {
       name: 'hero',
-      dress: dressHero,
       animations: { idle: 'Idle', move: 'Run', attack: 'Punch', cast: 'Shoot_OneHanded', hit: 'RecieveHit', death: 'Death' },
       armed: {
         // At rest the chainsaw hangs at U-7's side; it's held out ahead in both hands while cutting, and
         // revved with a jab at thin air.
         chainsaw: {
-          weapon: { name: 'chainsaw', bone: 'Fist.R', length: 0.65, turn: [0, Math.PI / 2, Math.PI / 2] },
+          weapon: { name: 'chainsaw', bone: 'hand_r', length: 0.65, turn: [0, Math.PI / 2, Math.PI / 2] },
           animations: { idle: 'IdleLoop', attack: 'PunchCross', channel: 'PistolIdle' },
         },
       },
       matchPace: true,
     },
   },
-  crawler: {
-    ...robot('crawler', 0.6, { idle: 'Idle', move: 'Run', attack: 'Attack', hit: 'Hit', death: 'TurnOff' }, 0.8),
-    light: { colour: 0xffa040, radius: 0.9, intensity: 0.4 },
-  },
+  crawler: robot('crawler', 0.6, { idle: 'Idle', move: 'Run', attack: 'Attack', hit: 'Hit', death: 'TurnOff' }, 0.8),
   loader: { ...robot('loader', 1.0, { idle: 'Idle', move: 'Walk', attack: 'Attack', hit: 'Hit', death: 'TurnOff' }, 1.3) },
   sentry: {
     ...robot('sentry', 0.75, { idle: 'Idle', attack: 'Attack', hit: 'Hit' }),
     hover: 0.8,
-    light: { colour: 0xff8a40, radius: 0.9, intensity: 0.2 },
   },
   foreman: { colour: 0x8a7a60, height: 1.25, radius: 0.26, model: { name: 'foreman', animations: { idle: 'Idle' } } },
   trader: { colour: 0x7a6a8a, height: 1.15, radius: 0.24, model: { name: 'trader', animations: { idle: 'Idle' } } },
@@ -238,7 +201,7 @@ export const unrecalledLook: Look = {
     explosion: { flash: 0x8ae8ff },
     slam: { flash: 0xffa050, scorch: 0x201008 },
   },
-  mood: (levelId) => styleOf(levelId).mood,
+  mood: () => PLAIN_LIGHT,
   groundColour(kind, tx, ty) {
     const n = valueNoise(tx * 0.25, ty * 0.25);
     const h = hash2(tx, ty, 9);
@@ -286,8 +249,8 @@ export const unrecalledLook: Look = {
       { props: [Prop.WallAlarm], name: 'beacon', height: 1.6, turn: Math.PI, tilt: Math.PI / 2 },
     ],
   }),
-  surroundings: surroundingsOf,
   structure: (kind) => STRUCTURES[kind] ?? STRUCTURES.workshop!,
-  lightColour: (name) => LIGHTS[name] ?? LIGHTS.cyan!,
+  // Lamps and windows cast no light on what's round them yet: the plain light shows everything.
+  lightColour: () => 0x000000,
   actor: (kind) => ACTORS[kind] ?? ACTORS.hero!,
 };

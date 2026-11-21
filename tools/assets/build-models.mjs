@@ -5,7 +5,8 @@
 // models with the Blender image. `--list-fbx` only fetches the packs and prints each FBX model's local path, textures folder, borrow spec and decimate ratio, separated by |.
 //
 // A pack is either a folder URL at a pinned commit, or `{ "zip": url, "sha256": hash }` for packs only published as
-// zip files; a zip whose checksum doesn't match is refused. A zip pack's `textures` names the folder inside it that
+// zip files; a zip whose checksum doesn't match is refused. `{ "made": script }` is a pack put together on this machine
+// by that script, in tools/assets/cache/<pack name>, such as characters assembled from several packs. A zip pack's `textures` names the folder inside it that
 // holds images its .gltf files expect beside them. A model's `textures` option shrinks its textures to
 // `maxSize` pixels and can drop its normal and occlusion-roughness-metal maps, for packs made for close-up games.
 // An FBX model's `decimate` keeps about that share of its triangles (the converter does it in Blender).
@@ -71,6 +72,11 @@ async function unpackZip(pack, packName) {
 
 /** Downloads a model and, for .gltf, the buffers and images it refers to. Returns the local path. */
 async function fetchModel(pack, packName, path) {
+  if (typeof pack === 'object' && pack.made) {
+    const local = join(cacheDir, packName, path);
+    if (!(await exists(local))) throw new Error(`${packName}: ${local} isn't there; make the pack with ${pack.made} first`);
+    return local;
+  }
   if (typeof pack === 'object') {
     const folder = await unpackZip(pack, packName);
     const local = join(folder, path);
@@ -210,7 +216,7 @@ for (const model of manifest.models) {
   }
   if (model.textures?.recolour) await recolour(doc, model.textures.recolour);
   const textures = model.textures?.maxSize
-    ? [textureCompress({ encoder: sharp, targetFormat: 'png', resize: [model.textures.maxSize, model.textures.maxSize] })]
+    ? [textureCompress({ encoder: sharp, targetFormat: 'webp', quality: 85, resize: [model.textures.maxSize, model.textures.maxSize] })]
     : [];
   await doc.transform(prune(), dedup(), ...textures, resample(), dropRestingChannels(), prune(), quantize(), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
   const out = join(outDir, `${model.name}.glb`);
