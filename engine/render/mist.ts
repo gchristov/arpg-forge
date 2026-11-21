@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { ELEVATION } from './camera-angle';
 import type { MistLook } from './look';
 import { NOISE_GLSL } from './shader-noise';
 
@@ -25,7 +24,7 @@ export class Mist {
   readonly group = new THREE.Group();
   private readonly materials: THREE.ShaderMaterial[] = [];
 
-  constructor(width: number, depth: number, look: MistLook, lightMap: Record<string, THREE.IUniform>) {
+  constructor(width: number, depth: number, look: MistLook, lightMap: Record<string, THREE.IUniform>, elevation: number) {
     const plane = new THREE.PlaneGeometry(width + MARGIN * 2, depth + MARGIN * 2).rotateX(-Math.PI / 2);
     for (const layer of LAYERS) {
       const material = new THREE.ShaderMaterial({
@@ -39,7 +38,7 @@ export class Mist {
           density: { value: look.density * layer.share },
           colour: { value: new THREE.Color(look.colour) },
           // A layer above the ground shows on screen over the ground this far back from it, which is where its light comes from.
-          lift: { value: layer.height / Math.tan(ELEVATION) / Math.SQRT2 },
+          lift: { value: layer.height / Math.tan(elevation) / Math.SQRT2 },
         },
         transparent: true,
         depthWrite: false,

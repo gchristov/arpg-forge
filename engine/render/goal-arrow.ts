@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import type { Vec2 } from '../core/math';
-import { ELEVATION } from './camera-angle';
 
 /** How far the arrow lies from the middle of the hero's body on screen, in tiles at zoom 1; and its length. */
 const RING = 1.3;
@@ -13,22 +12,23 @@ const PULSES_PER_SECOND = 0.7;
 /** How quickly the arrow swings round to a new heading: most of the way in about this many seconds. */
 const TURN_SECONDS = 0.3;
 
-/** Ground directions up the screen (away from the camera) and to its right, and how much the camera squashes the first. */
+/** Ground directions up the screen (away from the camera) and to its right. */
 const UP = { x: -Math.SQRT1_2, y: -Math.SQRT1_2 };
 const RIGHT = { x: Math.SQRT1_2, y: -Math.SQRT1_2 };
-const UP_SQUASH = Math.sin(ELEVATION);
 
 /**
  * Where on the ground, from the hero's feet, the arrow lies for a heading: on a circle round the middle of a body
- * `height` tall as the camera sees it, so it sits as far from the hero whichever way it points, never under them.
+ * `height` tall as a camera `elevation` radians above the ground sees it, so it sits as far from the hero whichever way
+ * it points, never under them.
  */
-export function ringOffset(heading: number, height: number, out: Vec2): Vec2 {
+export function ringOffset(heading: number, height: number, elevation: number, out: Vec2): Vec2 {
+  const upSquash = Math.sin(elevation);
   const right = Math.cos(heading) * RIGHT.x + Math.sin(heading) * RIGHT.y;
-  const up = (Math.cos(heading) * UP.x + Math.sin(heading) * UP.y) * UP_SQUASH;
+  const up = (Math.cos(heading) * UP.x + Math.sin(heading) * UP.y) * upSquash;
   const length = Math.hypot(right, up);
   const screenRight = (RING * right) / length;
-  const screenUp = (height / 2) * Math.cos(ELEVATION) + (RING * up) / length;
-  const groundUp = screenUp / UP_SQUASH;
+  const screenUp = (height / 2) * Math.cos(elevation) + (RING * up) / length;
+  const groundUp = screenUp / upSquash;
   out.x = screenRight * RIGHT.x + groundUp * UP.x;
   out.y = screenRight * RIGHT.y + groundUp * UP.y;
   return out;
@@ -40,7 +40,7 @@ export class GoalArrow {
   private heading = 0;
   private readonly offset = { x: 0, y: 0 };
 
-  constructor(scene: THREE.Scene, colour: number) {
+  constructor(scene: THREE.Scene, colour: number, private readonly elevation: number) {
     const half = LENGTH / 2;
     const shape = new THREE.Shape()
       .moveTo(half, 0)
@@ -70,7 +70,7 @@ export class GoalArrow {
       const turn = Math.atan2(Math.sin(target - this.heading), Math.cos(target - this.heading));
       this.heading += turn * (1 - Math.exp(-frameSeconds / TURN_SECONDS));
     }
-    const offset = ringOffset(this.heading, height, this.offset);
+    const offset = ringOffset(this.heading, height, this.elevation, this.offset);
     this.mesh.position.set(x + offset.x, 0.04, y + offset.y);
     this.mesh.rotation.y = -this.heading;
     const pulse = 0.5 + 0.5 * Math.sin(seconds * PULSES_PER_SECOND * Math.PI * 2);
