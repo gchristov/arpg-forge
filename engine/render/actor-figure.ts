@@ -316,8 +316,6 @@ export class ActorFigure {
   private ownMaterial(material: THREE.Material, tint: THREE.Color | null): THREE.Material {
     const own = material.clone() as FlashableMaterial & { color?: THREE.Color };
     if (tint && own.color) own.color.multiply(tint);
-    // Metallic surfaces only look right with an environment map; under the scene's lamps they turn dark.
-    if (own instanceof THREE.MeshStandardMaterial) own.metalness = 0;
     this.keep(own);
     return own;
   }

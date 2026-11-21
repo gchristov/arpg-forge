@@ -154,6 +154,11 @@ export interface Mood {
   ambientIntensity: number;
   /** The ambient colour while the level's memory has this mark set, such as during a game's alarm, so the whole room shows it. */
   ambientWhen?: { mark: string; colour: number };
+  /**
+   * How strongly surfaces reflect a plain, neutral room around them (0 to 1), so metal and gloss look as their models
+   * were made to. It also brightens every surface a little, as light bouncing round the room would. Without it, nothing reflects.
+   */
+  reflections?: number;
   /** A directional light that casts shadows, for outdoor levels. */
   moon?: { colour: number; intensity: number };
   /** The light the hero carries, so the area around them is always visible. */

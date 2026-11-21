@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { clamp, hash2, type Vec2 } from '../core/math';
 import type { Level, LevelLight } from '../world/level';
 import { inBounds, tileIndex } from '../world/tile-map';
@@ -13,7 +14,7 @@ import { LightMap, type SurfaceFade } from './light-map';
 import { Mist } from './mist';
 import type { Look, Mood, PropLook, Surroundings, WallFixture, WallLook, WaterLook } from './look';
 import { fitMatrix, instancedModel, modelSize, panelFit, panelScale } from './model-instancing';
-import { ModelLibrary, type ModelTemplate } from './models';
+import { ModelLibrary, texturesOf, type ModelTemplate } from './models';
 import { playDistances, shadeArea, shadeAt } from './shade-map';
 import { Spatter } from './spatter';
 import { WaterSurface } from './water';
@@ -123,6 +124,10 @@ export class SceneRenderer {
     );
     this.marker.visible = false;
     this.scene.add(this.marker);
+    // One fixed room to reflect, made once: it costs a texture, not a light.
+    const reflections = new THREE.PMREMGenerator(this.renderer);
+    this.scene.environment = reflections.fromScene(new RoomEnvironment(), 0.04).texture;
+    reflections.dispose();
     this.effects = new Effects(this.scene, look.effects);
     this.spatter = new Spatter(this.scene);
   }
@@ -165,6 +170,7 @@ export class SceneRenderer {
     this.levelMemory = {};
     this.ambientSwitched = false;
     this.scene.background = new THREE.Color(mood.background);
+    this.scene.environmentIntensity = mood.reflections ?? 0;
     this.ambient.color.set(mood.ambient);
     this.ambient.intensity = mood.ambientIntensity;
     this.moon.visible = Boolean(mood.moon);
@@ -376,6 +382,11 @@ export class SceneRenderer {
     this.spatter.setAllVisible(true);
     for (const figure of this.actors.values()) figure.setLookOf(0, 0.5);
     this.renderer.compile(this.scene, this.camera);
+    // Textures are sent to the GPU the first time they're drawn; a level's and every model's go now, so a big one
+    // doesn't stall the frame it first comes into view, such as a machine arriving mid-fight.
+    const textures = new Set(this.models.textures());
+    this.scene.traverse((o) => texturesOf(o, textures));
+    for (const texture of textures) this.renderer.initTexture(texture);
     for (const figure of this.actors.values()) figure.setLookOf(0, 1);
     this.renderer.compile(this.scene, this.camera);
     this.effects.setAllVisible(false);

@@ -66,7 +66,7 @@ export function instancedModel(template: ModelTemplate, fit: THREE.Matrix4, plac
   template.scene.traverse((o) => {
     // A rigged part, such as a chest's lid, is drawn as it was bound to its rig: at rest.
     if (!(o instanceof THREE.Mesh)) return;
-    const material = Array.isArray(o.material) ? o.material.map(nonMetallic) : nonMetallic(o.material);
+    const material = o.material;
     const mesh = new THREE.InstancedMesh(o.geometry, material, placements.length);
     placements.forEach((placement, i) => {
       mesh.setMatrixAt(i, matrix.copy(placement).multiply(fit).multiply(o.matrixWorld));
@@ -77,15 +77,6 @@ export function instancedModel(template: ModelTemplate, fit: THREE.Matrix4, plac
     meshes.push(mesh);
   });
   return meshes;
-}
-
-/** Metallic surfaces need an environment map to look right; under the scene's lamps they turn dark. */
-function nonMetallic(material: THREE.Material): THREE.Material {
-  if (!(material instanceof THREE.MeshStandardMaterial) || material.metalness === 0) return material;
-  const own = material.clone();
-  own.metalness = 0;
-  own.userData.ownCopy = true;
-  return own;
 }
 
 /** How much a wall panel lying along z is scaled to span `span` tiles. */

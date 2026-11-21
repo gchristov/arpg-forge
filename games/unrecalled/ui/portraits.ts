@@ -1,11 +1,10 @@
 import type { Sitter } from './portrait-drawing';
-import { dressHero } from '../art/look';
 import type { Speaker } from '../../../engine/ui/message-feed';
 import { SPEAKERS, VOICES } from '../story/voices';
 
 /** Who has a portrait, and how they sit for it. The Foundry's speakers and its screens have no face. */
 const SITTERS: Record<string, Sitter> = {
-  u7: { model: 'hero', pose: 'Idle', dress: dressHero },
+  u7: { model: 'hero', pose: 'Idle' },
   foreman: { model: 'foreman', pose: 'Idle' },
   trader: { model: 'trader', pose: 'Idle' },
   tinker: { model: 'tinker', pose: 'Idle' },

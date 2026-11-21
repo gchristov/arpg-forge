@@ -13,10 +13,10 @@ wants it.
 | `alarm`, `recognised` signals (`extensions/calm-machines.ts`) | An alarm sounding, and a machine first looking U-7 over, for the story, sounds and labels | signals, heard by the story as `on: { signal: 'alarm' }` |
 | Scanning beams (`extensions/machine-scans.ts`, `scan-beams.ts`) | The beam from a machine's eye looking U-7 over | the game's `draw` hook; which machines have an eye, and its height, are `SCANNER_EYES` in `art/look.ts` |
 | `cut` (`extensions/cutting.ts`) | Pell's chainsaw cutting for as long as it's held against a machine, a tick of damage at a time, reported a few times a second, holding the machine where it is (the engine's `rootedFor`) | a weapon attack, named in the chainsaw's `attack` in `content/hero.ts` |
-| Mesh lines (`extensions/mesh-lines.ts`) | The fine mesh of lines over U-7's steel shell, drawn over a copy of the shell the model build raises off it (`raisedCopy`, in the model's Mesh material) | the hero look's `dress` |
-| Glass shine (`extensions/glass-shine.ts`) | A glare and a bright rim on U-7's see-through glass (the model's Skin material), from a fixed reflection image (a matcap) drawn over it: one extra draw, no lights | the hero look's `dress` |
+| Mesh lines (`extensions/mesh-lines.ts`) | The fine mesh of lines over U-7's steel shell, drawn over a copy of the shell the model build raises off it (`raisedCopy`, in the model's Mesh material) | the hero look's `dress`; not used while U-7 is the plain base body |
+| Glass shine (`extensions/glass-shine.ts`) | A glare and a bright rim on U-7's see-through glass (the model's Skin material), from a fixed reflection image (a matcap) drawn over it: one extra draw, no lights | the hero look's `dress`; not used while U-7 is the plain base body |
 | Cut spray (`extensions/cut-spray.ts`) | The screen rumbling and oil spurting off what U-7 cuts | the game's `draw` hook; the lean and buzz while cutting are the hero look's `channelPose` |
-| Alarm lights and air (`levels/foundry.ts`, `art/look.ts`) | The Foundry's beacons, dark until the floor's alarm, then pulsing, and its air turning red | level lights with `onlyWhen` and `pulse`, and the mood's `ambientWhen`, on the alarm's mark |
+| Alarm lights (`levels/foundry.ts`) | The Foundry's beacons, dark until the floor's alarm, then pulsing; not drawn while the base look gives lamps no light | level lights with `onlyWhen` and `pulse`, on the alarm's mark |
 
 A game adds its own story action by naming it in `extensions/actions.ts` (so the story checks know it), doing it in the
 `actions` it gives `StoryRunner` in `main.ts`, and using it from its rules or scenes as `{ run: 'name' }`; a scene

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import type { ModelLibrary } from '../../../engine/render/models';
 
 /** Who sits for a portrait: a model from the library, posed in an animation's first frame. */
@@ -28,6 +29,11 @@ export function drawPortraits(models: ModelLibrary, sitters: Record<string, Sitt
   renderer.setSize(size, size, false);
   renderer.setClearColor(0x000000, 0);
   const scene = new THREE.Scene();
+  // The same plain room to reflect as in the world, so metal looks as it does there.
+  const reflections = new THREE.PMREMGenerator(renderer);
+  const room = reflections.fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environment = room;
+  reflections.dispose();
   scene.add(new THREE.HemisphereLight(0xdfe8f0, 0x2a2420, 2));
   const key = new THREE.DirectionalLight(0xffe6c8, 2.2);
   key.position.set(1.5, 2, 2.5);
@@ -44,7 +50,7 @@ export function drawPortraits(models: ModelLibrary, sitters: Record<string, Sitt
     if (!template || !figure) continue;
     posed(figure, template.animations, sitter.pose);
     figure.traverse((o) => {
-      if (o instanceof THREE.Mesh) o.material = Array.isArray(o.material) ? o.material.map(matteCopy) : matteCopy(o.material);
+      if (o instanceof THREE.Mesh) o.material = Array.isArray(o.material) ? o.material.map((m) => m.clone()) : o.material.clone();
     });
     sitter.dress?.(figure, () => {});
     figure.rotation.y = sitter.turn ?? DEFAULT_TURN;
@@ -62,6 +68,7 @@ export function drawPortraits(models: ModelLibrary, sitters: Record<string, Sitt
     urls[name] = canvas.toDataURL('image/png');
     scene.remove(figure);
   }
+  room.dispose();
   renderer.dispose();
   renderer.forceContextLoss();
   return urls;
@@ -73,11 +80,4 @@ function posed(figure: THREE.Object3D, animations: THREE.AnimationClip[], pose: 
   const mixer = new THREE.AnimationMixer(figure);
   mixer.clipAction(clip).play();
   mixer.update(0);
-}
-
-/** A copy of a material without metal: metallic surfaces only look right with an environment map, and turn dark without one. */
-function matteCopy(material: THREE.Material): THREE.Material {
-  const copy = material.clone();
-  if (copy instanceof THREE.MeshStandardMaterial) copy.metalness = 0;
-  return copy;
 }
