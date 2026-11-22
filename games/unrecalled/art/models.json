@@ -119,6 +119,14 @@
             "ball_l",
             "ball_r"
           ]
+        },
+        {
+          "material": "MI_Superhero_Male",
+          "into": "Metal",
+          "bones": [
+            "clavicle_l",
+            "clavicle_r"
+          ]
         }
       ],
       "paint": {
