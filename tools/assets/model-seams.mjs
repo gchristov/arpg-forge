@@ -1,8 +1,11 @@
 import { linear } from './model-parts.mjs';
-import { cross, normalise } from './shapes.mjs';
+import { ball, cross, normalise } from './shapes.mjs';
 
 // Lays a seam along every edge where two of a character's materials meet, such as where a metal shell ends and glass
-// begins, with staples across it. The seam is skinned as the body is there, so it bends with every animation.
+// begins, with studs along it. The seam is skinned as the body is there, so it bends with every animation.
+
+/** How many rings of faces a stud's dome has; few, as many studs line a body. */
+const STUD_RINGS = 3;
 
 /** How close two corners are, in metres, to count as the same place where two parts were cut apart. */
 const SAME_PLACE = 1e-4;
@@ -11,13 +14,14 @@ const placeKey = (p) => p.map((v) => Math.round(v / SAME_PLACE)).join(',');
 
 /**
  * Adds a seam, in a new material called `material` of `colour`, along every edge where a triangle in material
- * `between[0]` meets one in `between[1]`: a band `width` across, raised `raise` off the surface, with a staple across
- * it every `staples.every` metres, `staples.length` long, `staples.width` wide and standing `staples.height` above
- * the band.
+ * `between[0]` meets one in `between[1]`: a band `width` across, raised `raise` off the surface, with a domed stud
+ * `studs.size` across on it every `studs.every` metres, in a material of its own (`studs.material`, `studs.colour`).
  */
-export function addSeams(doc, { between: [first, second], material: name, colour, width, raise, staples }) {
-  const material = doc.createMaterial(name).setBaseColorFactor([...linear(colour), 1]);
-  material.setMetallicFactor(0.9).setRoughnessFactor(0.35);
+export function addSeams(doc, { between: [first, second], material: name, colour, width, raise, studs }) {
+  const metal = (materialName, c) =>
+    doc.createMaterial(materialName).setBaseColorFactor([...linear(c), 1]).setMetallicFactor(0.9).setRoughnessFactor(0.35);
+  const [material, studMaterial] = [metal(name, colour), metal(studs.material, studs.colour)];
+  const dome = ball(studs.size / 2, STUD_RINGS);
   let seams = 0;
   for (const mesh of doc.getRoot().listMeshes()) {
     const primitives = mesh.listPrimitives().filter((p) => p.getAttribute('JOINTS_0'));
@@ -39,8 +43,8 @@ export function addSeams(doc, { between: [first, second], material: name, colour
     const theirs = edgesIn(second);
     const shared = [...edgesIn(first)].filter(([key]) => theirs.has(key)).map(([, edge]) => edge);
     if (!shared.length) continue;
-    const seam = { positions: [], normals: [], joints: [], weights: [], indices: [] };
-    let sinceStaple = staples.every / 2;
+    const [seam, studded] = [0, 1].map(() => ({ positions: [], normals: [], joints: [], weights: [], indices: [] }));
+    let sinceStud = studs.every / 2;
     for (const { primitive, a, b } of shared) {
       const corner = (v) => ({
         p: primitive.getAttribute('POSITION').getElement(v, []),
@@ -57,15 +61,16 @@ export function addSeams(doc, { between: [first, second], material: name, colour
       const lift = (c, side) => c.p.map((v, k) => v + c.n[k] * raise + across[k] * side * (width / 2));
       const band = [from, to].flatMap((c) => [-1, 1].map((side) => ({ ...c, p: lift(c, side) })));
       addQuad(seam, [band[0], band[2], band[3], band[1]]);
-      // Staples sit evenly along the seam's edges, carried on from one edge to the next.
-      for (sinceStaple += length; sinceStaple >= staples.every; sinceStaple -= staples.every) {
-        const t = 1 - (sinceStaple - staples.every) / length;
-        const at = t < 0.5 ? from : to;
-        const centre = from.p.map((v, k) => v + (to.p[k] - v) * Math.min(1, Math.max(0, t)));
-        addStaple(seam, centre, along, up, across, at, raise, staples);
+      // Studs sit evenly along the seam's edges, carried on from one edge to the next.
+      for (sinceStud += length; sinceStud >= studs.every; sinceStud -= studs.every) {
+        const t = Math.min(1, Math.max(0, 1 - (sinceStud - studs.every) / length));
+        const centre = from.p.map((v, k) => v + (to.p[k] - v) * t + up[k] * raise);
+        // Half sunk into the band, so it shows as a dome; moved by the bones of the nearer corner.
+        addShape(studded, dome, centre, [along, up, across.map((v) => -v)], t < 0.5 ? from : to);
       }
     }
     mesh.addPrimitive(seamPrimitive(doc, primitives[0], seam, material));
+    mesh.addPrimitive(seamPrimitive(doc, primitives[0], studded, studMaterial));
     seams++;
   }
   if (seams === 0) throw new Error(`no edges where ${first} meets ${second}`);
@@ -83,21 +88,21 @@ function addQuad(seam, corners) {
   seam.indices.push(start, start + 1, start + 2, start, start + 2, start + 3);
 }
 
-/** A staple standing on the seam at `centre`, across it, moved by the bones of the corner `at`. */
-function addStaple(seam, centre, along, up, across, at, raise, { length, width, height }) {
-  const corner = (x, y, z) => centre.map((v, k) => v + along[k] * x + up[k] * (raise + y) + across[k] * z);
-  const [x, z] = [width / 2, length / 2];
-  const faces = [
-    [up, [[-x, height, -z], [x, height, -z], [x, height, z], [-x, height, z]]],
-    [along, [[x, 0, -z], [x, 0, z], [x, height, z], [x, height, -z]]],
-    [along.map((v) => -v), [[-x, 0, z], [-x, 0, -z], [-x, height, -z], [-x, height, z]]],
-    [across, [[-x, 0, z], [-x, height, z], [x, height, z], [x, 0, z]]],
-    [across.map((v) => -v), [[x, 0, -z], [x, height, -z], [-x, height, -z], [-x, 0, -z]]],
-  ];
-  for (const [n, square] of faces) addQuad(seam, square.map(([cx, cy, cz]) => ({ ...at, p: corner(cx, cy, cz), n })));
+/** `shape` with its x, y and z along `axes`, moved to `centre`, moved by the bones `j` of `skin` with weights `w`. */
+function addShape(part, shape, centre, axes, { j, w }) {
+  const start = part.positions.length / 3;
+  const turn = (v) => [0, 1, 2].map((k) => axes[0][k] * v[0] + axes[1][k] * v[1] + axes[2][k] * v[2]);
+  for (let i = 0; i < shape.positions.length; i += 3) {
+    const p = turn(shape.positions.slice(i, i + 3));
+    part.positions.push(...p.map((v, k) => v + centre[k]));
+    part.normals.push(...turn(shape.normals.slice(i, i + 3)));
+    part.joints.push(...j);
+    part.weights.push(...w);
+  }
+  part.indices.push(...shape.indices.map((i) => start + i));
 }
 
-/** The seam as a primitive skinned as `like` is, in `material`. */
+/** A seam's band or studs as a primitive skinned as `like` is, in `material`. */
 function seamPrimitive(doc, like, seam, material) {
   const buffer = like.getAttribute('POSITION').getBuffer();
   const accessor = (type, array) => doc.createAccessor().setType(type).setArray(array).setBuffer(buffer);
