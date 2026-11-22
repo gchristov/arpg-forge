@@ -13,7 +13,8 @@ export function linear(hex) {
 
 /**
  * Repaints parts by material name: `colour` (#rrggbb), `opacity` (below 1 makes it see-through), `glow` (#rrggbb)
- * with `glowStrength` to light it beyond full, and `roughness` and `metalness`.
+ * with `glowStrength` to light it beyond full, and `roughness` and `metalness`. `plain` drops the part's texture, so
+ * it's drawn in its colour alone, such as a body painted over its skin.
  */
 export function paintParts(doc, paint) {
   const known = new Set(doc.getRoot().listMaterials().map((m) => m.getName()));
@@ -25,6 +26,7 @@ export function paintParts(doc, paint) {
     const [r, g, b, a] = material.getBaseColorFactor();
     const colour = p.colour ? linear(p.colour) : [r, g, b];
     material.setBaseColorFactor([...colour, p.opacity ?? a]);
+    if (p.plain) material.setBaseColorTexture(null);
     if (p.opacity !== undefined) material.setAlphaMode(p.opacity < 1 ? 'BLEND' : 'OPAQUE');
     if (p.roughness !== undefined) material.setRoughnessFactor(p.roughness);
     if (p.metalness !== undefined) material.setMetallicFactor(p.metalness);

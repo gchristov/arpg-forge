@@ -48,6 +48,63 @@
         "PunchCross",
         "IdleLoop"
       ],
+      "keepMaterials": [
+        "MI_Superhero_Male",
+        "MI_Eyes"
+      ],
+      "split": [
+        {
+          "material": "MI_Superhero_Male",
+          "into": "Visor",
+          "bones": [
+            "Head"
+          ],
+          "front": 0.4,
+          "below": 0.92
+        },
+        {
+          "material": "MI_Superhero_Male",
+          "into": "Shell",
+          "bones": [
+            "pelvis",
+            "spine_01",
+            "spine_02",
+            "spine_03",
+            "clavicle_l",
+            "clavicle_r",
+            "upperarm_l",
+            "upperarm_r",
+            "thigh_l",
+            "thigh_r"
+          ]
+        }
+      ],
+      "paint": {
+        "MI_Superhero_Male": {
+          "colour": "#4a4e57",
+          "plain": true,
+          "metalness": 0.8,
+          "roughness": 0.45
+        },
+        "Shell": {
+          "colour": "#d4d8de",
+          "plain": true,
+          "metalness": 1,
+          "roughness": 0.22
+        },
+        "Visor": {
+          "colour": "#1b1e23",
+          "plain": true,
+          "metalness": 0.6,
+          "roughness": 0.12
+        },
+        "MI_Eyes": {
+          "colour": "#1b1e23",
+          "plain": true,
+          "metalness": 0.6,
+          "roughness": 0.12
+        }
+      },
       "textures": {
         "maxSize": 1024
       }
