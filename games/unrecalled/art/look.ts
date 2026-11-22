@@ -146,7 +146,7 @@ const robot = (
 
 const ACTORS: Record<string, ActorLook> = {
   hero: {
-    colour: 0x9a8a70, height: 1.2, radius: 0.24,
+    colour: 0x9a8a70, height: 1.2, radius: 0.24, seenThrough: 0x8ae8ff,
     // Leaning into a cut, the chainsaw buzzing in its hands.
     channelPose: { lean: 0.18, buzz: 0.012 },
     model: {
