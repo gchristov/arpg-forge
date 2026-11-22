@@ -154,6 +154,23 @@
           "below": 0.15
         }
       ],
+      "frame": {
+        "material": "Frame",
+        "colour": "#5a616a",
+        "width": 0.02,
+        "joint": 2.0,
+        "skip": [
+          "root",
+          "leaf",
+          "index",
+          "middle",
+          "pinky",
+          "ring",
+          "thumb",
+          "ball",
+          "clavicle"
+        ]
+      },
       "paint": {
         "MI_Superhero_Male": {
           "colour": "#3a434d",
@@ -163,6 +180,18 @@
           "roughness": 0.05
         },
         "Metal": {
+          "colour": "#d4d8de",
+          "plain": true,
+          "metalness": 1,
+          "roughness": 0.22
+        },
+        "Frame": {
+          "colour": "#5a616a",
+          "plain": true,
+          "metalness": 1,
+          "roughness": 0.18
+        },
+        "FrameJoint": {
           "colour": "#d4d8de",
           "plain": true,
           "metalness": 1,
