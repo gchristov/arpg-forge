@@ -154,6 +154,31 @@
           "below": 0.15
         }
       ],
+      "frame": {
+        "material": "Frame",
+        "colour": "#22262c",
+        "thickness": 0.035,
+        "joint": 2.8,
+        "skip": [
+          "root",
+          "leaf",
+          "index",
+          "middle",
+          "pinky",
+          "ring",
+          "thumb",
+          "ball",
+          "clavicle"
+        ],
+        "wires": {
+          "colours": [
+            "#16191d",
+            "#4a3a2a"
+          ],
+          "thickness": 0.018,
+          "apart": 0.06
+        }
+      },
       "paint": {
         "MI_Superhero_Male": {
           "colour": "#3a434d",
