@@ -154,8 +154,8 @@ const CORE_COLOUR = 0x3ac8ff;
 
 /** U-7's core and brain nodes, drawn glowing through the glass over them. */
 const glowing = coreGlow({
-  materials: ['CoreRod', 'CoreHalo', 'Synapse'], colour: CORE_COLOUR, strength: 1.6,
-  spill: { material: 'CoreRod', size: 0.3, strength: 0.9 },
+  materials: ['CoreRod', 'CoreHalo', 'Synapse'], colour: CORE_COLOUR, strength: 2.6,
+  spill: { material: 'CoreRod', size: 0.42, strength: 1.6 },
 });
 
 /**
