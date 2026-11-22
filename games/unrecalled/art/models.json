@@ -161,7 +161,7 @@
         ],
         "material": "Seam",
         "colour": "#5a616a",
-        "width": 0.009,
+        "width": 0.012,
         "raise": 0.0015,
         "studs": {
           "every": 0.03,

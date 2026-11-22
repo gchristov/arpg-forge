@@ -34,7 +34,7 @@ export function addSeams(doc, { between: [first, second], material: name, colour
           for (let k = 0; k < 3; k++) {
             const [a, b] = [all[t + k], all[t + ((k + 1) % 3)]];
             const [ka, kb] = [placeKey(position.getElement(a, [])), placeKey(position.getElement(b, []))];
-            edges.set(ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`, { primitive, a, b });
+            edges.set(ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`, { primitive, a, b, ka, kb });
           }
         }
       }
@@ -44,29 +44,40 @@ export function addSeams(doc, { between: [first, second], material: name, colour
     const shared = [...edgesIn(first)].filter(([key]) => theirs.has(key)).map(([, edge]) => edge);
     if (!shared.length) continue;
     const [seam, studded] = [0, 1].map(() => ({ positions: [], normals: [], joints: [], weights: [], indices: [] }));
-    let sinceStud = studs.every / 2;
-    for (const { primitive, a, b } of shared) {
-      const corner = (v) => ({
-        p: primitive.getAttribute('POSITION').getElement(v, []),
-        n: normalise(primitive.getAttribute('NORMAL').getElement(v, [])),
-        j: primitive.getAttribute('JOINTS_0').getElement(v, []),
-        w: primitive.getAttribute('WEIGHTS_0').getElement(v, []),
-      });
-      const [from, to] = [corner(a), corner(b)];
-      const length = Math.hypot(...to.p.map((v, k) => v - from.p[k]));
-      if (length < SAME_PLACE) continue;
-      const along = normalise(to.p.map((v, k) => v - from.p[k]));
-      const up = normalise(from.n.map((v, k) => v + to.n[k]));
-      const across = normalise(cross(up, along));
-      const lift = (c, side) => c.p.map((v, k) => v + c.n[k] * raise + across[k] * side * (width / 2));
-      const band = [from, to].flatMap((c) => [-1, 1].map((side) => ({ ...c, p: lift(c, side) })));
-      addQuad(seam, [band[0], band[2], band[3], band[1]]);
-      // Studs sit evenly along the seam's edges, carried on from one edge to the next.
-      for (sinceStud += length; sinceStud >= studs.every; sinceStud -= studs.every) {
-        const t = Math.min(1, Math.max(0, 1 - (sinceStud - studs.every) / length));
-        const centre = from.p.map((v, k) => v + (to.p[k] - v) * t + up[k] * raise);
-        // Half sunk into the band, so it shows as a dome; moved by the bones of the nearer corner.
-        addShape(studded, dome, centre, [along, up, across.map((v) => -v)], t < 0.5 ? from : to);
+    for (const line of linesOf(shared)) {
+      const pieces = line
+        .map(({ primitive, a, b }) => {
+          const corner = (v) => ({
+            p: primitive.getAttribute('POSITION').getElement(v, []),
+            n: normalise(primitive.getAttribute('NORMAL').getElement(v, [])),
+            j: primitive.getAttribute('JOINTS_0').getElement(v, []),
+            w: primitive.getAttribute('WEIGHTS_0').getElement(v, []),
+          });
+          const [from, to] = [corner(a), corner(b)];
+          const length = Math.hypot(...to.p.map((v, k) => v - from.p[k]));
+          const along = normalise(to.p.map((v, k) => v - from.p[k]));
+          const up = normalise(from.n.map((v, k) => v + to.n[k]));
+          return { from, to, length, along, up, across: normalise(cross(up, along)) };
+        })
+        .filter(({ length }) => length >= SAME_PLACE);
+      for (const { from, to, across } of pieces) {
+        const lift = (c, side) => c.p.map((v, k) => v + c.n[k] * raise + across[k] * side * (width / 2));
+        const band = [from, to].flatMap((c) => [-1, 1].map((side) => ({ ...c, p: lift(c, side) })));
+        addQuad(seam, [band[0], band[2], band[3], band[1]]);
+      }
+      // As many studs as fit `studs.every` apart, spaced evenly along the whole line.
+      const total = pieces.reduce((sum, { length }) => sum + length, 0);
+      const count = Math.max(1, Math.round(total / studs.every));
+      let next = total / count / 2;
+      let walked = 0;
+      for (const { from, to, length, along, up, across } of pieces) {
+        for (; next <= walked + length && next < total; next += total / count) {
+          const t = (next - walked) / length;
+          const centre = from.p.map((v, k) => v + (to.p[k] - v) * t + up[k] * raise);
+          // Half sunk into the band, so it shows as a dome; moved by the bones of the nearer corner.
+          addShape(studded, dome, centre, [along, up, across.map((v) => -v)], t < 0.5 ? from : to);
+        }
+        walked += length;
       }
     }
     mesh.addPrimitive(seamPrimitive(doc, primitives[0], seam, material));
@@ -74,6 +85,34 @@ export function addSeams(doc, { between: [first, second], material: name, colour
     seams++;
   }
   if (seams === 0) throw new Error(`no edges where ${first} meets ${second}`);
+}
+
+/**
+ * The `edges` joined end to end into lines, each edge turned to run on from the one before. A line that meets
+ * others where three or more edges share a corner carries on along any of them; the rest start lines of their own.
+ */
+function linesOf(edges) {
+  const at = new Map();
+  for (const edge of edges) for (const key of [edge.ka, edge.kb]) at.set(key, [...(at.get(key) ?? []), edge]);
+  const used = new Set();
+  const lines = [];
+  // Open lines start from their ends, so they aren't walked from the middle.
+  const starts = [...at.keys()].sort((p, q) => (at.get(p).length === 1 ? 0 : 1) - (at.get(q).length === 1 ? 0 : 1));
+  for (const start of starts) {
+    for (;;) {
+      const line = [];
+      let here = start;
+      for (let edge = at.get(here).find((e) => !used.has(e)); edge; edge = at.get(here).find((e) => !used.has(e))) {
+        used.add(edge);
+        const forward = edge.ka === here;
+        line.push(forward ? edge : { ...edge, a: edge.b, b: edge.a });
+        here = forward ? edge.kb : edge.ka;
+      }
+      if (!line.length) break;
+      lines.push(line);
+    }
+  }
+  return lines;
 }
 
 /** A face of four corners, each a place `p`, a normal `n` and the bones `j` moving it by weights `w`, facing along `n`. */
