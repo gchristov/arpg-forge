@@ -48,11 +48,12 @@ function share(values, at) {
 
 /**
  * Moves the triangles of `material` that the named `bones` mostly move into a copy of it called `into`. `front`
- * keeps only those in front of that share of them (0.5: the front half), `back` only those behind that share, and
- * `below` only those below that share of their height, for a face without the back or top of the head. `inner` keeps
+ * keeps only those in front of that share of them (0.5: the front half), `back` only those behind that share,
+ * `below` only those below that share of their height, for a face without the back or top of the head, and `above`
+ * only those above it, such as the line of the shoulders off the top of a chest. `inner` keeps
  * only those within that share of their distance out to the side, such as the top of an arm held out from the body.
  */
-export function splitPart(doc, { material: name, into, bones, front = 0, back = 1, below = 1, inner = 1 }) {
+export function splitPart(doc, { material: name, into, bones, front = 0, back = 1, above = 0, below = 1, inner = 1 }) {
   const root = doc.getRoot();
   const source = root.listMaterials().find((m) => m.getName() === name);
   if (!source) throw new Error(`no material ${name} to split`);
@@ -80,12 +81,13 @@ export function splitPart(doc, { material: name, into, bones, front = 0, back = 
       for (let v = 0; v < position.getCount(); v++) if (onBones(v)) ours.push(position.getElement(v, []));
       const frontFrom = share(ours.map((p) => p[2]), front);
       const backTo = share(ours.map((p) => p[2]), back);
+      const aboveFrom = share(ours.map((p) => p[1]), above);
       const belowTo = share(ours.map((p) => p[1]), below);
       const innerTo = share(ours.map((p) => Math.abs(p[0])), inner);
       const inPart = (v) => {
         if (!onBones(v)) return false;
         const [x, y, z] = position.getElement(v, []);
-        return z >= frontFrom && z <= backTo && y <= belowTo && Math.abs(x) <= innerTo;
+        return z >= frontFrom && z <= backTo && y >= aboveFrom && y <= belowTo && Math.abs(x) <= innerTo;
       };
       const all = indices.getArray();
       const kept = [];

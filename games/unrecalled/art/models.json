@@ -164,6 +164,20 @@
             "upperarm_r"
           ],
           "inner": 0.5
+        },
+        {
+          "material": "MI_Superhero_Male",
+          "into": "Metal",
+          "bones": [
+            "neck_01",
+            "spine_03",
+            "clavicle_l",
+            "clavicle_r",
+            "upperarm_l",
+            "upperarm_r"
+          ],
+          "above": 0.5,
+          "inner": 0.75
         }
       ],
       "paint": {
