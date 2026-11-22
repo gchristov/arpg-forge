@@ -123,7 +123,7 @@
             "hand_l",
             "hand_r"
           ],
-          "outer": 0.4
+          "outer": 0.2
         },
         {
           "material": "MI_Superhero_Male",
@@ -143,6 +143,15 @@
             "ball_l",
             "ball_r"
           ]
+        },
+        {
+          "material": "MI_Superhero_Male",
+          "into": "Metal",
+          "bones": [
+            "calf_l",
+            "calf_r"
+          ],
+          "below": 0.25
         }
       ],
       "paint": {
