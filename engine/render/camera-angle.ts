@@ -13,7 +13,7 @@ export function cameraFromQuery(camera: CameraLook, params: URLSearchParams): Ca
   return {
     pitch: numberFrom(params, 'pitch', 20, 80) ?? camera.pitch,
     fieldOfView: numberFrom(params, 'fov', 0, 60) ?? camera.fieldOfView,
-    closeness: numberFrom(params, 'closeness', 0.5, 3) ?? camera.closeness,
+    closeness: numberFrom(params, 'closeness', 0.5, 8) ?? camera.closeness,
   };
 }
 

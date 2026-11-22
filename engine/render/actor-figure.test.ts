@@ -218,6 +218,35 @@ describe('ActorFigure seen through', () => {
   it('leaves actors without an outline as they are', () => {
     expect(meshesOf(boxFigure())).toHaveLength(1);
   });
+
+  it('draws no outline where the weapon it picks up hides it, as the weapon is its own', () => {
+    const scene = new THREE.Group();
+    const hand = new THREE.Object3D();
+    hand.name = 'hand';
+    scene.add(hand, new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshLambertMaterial()));
+    const saw = new THREE.Group().add(new THREE.Mesh(new THREE.BoxGeometry(4, 1, 1), new THREE.MeshLambertMaterial()));
+    const models: Record<string, ModelTemplate> = {
+      actor: { scene, animations: [new THREE.AnimationClip('Idle', 1, [])], height: 1 },
+      saw: { scene: saw, animations: [], height: 1 },
+    };
+    const library = {
+      get: (name: string) => models[name],
+      instantiate: (name: string) => models[name]!.scene.clone(),
+    } as unknown as ModelLibrary;
+    const f = new ActorFigure({
+      colour: 0, height: 1, radius: 0.3, seenThrough: 0x88ccff,
+      model: {
+        name: 'actor', animations: { idle: 'Idle' },
+        armed: { saw: { weapon: { name: 'saw', bone: 'hand', length: 0.6, turn: [0, 0, 0] } } },
+      },
+    }, library);
+    f.arm('saw');
+    const held = f.root.getObjectByName('hand')!.children[0]!;
+    const materials: THREE.Material[] = [];
+    held.traverse((o) => o instanceof THREE.Mesh && materials.push(o.material as THREE.Material));
+    expect(materials.length).toBeGreaterThan(0);
+    for (const material of materials) expect(material.stencilZPass).toBe(THREE.ReplaceStencilOp);
+  });
 });
 
 describe('ActorFigure channelling', () => {

@@ -13,6 +13,11 @@ describe('cameraFromQuery', () => {
     expect(cameraFromQuery(game, new URLSearchParams('pitch=120&fov=-5'))).toEqual({ pitch: 80, fieldOfView: 0 });
   });
 
+  it('comes as close as eight times, for looking at a character up close', () => {
+    expect(cameraFromQuery(game, new URLSearchParams('closeness=6')).closeness).toBe(6);
+    expect(cameraFromQuery(game, new URLSearchParams('closeness=20')).closeness).toBe(8);
+  });
+
   it('ignores an angle that is not a number', () => {
     expect(cameraFromQuery(game, new URLSearchParams('pitch=steep'))).toEqual(game);
   });

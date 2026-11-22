@@ -168,6 +168,8 @@ export class ActorFigure {
       if (!(o instanceof THREE.Mesh)) return;
       o.castShadow = true;
       o.material = this.ownMaterial(o.material as THREE.Material, null);
+      // The weapon is the actor's own, so its outline doesn't show where the weapon hides the actor.
+      if (this.seenThrough) markStencil(o.material as THREE.Material);
     });
     // Sizes in tiles undo the scale the hand's bones and the model already carry.
     model.updateMatrixWorld(true);

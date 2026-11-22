@@ -154,6 +154,22 @@
           "below": 0.15
         }
       ],
+      "seams": {
+        "between": [
+          "Metal",
+          "MI_Superhero_Male"
+        ],
+        "material": "Seam",
+        "colour": "#5a616a",
+        "width": 0.012,
+        "raise": 0.0015,
+        "studs": {
+          "every": 0.03,
+          "size": 0.006,
+          "material": "Stud",
+          "colour": "#d4d8de"
+        }
+      },
       "frame": {
         "material": "Frame",
         "colour": "#5a616a",
@@ -169,6 +185,651 @@
           "thumb",
           "ball",
           "clavicle"
+        ],
+        "wires": [
+          {
+            "colour": "#15181c",
+            "width": 0.007,
+            "around": 0.015,
+            "turns": 6,
+            "bones": [
+              "spine",
+              "upperarm",
+              "lowerarm",
+              "calf"
+            ]
+          },
+          {
+            "colour": "#d0342c",
+            "width": 0.007,
+            "around": 0.015,
+            "turns": 6,
+            "phase": 180,
+            "bones": [
+              "spine",
+              "upperarm",
+              "lowerarm",
+              "calf"
+            ]
+          },
+          {
+            "colour": "#b8733a",
+            "width": 0.0035,
+            "around": 0.0125,
+            "turns": 30,
+            "bones": [
+              "calf",
+              "lowerarm"
+            ]
+          },
+          {
+            "colour": "#2f7fd6",
+            "width": 0.012,
+            "flat": 0.3,
+            "around": 0.0115,
+            "turns": -2,
+            "phase": 90,
+            "bones": [
+              "upperarm",
+              "spine"
+            ]
+          },
+          {
+            "colour": "#e0b020",
+            "width": 0.0045,
+            "around": 0.02,
+            "turns": -3.5,
+            "phase": 45,
+            "bones": [
+              "spine",
+              "upperarm",
+              "lowerarm",
+              "calf"
+            ]
+          },
+          {
+            "colour": "#2a6fd0",
+            "width": 0.005,
+            "around": 0.018,
+            "turns": 4,
+            "phase": 90,
+            "bones": [
+              "spine",
+              "upperarm",
+              "lowerarm",
+              "calf"
+            ]
+          },
+          {
+            "colour": "#15181c",
+            "width": 0.01,
+            "around": 0.024,
+            "turns": 2.5,
+            "phase": 300,
+            "bones": [
+              "spine",
+              "upperarm",
+              "calf"
+            ]
+          },
+          {
+            "colour": "#e8e8e4",
+            "width": 0.0025,
+            "around": 0.016,
+            "turns": 9,
+            "phase": 30,
+            "bones": [
+              "spine",
+              "upperarm",
+              "lowerarm",
+              "calf"
+            ]
+          },
+          {
+            "colour": "#d0342c",
+            "width": 0.003,
+            "around": 0.019,
+            "turns": -6,
+            "phase": 220,
+            "bones": [
+              "spine",
+              "upperarm",
+              "lowerarm",
+              "calf"
+            ]
+          },
+          {
+            "colour": "#e0b020",
+            "width": 0.003,
+            "around": 0.021,
+            "turns": 11,
+            "phase": 120,
+            "bones": [
+              "lowerarm",
+              "calf"
+            ]
+          }
+        ]
+      },
+      "machinery": {
+        "ribs": [
+          {
+            "bones": [
+              "spine_02"
+            ],
+            "perBone": 3,
+            "width": 0.012,
+            "fill": 0.78,
+            "gap": 0.2,
+            "droop": 0.03,
+            "material": "Rib",
+            "colour": "#7c838c"
+          }
+        ],
+        "pistons": [
+          {
+            "bones": [
+              "spine_01"
+            ],
+            "toward": "side",
+            "out": 0.6,
+            "from": 0.2,
+            "to": 1.0,
+            "width": 0.014,
+            "material": "Piston",
+            "colour": "#2d3238",
+            "rodMaterial": "PistonRod",
+            "rodColour": "#d4d8de"
+          },
+          {
+            "bones": [
+              "spine_01"
+            ],
+            "toward": "otherSide",
+            "out": 0.6,
+            "from": 0.2,
+            "to": 1.0,
+            "width": 0.014,
+            "material": "Piston",
+            "colour": "#2d3238",
+            "rodMaterial": "PistonRod",
+            "rodColour": "#d4d8de"
+          },
+          {
+            "bones": [
+              "spine_02"
+            ],
+            "toward": "side",
+            "out": 0.45,
+            "from": 0.1,
+            "to": 0.9,
+            "width": 0.012,
+            "material": "Piston",
+            "colour": "#2d3238",
+            "rodMaterial": "PistonRod",
+            "rodColour": "#d4d8de"
+          },
+          {
+            "bones": [
+              "spine_02"
+            ],
+            "toward": "otherSide",
+            "out": 0.45,
+            "from": 0.1,
+            "to": 0.9,
+            "width": 0.012,
+            "material": "Piston",
+            "colour": "#2d3238",
+            "rodMaterial": "PistonRod",
+            "rodColour": "#d4d8de"
+          },
+          {
+            "bones": [
+              "lowerarm_l",
+              "lowerarm_r",
+              "calf_l",
+              "calf_r"
+            ],
+            "toward": "back",
+            "out": 0.5,
+            "width": 0.012,
+            "material": "Piston",
+            "colour": "#2d3238",
+            "rodMaterial": "PistonRod",
+            "rodColour": "#d4d8de"
+          },
+          {
+            "bones": [
+              "calf_l",
+              "calf_r"
+            ],
+            "toward": "front",
+            "out": 0.45,
+            "from": 0.2,
+            "to": 0.8,
+            "width": 0.01,
+            "material": "Piston",
+            "colour": "#2d3238",
+            "rodMaterial": "PistonRod",
+            "rodColour": "#d4d8de"
+          }
+        ],
+        "parts": [
+          {
+            "bone": "spine_01",
+            "kind": "canister",
+            "at": [
+              0.4,
+              0.5,
+              0.15
+            ],
+            "size": 0.035,
+            "mirror": true,
+            "material": "Canister",
+            "colour": "#2d3238"
+          },
+          {
+            "bone": "spine_01",
+            "kind": "block",
+            "at": [
+              0,
+              0.45,
+              0.4
+            ],
+            "size": 0.05,
+            "material": "Canister",
+            "colour": "#2d3238"
+          },
+          {
+            "bone": "spine_01",
+            "kind": "gear",
+            "at": [
+              0.45,
+              0.6,
+              -0.4
+            ],
+            "size": 0.03,
+            "mirror": true,
+            "material": "Brass",
+            "colour": "#8a6a3a"
+          },
+          {
+            "bone": "spine_02",
+            "kind": "block",
+            "at": [
+              0.35,
+              0.35,
+              0.25
+            ],
+            "size": 0.035,
+            "mirror": true,
+            "material": "Canister",
+            "colour": "#2d3238"
+          },
+          {
+            "bone": "spine_01",
+            "kind": "spring",
+            "at": [
+              0.55,
+              0.5,
+              -0.2
+            ],
+            "size": 0.03,
+            "mirror": true,
+            "material": "Spring",
+            "colour": "#b0b6bd"
+          },
+          {
+            "bone": "spine_01",
+            "kind": "canister",
+            "at": [
+              0.3,
+              0.4,
+              -0.45
+            ],
+            "size": 0.025,
+            "mirror": true,
+            "material": "Canister",
+            "colour": "#2d3238"
+          },
+          {
+            "bone": "spine_02",
+            "kind": "canister",
+            "at": [
+              0.45,
+              0.55,
+              -0.25
+            ],
+            "size": 0.028,
+            "mirror": true,
+            "material": "Canister",
+            "colour": "#2d3238"
+          },
+          {
+            "bone": "spine_02",
+            "kind": "spring",
+            "at": [
+              0.5,
+              0.3,
+              0.1
+            ],
+            "size": 0.026,
+            "mirror": true,
+            "material": "Spring",
+            "colour": "#b0b6bd"
+          },
+          {
+            "bone": "spine_02",
+            "kind": "gear",
+            "at": [
+              0.35,
+              0.75,
+              -0.45
+            ],
+            "size": 0.03,
+            "mirror": true,
+            "material": "Brass",
+            "colour": "#8a6a3a"
+          },
+          {
+            "bone": "spine_02",
+            "kind": "battery",
+            "at": [
+              0,
+              0.4,
+              -0.4
+            ],
+            "size": 0.065,
+            "material": "Battery",
+            "colour": "#1f4e6e"
+          },
+          {
+            "bone": "spine_02",
+            "kind": "motor",
+            "at": [
+              0.45,
+              0.5,
+              -0.15
+            ],
+            "size": 0.05,
+            "mirror": true,
+            "material": "Housing",
+            "colour": "#3a4048"
+          },
+          {
+            "bone": "spine_02",
+            "kind": "fins",
+            "at": [
+              0.5,
+              0.2,
+              0.2
+            ],
+            "size": 0.04,
+            "mirror": true,
+            "material": "Fins",
+            "colour": "#9aa1aa"
+          },
+          {
+            "bone": "spine_02",
+            "kind": "block",
+            "at": [
+              0.3,
+              0.85,
+              0.3
+            ],
+            "size": 0.03,
+            "mirror": true,
+            "material": "Housing",
+            "colour": "#3a4048"
+          },
+          {
+            "bone": "spine_01",
+            "kind": "battery",
+            "at": [
+              0.25,
+              0.55,
+              -0.1
+            ],
+            "size": 0.05,
+            "mirror": true,
+            "material": "Battery",
+            "colour": "#1f4e6e"
+          },
+          {
+            "bone": "spine_01",
+            "kind": "motor",
+            "at": [
+              0,
+              0.85,
+              -0.3
+            ],
+            "size": 0.045,
+            "material": "Housing",
+            "colour": "#3a4048"
+          },
+          {
+            "bone": "spine_01",
+            "kind": "fins",
+            "at": [
+              0,
+              0.2,
+              -0.45
+            ],
+            "size": 0.05,
+            "material": "Fins",
+            "colour": "#9aa1aa"
+          },
+          {
+            "bone": "spine_02",
+            "kind": "battery",
+            "at": [
+              0.65,
+              0.45,
+              -0.35
+            ],
+            "size": 0.04,
+            "mirror": true,
+            "material": "Battery",
+            "colour": "#1f4e6e"
+          },
+          {
+            "bone": "spine_02",
+            "kind": "canister",
+            "at": [
+              0.7,
+              0.6,
+              0.05
+            ],
+            "size": 0.03,
+            "mirror": true,
+            "material": "Canister",
+            "colour": "#2d3238"
+          },
+          {
+            "bone": "spine_01",
+            "kind": "motor",
+            "at": [
+              0.62,
+              0.5,
+              -0.3
+            ],
+            "size": 0.035,
+            "mirror": true,
+            "material": "Housing",
+            "colour": "#3a4048"
+          },
+          {
+            "bone": "spine_01",
+            "kind": "block",
+            "at": [
+              0.5,
+              0.25,
+              0.35
+            ],
+            "size": 0.035,
+            "mirror": true,
+            "material": "Housing",
+            "colour": "#3a4048"
+          },
+          {
+            "bone": "spine_01",
+            "kind": "canister",
+            "at": [
+              0.7,
+              0.45,
+              0.05
+            ],
+            "size": 0.028,
+            "mirror": true,
+            "material": "Canister",
+            "colour": "#2d3238"
+          }
+        ],
+        "cables": [
+          {
+            "bone": "spine_01",
+            "from": [
+              0,
+              0.45,
+              0.4
+            ],
+            "to": [
+              0.1,
+              0.9,
+              -0.3
+            ],
+            "sag": 0.015,
+            "width": 0.008,
+            "mirror": true,
+            "material": "CableBlack",
+            "colour": "#15181c"
+          },
+          {
+            "bone": "spine_01",
+            "from": [
+              0.4,
+              0.85,
+              0.15
+            ],
+            "to": [
+              0.15,
+              0.1,
+              -0.2
+            ],
+            "sag": 0.012,
+            "width": 0.004,
+            "mirror": true,
+            "material": "CableRed",
+            "colour": "#d0342c"
+          },
+          {
+            "bone": "spine_01",
+            "from": [
+              0.5,
+              0.2,
+              0.0
+            ],
+            "to": [
+              0.2,
+              0.95,
+              0.3
+            ],
+            "sag": 0.01,
+            "width": 0.003,
+            "mirror": true,
+            "material": "CableYellow",
+            "colour": "#e0b020"
+          },
+          {
+            "bone": "spine_01",
+            "from": [
+              0.3,
+              0.1,
+              0.3
+            ],
+            "to": [
+              0.6,
+              0.9,
+              -0.2
+            ],
+            "sag": 0.012,
+            "width": 0.005,
+            "mirror": true,
+            "material": "CableBlue",
+            "colour": "#2a6fd0"
+          },
+          {
+            "bone": "spine_02",
+            "from": [
+              0.2,
+              0.05,
+              -0.4
+            ],
+            "to": [
+              0.55,
+              0.9,
+              -0.1
+            ],
+            "sag": 0.012,
+            "width": 0.008,
+            "mirror": true,
+            "material": "CableBlack",
+            "colour": "#15181c"
+          },
+          {
+            "bone": "spine_02",
+            "from": [
+              0.6,
+              0.1,
+              0.1
+            ],
+            "to": [
+              0.3,
+              0.95,
+              -0.35
+            ],
+            "sag": 0.012,
+            "width": 0.004,
+            "mirror": true,
+            "material": "CableRed",
+            "colour": "#d0342c"
+          },
+          {
+            "bone": "spine_02",
+            "from": [
+              0.45,
+              0.1,
+              -0.3
+            ],
+            "to": [
+              0.6,
+              0.8,
+              0.2
+            ],
+            "sag": 0.01,
+            "width": 0.003,
+            "mirror": true,
+            "material": "CableYellow",
+            "colour": "#e0b020"
+          },
+          {
+            "bone": "spine_02",
+            "from": [
+              0.1,
+              0.05,
+              -0.5
+            ],
+            "to": [
+              0.4,
+              0.9,
+              -0.5
+            ],
+            "sag": 0.012,
+            "width": 0.005,
+            "mirror": true,
+            "material": "CableBlue",
+            "colour": "#2a6fd0"
+          }
         ]
       },
       "paint": {
@@ -196,6 +857,48 @@
           "plain": true,
           "metalness": 1,
           "roughness": 0.22
+        },
+        "Wire.2": {
+          "colour": "#b8733a",
+          "plain": true,
+          "metalness": 1,
+          "roughness": 0.3
+        },
+        "Brass": {
+          "colour": "#8a6a3a",
+          "plain": true,
+          "metalness": 1,
+          "roughness": 0.3
+        },
+        "PistonRod": {
+          "colour": "#d4d8de",
+          "plain": true,
+          "metalness": 1,
+          "roughness": 0.15
+        },
+        "Spring": {
+          "colour": "#b0b6bd",
+          "plain": true,
+          "metalness": 1,
+          "roughness": 0.2
+        },
+        "Seam": {
+          "colour": "#5a616a",
+          "plain": true,
+          "metalness": 1,
+          "roughness": 0.3
+        },
+        "Stud": {
+          "colour": "#e2e5e9",
+          "plain": true,
+          "metalness": 1,
+          "roughness": 0.15
+        },
+        "Fins": {
+          "colour": "#9aa1aa",
+          "plain": true,
+          "metalness": 1,
+          "roughness": 0.3
         }
       },
       "textures": {

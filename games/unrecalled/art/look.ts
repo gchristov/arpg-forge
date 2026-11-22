@@ -163,7 +163,10 @@ const ACTORS: Record<string, ActorLook> = {
         // At rest the chainsaw hangs at U-7's side; it's held out ahead in both hands while cutting, and
         // revved with a jab at thin air.
         chainsaw: {
-          weapon: { name: 'chainsaw', bone: 'hand_r', length: 0.65, turn: [0, Math.PI / 2, Math.PI / 2] },
+          // Moved so its rear handle, not the middle of its body, sits in the palm.
+          weapon: {
+            name: 'chainsaw', bone: 'hand_r', length: 0.65, turn: [0, Math.PI / 2, Math.PI / 2], offset: [0, 0.17, -0.026],
+          },
           animations: { idle: 'IdleLoop', attack: 'PunchCross', channel: 'PistolIdle' },
         },
       },

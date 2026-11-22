@@ -1,74 +1,8 @@
 import { linear } from './model-parts.mjs';
+import { ball, helix, meshOf, tube, turnUpTo } from './shapes.mjs';
 
 // Builds a machine's insides into a character: a metal frame along its skeleton and a glowing core in its chest,
 // seen through a see-through body. Each piece hangs off a bone, so it moves with every animation.
-
-const SIDES = 8;
-
-/** A tube of `radius` from y = 0 to y = `length`, open at the ends, which the joints cover, moved `ox` and `oz` aside. */
-function tube(radius, length, ox = 0, oz = 0) {
-  const positions = [];
-  const normals = [];
-  const indices = [];
-  for (let i = 0; i <= SIDES; i++) {
-    const a = (i / SIDES) * Math.PI * 2;
-    const [x, z] = [Math.cos(a), Math.sin(a)];
-    positions.push(ox + x * radius, 0, oz + z * radius, ox + x * radius, length, oz + z * radius);
-    normals.push(x, 0, z, x, 0, z);
-  }
-  for (let i = 0; i < SIDES; i++) {
-    const [a, b, c, d] = [i * 2, i * 2 + 1, i * 2 + 2, i * 2 + 3];
-    indices.push(a, b, c, c, b, d);
-  }
-  return { positions, normals, indices };
-}
-
-/** A ball of `radius` about the origin. */
-function ball(radius, rings = 6) {
-  const positions = [];
-  const normals = [];
-  const indices = [];
-  for (let r = 0; r <= rings; r++) {
-    const polar = (r / rings) * Math.PI;
-    for (let s = 0; s <= SIDES; s++) {
-      const a = (s / SIDES) * Math.PI * 2;
-      const n = [Math.sin(polar) * Math.cos(a), Math.cos(polar), Math.sin(polar) * Math.sin(a)];
-      normals.push(...n);
-      positions.push(...n.map((v) => v * radius));
-    }
-  }
-  for (let r = 0; r < rings; r++) {
-    for (let s = 0; s < SIDES; s++) {
-      const a = r * (SIDES + 1) + s;
-      const b = a + SIDES + 1;
-      indices.push(a, a + 1, b, a + 1, b + 1, b);
-    }
-  }
-  return { positions, normals, indices };
-}
-
-/** A mesh of one shape in one material. */
-function meshOf(doc, shape, material) {
-  const buffer = doc.getRoot().listBuffers()[0];
-  const accessor = (type, array) => doc.createAccessor().setType(type).setArray(array).setBuffer(buffer);
-  const primitive = doc.createPrimitive()
-    .setAttribute('POSITION', accessor('VEC3', new Float32Array(shape.positions)))
-    .setAttribute('NORMAL', accessor('VEC3', new Float32Array(shape.normals)))
-    .setIndices(accessor('SCALAR', new Uint16Array(shape.indices)))
-    .setMaterial(material);
-  return doc.createMesh().addPrimitive(primitive);
-}
-
-/** The rotation that turns the y axis to point along `to`, as a quaternion. */
-function turnUpTo([x, y, z]) {
-  const length = Math.hypot(x, y, z);
-  const [dx, dy, dz] = [x / length, y / length, z / length];
-  if (dy < -0.9999) return [1, 0, 0, 0];
-  // Half way between up and the direction, as a quaternion: the cross product and 1 + the dot product.
-  const q = [dz, 0, -dx, 1 + dy];
-  const n = Math.hypot(...q);
-  return q.map((v) => v / n);
-}
 
 const bonesOf = (doc) => new Set(doc.getRoot().listSkins().flatMap((skin) => skin.listJoints()));
 
@@ -77,15 +11,16 @@ const bonesOf = (doc) => new Set(doc.getRoot().listSkins().flatMap((skin) => ski
  * material called `material` of `colour`, with a ball `joint` times as wide at each joint, in its own material called
  * `material` + Joint so it can be painted apart. Bones whose names contain any of `skip` are left bare, except that
  * the bones named in `reach` run a rod to their end bone too, such as a shin that has no foot below it.
- * `wires` runs a cable of each colour alongside every rod, `thickness` of the rod's length across and `apart` of it
- * out from the rod, in materials called Wire.0, Wire.1 and so on.
+ * `wires` winds wires round the rods, each in its own material called Wire.0, Wire.1 and so on, of its `colour`: see
+ * `helix` for their shape. A wire with `bones` winds only round the rods of bones whose names contain one of them.
  */
-export function addFrame(doc, { material: name, colour, width, joint = 1.8, skip = [], reach = [], wires }) {
+export function addFrame(doc, { material: name, colour, width, joint = 1.8, skip = [], reach = [], wires = [] }) {
   const metal = (materialName) =>
     doc.createMaterial(materialName).setBaseColorFactor([...linear(colour), 1]).setMetallicFactor(0.9).setRoughnessFactor(0.35);
   const material = metal(name);
   const jointMaterial = metal(`${name}Joint`);
-  const wireMaterials = (wires?.colours ?? []).map((c, i) => doc.createMaterial(`Wire.${i}`).setBaseColorFactor([...linear(c), 1]).setRoughnessFactor(0.5));
+  const wireMaterials = wires.map(({ colour: c }, i) =>
+    doc.createMaterial(`Wire.${i}`).setBaseColorFactor([...linear(c), 1]).setRoughnessFactor(0.5));
   const bones = bonesOf(doc);
   const bare = (bone) => skip.some((part) => bone.getName().includes(part));
   let rods = 0;
@@ -99,12 +34,10 @@ export function addFrame(doc, { material: name, colour, width, joint = 1.8, skip
       if (length < 1e-6) continue;
       bone.addChild(doc.createNode(`${name}.${bone.getName()}`).setMesh(meshOf(doc, tube(width / 2, length), material)).setRotation(turnUpTo(to)));
       child.addChild(doc.createNode(`${name}.${child.getName()}.joint`).setMesh(meshOf(doc, ball((width / 2) * joint), jointMaterial)));
-      wireMaterials.forEach((wire, i) => {
-        // Spread round the rod, each cable on its own side of it.
-        const a = (i / wireMaterials.length) * Math.PI * 2 + 0.6;
-        const out = length * wires.apart;
-        const cable = tube(length * wires.thickness, length, Math.cos(a) * out, Math.sin(a) * out);
-        bone.addChild(doc.createNode(`Wire.${i}.${bone.getName()}`).setMesh(meshOf(doc, cable, wire)).setRotation(turnUpTo(to)));
+      wires.forEach((wire, i) => {
+        if (wire.bones && !wire.bones.some((part) => bone.getName().includes(part))) return;
+        const node = doc.createNode(`Wire.${i}.${bone.getName()}`).setMesh(meshOf(doc, helix(wire, length), wireMaterials[i]));
+        bone.addChild(node.setRotation(turnUpTo(to)));
       });
       rods++;
     }
