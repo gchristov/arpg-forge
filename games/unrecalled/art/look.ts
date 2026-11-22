@@ -153,7 +153,10 @@ const glass = glassShine({ material: 'MI_Superhero_Male', strength: 0.4 });
 const CORE_COLOUR = 0x3ac8ff;
 
 /** U-7's core and brain nodes, drawn glowing through the glass over them. */
-const glowing = coreGlow({ materials: ['CoreRod', 'CoreHalo', 'Synapse'], colour: CORE_COLOUR, strength: 0.9 });
+const glowing = coreGlow({
+  materials: ['CoreRod', 'CoreHalo', 'Synapse'], colour: CORE_COLOUR, strength: 1.6,
+  spill: { material: 'CoreRod', size: 0.3, strength: 0.9 },
+});
 
 /**
  * What the game adds to U-7's model, in the world and in its portrait: a glossy glare and rim on its glass, and its
@@ -168,7 +171,7 @@ const ACTORS: Record<string, ActorLook> = {
   hero: {
     colour: 0x9a8a70, height: 1.2, radius: 0.24, seenThrough: 0x8ae8ff,
     // The core's glow, faint on the ground round U-7.
-    light: { colour: CORE_COLOUR, radius: 1.1, intensity: 0.2 },
+    light: { colour: CORE_COLOUR, radius: 1.5, intensity: 0.45 },
     // Leaning into a cut, the chainsaw buzzing in its hands.
     channelPose: { lean: 0.18, buzz: 0.012 },
     model: {

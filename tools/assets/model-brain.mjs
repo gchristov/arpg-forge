@@ -1,14 +1,19 @@
 import { sliceAt, pointIn } from './body-fit.mjs';
 import { machineParts, xTo } from './machine-parts.mjs';
-import { ball, box, cylinder, drift, moved, normalise, scaled, sweep } from './shapes.mjs';
+import { ball, box, cylinder, drift, gear, moved, normalise, scaled, sweep, turnUpTo } from './shapes.mjs';
 
 // Builds a machine's brain into a character's head, fitted to the skull: two metal lobes wound with wires in place of
-// folds, a plate between them, glowing nodes on top, and a stem of cables down into the neck.
+// folds, gears set into their sides, a band of casing round their lower half and a rail over the top, glowing nodes,
+// and a stem of cables down into the neck.
 
 /** How many lengths a coil round a lobe is cut into for each turn. */
 const COIL_STEPS_PER_TURN = 10;
 /** How many lengths a cable down the stem is cut into. */
 const STEM_STEPS = 8;
+/** How many lengths the band round the brain and the rail over it are cut into. */
+const BAND_STEPS = 32;
+/** Where the gears sit on each lobe's outer side, above the band, as ways out from its middle: at the back and front. */
+const GEAR_SPOTS = [[1, 0.35, -0.35], [1, 0.55, 0.35]];
 
 /**
  * Fills the skull round `bone` with a brain centred at `at` (across and front to back as shares of the head's half
@@ -19,12 +24,16 @@ const STEM_STEPS = 8;
  *   the folds of a brain: from back to front, or `across` from side to side, so coils both ways cross like a weave
  *   and cover the lobe's ends; `wobble` from 0 to 1 makes them wander as wound wire does;
  * - a `plate` between the lobes;
+ * - `gears`: a gear of each of `sizes` set into each lobe's outer side;
+ * - a `band` of casing round the lobes, `height` of the brain's height tall, its middle `at` that share of the way
+ *   from the brain's middle down to its bottom;
+ * - a `rail` `width` across over the top, from back to front, between the lobes;
  * - `nodes`: `count` balls `size` across in their own material, spread over the top of the lobes, for painting to
  *   glow;
  * - `stem`: `cables` (each a `material` of `colour`) `width` across, from under the brain down to the bone, with a
  *   sleeve round them in the plate's material.
  */
-export function addBrain(doc, { bone, at, fill, lobes, coils = [], plate, nodes, stem }) {
+export function addBrain(doc, { bone, at, fill, lobes, coils = [], plate, gears, band, rail, nodes, stem }) {
   const { bodyOf, materialFor, add, build } = machineParts(doc, 'Brain');
   const body = bodyOf(bone);
   const y = at[1] * body.length;
@@ -42,6 +51,16 @@ export function addBrain(doc, { bone, at, fill, lobes, coils = [], plate, nodes,
     coils.forEach((coil, i) => {
       add(bone, materialFor(coil.material, coil.colour), place(coilRound(radii, coil, sign, i * 3.7 + sign), offset));
     });
+    if (gears) {
+      gears.sizes.forEach((size, i) => {
+        const [x, y, z] = GEAR_SPOTS[i % GEAR_SPOTS.length];
+        const spot = normalise([x * sign, y, z]);
+        const out = normalise(spot.map((v, k) => v / radii[k]));
+        // Set a little into the lobe, facing straight out of it.
+        const at = spot.map((v, k) => v * radii[k] - out[k] * size * 0.05);
+        add(bone, materialFor(gears.material, gears.colour), place(moved(gear(size), turnUpTo(out), at), offset));
+      });
+    }
     if (nodes) {
       for (let i = 0; i < nodes.count; i++) {
         // Spread over the lobe's top by the golden angle, so no two crowd together.
@@ -56,6 +75,15 @@ export function addBrain(doc, { bone, at, fill, lobes, coils = [], plate, nodes,
   if (plate) {
     const shape = box([radii[0] * 0.12, radii[1] * 1.7, radii[2] * 1.9]);
     add(bone, materialFor(plate.material, plate.colour), place(shape, [0, 0, 0]));
+  }
+  if (band) add(bone, materialFor(band.material, band.colour), place(bandRound(radii, band), [0, 0, 0]));
+  if (rail) {
+    const points = [];
+    for (let i = 0; i <= BAND_STEPS / 2; i++) {
+      const angle = (0.08 + (0.84 * i) / (BAND_STEPS / 2)) * Math.PI;
+      points.push([0, Math.sin(angle) * radii[1] * 1.04, -Math.cos(angle) * radii[2] * 1.02]);
+    }
+    add(bone, materialFor(rail.material, rail.colour), place(sweep(points, rail.width / 2, 6), [0, 0, 0]));
   }
   if (stem) {
     const bottom = centre.map((v, k) => v - (k === 1 ? radii[1] * 0.8 : 0));
@@ -74,6 +102,33 @@ export function addBrain(doc, { bone, at, fill, lobes, coils = [], plate, nodes,
     });
   }
   build();
+}
+
+/**
+ * A band of casing round both lobes of `radii`, side by side, `height` of the brain's height tall, its middle `at` the
+ * way down from the brain's middle, hugging the lobes as they narrow towards their top and bottom.
+ */
+function bandRound(radii, { height, at }) {
+  const positions = [];
+  const normals = [];
+  const indices = [];
+  const edges = [-at - height / 2, -at + height / 2].map((y) => Math.max(-0.98, Math.min(0.98, y)));
+  for (let i = 0; i <= BAND_STEPS; i++) {
+    const angle = (i / BAND_STEPS) * Math.PI * 2;
+    const [c, s] = [Math.cos(angle), Math.sin(angle)];
+    for (const y of edges) {
+      // How far the lobes reach at this height, standing clear of the coils wound round them.
+      const reach = Math.sqrt(1 - y * y) * 1.18;
+      const [x, z] = [radii[0] * (1.02 + reach), radii[2] * reach];
+      positions.push(c * x, y * radii[1], s * z);
+      normals.push(...normalise([c / x, 0, s / z]));
+    }
+  }
+  for (let i = 0; i < BAND_STEPS; i++) {
+    const [a, b] = [i * 2, i * 2 + 2];
+    indices.push(a, a + 1, b, b, a + 1, b + 1);
+  }
+  return { positions, normals, indices };
 }
 
 /** How many times a coil's wander turns back on itself over its length, at its slowest. */

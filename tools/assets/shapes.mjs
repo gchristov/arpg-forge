@@ -249,6 +249,18 @@ export function moved(shape, turn = [0, 0, 0, 1], by = [0, 0, 0]) {
   };
 }
 
+/** A gear `size` across, `teeth` round its rim, with a hub standing out of it, turning about the y axis. */
+export function gear(size, teeth = 10) {
+  const tooth = box([size * 0.18, size * 0.2, size * 0.14]);
+  const shapes = [cylinder(size / 2, size * 0.2, 14), cylinder(size * 0.15, size * 0.4, 8)];
+  for (let t = 0; t < teeth; t++) {
+    const angle = (t / teeth) * Math.PI * 2;
+    const turn = [0, Math.sin(-angle / 2), 0, Math.cos(-angle / 2)];
+    shapes.push(moved(tooth, turn, [Math.cos(angle) * size * 0.55, 0, Math.sin(angle) * size * 0.55]));
+  }
+  return merged(shapes);
+}
+
 /** `shape` stretched `by` along x, y and z, its normals turned to stay square to its surface. */
 export function scaled(shape, by) {
   const out = { positions: [], normals: [], indices: shape.indices };

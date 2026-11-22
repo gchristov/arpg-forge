@@ -1,6 +1,6 @@
 import { pointIn, sliceAt } from './body-fit.mjs';
-import { aboutY, machineParts, placeAt, xTo } from './machine-parts.mjs';
-import { ball, box, cylinder, helix, merged, moved, normalise, sweep, turnUpTo } from './shapes.mjs';
+import { machineParts, placeAt, xTo } from './machine-parts.mjs';
+import { ball, box, cylinder, gear, helix, merged, moved, normalise, sweep, turnUpTo } from './shapes.mjs';
 
 // Builds machinery into a character's body round its skeleton, fitted to the body's own shape at each bone: ribs,
 // pistons, loose cables, and parts such as canisters, springs, gears, motors, battery packs and heat sinks. Each hangs off a bone, so it moves with every animation.
@@ -127,16 +127,7 @@ function partShape(kind, size, body, position) {
   if (kind === 'canister') {
     return moved(merged([cylinder(size / 2, size * 1.8), cylinder(size * 0.3, size * 2.2, 8)]), undefined, position);
   }
-  if (kind === 'gear') {
-    const teeth = 10;
-    const tooth = box([size * 0.18, size * 0.2, size * 0.14]);
-    const shapes = [cylinder(size / 2, size * 0.2, 14), cylinder(size * 0.15, size * 0.4, 8)];
-    for (let t = 0; t < teeth; t++) {
-      const angle = (t / teeth) * Math.PI * 2;
-      shapes.push(moved(tooth, aboutY(-angle), [Math.cos(angle) * size * 0.55, 0, Math.sin(angle) * size * 0.55]));
-    }
-    return moved(merged(shapes), turnUpTo(body.forward), position);
-  }
+  if (kind === 'gear') return moved(gear(size), turnUpTo(body.forward), position);
   if (kind === 'block') {
     const pipe = moved(cylinder(size * 0.12, size * 0.5, 8), undefined, [size * 0.2, size * 0.5, 0]);
     const shape = merged([box([size, size * 0.7, size * 0.5]), pipe]);
