@@ -1,6 +1,7 @@
 // Changes a model's parts by the material they're drawn in: repainting them, and splitting part of one off into
 // another, such as a faceplate off a body.
 import { KHRMaterialsEmissiveStrength } from '@gltf-transform/extensions';
+import { cutAlong } from './triangle-cut.mjs';
 
 /** A colour written as #rrggbb, in the linear values glTF stores. */
 export function linear(hex) {
@@ -40,6 +41,12 @@ export function paintParts(doc, paint) {
   }
 }
 
+/**
+ * How far, in metres, a change of a whole bone weight moves an edge cut along the weights: half a weight is a few
+ * centimetres, about a triangle across on a character.
+ */
+const WEIGHT_SPAN = 0.1;
+
 /** The values at the given share of the way through, from lowest to highest. */
 function share(values, at) {
   const sorted = [...values].sort((a, b) => a - b);
@@ -52,7 +59,8 @@ function share(values, at) {
  * `below` only those below that share of their height, for a face without the back or top of the head, and `above`
  * only those above it, such as the line of the shoulders off the top of a chest. `inner` keeps
  * only those within that share of their distance out to the side, such as the top of an arm held out from the body,
- * and `outer` only those beyond it, such as the wrist end of a forearm.
+ * and `outer` only those beyond it, such as the wrist end of a forearm. Triangles across the part's edge are cut
+ * along it, so the edge runs smoothly rather than along whole triangles.
  */
 export function splitPart(doc, { material: name, into, bones, front = 0, back = 1, above = 0, below = 1, inner = 1, outer = 0 }) {
   const root = doc.getRoot();
@@ -73,33 +81,32 @@ export function splitPart(doc, { material: name, into, bones, front = 0, back = 
       const position = primitive.getAttribute('POSITION');
       const joints = primitive.getAttribute('JOINTS_0');
       const weights = primitive.getAttribute('WEIGHTS_0');
-      const onBones = (v) => {
+      const boneWeight = (v) => {
         const j = joints.getElement(v, []);
         const w = weights.getElement(v, []);
-        return j.reduce((sum, joint, k) => sum + (named.has(joint) ? w[k] : 0), 0) > 0.5;
+        return j.reduce((sum, joint, k) => sum + (named.has(joint) ? w[k] : 0), 0);
       };
       const ours = [];
-      for (let v = 0; v < position.getCount(); v++) if (onBones(v)) ours.push(position.getElement(v, []));
-      const frontFrom = share(ours.map((p) => p[2]), front);
-      const backTo = share(ours.map((p) => p[2]), back);
-      const aboveFrom = share(ours.map((p) => p[1]), above);
-      const belowTo = share(ours.map((p) => p[1]), below);
-      const innerTo = share(ours.map((p) => Math.abs(p[0])), inner);
-      const outerFrom = share(ours.map((p) => Math.abs(p[0])), outer);
-      const inPart = (v) => {
-        if (!onBones(v)) return false;
-        const [x, y, z] = position.getElement(v, []);
-        return z >= frontFrom && z <= backTo && y >= aboveFrom && y <= belowTo && Math.abs(x) <= innerTo && Math.abs(x) >= outerFrom;
+      for (let v = 0; v < position.getCount(); v++) if (boneWeight(v) > 0.5) ours.push(position.getElement(v, []));
+      const limits = [];
+      const limit = (used, distance) => used && limits.push(distance);
+      const [zs, ys, xs] = [ours.map((p) => p[2]), ours.map((p) => p[1]), ours.map((p) => Math.abs(p[0]))];
+      const [frontFrom, backTo, aboveFrom, belowTo, innerTo, outerFrom] =
+        [share(zs, front), share(zs, back), share(ys, above), share(ys, below), share(xs, inner), share(xs, outer)];
+      limit(front > 0, ([, , z]) => z - frontFrom);
+      limit(back < 1, ([, , z]) => backTo - z);
+      limit(above > 0, ([, y]) => y - aboveFrom);
+      limit(below < 1, ([, y]) => belowTo - y);
+      limit(inner < 1, ([x]) => innerTo - Math.abs(x));
+      limit(outer > 0, ([x]) => Math.abs(x) - outerFrom);
+      // How far inside the part a vertex is, in metres: zero on its edge, below zero outside it.
+      const margin = (v) => {
+        const p = position.getElement(v, []);
+        return Math.min((boneWeight(v) - 0.5) * WEIGHT_SPAN, ...limits.map((distance) => distance(p)));
       };
-      const all = indices.getArray();
-      const kept = [];
-      const split = [];
-      for (let t = 0; t < all.length; t += 3) {
-        const triangle = [all[t], all[t + 1], all[t + 2]];
-        (triangle.every(inPart) ? split : kept).push(...triangle);
-      }
+      const { inside: split, outside: kept, vertexCount } = cutAlong(primitive, margin);
       if (split.length === 0) continue;
-      const Indices = all.constructor;
+      const Indices = vertexCount > 65535 ? Uint32Array : indices.getArray().constructor;
       indices.setArray(new Indices(kept));
       const part = primitive.clone().setMaterial(target);
       part.setIndices(doc.createAccessor().setType('SCALAR').setArray(new Indices(split)).setBuffer(indices.getBuffer()));
