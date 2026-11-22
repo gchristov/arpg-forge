@@ -5,15 +5,15 @@ import { linear } from './model-parts.mjs';
 
 const SIDES = 8;
 
-/** A tube of `radius` from y = 0 to y = `length`, open at the ends, which the joints cover, moved `ox` and `oz` aside. */
-function tube(radius, length, ox = 0, oz = 0) {
+/** A tube of `radius` from y = 0 to y = `length`, open at the ends, which the joints cover. */
+function tube(radius, length) {
   const positions = [];
   const normals = [];
   const indices = [];
   for (let i = 0; i <= SIDES; i++) {
     const a = (i / SIDES) * Math.PI * 2;
     const [x, z] = [Math.cos(a), Math.sin(a)];
-    positions.push(ox + x * radius, 0, oz + z * radius, ox + x * radius, length, oz + z * radius);
+    positions.push(x * radius, 0, z * radius, x * radius, length, z * radius);
     normals.push(x, 0, z, x, 0, z);
   }
   for (let i = 0; i < SIDES; i++) {
@@ -22,6 +22,56 @@ function tube(radius, length, ox = 0, oz = 0) {
   }
   return { positions, normals, indices };
 }
+
+/** How many sides a wire has round, fewer for a thin one, where more wouldn't show. */
+const wireSides = (width) => (width < 0.005 ? 4 : 6);
+/** How many lengths a wire is cut into for each turn it makes, so its curves stay smooth. */
+const STEPS_PER_TURN = 9;
+
+/**
+ * A wire `width` across, wound `around` metres out from the y axis from y = 0 to y = `length`, making `turns` turns a
+ * metre (a negative number winds the other way), starting `phase` degrees round. `flat` is how thick it is beside its
+ * width: 1 is a round cable, less a ribbon lying against what it winds round.
+ */
+function helix({ width, around, turns, phase = 0, flat = 1 }, length) {
+  const steps = Math.max(4, Math.ceil(Math.abs(turns) * length * STEPS_PER_TURN));
+  const twist = Math.PI * 2 * turns;
+  const [across, out] = [width / 2, (width * flat) / 2];
+  const sides = wireSides(width);
+  const positions = [];
+  const normals = [];
+  const indices = [];
+  for (let i = 0; i <= steps; i++) {
+    const y = (i / steps) * length;
+    const a = (phase * Math.PI) / 180 + twist * y;
+    const [cos, sin] = [Math.cos(a), Math.sin(a)];
+    // Along the wire, straight out from the axis, and the way round the axis at right angles to both.
+    const along = normalise([-sin * around * twist, 1, cos * around * twist]);
+    const outwards = [cos, 0, sin];
+    const round = cross(outwards, along);
+    for (let j = 0; j <= sides; j++) {
+      const t = (j / sides) * Math.PI * 2;
+      const [c, s] = [Math.cos(t), Math.sin(t)];
+      const centre = [cos * around, y, sin * around];
+      positions.push(...[0, 1, 2].map((k) => centre[k] + outwards[k] * c * out + round[k] * s * across));
+      normals.push(...normalise([0, 1, 2].map((k) => outwards[k] * c * across + round[k] * s * out)));
+    }
+  }
+  const ring = sides + 1;
+  for (let i = 0; i < steps; i++) {
+    for (let j = 0; j < sides; j++) {
+      const [a, b] = [i * ring + j, (i + 1) * ring + j];
+      indices.push(a, b, a + 1, a + 1, b, b + 1);
+    }
+  }
+  return { positions, normals, indices };
+}
+
+const normalise = (v) => {
+  const length = Math.hypot(...v) || 1;
+  return v.map((x) => x / length);
+};
+const cross = ([ax, ay, az], [bx, by, bz]) => [ay * bz - az * by, az * bx - ax * bz, ax * by - ay * bx];
 
 /** A ball of `radius` about the origin. */
 function ball(radius, rings = 6) {
@@ -77,15 +127,16 @@ const bonesOf = (doc) => new Set(doc.getRoot().listSkins().flatMap((skin) => ski
  * material called `material` of `colour`, with a ball `joint` times as wide at each joint, in its own material called
  * `material` + Joint so it can be painted apart. Bones whose names contain any of `skip` are left bare, except that
  * the bones named in `reach` run a rod to their end bone too, such as a shin that has no foot below it.
- * `wires` runs a cable of each colour alongside every rod, `thickness` of the rod's length across and `apart` of it
- * out from the rod, in materials called Wire.0, Wire.1 and so on.
+ * `wires` winds wires round the rods, each in its own material called Wire.0, Wire.1 and so on, of its `colour`: see
+ * `helix` for their shape. A wire with `bones` winds only round the rods of bones whose names contain one of them.
  */
-export function addFrame(doc, { material: name, colour, width, joint = 1.8, skip = [], reach = [], wires }) {
+export function addFrame(doc, { material: name, colour, width, joint = 1.8, skip = [], reach = [], wires = [] }) {
   const metal = (materialName) =>
     doc.createMaterial(materialName).setBaseColorFactor([...linear(colour), 1]).setMetallicFactor(0.9).setRoughnessFactor(0.35);
   const material = metal(name);
   const jointMaterial = metal(`${name}Joint`);
-  const wireMaterials = (wires?.colours ?? []).map((c, i) => doc.createMaterial(`Wire.${i}`).setBaseColorFactor([...linear(c), 1]).setRoughnessFactor(0.5));
+  const wireMaterials = wires.map(({ colour: c }, i) =>
+    doc.createMaterial(`Wire.${i}`).setBaseColorFactor([...linear(c), 1]).setRoughnessFactor(0.5));
   const bones = bonesOf(doc);
   const bare = (bone) => skip.some((part) => bone.getName().includes(part));
   let rods = 0;
@@ -99,12 +150,10 @@ export function addFrame(doc, { material: name, colour, width, joint = 1.8, skip
       if (length < 1e-6) continue;
       bone.addChild(doc.createNode(`${name}.${bone.getName()}`).setMesh(meshOf(doc, tube(width / 2, length), material)).setRotation(turnUpTo(to)));
       child.addChild(doc.createNode(`${name}.${child.getName()}.joint`).setMesh(meshOf(doc, ball((width / 2) * joint), jointMaterial)));
-      wireMaterials.forEach((wire, i) => {
-        // Spread round the rod, each cable on its own side of it.
-        const a = (i / wireMaterials.length) * Math.PI * 2 + 0.6;
-        const out = length * wires.apart;
-        const cable = tube(length * wires.thickness, length, Math.cos(a) * out, Math.sin(a) * out);
-        bone.addChild(doc.createNode(`Wire.${i}.${bone.getName()}`).setMesh(meshOf(doc, cable, wire)).setRotation(turnUpTo(to)));
+      wires.forEach((wire, i) => {
+        if (wire.bones && !wire.bones.some((part) => bone.getName().includes(part))) return;
+        const node = doc.createNode(`Wire.${i}.${bone.getName()}`).setMesh(meshOf(doc, helix(wire, length), wireMaterials[i]));
+        bone.addChild(node.setRotation(turnUpTo(to)));
       });
       rods++;
     }

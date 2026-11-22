@@ -169,6 +169,68 @@
           "thumb",
           "ball",
           "clavicle"
+        ],
+        "wires": [
+          {
+            "colour": "#15181c",
+            "width": 0.007,
+            "around": 0.015,
+            "turns": 6,
+            "bones": [
+              "spine",
+              "upperarm",
+              "lowerarm",
+              "calf"
+            ]
+          },
+          {
+            "colour": "#7a1f1f",
+            "width": 0.006,
+            "around": 0.015,
+            "turns": 6,
+            "phase": 180,
+            "bones": [
+              "spine",
+              "upperarm",
+              "lowerarm",
+              "calf"
+            ]
+          },
+          {
+            "colour": "#b8733a",
+            "width": 0.0035,
+            "around": 0.0125,
+            "turns": 30,
+            "bones": [
+              "calf",
+              "lowerarm"
+            ]
+          },
+          {
+            "colour": "#3d5a73",
+            "width": 0.012,
+            "flat": 0.3,
+            "around": 0.0115,
+            "turns": -2,
+            "phase": 90,
+            "bones": [
+              "upperarm",
+              "spine"
+            ]
+          },
+          {
+            "colour": "#c8ccd0",
+            "width": 0.003,
+            "around": 0.02,
+            "turns": -3.5,
+            "phase": 45,
+            "bones": [
+              "spine",
+              "upperarm",
+              "lowerarm",
+              "calf"
+            ]
+          }
         ]
       },
       "paint": {
@@ -196,6 +258,12 @@
           "plain": true,
           "metalness": 1,
           "roughness": 0.22
+        },
+        "Wire.2": {
+          "colour": "#b8733a",
+          "plain": true,
+          "metalness": 1,
+          "roughness": 0.3
         }
       },
       "textures": {
