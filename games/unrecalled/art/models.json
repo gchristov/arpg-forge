@@ -154,6 +154,22 @@
           "below": 0.15
         }
       ],
+      "seams": {
+        "between": [
+          "Metal",
+          "MI_Superhero_Male"
+        ],
+        "material": "Seam",
+        "colour": "#4a5058",
+        "width": 0.006,
+        "raise": 0.0015,
+        "staples": {
+          "every": 0.025,
+          "length": 0.012,
+          "width": 0.003,
+          "height": 0.0015
+        }
+      },
       "frame": {
         "material": "Frame",
         "colour": "#5a616a",
@@ -724,6 +740,12 @@
           "plain": true,
           "metalness": 1,
           "roughness": 0.2
+        },
+        "Seam": {
+          "colour": "#4a5058",
+          "plain": true,
+          "metalness": 1,
+          "roughness": 0.3
         }
       },
       "textures": {
