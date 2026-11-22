@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { hash2, valueNoise } from '../../../engine/core/math';
 import type { ActorLook, BuildingKit, Look, Mood, PropLook, StructureLook } from '../../../engine/render/look';
 import { Ground, Prop } from '../content/tiles';
+import { glassShine } from '../extensions/glass-shine';
 
 /**
  * Unrecalled's look, for now its base: every model drawn as its kit made it, under plain light. The game's own look
@@ -144,6 +145,12 @@ const robot = (
   model: { name, animations, matchPace: true },
 });
 
+/** U-7's body is drawn in its own material, painted as glass by its model build. */
+const glass = glassShine({ material: 'MI_Superhero_Male', strength: 0.7 });
+
+/** What the game adds to U-7's model, in the world and in its portrait: a glossy glare and rim on its glass. */
+export const dressHero = (model: THREE.Object3D, keep: (material: THREE.Material) => void): void => glass(model, keep);
+
 const ACTORS: Record<string, ActorLook> = {
   hero: {
     colour: 0x9a8a70, height: 1.2, radius: 0.24, seenThrough: 0x8ae8ff,
@@ -161,6 +168,7 @@ const ACTORS: Record<string, ActorLook> = {
         },
       },
       matchPace: true,
+      dress: dressHero,
     },
   },
   crawler: robot('crawler', 0.6, { idle: 'Idle', move: 'Run', attack: 'Attack', hit: 'Hit', death: 'TurnOff' }, 0.8),

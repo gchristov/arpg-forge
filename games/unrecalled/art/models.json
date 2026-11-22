@@ -80,9 +80,9 @@
       ],
       "paint": {
         "MI_Superhero_Male": {
-          "colour": "#8fa6bc",
+          "colour": "#3c434c",
           "plain": true,
-          "opacity": 0.4,
+          "opacity": 0.35,
           "metalness": 0,
           "roughness": 0.05
         },
