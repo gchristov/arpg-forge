@@ -21,9 +21,10 @@
 //
 // A character's parts can be changed by material (tools/assets/model-parts.mjs): `split` moves part of one material
 // into a copy of it, such as a faceplate off a body, and `paint` repaints parts, making them see-through or glow.
-// `frame` (with the `wires` wound round it), `core` and `brain` build a machine's insides along its skeleton
-// (tools/assets/model-frame.mjs), and `machinery` builds ribs, pistons and parts round it, fitted to the body
-// (tools/assets/model-machinery.mjs). `seams` lays a stapled seam where two split parts meet
+// `frame` (with the `wires` wound round it) builds a machine's skeleton (tools/assets/model-frame.mjs), `machinery`
+// ribs, pistons and parts round it, fitted to the body (tools/assets/model-machinery.mjs), `core` a glowing power core
+// in a cage (tools/assets/model-reactor.mjs) and `brain` a machine's brain filling the skull
+// (tools/assets/model-brain.mjs). `seams` lays a studded seam where two split parts meet
 // (tools/assets/model-seams.mjs). `raisedCopy` copies a part a little off its surface, for a game to draw lines
 // over. They run in that order: split, seams, frame, machinery, core, brain, raised copy, then paint, so the new parts
 // can be painted too.
@@ -38,8 +39,10 @@ import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import { dedup, meshopt, prune, quantize, resample, textureCompress } from '@gltf-transform/functions';
 import { MeshoptEncoder } from 'meshoptimizer';
 import sharp from 'sharp';
-import { addBrain, addCore, addFrame } from './model-frame.mjs';
+import { addBrain } from './model-brain.mjs';
+import { addFrame } from './model-frame.mjs';
 import { addMachinery } from './model-machinery.mjs';
+import { addReactor } from './model-reactor.mjs';
 import { addSeams } from './model-seams.mjs';
 import { addRaisedCopy, paintParts, splitPart } from './model-parts.mjs';
 
@@ -209,7 +212,7 @@ for (const model of manifest.models) {
   if (model.seams) addSeams(doc, model.seams);
   if (model.frame) addFrame(doc, model.frame);
   if (model.machinery) addMachinery(doc, model.machinery);
-  if (model.core) addCore(doc, model.core);
+  if (model.core) addReactor(doc, model.core);
   if (model.brain) addBrain(doc, model.brain);
   if (model.paint) paintParts(doc, model.paint);
   // After painting, so the copy is painted as its part is.

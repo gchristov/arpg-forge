@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { hash2, valueNoise } from '../../../engine/core/math';
 import type { ActorLook, BuildingKit, Look, Mood, PropLook, StructureLook } from '../../../engine/render/look';
 import { Ground, Prop } from '../content/tiles';
+import { coreGlow } from '../extensions/core-glow';
 import { glassShine } from '../extensions/glass-shine';
 
 /**
@@ -148,12 +149,29 @@ const robot = (
 /** U-7's body is drawn in its own material, painted as glass by its model build. */
 const glass = glassShine({ material: 'MI_Superhero_Male', strength: 0.4 });
 
-/** What the game adds to U-7's model, in the world and in its portrait: a glossy glare and rim on its glass. */
-export const dressHero = (model: THREE.Object3D, keep: (material: THREE.Material) => void): void => glass(model, keep);
+/** The colour of U-7's core, and of the nodes in its brain: the blue glow of a reactor. */
+const CORE_COLOUR = 0x3ac8ff;
+
+/** U-7's core and brain nodes, drawn glowing through the glass over them. */
+const glowing = coreGlow({
+  materials: ['CoreRod', 'CoreHalo', 'Synapse'], colour: CORE_COLOUR, strength: 2.6,
+  spill: { material: 'CoreRod', size: 0.42, strength: 1.6 },
+});
+
+/**
+ * What the game adds to U-7's model, in the world and in its portrait: a glossy glare and rim on its glass, and its
+ * core and brain glowing through it.
+ */
+export const dressHero = (model: THREE.Object3D, keep: (material: THREE.Material) => void): void => {
+  glass(model, keep);
+  glowing(model, keep);
+};
 
 const ACTORS: Record<string, ActorLook> = {
   hero: {
     colour: 0x9a8a70, height: 1.2, radius: 0.24, seenThrough: 0x8ae8ff,
+    // The core's glow, faint on the ground round U-7.
+    light: { colour: CORE_COLOUR, radius: 1.5, intensity: 0.45 },
     // Leaning into a cut, the chainsaw buzzing in its hands.
     channelPose: { lean: 0.18, buzz: 0.012 },
     model: {

@@ -7,7 +7,8 @@ const transform = (m, [x, y, z], w = 1) => [0, 1, 2].map((k) => m[k] * x + m[4 +
 /**
  * The body round `bone`, in the bone's own space (y along it, as parts hung off it are placed): the points of the skin
  * it mostly moves, which way the body's front faces (`forward`, the model's +z) and its side (`side`), both across the
- * bone, and the bone's `length` to its first child bone.
+ * bone, and the bone's `length` to its first child bone, or to the far end of the body for a bone with none, such as a
+ * head.
  */
 export function bodyRound(doc, bone) {
   const points = [];
@@ -32,7 +33,7 @@ export function bodyRound(doc, bone) {
   if (!points.length) throw new Error(`no body round ${bone.getName()}`);
   const front = normalise([forward[0], 0, forward[2]]);
   const child = bone.listChildren().find((c) => doc.getRoot().listSkins().some((s) => s.listJoints().includes(c)));
-  const length = child ? Math.hypot(...child.getTranslation()) : 0.1;
+  const length = child ? Math.hypot(...child.getTranslation()) : Math.max(...points.map((p) => p[1]));
   return { points, forward: front, side: cross([0, 1, 0], front), length };
 }
 

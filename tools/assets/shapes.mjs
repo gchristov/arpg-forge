@@ -25,35 +25,56 @@ const wireSides = (width) => (width < 0.005 ? 4 : 6);
 /** How many lengths a wire is cut into for each turn it makes, so its curves stay smooth. */
 const STEPS_PER_TURN = 9;
 
+/** How many times a metre a wire's drift turns back on itself, at its slowest. */
+const DRIFT_PER_METRE = 18;
+
+/**
+ * A smooth, uneven wave from -1 to 1 along `x`, different for each `seed`: the same every time for the same seed, so
+ * models build the same.
+ */
+export function drift(x, seed) {
+  return Math.sin(x + seed * 12.9898) * 0.5 + Math.sin(x * 2.3 + seed * 78.233) * 0.3 + Math.sin(x * 5.1 + seed * 37.719) * 0.2;
+}
+
+/** A number from `text`, as a seed for `drift`, so each named thing drifts its own way. */
+export const seedOf = (text) => [...text].reduce((sum, c, i) => sum + c.charCodeAt(0) * (i + 1), 0) % 1000;
+
 /**
  * A wire `width` across, wound `around` metres out from the y axis from y = 0 to y = `length`, making `turns` turns a
  * metre (a negative number winds the other way), starting `phase` degrees round. `flat` is how thick it is beside its
- * width: 1 is a round cable, less a ribbon lying against what it winds round.
+ * width: 1 is a round cable, less a ribbon lying against what it winds round. `wobble` from 0 to 1 makes it uneven, as
+ * wound wire is: its twist and its distance out drift along it, a way of their own for each `seed`.
  */
-export function helix({ width, around, turns, phase = 0, flat = 1 }, length) {
-  const steps = Math.max(4, Math.ceil(Math.abs(turns) * length * STEPS_PER_TURN));
+export function helix({ width, around, turns, phase = 0, flat = 1, wobble = 0 }, length, seed = 0) {
+  const steps = Math.max(4, Math.ceil(Math.abs(turns) * length * STEPS_PER_TURN), Math.ceil(wobble * length * DRIFT_PER_METRE * 3));
   const twist = Math.PI * 2 * turns;
   const [across, out] = [width / 2, (width * flat) / 2];
   const sides = wireSides(width);
+  const angles = [];
+  const centres = [];
+  for (let i = 0; i <= steps; i++) {
+    const y = (i / steps) * length;
+    const a = (phase * Math.PI) / 180 + twist * y + wobble * 1.2 * drift(y * DRIFT_PER_METRE, seed);
+    const r = around * (1 + wobble * 0.25 * drift(y * DRIFT_PER_METRE * 1.7, seed + 1));
+    angles.push(a);
+    centres.push([Math.cos(a) * r, y, Math.sin(a) * r]);
+  }
   const positions = [];
   const normals = [];
   const indices = [];
-  for (let i = 0; i <= steps; i++) {
-    const y = (i / steps) * length;
-    const a = (phase * Math.PI) / 180 + twist * y;
-    const [cos, sin] = [Math.cos(a), Math.sin(a)];
-    // Along the wire, straight out from the axis, and the way round the axis at right angles to both.
-    const along = normalise([-sin * around * twist, 1, cos * around * twist]);
-    const outwards = [cos, 0, sin];
-    const round = cross(outwards, along);
+  centres.forEach((centre, i) => {
+    const [from, to] = [centres[Math.max(i - 1, 0)], centres[Math.min(i + 1, steps)]];
+    // Along the wire, round the axis at right angles to it, and out from the axis at right angles to both.
+    const along = normalise(to.map((v, k) => v - from[k]));
+    const round = normalise(cross([Math.cos(angles[i]), 0, Math.sin(angles[i])], along));
+    const outwards = cross(along, round);
     for (let j = 0; j <= sides; j++) {
       const t = (j / sides) * Math.PI * 2;
       const [c, s] = [Math.cos(t), Math.sin(t)];
-      const centre = [cos * around, y, sin * around];
       positions.push(...[0, 1, 2].map((k) => centre[k] + outwards[k] * c * out + round[k] * s * across));
       normals.push(...normalise([0, 1, 2].map((k) => outwards[k] * c * across + round[k] * s * out)));
     }
-  }
+  });
   const ring = sides + 1;
   for (let i = 0; i < steps; i++) {
     for (let j = 0; j < sides; j++) {
@@ -226,6 +247,28 @@ export function moved(shape, turn = [0, 0, 0, 1], by = [0, 0, 0]) {
     normals: map(shape.normals, rotate),
     indices: shape.indices,
   };
+}
+
+/** A gear `size` across, `teeth` round its rim, with a hub standing out of it, turning about the y axis. */
+export function gear(size, teeth = 10) {
+  const tooth = box([size * 0.18, size * 0.2, size * 0.14]);
+  const shapes = [cylinder(size / 2, size * 0.2, 14), cylinder(size * 0.15, size * 0.4, 8)];
+  for (let t = 0; t < teeth; t++) {
+    const angle = (t / teeth) * Math.PI * 2;
+    const turn = [0, Math.sin(-angle / 2), 0, Math.cos(-angle / 2)];
+    shapes.push(moved(tooth, turn, [Math.cos(angle) * size * 0.55, 0, Math.sin(angle) * size * 0.55]));
+  }
+  return merged(shapes);
+}
+
+/** `shape` stretched `by` along x, y and z, its normals turned to stay square to its surface. */
+export function scaled(shape, by) {
+  const out = { positions: [], normals: [], indices: shape.indices };
+  for (let i = 0; i < shape.positions.length; i += 3) {
+    out.positions.push(...[0, 1, 2].map((k) => shape.positions[i + k] * by[k]));
+    out.normals.push(...normalise([0, 1, 2].map((k) => shape.normals[i + k] / by[k])));
+  }
+  return out;
 }
 
 /** One shape made of all of `shapes`. */

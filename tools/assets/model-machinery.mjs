@@ -1,6 +1,6 @@
-import { bodyRound, pointIn, sliceAt } from './body-fit.mjs';
-import { linear } from './model-parts.mjs';
-import { ball, box, cylinder, helix, meshOf, merged, moved, normalise, sweep, turnUpTo } from './shapes.mjs';
+import { pointIn, sliceAt } from './body-fit.mjs';
+import { machineParts, placeAt, xTo } from './machine-parts.mjs';
+import { ball, box, cylinder, gear, helix, merged, moved, normalise, sweep, turnUpTo } from './shapes.mjs';
 
 // Builds machinery into a character's body round its skeleton, fitted to the body's own shape at each bone: ribs,
 // pistons, loose cables, and parts such as canisters, springs, gears, motors, battery packs and heat sinks. Each hangs off a bone, so it moves with every animation.
@@ -13,22 +13,6 @@ const CABLE_STEPS = 12;
 const SPRING_COILS = 6;
 /** How far along a piston its barrel reaches before its rod comes out. */
 const BARREL_SHARE = 0.6;
-
-/** The quaternion turning `angle` radians about the y axis. */
-const aboutY = (angle) => [0, Math.sin(angle / 2), 0, Math.cos(angle / 2)];
-
-/** The quaternion turning the x axis to `side`, about the y axis. */
-const xTo = (side) => aboutY(Math.atan2(-side[2], side[0]));
-
-/**
- * The point on `body` at `at`: across and front to back as shares of the body's half size from its middle at that
- * height, and up as a share of the bone's length, across to the other side when `sign` is -1.
- */
-function placeAt(body, [across, up, deep], sign = 1) {
-  const y = up * body.length;
-  const { middle: [a, d], half: [ha, hd] } = sliceAt(body, y);
-  return pointIn(body, a + sign * across * ha, d + deep * hd, y);
-}
 
 /**
  * Builds `ribs`, `pistons`, `cables` and `parts` into the body, each in the material it names, of its `colour` (a new one the
@@ -46,27 +30,7 @@ function placeAt(body, [across, up, deep], sign = 1) {
  * and up as a share of the bone's length (see `placeAt`); `mirror` adds a cable or part on the other side too.
  */
 export function addMachinery(doc, { ribs = [], pistons = [], cables = [], parts = [] }) {
-  const bones = new Map(doc.getRoot().listSkins().flatMap((skin) => skin.listJoints()).map((b) => [b.getName(), b]));
-  const boneNamed = (name) => bones.get(name) ?? fail(`no bone ${name} for machinery`);
-  const bodies = new Map();
-  const bodyOf = (name) => {
-    if (!bodies.has(name)) bodies.set(name, bodyRound(doc, boneNamed(name)));
-    return bodies.get(name);
-  };
-  const materials = new Map();
-  const materialFor = (name, colour) => {
-    if (!materials.has(name)) {
-      const material = doc.createMaterial(name).setBaseColorFactor([...linear(colour), 1]);
-      materials.set(name, material.setMetallicFactor(0.9).setRoughnessFactor(0.35));
-    }
-    return materials.get(name);
-  };
-  const groups = new Map();
-  const add = (boneName, material, shape) => {
-    const key = `${boneName}|${material.getName()}`;
-    if (!groups.has(key)) groups.set(key, { boneName, material, shapes: [] });
-    groups.get(key).shapes.push(shape);
-  };
+  const { bodyOf, materialFor, add, build } = machineParts(doc, 'Machinery');
 
   for (const { bones: names, perBone, width, fill = 0.8, gap = 0.2, droop = 0, material, colour } of ribs) {
     const metal = materialFor(material, colour);
@@ -134,10 +98,7 @@ export function addMachinery(doc, { ribs = [], pistons = [], cables = [], parts 
     for (const sign of mirror ? [1, -1] : [1]) add(name, materialFor(material, colour), partShape(kind, size, body, placeAt(body, at, sign)));
   }
 
-  for (const { boneName, material, shapes } of groups.values()) {
-    const mesh = meshOf(doc, merged(shapes), material);
-    boneNamed(boneName).addChild(doc.createNode(`Machinery.${boneName}.${material.getName()}`).setMesh(mesh));
-  }
+  build();
 }
 
 /**
@@ -166,24 +127,11 @@ function partShape(kind, size, body, position) {
   if (kind === 'canister') {
     return moved(merged([cylinder(size / 2, size * 1.8), cylinder(size * 0.3, size * 2.2, 8)]), undefined, position);
   }
-  if (kind === 'gear') {
-    const teeth = 10;
-    const tooth = box([size * 0.18, size * 0.2, size * 0.14]);
-    const shapes = [cylinder(size / 2, size * 0.2, 14), cylinder(size * 0.15, size * 0.4, 8)];
-    for (let t = 0; t < teeth; t++) {
-      const angle = (t / teeth) * Math.PI * 2;
-      shapes.push(moved(tooth, aboutY(-angle), [Math.cos(angle) * size * 0.55, 0, Math.sin(angle) * size * 0.55]));
-    }
-    return moved(merged(shapes), turnUpTo(body.forward), position);
-  }
+  if (kind === 'gear') return moved(gear(size), turnUpTo(body.forward), position);
   if (kind === 'block') {
     const pipe = moved(cylinder(size * 0.12, size * 0.5, 8), undefined, [size * 0.2, size * 0.5, 0]);
     const shape = merged([box([size, size * 0.7, size * 0.5]), pipe]);
     return moved(shape, xTo(body.side), position);
   }
   throw new Error(`no machine part called ${kind}`);
-}
-
-function fail(message) {
-  throw new Error(message);
 }
