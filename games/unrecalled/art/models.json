@@ -184,8 +184,8 @@
             ]
           },
           {
-            "colour": "#7a1f1f",
-            "width": 0.006,
+            "colour": "#d0342c",
+            "width": 0.007,
             "around": 0.015,
             "turns": 6,
             "phase": 180,
@@ -207,7 +207,7 @@
             ]
           },
           {
-            "colour": "#3d5a73",
+            "colour": "#2f7fd6",
             "width": 0.012,
             "flat": 0.3,
             "around": 0.0115,
@@ -219,11 +219,24 @@
             ]
           },
           {
-            "colour": "#c8ccd0",
-            "width": 0.003,
+            "colour": "#e0b020",
+            "width": 0.0045,
             "around": 0.02,
             "turns": -3.5,
             "phase": 45,
+            "bones": [
+              "spine",
+              "upperarm",
+              "lowerarm",
+              "calf"
+            ]
+          },
+          {
+            "colour": "#2a6fd0",
+            "width": 0.005,
+            "around": 0.018,
+            "turns": 4,
+            "phase": 90,
             "bones": [
               "spine",
               "upperarm",
