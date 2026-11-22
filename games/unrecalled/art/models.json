@@ -243,6 +243,55 @@
               "lowerarm",
               "calf"
             ]
+          },
+          {
+            "colour": "#15181c",
+            "width": 0.01,
+            "around": 0.024,
+            "turns": 2.5,
+            "phase": 300,
+            "bones": [
+              "spine",
+              "upperarm",
+              "calf"
+            ]
+          },
+          {
+            "colour": "#e8e8e4",
+            "width": 0.0025,
+            "around": 0.016,
+            "turns": 9,
+            "phase": 30,
+            "bones": [
+              "spine",
+              "upperarm",
+              "lowerarm",
+              "calf"
+            ]
+          },
+          {
+            "colour": "#d0342c",
+            "width": 0.003,
+            "around": 0.019,
+            "turns": -6,
+            "phase": 220,
+            "bones": [
+              "spine",
+              "upperarm",
+              "lowerarm",
+              "calf"
+            ]
+          },
+          {
+            "colour": "#e0b020",
+            "width": 0.003,
+            "around": 0.021,
+            "turns": 11,
+            "phase": 120,
+            "bones": [
+              "lowerarm",
+              "calf"
+            ]
           }
         ]
       },
@@ -412,6 +461,217 @@
             "mirror": true,
             "material": "Canister",
             "colour": "#2d3238"
+          },
+          {
+            "bone": "spine_01",
+            "kind": "spring",
+            "at": [
+              0.55,
+              0.5,
+              -0.2
+            ],
+            "size": 0.03,
+            "mirror": true,
+            "material": "Spring",
+            "colour": "#b0b6bd"
+          },
+          {
+            "bone": "spine_01",
+            "kind": "canister",
+            "at": [
+              0.3,
+              0.4,
+              -0.45
+            ],
+            "size": 0.025,
+            "mirror": true,
+            "material": "Canister",
+            "colour": "#2d3238"
+          },
+          {
+            "bone": "spine_02",
+            "kind": "canister",
+            "at": [
+              0.45,
+              0.55,
+              -0.25
+            ],
+            "size": 0.028,
+            "mirror": true,
+            "material": "Canister",
+            "colour": "#2d3238"
+          },
+          {
+            "bone": "spine_02",
+            "kind": "spring",
+            "at": [
+              0.5,
+              0.3,
+              0.1
+            ],
+            "size": 0.026,
+            "mirror": true,
+            "material": "Spring",
+            "colour": "#b0b6bd"
+          },
+          {
+            "bone": "spine_02",
+            "kind": "gear",
+            "at": [
+              0.35,
+              0.75,
+              -0.45
+            ],
+            "size": 0.03,
+            "mirror": true,
+            "material": "Brass",
+            "colour": "#8a6a3a"
+          }
+        ],
+        "cables": [
+          {
+            "bone": "spine_01",
+            "from": [
+              0,
+              0.45,
+              0.4
+            ],
+            "to": [
+              0.1,
+              0.9,
+              -0.3
+            ],
+            "sag": 0.015,
+            "width": 0.008,
+            "mirror": true,
+            "material": "CableBlack",
+            "colour": "#15181c"
+          },
+          {
+            "bone": "spine_01",
+            "from": [
+              0.4,
+              0.85,
+              0.15
+            ],
+            "to": [
+              0.15,
+              0.1,
+              -0.2
+            ],
+            "sag": 0.012,
+            "width": 0.004,
+            "mirror": true,
+            "material": "CableRed",
+            "colour": "#d0342c"
+          },
+          {
+            "bone": "spine_01",
+            "from": [
+              0.5,
+              0.2,
+              0.0
+            ],
+            "to": [
+              0.2,
+              0.95,
+              0.3
+            ],
+            "sag": 0.01,
+            "width": 0.003,
+            "mirror": true,
+            "material": "CableYellow",
+            "colour": "#e0b020"
+          },
+          {
+            "bone": "spine_01",
+            "from": [
+              0.3,
+              0.1,
+              0.3
+            ],
+            "to": [
+              0.6,
+              0.9,
+              -0.2
+            ],
+            "sag": 0.012,
+            "width": 0.005,
+            "mirror": true,
+            "material": "CableBlue",
+            "colour": "#2a6fd0"
+          },
+          {
+            "bone": "spine_02",
+            "from": [
+              0.2,
+              0.05,
+              -0.4
+            ],
+            "to": [
+              0.55,
+              0.9,
+              -0.1
+            ],
+            "sag": 0.012,
+            "width": 0.008,
+            "mirror": true,
+            "material": "CableBlack",
+            "colour": "#15181c"
+          },
+          {
+            "bone": "spine_02",
+            "from": [
+              0.6,
+              0.1,
+              0.1
+            ],
+            "to": [
+              0.3,
+              0.95,
+              -0.35
+            ],
+            "sag": 0.012,
+            "width": 0.004,
+            "mirror": true,
+            "material": "CableRed",
+            "colour": "#d0342c"
+          },
+          {
+            "bone": "spine_02",
+            "from": [
+              0.45,
+              0.1,
+              -0.3
+            ],
+            "to": [
+              0.6,
+              0.8,
+              0.2
+            ],
+            "sag": 0.01,
+            "width": 0.003,
+            "mirror": true,
+            "material": "CableYellow",
+            "colour": "#e0b020"
+          },
+          {
+            "bone": "spine_02",
+            "from": [
+              0.1,
+              0.05,
+              -0.5
+            ],
+            "to": [
+              0.4,
+              0.9,
+              -0.5
+            ],
+            "sag": 0.012,
+            "width": 0.005,
+            "mirror": true,
+            "material": "CableBlue",
+            "colour": "#2a6fd0"
           }
         ]
       },
@@ -458,6 +718,12 @@
           "plain": true,
           "metalness": 1,
           "roughness": 0.15
+        },
+        "Spring": {
+          "colour": "#b0b6bd",
+          "plain": true,
+          "metalness": 1,
+          "roughness": 0.2
         }
       },
       "textures": {
