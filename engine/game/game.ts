@@ -29,7 +29,10 @@ export interface GameSetup {
   look: Look;
   /** URLs of the game's models, by name. */
   models: Record<string, string>;
-  /** Whether a tap anywhere on a building walks in through its door, or only a tap round its entrance does. Yes if not given. */
+  /**
+   * Whether a tap anywhere on a building walks in through its door, or only a tap round its entrance does and a tap on
+   * the building walks to the ground it hides. Yes if not given.
+   */
   buildingsEnterOnTap?: boolean;
 }
 
@@ -221,7 +224,8 @@ export class Game {
     const held = this.pointer.held();
     if (!held || !this.holdWalks) return null;
     const picked = this.renderer.pick(held.x, held.y);
-    return picked && 'ground' in picked ? picked.ground : null;
+    if (!picked || ('structure' in picked && this.buildingsEnterOnTap)) return null;
+    return picked.ground;
   }
 
   /** Scatters extra flickering lights over the start level, to check lighting cost stays flat. */

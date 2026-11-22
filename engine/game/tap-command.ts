@@ -27,8 +27,8 @@ export type TapView = Pick<SceneRenderer, 'screenPosition' | 'pick' | 'zoom'>;
 /**
  * Turns a tap on the world at screen point `x`, `y` into a command, checking in this order: enemies, NPCs, things to
  * read, doors by their body, buildings, chests, doors by the ground near them, then the ground. Only enemies `seen`
- * says the hero can see can be tapped. Unless `buildingsEnterOnTap`, a tap on a building does nothing, and only the
- * ground round its entrance enters it. Null when the tap hits nothing.
+ * says the hero can see can be tapped. Unless `buildingsEnterOnTap`, a tap on a building walks to the ground it hides
+ * there, for walking behind it, and only the ground round its entrance enters it. Null when the tap hits nothing.
  */
 export function tapCommand(
   state: GameState,
@@ -68,8 +68,9 @@ export function tapCommand(
   if (tappedDoor >= 0) return walkInto(ls.level.portals[tappedDoor]!);
   const picked = renderer.pick(x, y);
   if (!picked) return null;
-  if ('structure' in picked) return buildingsEnterOnTap ? { type: 'enterStructure', index: picked.structure } : null;
+  if ('structure' in picked && buildingsEnterOnTap) return { type: 'enterStructure', index: picked.structure };
   const { ground } = picked;
+  if (!ground) return null;
   const building = buildingsEnterOnTap
     ? nearest(ls.level.structures, (s) => distanceToArea(ground, s.x, s.y, s.width, s.depth), BUILDING_REACH)
     : nearest(ls.level.structures, (s) => distanceToTile(ground, s.door.tx, s.door.ty), ENTRANCE_REACH);
