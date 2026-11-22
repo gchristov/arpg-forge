@@ -65,8 +65,21 @@
           "material": "MI_Superhero_Male",
           "into": "Metal",
           "bones": [
-            "lowerarm_l",
-            "lowerarm_r",
+            "neck_01",
+            "spine_03",
+            "spine_02",
+            "clavicle_l",
+            "clavicle_r",
+            "upperarm_l",
+            "upperarm_r"
+          ],
+          "above": 0.3,
+          "inner": 0.8
+        },
+        {
+          "material": "MI_Superhero_Male",
+          "into": "Metal",
+          "bones": [
             "hand_l",
             "hand_r",
             "index_01_l",
@@ -105,6 +118,17 @@
           "material": "MI_Superhero_Male",
           "into": "Metal",
           "bones": [
+            "lowerarm_l",
+            "lowerarm_r",
+            "hand_l",
+            "hand_r"
+          ],
+          "outer": 0.4
+        },
+        {
+          "material": "MI_Superhero_Male",
+          "into": "Metal",
+          "bones": [
             "pelvis",
             "thigh_l",
             "thigh_r"
@@ -119,65 +143,6 @@
             "ball_l",
             "ball_r"
           ]
-        },
-        {
-          "material": "MI_Superhero_Male",
-          "into": "Metal",
-          "bones": [
-            "clavicle_l",
-            "clavicle_r"
-          ]
-        },
-        {
-          "material": "MI_Superhero_Male",
-          "into": "Metal",
-          "bones": [
-            "spine_03",
-            "clavicle_l",
-            "clavicle_r"
-          ],
-          "back": 0.5
-        },
-        {
-          "material": "MI_Superhero_Male",
-          "into": "Metal",
-          "bones": [
-            "upperarm_l",
-            "upperarm_r"
-          ],
-          "inner": 0.5
-        },
-        {
-          "material": "MI_Superhero_Male",
-          "into": "Metal",
-          "bones": [
-            "neck_01"
-          ]
-        },
-        {
-          "material": "MI_Superhero_Male",
-          "into": "Metal",
-          "bones": [
-            "clavicle_l",
-            "clavicle_r",
-            "upperarm_l",
-            "upperarm_r"
-          ],
-          "inner": 0.5
-        },
-        {
-          "material": "MI_Superhero_Male",
-          "into": "Metal",
-          "bones": [
-            "neck_01",
-            "spine_03",
-            "clavicle_l",
-            "clavicle_r",
-            "upperarm_l",
-            "upperarm_r"
-          ],
-          "above": 0.5,
-          "inner": 0.75
         }
       ],
       "paint": {

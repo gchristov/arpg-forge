@@ -51,9 +51,10 @@ function share(values, at) {
  * keeps only those in front of that share of them (0.5: the front half), `back` only those behind that share,
  * `below` only those below that share of their height, for a face without the back or top of the head, and `above`
  * only those above it, such as the line of the shoulders off the top of a chest. `inner` keeps
- * only those within that share of their distance out to the side, such as the top of an arm held out from the body.
+ * only those within that share of their distance out to the side, such as the top of an arm held out from the body,
+ * and `outer` only those beyond it, such as the wrist end of a forearm.
  */
-export function splitPart(doc, { material: name, into, bones, front = 0, back = 1, above = 0, below = 1, inner = 1 }) {
+export function splitPart(doc, { material: name, into, bones, front = 0, back = 1, above = 0, below = 1, inner = 1, outer = 0 }) {
   const root = doc.getRoot();
   const source = root.listMaterials().find((m) => m.getName() === name);
   if (!source) throw new Error(`no material ${name} to split`);
@@ -84,10 +85,11 @@ export function splitPart(doc, { material: name, into, bones, front = 0, back = 
       const aboveFrom = share(ours.map((p) => p[1]), above);
       const belowTo = share(ours.map((p) => p[1]), below);
       const innerTo = share(ours.map((p) => Math.abs(p[0])), inner);
+      const outerFrom = share(ours.map((p) => Math.abs(p[0])), outer);
       const inPart = (v) => {
         if (!onBones(v)) return false;
         const [x, y, z] = position.getElement(v, []);
-        return z >= frontFrom && z <= backTo && y >= aboveFrom && y <= belowTo && Math.abs(x) <= innerTo;
+        return z >= frontFrom && z <= backTo && y >= aboveFrom && y <= belowTo && Math.abs(x) <= innerTo && Math.abs(x) >= outerFrom;
       };
       const all = indices.getArray();
       const kept = [];
