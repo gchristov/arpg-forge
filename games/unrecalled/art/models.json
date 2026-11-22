@@ -157,8 +157,8 @@
       "frame": {
         "material": "Frame",
         "colour": "#5a616a",
-        "thickness": 0.022,
-        "joint": 2.2,
+        "width": 0.02,
+        "joint": 2.0,
         "skip": [
           "root",
           "leaf",
@@ -190,6 +190,12 @@
           "plain": true,
           "metalness": 1,
           "roughness": 0.18
+        },
+        "FrameJoint": {
+          "colour": "#d4d8de",
+          "plain": true,
+          "metalness": 1,
+          "roughness": 0.22
         }
       },
       "textures": {
