@@ -153,6 +153,17 @@
           "bones": [
             "neck_01"
           ]
+        },
+        {
+          "material": "MI_Superhero_Male",
+          "into": "Metal",
+          "bones": [
+            "clavicle_l",
+            "clavicle_r",
+            "upperarm_l",
+            "upperarm_r"
+          ],
+          "inner": 0.5
         }
       ],
       "paint": {
