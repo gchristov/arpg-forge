@@ -338,15 +338,18 @@ export class SceneRenderer {
     this.shakeAmount = Math.max(this.shakeAmount, amount);
   }
 
-  /** What's under a screen position: a structure (by its index in the level) or a point on the ground. */
-  pick(screenX: number, screenY: number): { structure: number } | { ground: Vec2 } | null {
+  /**
+   * What's under a screen position: a structure (by its index in the level), with the point on the ground it hides
+   * there, or else a point on the ground.
+   */
+  pick(screenX: number, screenY: number): { structure: number; ground: Vec2 | null } | { ground: Vec2 } | null {
     this.ndc.set((screenX / this.width) * 2 - 1, -(screenY / this.height) * 2 + 1);
     this.raycaster.setFromCamera(this.ndc, this.camera);
     const hit = this.raycaster.intersectObjects(this.structures, true)[0];
     if (hit) {
       let o: THREE.Object3D | null = hit.object;
       while (o && o.userData.structureIndex === undefined) o = o.parent;
-      if (o) return { structure: o.userData.structureIndex as number };
+      if (o) return { structure: o.userData.structureIndex as number, ground: this.groundPointAt(screenX, screenY) };
     }
     const ground = this.groundPointAt(screenX, screenY);
     return ground ? { ground } : null;

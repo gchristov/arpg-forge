@@ -11,7 +11,7 @@ const view: TapView = {
   screenPosition: (x: number, y: number, _height: number, out: Vec2) => Object.assign(out, { x: x * PIXELS, y: y * PIXELS }),
   pick: (sx: number, sy: number) => {
     const ground = { x: sx / PIXELS, y: sy / PIXELS };
-    if (ground.x >= 10 && ground.x < 13 && ground.y >= 10 && ground.y < 13) return { structure: 0 };
+    if (ground.x >= 10 && ground.x < 13 && ground.y >= 10 && ground.y < 13) return { structure: 0, ground };
     return { ground };
   },
 };
@@ -77,6 +77,20 @@ describe('tapCommand', () => {
     currentLevel(state).level.structures.push({ kind: 'shed', name: 'Shed', x: 20, y: 2, width: 3, depth: 2, door: { tx: 21, ty: 3 } });
     expect(tapTile(state, 21.5, 4.6)).toEqual({ type: 'enterStructure', index: 0 });
     expect(tapTile(state, 21.5, 5.2)).toEqual({ type: 'walk', x: 21.5, y: 5.2 });
+  });
+
+  it('walks to the ground a building hides where it\'s tapped, when its game enters buildings only by their entrance', () => {
+    expect(tapCommand(room(), view, () => 1, 11 * PIXELS, 11.5 * PIXELS, undefined, false)).toEqual({ type: 'walk', x: 11, y: 11.5 });
+  });
+
+  it('enters a building tapped on the ground round its entrance, and walks anywhere else beside it', () => {
+    const state = room();
+    currentLevel(state).level.structures.push({ kind: 'shed', name: 'Shed', x: 20, y: 2, width: 3, depth: 2, door: { tx: 21, ty: 3 } });
+    const tap = (x: number, y: number) => tapCommand(state, view, () => 1, x * PIXELS, y * PIXELS, undefined, false);
+    expect(tap(21.5, 4.8)).toEqual({ type: 'enterStructure', index: 0 });
+    expect(tap(22.6, 4.2)).toEqual({ type: 'enterStructure', index: 0 });
+    expect(tap(19.6, 2.5)).toEqual({ type: 'walk', x: 19.6, y: 2.5 });
+    expect(tap(21.5, 5.4)).toEqual({ type: 'walk', x: 21.5, y: 5.4 });
   });
 
   it('opens a chest or walks into a portal tapped beside its tile, not only on it', () => {

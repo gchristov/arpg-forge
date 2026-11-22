@@ -35,6 +35,8 @@ const game = new Game({
   content: unrecalledContent(),
   look: unrecalledLook,
   models: MODEL_URLS,
+  // Close up, a building fills much of the screen, so a tap on it is more often meant as a walk past it.
+  buildingsEnterOnTap: false,
 });
 const { state, labels, view, platform } = game;
 const $ = (id: string): HTMLElement => document.getElementById(id)!;

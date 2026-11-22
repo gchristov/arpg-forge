@@ -29,6 +29,11 @@ export interface GameSetup {
   look: Look;
   /** URLs of the game's models, by name. */
   models: Record<string, string>;
+  /**
+   * Whether a tap anywhere on a building walks in through its door, or only a tap round its entrance does and a tap on
+   * the building walks to the ground it hides. Yes if not given.
+   */
+  buildingsEnterOnTap?: boolean;
 }
 
 /** What the game does on top of what the engine shows: sounds, text, its HUD and dialogue. */
@@ -82,7 +87,10 @@ export class Game {
   private cutting = false;
   private readonly models = new ModelLibrary();
 
+  private readonly buildingsEnterOnTap: boolean;
+
   constructor(setup: GameSetup) {
+    this.buildingsEnterOnTap = setup.buildingsEnterOnTap ?? true;
     const params = new URLSearchParams(location.search);
     const debugMode = params.has('debug');
     const camera = cameraFromQuery(setup.look.camera ?? ISOMETRIC_CAMERA, params);
@@ -209,14 +217,15 @@ export class Game {
     if (this.state.transition) return null;
     if (this.state.hero.dead) return { type: 'respawn' };
     if (this.hooks?.onWorldTap?.() === false) return null;
-    return tapCommand(this.state, this.renderer, (kind) => this.view.scaleOf(kind), x, y, (id) => this.view.sight.of(id) > 0.5);
+    return tapCommand(this.state, this.renderer, (kind) => this.view.scaleOf(kind), x, y, (id) => this.view.sight.of(id) > 0.5, this.buildingsEnterOnTap);
   }
 
   private heldGroundPoint(): Vec2 | null {
     const held = this.pointer.held();
     if (!held || !this.holdWalks) return null;
     const picked = this.renderer.pick(held.x, held.y);
-    return picked && 'ground' in picked ? picked.ground : null;
+    if (!picked || ('structure' in picked && this.buildingsEnterOnTap)) return null;
+    return picked.ground;
   }
 
   /** Scatters extra flickering lights over the start level, to check lighting cost stays flat. */
