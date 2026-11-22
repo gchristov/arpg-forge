@@ -22,8 +22,10 @@
 // A character's parts can be changed by material (tools/assets/model-parts.mjs): `split` moves part of one material
 // into a copy of it, such as a faceplate off a body, and `paint` repaints parts, making them see-through or glow.
 // `frame` (with the `wires` wound round it), `core` and `brain` build a machine's insides along its skeleton
-// (tools/assets/model-frame.mjs). `raisedCopy` copies a part a little off its surface, for a game to draw lines over.
-// They run in that order: split, frame, core, brain, raised copy, then paint, so the new parts can be painted too.
+// (tools/assets/model-frame.mjs), and `machinery` builds ribs, pistons and parts round it, fitted to the body
+// (tools/assets/model-machinery.mjs). `raisedCopy` copies a part a little off its surface, for a game to draw lines
+// over. They run in that order: split, frame, machinery, core, brain, raised copy, then paint, so the new parts can be
+// painted too.
 //
 // Downloads are cached in tools/assets/cache (gitignored). The output goes in a `models/` folder beside the manifest.
 import { execFileSync } from 'node:child_process';
@@ -36,6 +38,7 @@ import { dedup, meshopt, prune, quantize, resample, textureCompress } from '@glt
 import { MeshoptEncoder } from 'meshoptimizer';
 import sharp from 'sharp';
 import { addBrain, addCore, addFrame } from './model-frame.mjs';
+import { addMachinery } from './model-machinery.mjs';
 import { addRaisedCopy, paintParts, splitPart } from './model-parts.mjs';
 
 const manifestPath = process.argv[2];
@@ -202,6 +205,7 @@ for (const model of manifest.models) {
   }
   for (const rule of model.split ?? []) splitPart(doc, rule);
   if (model.frame) addFrame(doc, model.frame);
+  if (model.machinery) addMachinery(doc, model.machinery);
   if (model.core) addCore(doc, model.core);
   if (model.brain) addBrain(doc, model.brain);
   if (model.paint) paintParts(doc, model.paint);

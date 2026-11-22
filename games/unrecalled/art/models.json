@@ -233,6 +233,175 @@
           }
         ]
       },
+      "machinery": {
+        "ribs": [
+          {
+            "bones": [
+              "spine_02"
+            ],
+            "perBone": 3,
+            "width": 0.012,
+            "fill": 0.78,
+            "gap": 0.2,
+            "droop": 0.03,
+            "material": "Rib",
+            "colour": "#7c838c"
+          }
+        ],
+        "pistons": [
+          {
+            "bones": [
+              "spine_01"
+            ],
+            "toward": "side",
+            "out": 0.6,
+            "from": 0.2,
+            "to": 1.0,
+            "width": 0.014,
+            "material": "Piston",
+            "colour": "#2d3238",
+            "rodMaterial": "PistonRod",
+            "rodColour": "#d4d8de"
+          },
+          {
+            "bones": [
+              "spine_01"
+            ],
+            "toward": "otherSide",
+            "out": 0.6,
+            "from": 0.2,
+            "to": 1.0,
+            "width": 0.014,
+            "material": "Piston",
+            "colour": "#2d3238",
+            "rodMaterial": "PistonRod",
+            "rodColour": "#d4d8de"
+          },
+          {
+            "bones": [
+              "spine_02"
+            ],
+            "toward": "side",
+            "out": 0.45,
+            "from": 0.1,
+            "to": 0.9,
+            "width": 0.012,
+            "material": "Piston",
+            "colour": "#2d3238",
+            "rodMaterial": "PistonRod",
+            "rodColour": "#d4d8de"
+          },
+          {
+            "bones": [
+              "spine_02"
+            ],
+            "toward": "otherSide",
+            "out": 0.45,
+            "from": 0.1,
+            "to": 0.9,
+            "width": 0.012,
+            "material": "Piston",
+            "colour": "#2d3238",
+            "rodMaterial": "PistonRod",
+            "rodColour": "#d4d8de"
+          },
+          {
+            "bones": [
+              "lowerarm_l",
+              "lowerarm_r",
+              "calf_l",
+              "calf_r"
+            ],
+            "toward": "back",
+            "out": 0.5,
+            "width": 0.012,
+            "material": "Piston",
+            "colour": "#2d3238",
+            "rodMaterial": "PistonRod",
+            "rodColour": "#d4d8de"
+          },
+          {
+            "bones": [
+              "calf_l",
+              "calf_r"
+            ],
+            "toward": "front",
+            "out": 0.45,
+            "from": 0.2,
+            "to": 0.8,
+            "width": 0.01,
+            "material": "Piston",
+            "colour": "#2d3238",
+            "rodMaterial": "PistonRod",
+            "rodColour": "#d4d8de"
+          }
+        ],
+        "parts": [
+          {
+            "bone": "spine_01",
+            "kind": "canister",
+            "at": [
+              0.4,
+              0.5,
+              0.15
+            ],
+            "size": 0.035,
+            "mirror": true,
+            "material": "Canister",
+            "colour": "#2d3238"
+          },
+          {
+            "bone": "spine_01",
+            "kind": "block",
+            "at": [
+              0,
+              0.45,
+              0.4
+            ],
+            "size": 0.05,
+            "material": "Canister",
+            "colour": "#2d3238"
+          },
+          {
+            "bone": "spine_02",
+            "kind": "gear",
+            "at": [
+              0,
+              0.4,
+              -0.5
+            ],
+            "size": 0.055,
+            "material": "Brass",
+            "colour": "#8a6a3a"
+          },
+          {
+            "bone": "spine_01",
+            "kind": "gear",
+            "at": [
+              0.45,
+              0.6,
+              -0.4
+            ],
+            "size": 0.03,
+            "mirror": true,
+            "material": "Brass",
+            "colour": "#8a6a3a"
+          },
+          {
+            "bone": "spine_02",
+            "kind": "block",
+            "at": [
+              0.35,
+              0.35,
+              0.25
+            ],
+            "size": 0.035,
+            "mirror": true,
+            "material": "Canister",
+            "colour": "#2d3238"
+          }
+        ]
+      },
       "paint": {
         "MI_Superhero_Male": {
           "colour": "#3a434d",
@@ -264,6 +433,18 @@
           "plain": true,
           "metalness": 1,
           "roughness": 0.3
+        },
+        "Brass": {
+          "colour": "#8a6a3a",
+          "plain": true,
+          "metalness": 1,
+          "roughness": 0.3
+        },
+        "PistonRod": {
+          "colour": "#d4d8de",
+          "plain": true,
+          "metalness": 1,
+          "roughness": 0.15
         }
       },
       "textures": {
