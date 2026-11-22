@@ -146,7 +146,7 @@ const robot = (
 });
 
 /** U-7's body is drawn in its own material, painted as glass by its model build. */
-const glass = glassShine({ material: 'MI_Superhero_Male', strength: 0.7 });
+const glass = glassShine({ material: 'MI_Superhero_Male', strength: 0.4 });
 
 /** What the game adds to U-7's model, in the world and in its portrait: a glossy glare and rim on its glass. */
 export const dressHero = (model: THREE.Object3D, keep: (material: THREE.Material) => void): void => glass(model, keep);

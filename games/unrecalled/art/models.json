@@ -54,7 +54,7 @@
       "split": [
         {
           "material": "MI_Superhero_Male",
-          "into": "Visor",
+          "into": "Metal",
           "bones": [
             "Head"
           ],
@@ -63,40 +63,77 @@
         },
         {
           "material": "MI_Superhero_Male",
-          "into": "Shell",
+          "into": "Metal",
+          "bones": [
+            "lowerarm_l",
+            "lowerarm_r",
+            "hand_l",
+            "hand_r",
+            "index_01_l",
+            "index_02_l",
+            "index_03_l",
+            "middle_01_l",
+            "middle_02_l",
+            "middle_03_l",
+            "pinky_01_l",
+            "pinky_02_l",
+            "pinky_03_l",
+            "ring_01_l",
+            "ring_02_l",
+            "ring_03_l",
+            "thumb_01_l",
+            "thumb_02_l",
+            "thumb_03_l",
+            "index_01_r",
+            "index_02_r",
+            "index_03_r",
+            "middle_01_r",
+            "middle_02_r",
+            "middle_03_r",
+            "pinky_01_r",
+            "pinky_02_r",
+            "pinky_03_r",
+            "ring_01_r",
+            "ring_02_r",
+            "ring_03_r",
+            "thumb_01_r",
+            "thumb_02_r",
+            "thumb_03_r"
+          ]
+        },
+        {
+          "material": "MI_Superhero_Male",
+          "into": "Metal",
           "bones": [
             "pelvis",
-            "spine_01",
-            "spine_02",
-            "spine_03",
-            "clavicle_l",
-            "clavicle_r",
-            "upperarm_l",
-            "upperarm_r",
             "thigh_l",
             "thigh_r"
+          ]
+        },
+        {
+          "material": "MI_Superhero_Male",
+          "into": "Metal",
+          "bones": [
+            "foot_l",
+            "foot_r",
+            "ball_l",
+            "ball_r"
           ]
         }
       ],
       "paint": {
         "MI_Superhero_Male": {
-          "colour": "#3c434c",
+          "colour": "#121519",
           "plain": true,
-          "opacity": 0.35,
+          "opacity": 0.6,
           "metalness": 0,
           "roughness": 0.05
         },
-        "Shell": {
+        "Metal": {
           "colour": "#d4d8de",
           "plain": true,
           "metalness": 1,
           "roughness": 0.22
-        },
-        "Visor": {
-          "colour": "#1b1e23",
-          "plain": true,
-          "metalness": 0.6,
-          "roughness": 0.12
         }
       },
       "textures": {
