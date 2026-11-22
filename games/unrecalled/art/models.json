@@ -175,6 +175,7 @@
         "colour": "#5a616a",
         "width": 0.02,
         "joint": 2.0,
+        "wobble": 0.6,
         "skip": [
           "root",
           "leaf",
@@ -895,21 +896,24 @@
             "material": "CableRed",
             "colour": "#d0342c",
             "width": 0.003,
-            "turns": 9
+            "turns": 9,
+            "wobble": 0.7
           },
           {
             "material": "CableBlue",
             "colour": "#2a6fd0",
             "width": 0.003,
             "turns": 9,
-            "phase": 0.33
+            "phase": 0.33,
+            "wobble": 0.7
           },
           {
             "material": "CableYellow",
             "colour": "#e0b020",
             "width": 0.0025,
             "turns": 9,
-            "phase": 0.66
+            "phase": 0.66,
+            "wobble": 0.7
           },
           {
             "material": "CableBlack",
@@ -917,7 +921,8 @@
             "width": 0.003,
             "turns": 14,
             "phase": 0.1,
-            "across": true
+            "across": true,
+            "wobble": 0.7
           },
           {
             "material": "BrainCopper",
@@ -925,7 +930,8 @@
             "width": 0.0025,
             "turns": 14,
             "phase": 0.6,
-            "across": true
+            "across": true,
+            "wobble": 0.7
           }
         ],
         "plate": {

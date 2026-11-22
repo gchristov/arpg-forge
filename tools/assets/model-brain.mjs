@@ -1,6 +1,6 @@
 import { sliceAt, pointIn } from './body-fit.mjs';
 import { machineParts, xTo } from './machine-parts.mjs';
-import { ball, box, cylinder, moved, normalise, scaled, sweep } from './shapes.mjs';
+import { ball, box, cylinder, drift, moved, normalise, scaled, sweep } from './shapes.mjs';
 
 // Builds a machine's brain into a character's head, fitted to the skull: two metal lobes wound with wires in place of
 // folds, a plate between them, glowing nodes on top, and a stem of cables down into the neck.
@@ -17,7 +17,7 @@ const STEM_STEPS = 8;
  * - two `lobes` side by side, in their `material` of `colour`;
  * - `coils`: wires wound round each lobe, `width` across, making `turns` turns, starting `phase` of a turn round, as
  *   the folds of a brain: from back to front, or `across` from side to side, so coils both ways cross like a weave
- *   and cover the lobe's ends;
+ *   and cover the lobe's ends; `wobble` from 0 to 1 makes them wander as wound wire does;
  * - a `plate` between the lobes;
  * - `nodes`: `count` balls `size` across in their own material, spread over the top of the lobes, for painting to
  *   glow;
@@ -39,9 +39,9 @@ export function addBrain(doc, { bone, at, fill, lobes, coils = [], plate, nodes,
   for (const sign of [-1, 1]) {
     const offset = across(sign * radii[0] * 1.02);
     add(bone, materialFor(lobes.material, lobes.colour), place(scaled(ball(1, 8), radii), offset));
-    for (const coil of coils) {
-      add(bone, materialFor(coil.material, coil.colour), place(coilRound(radii, coil, sign), offset));
-    }
+    coils.forEach((coil, i) => {
+      add(bone, materialFor(coil.material, coil.colour), place(coilRound(radii, coil, sign, i * 3.7 + sign), offset));
+    });
     if (nodes) {
       for (let i = 0; i < nodes.count; i++) {
         // Spread over the lobe's top by the golden angle, so no two crowd together.
@@ -76,23 +76,27 @@ export function addBrain(doc, { bone, at, fill, lobes, coils = [], plate, nodes,
   build();
 }
 
+/** How many times a coil's wander turns back on itself over its length, at its slowest. */
+const COIL_DRIFT = 9;
+
 /**
  * A wire wound round a lobe of `radii` on its surface, from its back to its front or, `across`, from side to side, on
- * the side given by `sign`.
+ * the side given by `sign`, wandering by `wobble` a way of its own for each `seed`.
  */
-function coilRound(radii, { width, turns, phase = 0, across = false }, sign) {
+function coilRound(radii, { width, turns, phase = 0, across = false, wobble = 0 }, sign, seed) {
   const steps = Math.ceil(turns * COIL_STEPS_PER_TURN);
   const points = [];
   for (let i = 0; i <= steps; i++) {
     const t = i / steps;
-    const along = (t * 2 - 1) * 0.96;
-    const ring = Math.sqrt(1 - along * along);
-    const angle = (phase + turns * t) * Math.PI * 2 * sign;
+    const along = (t * 2 - 1) * 0.96 + wobble * 0.1 * drift(t * COIL_DRIFT * 3, seed);
+    const ring = Math.sqrt(Math.max(0, 1 - along * along));
+    const angle = (phase + turns * t + wobble * 0.3 * drift(t * COIL_DRIFT * 2, seed + 1)) * Math.PI * 2 * sign;
     const [c, s] = [Math.cos(angle) * ring, Math.sin(angle) * ring];
     const p = across ? [along, s, c] : [c, s, along];
     // Half its width proud of the surface, so it sits on the lobe rather than sinking in.
     const lift = normalise(p.map((v, k) => v / radii[k]));
-    points.push(p.map((v, k) => v * radii[k] + lift[k] * width * 0.4));
+    const proud = width * (0.4 + wobble * 0.8 * (drift(t * COIL_DRIFT * 2, seed + 2) + 1));
+    points.push(p.map((v, k) => v * radii[k] + lift[k] * proud));
   }
   return sweep(points, width / 2, 5);
 }

@@ -1,5 +1,5 @@
 import { linear } from './model-parts.mjs';
-import { ball, helix, meshOf, tube, turnUpTo } from './shapes.mjs';
+import { ball, helix, meshOf, seedOf, tube, turnUpTo } from './shapes.mjs';
 
 // Builds a machine's skeleton into a character: a metal frame along its bones with wires wound round it, seen through
 // a see-through body. Each piece hangs off a bone, so it moves with every animation.
@@ -13,8 +13,9 @@ const bonesOf = (doc) => new Set(doc.getRoot().listSkins().flatMap((skin) => ski
  * the bones named in `reach` run a rod to their end bone too, such as a shin that has no foot below it.
  * `wires` winds wires round the rods, each in its own material called Wire.0, Wire.1 and so on, of its `colour`: see
  * `helix` for their shape. A wire with `bones` winds only round the rods of bones whose names contain one of them.
+ * `wobble` makes every wire that doesn't set its own uneven, each its own way on each bone.
  */
-export function addFrame(doc, { material: name, colour, width, joint = 1.8, skip = [], reach = [], wires = [] }) {
+export function addFrame(doc, { material: name, colour, width, joint = 1.8, skip = [], reach = [], wires = [], wobble = 0 }) {
   const metal = (materialName) =>
     doc.createMaterial(materialName).setBaseColorFactor([...linear(colour), 1]).setMetallicFactor(0.9).setRoughnessFactor(0.35);
   const material = metal(name);
@@ -36,7 +37,8 @@ export function addFrame(doc, { material: name, colour, width, joint = 1.8, skip
       child.addChild(doc.createNode(`${name}.${child.getName()}.joint`).setMesh(meshOf(doc, ball((width / 2) * joint), jointMaterial)));
       wires.forEach((wire, i) => {
         if (wire.bones && !wire.bones.some((part) => bone.getName().includes(part))) return;
-        const node = doc.createNode(`Wire.${i}.${bone.getName()}`).setMesh(meshOf(doc, helix(wire, length), wireMaterials[i]));
+        const shape = helix({ wobble, ...wire }, length, seedOf(bone.getName()) + i * 7.31);
+        const node = doc.createNode(`Wire.${i}.${bone.getName()}`).setMesh(meshOf(doc, shape, wireMaterials[i]));
         bone.addChild(node.setRotation(turnUpTo(to)));
       });
       rods++;
