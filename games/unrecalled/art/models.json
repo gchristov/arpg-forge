@@ -123,7 +123,7 @@
             "hand_l",
             "hand_r"
           ],
-          "outer": 0.2
+          "outer": 0.3
         },
         {
           "material": "MI_Superhero_Male",
@@ -151,7 +151,7 @@
             "calf_l",
             "calf_r"
           ],
-          "below": 0.25
+          "below": 0.15
         }
       ],
       "paint": {
