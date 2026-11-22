@@ -985,7 +985,7 @@
           "roughness": 0.05
         },
         "Metal": {
-          "colour": "#d4d8de",
+          "colour": "#8f959d",
           "plain": true,
           "metalness": 1,
           "roughness": 0.22

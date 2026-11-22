@@ -19,6 +19,7 @@ import { playDistances, shadeArea, shadeAt } from './shade-map';
 import { Spatter } from './spatter';
 import { WaterSurface } from './water';
 import { isWallTile, kitPartitions, kitWalls, wallFaces, wallPanels, type KitCorner, type KitOpening } from './wall-panels';
+import { heroLightOf, LANTERN } from './hero-light';
 
 /** On-screen width of one tile at zoom 1. */
 const TILE_PIXELS = 64;
@@ -57,7 +58,8 @@ export class SceneRenderer {
   private readonly ambient = new THREE.AmbientLight();
   private readonly fill = new THREE.HemisphereLight();
   private readonly moon = new THREE.DirectionalLight();
-  private readonly heroLight = new THREE.PointLight(0xfff1dd, 1.4, 6, 1);
+  private readonly heroLight = new THREE.PointLight(LANTERN.colour, LANTERN.intensity, 6, 1);
+  private heroLightHeight = LANTERN.height;
   private readonly lightMap = new LightMap();
   private readonly glowColour = new THREE.Color();
   /** Kit corner pieces split into their arms, by model name, split once and kept for every level. */
@@ -195,7 +197,11 @@ export class SceneRenderer {
       this.moon.color.set(mood.moon.colour);
       this.moon.intensity = mood.moon.intensity;
     }
-    this.heroLight.distance = mood.heroLightRadius * 1.6;
+    const heroLight = heroLightOf(mood);
+    this.heroLight.color.set(heroLight.colour);
+    this.heroLight.intensity = heroLight.intensity;
+    this.heroLight.distance = heroLight.distance;
+    this.heroLightHeight = heroLight.height;
     this.fill.visible = Boolean(mood.fill);
     if (mood.fill) {
       this.fill.color.set(mood.fill.sky);
@@ -370,7 +376,7 @@ export class SceneRenderer {
 
   /** Moves the light the hero carries to where they stand. */
   lightHero(x: number, y: number): void {
-    this.heroLight.position.set(x, 1.2, y);
+    this.heroLight.position.set(x, this.heroLightHeight, y);
     this.lightMap.setHero(x, y);
   }
 
