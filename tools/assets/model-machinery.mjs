@@ -3,7 +3,7 @@ import { linear } from './model-parts.mjs';
 import { ball, box, cylinder, helix, meshOf, merged, moved, normalise, sweep, turnUpTo } from './shapes.mjs';
 
 // Builds machinery into a character's body round its skeleton, fitted to the body's own shape at each bone: ribs,
-// pistons, loose cables, and parts such as canisters, springs and gears. Each hangs off a bone, so it moves with every animation.
+// pistons, loose cables, and parts such as canisters, springs, gears, motors, battery packs and heat sinks. Each hangs off a bone, so it moves with every animation.
 
 /** How many lengths a rib's curve is cut into. */
 const RIB_STEPS = 10;
@@ -40,7 +40,7 @@ function placeAt(body, [across, up, deep], sign = 1) {
  * - `pistons`: a barrel `width` across and a rod coming out of it in `rodMaterial`, beside each of `bones` from `from`
  *   to `to` of its length, `out` of the way to the skin `toward` the front, back, side or otherSide.
  * - `cables`: a cable `width` across on `bone` from `from` to `to`, sagging `sag` metres out from the bone half way.
- * - `parts`: a `canister`, `spring`, `gear` or `block` `size` across on `bone`, at `at`.
+ * - `parts`: a `canister`, `spring`, `gear`, `block`, `motor`, `battery` or `fins` `size` across on `bone`, at `at`.
  *
  * Places on a bone (`at`, `from`, `to`) are across and front to back as shares of the body's half size from its middle,
  * and up as a share of the bone's length (see `placeAt`); `mirror` adds a cable or part on the other side too.
@@ -140,8 +140,24 @@ export function addMachinery(doc, { ribs = [], pistons = [], cables = [], parts 
   }
 }
 
-/** A canister or a spring standing up the bone, a gear facing the front, or a pump block with a pipe out of its top. */
+/**
+ * A canister or a spring standing up the bone, a gear facing the front, a pump block with a pipe out of its top, a
+ * motor lying across the body with a flange at each end, a battery pack banded round, or a heat sink's stack of fins.
+ */
 function partShape(kind, size, body, position) {
+  if (kind === 'motor') {
+    const flange = (end) => moved(cylinder(size * 0.6, size * 0.12, 12), undefined, [0, end * size * 0.7, 0]);
+    return moved(merged([cylinder(size / 2, size * 1.4, 12), flange(-1), flange(1)]), turnUpTo(body.side), position);
+  }
+  if (kind === 'battery') {
+    const band = (y) => moved(box([size * 1.06, size * 0.1, size * 0.66]), undefined, [0, y * size, 0]);
+    return moved(merged([box([size, size * 1.3, size * 0.6]), band(-0.4), band(0), band(0.4)]), xTo(body.side), position);
+  }
+  if (kind === 'fins') {
+    const fins = [box([size, size * 0.12, size * 0.25])];
+    for (let i = 0; i < 6; i++) fins.push(moved(box([size, size * 0.06, size * 0.6]), undefined, [0, (i - 2.5) * size * 0.18, 0]));
+    return moved(merged(fins), xTo(body.side), position);
+  }
   if (kind === 'spring') {
     const height = size * 1.6;
     const coil = helix({ width: size * 0.12, around: size * 0.4, turns: SPRING_COILS / height }, height);

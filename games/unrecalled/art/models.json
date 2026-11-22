@@ -441,18 +441,6 @@
             "colour": "#2d3238"
           },
           {
-            "bone": "spine_02",
-            "kind": "gear",
-            "at": [
-              0,
-              0.4,
-              -0.5
-            ],
-            "size": 0.055,
-            "material": "Brass",
-            "colour": "#8a6a3a"
-          },
-          {
             "bone": "spine_01",
             "kind": "gear",
             "at": [
@@ -542,6 +530,159 @@
             "mirror": true,
             "material": "Brass",
             "colour": "#8a6a3a"
+          },
+          {
+            "bone": "spine_02",
+            "kind": "battery",
+            "at": [
+              0,
+              0.4,
+              -0.4
+            ],
+            "size": 0.065,
+            "material": "Battery",
+            "colour": "#1f4e6e"
+          },
+          {
+            "bone": "spine_02",
+            "kind": "motor",
+            "at": [
+              0.45,
+              0.5,
+              -0.15
+            ],
+            "size": 0.05,
+            "mirror": true,
+            "material": "Housing",
+            "colour": "#3a4048"
+          },
+          {
+            "bone": "spine_02",
+            "kind": "fins",
+            "at": [
+              0.5,
+              0.2,
+              0.2
+            ],
+            "size": 0.04,
+            "mirror": true,
+            "material": "Fins",
+            "colour": "#9aa1aa"
+          },
+          {
+            "bone": "spine_02",
+            "kind": "block",
+            "at": [
+              0.3,
+              0.85,
+              0.3
+            ],
+            "size": 0.03,
+            "mirror": true,
+            "material": "Housing",
+            "colour": "#3a4048"
+          },
+          {
+            "bone": "spine_01",
+            "kind": "battery",
+            "at": [
+              0.25,
+              0.55,
+              -0.1
+            ],
+            "size": 0.05,
+            "mirror": true,
+            "material": "Battery",
+            "colour": "#1f4e6e"
+          },
+          {
+            "bone": "spine_01",
+            "kind": "motor",
+            "at": [
+              0,
+              0.85,
+              -0.3
+            ],
+            "size": 0.045,
+            "material": "Housing",
+            "colour": "#3a4048"
+          },
+          {
+            "bone": "spine_01",
+            "kind": "fins",
+            "at": [
+              0,
+              0.2,
+              -0.45
+            ],
+            "size": 0.05,
+            "material": "Fins",
+            "colour": "#9aa1aa"
+          },
+          {
+            "bone": "spine_02",
+            "kind": "battery",
+            "at": [
+              0.65,
+              0.45,
+              -0.35
+            ],
+            "size": 0.04,
+            "mirror": true,
+            "material": "Battery",
+            "colour": "#1f4e6e"
+          },
+          {
+            "bone": "spine_02",
+            "kind": "canister",
+            "at": [
+              0.7,
+              0.6,
+              0.05
+            ],
+            "size": 0.03,
+            "mirror": true,
+            "material": "Canister",
+            "colour": "#2d3238"
+          },
+          {
+            "bone": "spine_01",
+            "kind": "motor",
+            "at": [
+              0.62,
+              0.5,
+              -0.3
+            ],
+            "size": 0.035,
+            "mirror": true,
+            "material": "Housing",
+            "colour": "#3a4048"
+          },
+          {
+            "bone": "spine_01",
+            "kind": "block",
+            "at": [
+              0.5,
+              0.25,
+              0.35
+            ],
+            "size": 0.035,
+            "mirror": true,
+            "material": "Housing",
+            "colour": "#3a4048"
+          },
+          {
+            "bone": "spine_01",
+            "kind": "canister",
+            "at": [
+              0.7,
+              0.45,
+              0.05
+            ],
+            "size": 0.028,
+            "mirror": true,
+            "material": "Canister",
+            "colour": "#2d3238"
           }
         ],
         "cables": [
@@ -752,6 +893,12 @@
           "plain": true,
           "metalness": 1,
           "roughness": 0.15
+        },
+        "Fins": {
+          "colour": "#9aa1aa",
+          "plain": true,
+          "metalness": 1,
+          "roughness": 0.3
         }
       },
       "textures": {
