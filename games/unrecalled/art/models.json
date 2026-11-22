@@ -49,8 +49,7 @@
         "IdleLoop"
       ],
       "keepMaterials": [
-        "MI_Superhero_Male",
-        "MI_Eyes"
+        "MI_Superhero_Male"
       ],
       "split": [
         {
@@ -81,10 +80,11 @@
       ],
       "paint": {
         "MI_Superhero_Male": {
-          "colour": "#4a4e57",
+          "colour": "#8fa6bc",
           "plain": true,
-          "metalness": 0.8,
-          "roughness": 0.45
+          "opacity": 0.4,
+          "metalness": 0,
+          "roughness": 0.05
         },
         "Shell": {
           "colour": "#d4d8de",
@@ -93,12 +93,6 @@
           "roughness": 0.22
         },
         "Visor": {
-          "colour": "#1b1e23",
-          "plain": true,
-          "metalness": 0.6,
-          "roughness": 0.12
-        },
-        "MI_Eyes": {
           "colour": "#1b1e23",
           "plain": true,
           "metalness": 0.6,
