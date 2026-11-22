@@ -11,6 +11,8 @@ const TAP_REACH_PX = 44;
  */
 const BUILDING_REACH = 0.8;
 const THING_REACH = 0.9;
+/** For a game whose buildings aren't entered by tapping them: taps on the ground this close to a door enter it. */
+const ENTRANCE_REACH = 1.5;
 /** Where on an actor's body a tap aims, in screen pixels above its feet at zoom 1. */
 const BODY_PX = 18;
 /** How tall a door stands, in tiles; a tap anywhere up its height goes through it. */
@@ -25,7 +27,8 @@ export type TapView = Pick<SceneRenderer, 'screenPosition' | 'pick' | 'zoom'>;
 /**
  * Turns a tap on the world at screen point `x`, `y` into a command, checking in this order: enemies, NPCs, things to
  * read, doors by their body, buildings, chests, doors by the ground near them, then the ground. Only enemies `seen`
- * says the hero can see can be tapped. Null when the tap hits nothing.
+ * says the hero can see can be tapped. Unless `buildingsEnterOnTap`, a tap on a building does nothing, and only the
+ * ground round its entrance enters it. Null when the tap hits nothing.
  */
 export function tapCommand(
   state: GameState,
@@ -34,6 +37,7 @@ export function tapCommand(
   x: number,
   y: number,
   seen: (enemyId: number) => boolean = () => true,
+  buildingsEnterOnTap = true,
 ): Command | null {
   const ls = currentLevel(state);
   let best: { id: number; d: number } | null = null;
@@ -64,9 +68,11 @@ export function tapCommand(
   if (tappedDoor >= 0) return walkInto(ls.level.portals[tappedDoor]!);
   const picked = renderer.pick(x, y);
   if (!picked) return null;
-  if ('structure' in picked) return { type: 'enterStructure', index: picked.structure };
+  if ('structure' in picked) return buildingsEnterOnTap ? { type: 'enterStructure', index: picked.structure } : null;
   const { ground } = picked;
-  const building = nearest(ls.level.structures, (s) => distanceToArea(ground, s.x, s.y, s.width, s.depth), BUILDING_REACH);
+  const building = buildingsEnterOnTap
+    ? nearest(ls.level.structures, (s) => distanceToArea(ground, s.x, s.y, s.width, s.depth), BUILDING_REACH)
+    : nearest(ls.level.structures, (s) => distanceToTile(ground, s.door.tx, s.door.ty), ENTRANCE_REACH);
   if (building >= 0) return { type: 'enterStructure', index: building };
   const chest = nearest(ls.containers, (c) => (c.opened ? Infinity : distanceToTile(ground, c.tx, c.ty)), THING_REACH);
   if (chest >= 0) return { type: 'open', index: chest };

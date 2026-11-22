@@ -79,6 +79,20 @@ describe('tapCommand', () => {
     expect(tapTile(state, 21.5, 5.2)).toEqual({ type: 'walk', x: 21.5, y: 5.2 });
   });
 
+  it('ignores a building tapped when its game enters buildings only by their entrance', () => {
+    expect(tapCommand(room(), view, () => 1, 11 * PIXELS, 11 * PIXELS, undefined, false)).toBeNull();
+  });
+
+  it('enters a building tapped on the ground round its entrance, and walks anywhere else beside it', () => {
+    const state = room();
+    currentLevel(state).level.structures.push({ kind: 'shed', name: 'Shed', x: 20, y: 2, width: 3, depth: 2, door: { tx: 21, ty: 3 } });
+    const tap = (x: number, y: number) => tapCommand(state, view, () => 1, x * PIXELS, y * PIXELS, undefined, false);
+    expect(tap(21.5, 4.8)).toEqual({ type: 'enterStructure', index: 0 });
+    expect(tap(22.6, 4.2)).toEqual({ type: 'enterStructure', index: 0 });
+    expect(tap(19.6, 2.5)).toEqual({ type: 'walk', x: 19.6, y: 2.5 });
+    expect(tap(21.5, 5.4)).toEqual({ type: 'walk', x: 21.5, y: 5.4 });
+  });
+
   it('opens a chest or walks into a portal tapped beside its tile, not only on it', () => {
     const state = room();
     currentLevel(state).containers.push({ tx: 15, ty: 3, gold: 10, healingItems: 0, opened: false });
