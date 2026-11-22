@@ -146,13 +146,20 @@
             "upperarm_r"
           ],
           "inner": 0.5
+        },
+        {
+          "material": "MI_Superhero_Male",
+          "into": "Metal",
+          "bones": [
+            "neck_01"
+          ]
         }
       ],
       "paint": {
         "MI_Superhero_Male": {
-          "colour": "#121519",
+          "colour": "#3a434d",
           "plain": true,
-          "opacity": 0.6,
+          "opacity": 0.5,
           "metalness": 0,
           "roughness": 0.05
         },

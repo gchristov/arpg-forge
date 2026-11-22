@@ -13,6 +13,8 @@ const library = await io.read(`${C}/ual-ue.glb`);
 // The library's rig is shorter than the body, so its pelvis moves are scaled to the body's height, or the feet sink.
 const restHeight = (d) => d.getRoot().listNodes().find((n) => n.getName() === 'pelvis').getTranslation()[2];
 const pelvisScale = restHeight(doc) / restHeight(library);
+// Standing, the library's poses put the toes a little below the ground; this lifts the body clear of it, in metres.
+const TOE_CLEARANCE = 0.02;
 mergeDocuments(doc, library);
 
 /** The game's name for each animation, and the library's. */
@@ -33,7 +35,8 @@ for (const [name, from] of Object.entries(ANIMATIONS)) {
     const s = channel.getSampler();
     let output = s.getOutput();
     if (path === 'translation') {
-      output = output.clone().setArray(output.getArray().map((v) => v * pelvisScale));
+      // Its third value is the pelvis's height above the ground.
+      output = output.clone().setArray(output.getArray().map((v, i) => v * pelvisScale + (i % 3 === 2 ? TOE_CLEARANCE : 0)));
     }
     const sampler = doc.createAnimationSampler().setInput(s.getInput()).setOutput(output).setInterpolation(s.getInterpolation());
     animation.addSampler(sampler).addChannel(doc.createAnimationChannel().setTargetNode(target).setTargetPath(path).setSampler(sampler));
