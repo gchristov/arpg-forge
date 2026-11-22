@@ -156,9 +156,9 @@
       ],
       "frame": {
         "material": "Frame",
-        "colour": "#22262c",
-        "thickness": 0.035,
-        "joint": 2.8,
+        "colour": "#5a616a",
+        "thickness": 0.022,
+        "joint": 2.2,
         "skip": [
           "root",
           "leaf",
@@ -169,15 +169,7 @@
           "thumb",
           "ball",
           "clavicle"
-        ],
-        "wires": {
-          "colours": [
-            "#16191d",
-            "#4a3a2a"
-          ],
-          "thickness": 0.018,
-          "apart": 0.06
-        }
+        ]
       },
       "paint": {
         "MI_Superhero_Male": {
@@ -192,6 +184,12 @@
           "plain": true,
           "metalness": 1,
           "roughness": 0.22
+        },
+        "Frame": {
+          "colour": "#5a616a",
+          "plain": true,
+          "metalness": 1,
+          "roughness": 0.18
         }
       },
       "textures": {
