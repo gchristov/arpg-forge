@@ -228,6 +228,16 @@ export function moved(shape, turn = [0, 0, 0, 1], by = [0, 0, 0]) {
   };
 }
 
+/** `shape` stretched `by` along x, y and z, its normals turned to stay square to its surface. */
+export function scaled(shape, by) {
+  const out = { positions: [], normals: [], indices: shape.indices };
+  for (let i = 0; i < shape.positions.length; i += 3) {
+    out.positions.push(...[0, 1, 2].map((k) => shape.positions[i + k] * by[k]));
+    out.normals.push(...normalise([0, 1, 2].map((k) => shape.normals[i + k] / by[k])));
+  }
+  return out;
+}
+
 /** One shape made of all of `shapes`. */
 export function merged(shapes) {
   const out = { positions: [], normals: [], indices: [] };

@@ -832,6 +832,134 @@
           }
         ]
       },
+      "core": {
+        "bone": "spine_02",
+        "at": [
+          0,
+          0.3,
+          0.35
+        ],
+        "size": 0.08,
+        "rod": {
+          "material": "CoreRod",
+          "colour": "#bff4ff"
+        },
+        "halo": {
+          "material": "CoreHalo",
+          "colour": "#5ad8ff"
+        },
+        "cage": {
+          "material": "CoreCage",
+          "colour": "#e2e5e9"
+        },
+        "rings": {
+          "material": "CoreRing",
+          "colour": "#e0b020"
+        },
+        "cables": [
+          {
+            "material": "CableBlack",
+            "colour": "#15181c",
+            "width": 0.006
+          },
+          {
+            "material": "CableBlue",
+            "colour": "#2a6fd0",
+            "width": 0.004
+          },
+          {
+            "material": "CableYellow",
+            "colour": "#e0b020",
+            "width": 0.004
+          }
+        ]
+      },
+      "brain": {
+        "bone": "Head",
+        "at": [
+          0,
+          0.58,
+          -0.12
+        ],
+        "fill": [
+          0.85,
+          0.55,
+          0.85
+        ],
+        "lobes": {
+          "material": "BrainLobe",
+          "colour": "#5a616a"
+        },
+        "coils": [
+          {
+            "material": "CableRed",
+            "colour": "#d0342c",
+            "width": 0.003,
+            "turns": 9
+          },
+          {
+            "material": "CableBlue",
+            "colour": "#2a6fd0",
+            "width": 0.003,
+            "turns": 9,
+            "phase": 0.33
+          },
+          {
+            "material": "CableYellow",
+            "colour": "#e0b020",
+            "width": 0.0025,
+            "turns": 9,
+            "phase": 0.66
+          },
+          {
+            "material": "CableBlack",
+            "colour": "#15181c",
+            "width": 0.003,
+            "turns": 14,
+            "phase": 0.1,
+            "across": true
+          },
+          {
+            "material": "BrainCopper",
+            "colour": "#b8733a",
+            "width": 0.0025,
+            "turns": 14,
+            "phase": 0.6,
+            "across": true
+          }
+        ],
+        "plate": {
+          "material": "BrainPlate",
+          "colour": "#d4d8de"
+        },
+        "nodes": {
+          "count": 10,
+          "size": 0.009,
+          "material": "Synapse",
+          "colour": "#5ad8ff"
+        },
+        "stem": {
+          "width": 0.005,
+          "cables": [
+            {
+              "material": "CableBlack",
+              "colour": "#15181c"
+            },
+            {
+              "material": "CableRed",
+              "colour": "#d0342c"
+            },
+            {
+              "material": "CableBlue",
+              "colour": "#2a6fd0"
+            },
+            {
+              "material": "CableYellow",
+              "colour": "#e0b020"
+            }
+          ]
+        }
+      },
       "paint": {
         "MI_Superhero_Male": {
           "colour": "#3a434d",
@@ -896,6 +1024,60 @@
         },
         "Fins": {
           "colour": "#9aa1aa",
+          "plain": true,
+          "metalness": 1,
+          "roughness": 0.3
+        },
+        "CoreRod": {
+          "colour": "#8aeaff",
+          "plain": true,
+          "metalness": 0,
+          "roughness": 0.3,
+          "glow": "#3ac8ff",
+          "glowStrength": 14
+        },
+        "CoreHalo": {
+          "colour": "#2ab8ff",
+          "plain": true,
+          "opacity": 0.6,
+          "metalness": 0,
+          "roughness": 0.1,
+          "glow": "#2ab8ff",
+          "glowStrength": 6
+        },
+        "CoreCage": {
+          "colour": "#e2e5e9",
+          "plain": true,
+          "metalness": 1,
+          "roughness": 0.15
+        },
+        "CoreRing": {
+          "colour": "#e0b020",
+          "plain": true,
+          "metalness": 0.6,
+          "roughness": 0.35
+        },
+        "BrainPlate": {
+          "colour": "#d4d8de",
+          "plain": true,
+          "metalness": 1,
+          "roughness": 0.2
+        },
+        "BrainCopper": {
+          "colour": "#b8733a",
+          "plain": true,
+          "metalness": 1,
+          "roughness": 0.3
+        },
+        "Synapse": {
+          "colour": "#bff4ff",
+          "plain": true,
+          "metalness": 0,
+          "glow": "#5ad8ff",
+          "glowStrength": 8
+        },
+        "BrainLobe": {
+          "colour": "#5a616a",
           "plain": true,
           "metalness": 1,
           "roughness": 0.3
