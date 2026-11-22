@@ -127,6 +127,25 @@
             "clavicle_l",
             "clavicle_r"
           ]
+        },
+        {
+          "material": "MI_Superhero_Male",
+          "into": "Metal",
+          "bones": [
+            "spine_03",
+            "clavicle_l",
+            "clavicle_r"
+          ],
+          "back": 0.5
+        },
+        {
+          "material": "MI_Superhero_Male",
+          "into": "Metal",
+          "bones": [
+            "upperarm_l",
+            "upperarm_r"
+          ],
+          "inner": 0.5
         }
       ],
       "paint": {
