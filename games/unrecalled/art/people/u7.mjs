@@ -9,7 +9,11 @@ const doc = await io.read(`${C}/ubc/Universal Base Characters[Standard]/Base Cha
 const root = doc.getRoot();
 const own = new Set(root.listNodes());
 const byName = new Map([...own].map((n) => [n.getName(), n]));
-mergeDocuments(doc, await io.read(`${C}/ual-ue.glb`));
+const library = await io.read(`${C}/ual-ue.glb`);
+// The library's rig is shorter than the body, so its pelvis moves are scaled to the body's height, or the feet sink.
+const restHeight = (d) => d.getRoot().listNodes().find((n) => n.getName() === 'pelvis').getTranslation()[2];
+const pelvisScale = restHeight(doc) / restHeight(library);
+mergeDocuments(doc, library);
 
 /** The game's name for each animation, and the library's. */
 const ANIMATIONS = {
@@ -27,7 +31,11 @@ for (const [name, from] of Object.entries(ANIMATIONS)) {
     // Bones turn; only the pelvis moves, so the body bobs and falls without sliding away from its place.
     if (!target || !(path === 'rotation' || (path === 'translation' && target.getName() === 'pelvis'))) continue;
     const s = channel.getSampler();
-    const sampler = doc.createAnimationSampler().setInput(s.getInput()).setOutput(s.getOutput()).setInterpolation(s.getInterpolation());
+    let output = s.getOutput();
+    if (path === 'translation') {
+      output = output.clone().setArray(output.getArray().map((v) => v * pelvisScale));
+    }
+    const sampler = doc.createAnimationSampler().setInput(s.getInput()).setOutput(output).setInterpolation(s.getInterpolation());
     animation.addSampler(sampler).addChannel(doc.createAnimationChannel().setTargetNode(target).setTargetPath(path).setSampler(sampler));
   }
 }
