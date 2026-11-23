@@ -103,6 +103,23 @@ describe('area skill', () => {
     expect(ofType(run(state, 3), 'HeroHurt').length).toBeGreaterThan(0);
   });
 
+  it('can send the hero after the nearest enemy it stunned, unless their target is stunned already', () => {
+    const state = arena(OPEN_ROOM, { x: 8.5, y: 8.5 }, [
+      { kind: 'dummy', x: 11, y: 8.5 },
+      { kind: 'dummy', x: 9.8, y: 8.5 },
+      { kind: 'dummy', x: 4, y: 8.5 },
+    ]);
+    withExtraSkill(state, { ...PULSE, knockback: 0, radius: 3, stun: 1, chaseStunned: true });
+    const [far, near, untouched] = enemiesOf(state);
+    state.hero.targetId = untouched!.id;
+    run(state, 1 / 60, [{ type: 'useSkill', slot: 1 }]);
+    expect(state.hero.targetId).toBe(near!.id);
+    state.hero.targetId = far!.id;
+    state.hero.skillCooldowns[1] = 0;
+    run(state, 1 / 60, [{ type: 'useSkill', slot: 1 }]);
+    expect(state.hero.targetId).toBe(far!.id);
+  });
+
   it('never stuns a boss', () => {
     const state = arena(OPEN_ROOM, { x: 8.5, y: 8.5 }, [{ kind: 'lord', x: 10, y: 8.5 }]);
     withExtraSkill(state, { ...PULSE, stun: 1 });

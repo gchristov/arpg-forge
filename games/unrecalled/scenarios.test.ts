@@ -201,6 +201,26 @@ describe('Unrecalled scenarios', () => {
     machine.stunnedFor = 3;
     const strikes = play(state, 2.5);
     expect(strikes.some((e) => e.type === 'Signal' && e.name === BLAST_SIGNAL.strike)).toBe(true);
+    machine.stunnedFor = 0;
+    const close = play(state, 1.5);
+    expect(close.some((e) => e.type === 'Signal' && e.name === BLAST_SIGNAL.punch)).toBe(true);
+  });
+
+  it('after the repel, goes for a machine it knocked down and moves on to the next once it falls', () => {
+    const state = untouchable(createGameState(content, 1, 'arena'));
+    readyForPractice(state, null);
+    const [first, second] = currentLevel(state).enemies;
+    state.hero.x = first!.x - 1.5;
+    state.hero.y = first!.y;
+    second!.x = first!.x + 0.5;
+    second!.y = first!.y + 0.8;
+    first!.hp = 1;
+    const repel = state.rules.hero.skills.findIndex((s) => s.id === 'repel');
+    play(state, 1 / 60, [{ type: 'useSkill', slot: repel }]);
+    expect([first!.id, second!.id]).toContain(state.hero.targetId);
+    const events = play(state, 1.2);
+    expect(events.some((e) => e.type === 'EnemyKilled')).toBe(true);
+    expect(events.filter((e) => e.type === 'Signal' && e.name === BLAST_SIGNAL.strike).length).toBeGreaterThan(1);
   });
 
   it('cuts with the chainsaw rather than swinging', () => {

@@ -154,9 +154,24 @@ function useSkill(state: GameState, slot: number, events: SimEvent[]): void {
       hero.swing = CAST_SWING;
       hero.struck = true;
       burst(state, skill, hero.x, hero.y, skill.knockback, events, skill.arc === undefined ? undefined : aimCone(state, skill.radius, skill.arc));
+      if (skill.chaseStunned) chaseStunned(state);
       break;
   }
   events.push({ type: 'SkillUsed', slot, skill: skill.id });
+}
+
+/** Targets the nearest stunned enemy, unless the hero's target is stunned already. */
+function chaseStunned(state: GameState): void {
+  if ((findEnemy(state, state.hero.targetId)?.stunnedFor ?? 0) > 0) return;
+  const { hero } = state;
+  let best: number | null = null;
+  let bestDistance = Infinity;
+  for (const e of currentLevel(state).enemies) {
+    if (e.dead || e.stunnedFor <= 0) continue;
+    const d = dist(hero.x, hero.y, e.x, e.y);
+    if (d < bestDistance) [best, bestDistance] = [e.id, d];
+  }
+  if (best !== null) target(state, best);
 }
 
 /** A cone aimed at the hero's target, else the nearest enemy within `radius`, else ahead; the hero turns to face it. */

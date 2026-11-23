@@ -7,55 +7,88 @@ import { meleeOf } from '../../../engine/sim/weapons';
 import { steerTowards } from '../../../engine/sim/walking';
 import { hasLineOfSight } from '../../../engine/world/line-of-sight';
 
+/** One kind of hit: `power` times a swing's damage, every `seconds`, landing within `reach` of the target's edge. */
+interface Blow {
+  reach: number;
+  power: number;
+  knockback: number;
+  seconds: number;
+}
+
 /**
- * U-7's hand blaster: from out of the machine's reach, a shot every `shotSeconds` for `cost` charge, each `power` times
- * a swing's damage. A machine that's down (stunned) is open: U-7 closes in and tears its core out with a powered
- * strike, `strike.power` times a swing, every `strike.seconds`.
+ * U-7's hand blaster and fists. Within `range` of a machine it shoots, every `shotSeconds` for `cost` charge; once the
+ * machine is up close it punches it back instead. A machine that's down (stunned) is open: U-7 dashes in at `dash`
+ * times its speed and keeps tearing at its core with powered strikes until it dies or gets up. The weapon's
+ * `engageRange` should reach past `range`, so U-7 walks into range itself and can dash from further out.
  */
 export interface BlastSettings {
+  range: number;
   shotSeconds: number;
   cost: number;
   power: number;
   knockback: number;
-  strike: { reach: number; power: number; knockback: number; seconds: number };
+  punch: Blow;
+  strike: Blow & { dash: number };
 }
 
-/** The signals the blaster sends, for the game to draw and sound: a shot landing, and a powered strike. */
-export const BLAST_SIGNAL = { shot: 'blast', strike: 'poweredStrike' } as const;
+/** The signals the blaster sends, for the game to draw and sound: a shot landing, a punch, and a powered strike. */
+export const BLAST_SIGNAL = { shot: 'blast', punch: 'punch', strike: 'poweredStrike' } as const;
 
-/** Keeps `untilShot`, the seconds until it can shoot or strike again, in its memory. See EXTENSIONS.md. */
+/** How far round U-7 it looks for the next machine that's down, once it has finished one. */
+const NEXT_DOWNED_RANGE = 6;
+
+/** Keeps `untilHit`, the seconds until it can shoot or hit again, in its memory. See EXTENSIONS.md. */
 export const BLAST: WeaponAttack<BlastSettings> = {
   attack({ state, target, dt, events, settings, memory }) {
     const { hero } = state;
     const { map } = currentLevel(state).level;
-    memory.untilShot = (memory.untilShot ?? 0) - dt;
+    memory.untilHit = (memory.untilHit ?? 0) - dt;
     const d = dist(hero.x, hero.y, target.x, target.y);
-    const closeIn = (): void => {
-      steerTowards(map, hero, target.x, target.y, hero.speed, dt);
+    const closeIn = (speed: number): void => {
+      steerTowards(map, hero, target.x, target.y, speed, dt);
       hero.moving = true;
     };
+    const inReach = (blow: Blow): boolean => d <= blow.reach + target.r + hero.r;
+
     if (target.stunnedFor > 0) {
-      if (d > settings.strike.reach + target.r) return closeIn();
-      if (memory.untilShot > 0) return;
-      memory.untilShot = settings.strike.seconds;
-      events.push({ type: 'Signal', name: BLAST_SIGNAL.strike, x: target.x, y: target.y, enemyId: target.id });
-      hit(state, target, settings.strike.power, settings.strike.knockback, events);
+      const { strike } = settings;
+      if (!inReach(strike)) return closeIn(hero.speed * strike.dash);
+      if (memory.untilHit > 0) return;
+      blow(state, target, strike, BLAST_SIGNAL.strike, memory, events);
+      if (target.dead) goForNextDowned(state);
       return;
     }
-    if (!hasLineOfSight(map, hero.x, hero.y, target.x, target.y)) return closeIn();
-    if (memory.untilShot > 0 || hero.resource < settings.cost) return;
+    if (inReach(settings.punch)) {
+      if (memory.untilHit <= 0) blow(state, target, settings.punch, BLAST_SIGNAL.punch, memory, events);
+      return;
+    }
+    if (d > settings.range + target.r || !hasLineOfSight(map, hero.x, hero.y, target.x, target.y)) return closeIn(hero.speed);
+    if (memory.untilHit > 0 || hero.resource < settings.cost) return;
     hero.resource -= settings.cost;
-    memory.untilShot = settings.shotSeconds;
-    events.push({ type: 'Signal', name: BLAST_SIGNAL.shot, x: target.x, y: target.y, enemyId: target.id });
-    hit(state, target, settings.power, settings.knockback, events);
+    blow(state, target, { reach: settings.range, power: settings.power, knockback: settings.knockback, seconds: settings.shotSeconds }, BLAST_SIGNAL.shot, memory, events);
   },
 };
 
-function hit(state: GameState, target: Enemy, power: number, knockback: number, events: SimEvent[]): void {
+function blow(state: GameState, target: Enemy, b: Blow, signal: string, memory: Record<string, number>, events: SimEvent[]): void {
   const { hero } = state;
+  memory.untilHit = b.seconds;
+  events.push({ type: 'Signal', name: signal, x: target.x, y: target.y, enemyId: target.id });
   const melee = meleeOf(state);
   const crit = chance(state.rng, melee.critChance);
-  const amount = Math.round((range(state.rng, hero.damage[0], hero.damage[1]) + hero.bonusDamage) * power * (crit ? melee.critMultiplier : 1));
+  const amount = Math.round((range(state.rng, hero.damage[0], hero.damage[1]) + hero.bonusDamage) * b.power * (crit ? melee.critMultiplier : 1));
   const d = dist(hero.x, hero.y, target.x, target.y) || 1;
-  damageEnemy(state, target, Math.max(1, amount), crit, (target.x - hero.x) / d, (target.y - hero.y) / d, knockback, events);
+  damageEnemy(state, target, Math.max(1, amount), crit, (target.x - hero.x) / d, (target.y - hero.y) / d, b.knockback, events);
+}
+
+/** Moves straight on to the nearest machine that's still down, if there is one. */
+function goForNextDowned(state: GameState): void {
+  const { hero } = state;
+  let best: Enemy | null = null;
+  let bestDistance = NEXT_DOWNED_RANGE;
+  for (const e of currentLevel(state).enemies) {
+    if (e.dead || e.stunnedFor <= 0) continue;
+    const d = dist(hero.x, hero.y, e.x, e.y);
+    if (d < bestDistance) [best, bestDistance] = [e, d];
+  }
+  if (best) hero.targetId = best.id;
 }

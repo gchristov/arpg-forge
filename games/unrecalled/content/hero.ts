@@ -9,14 +9,14 @@ import type { CutSettings } from '../extensions/cutting';
 export const EMP: AreaSkill = {
   type: 'area', id: 'emp',
   cost: 20, cooldown: 12, radius: 2.6, damage: [16, 24], damagePerLevel: 3, critChance: 0.1, critMultiplier: 1.5, knockback: 1.6,
-  stun: 3,
+  stun: 3, chaseStunned: true,
 };
 
 /** Both palms at once: throws the machines in front of U-7 back and knocks them down, for when they close in. */
 export const REPEL: AreaSkill = {
   type: 'area', id: 'repel', arc: 55,
   cost: 15, cooldown: 3, radius: 3, damage: [4, 7], damagePerLevel: 1, critChance: 0.05, critMultiplier: 1.5, knockback: 2.2,
-  stun: 2.5,
+  stun: 2.5, chaseStunned: true,
 };
 
 /**
@@ -44,13 +44,15 @@ export const HERO: HeroRules = {
   },
   startingWeapon: 'blaster',
   weapons: {
-    // Shoots from out of a machine's reach, and closes in to finish one that's down.
+    // Shoots from out of a machine's reach, punches one that's close back out of it, and dashes in to finish one
+    // that's down. It walks into range itself, so it takes over from further out than it shoots.
     blaster: {
-      engageRange: 4.5, reach: 4.5,
+      engageRange: 9, reach: 9,
       attack: {
         blast: {
-          shotSeconds: 0.4, cost: 2, power: 1, knockback: 0.08,
-          strike: { reach: 1.1, power: 4, knockback: 1.2, seconds: 0.6 },
+          range: 4.5, shotSeconds: 0.4, cost: 2, power: 1, knockback: 0.08,
+          punch: { reach: 0.6, power: 1, knockback: 0.6, seconds: 0.55 },
+          strike: { reach: 0.6, power: 2.5, knockback: 0.15, seconds: 0.35, dash: 2 },
         } satisfies BlastSettings,
       },
     },

@@ -207,6 +207,8 @@ export interface AreaSkill extends BurstDamage {
    * aimed at their target, else the nearest enemy in reach, else straight ahead. All round them if not given.
    */
   arc?: number;
+  /** Afterwards the hero goes for the nearest enemy it stunned, unless their target is already stunned. */
+  chaseStunned?: boolean;
 }
 
 /** A skill the hero can use, by engine type. Games pick and tune these; new types are added here as games need them. */

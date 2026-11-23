@@ -29,6 +29,8 @@ export class BlastEffects {
         renderer.effects.arc(hero.x, hero.y, HAND_HEIGHT, e.x, e.y, HIT_HEIGHT, this.colour, 0.1, 0, 0.7);
         renderer.effects.flash(e.x, e.y, 0.5, this.colour, 0.12);
         renderer.playActor(heroId, 'cast', 0.3);
+      } else if (e.type === 'Signal' && e.name === BLAST_SIGNAL.punch) {
+        renderer.playActor(heroId, 'attack', 0.3);
       } else if (e.type === 'Signal' && e.name === BLAST_SIGNAL.strike) {
         renderer.effects.flash(e.x, e.y, 1.1, this.colour, 0.25);
         renderer.shake(0.3);
