@@ -319,6 +319,11 @@ export interface CameraLook {
   fieldOfView?: number;
   /** How close the camera stands: 1 when a tile is 64 pixels wide on a typical screen, more to see the world larger. */
   closeness?: number;
+  /**
+   * In place of `closeness` and `fieldOfView` while the screen is taller than it is wide, such as a phone held upright,
+   * whose narrow width would otherwise show little either side of the hero. The same as on a wide screen if not given.
+   */
+  portrait?: { closeness?: number; fieldOfView?: number };
 }
 
 export interface Look {

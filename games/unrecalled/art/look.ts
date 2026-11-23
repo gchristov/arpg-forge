@@ -226,7 +226,8 @@ export const SCAN_COLOUR = 0xff3a2a;
 
 export const unrecalledLook: Look = {
   // Close to the action, looking steeply down so the ground fills the screen, with mild perspective for depth.
-  camera: { pitch: 50, fieldOfView: 32, closeness: 2.2 },
+  // Held upright, a phone is narrow, so the camera stands further back to show what U-7 can shoot either side of it.
+  camera: { pitch: 50, fieldOfView: 32, closeness: 2.2, portrait: { closeness: 1.65 } },
   effects: {
     skill: 0x8ae8ff, shot: 0xffd070, telegraph: 0xff7a3a, items: { gold: 0xd8c070, healingItem: 0x50d070, weapon: 0xe0782a },
     walkMarker: 0x9ad8e8, targetMarker: 0xff7a3a,

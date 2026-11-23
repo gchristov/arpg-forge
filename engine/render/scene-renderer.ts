@@ -9,7 +9,7 @@ import { Effects } from './effects';
 import { Flames, type FlameSpot } from './flames';
 import { blendedGround } from './ground-blend';
 import { kitBuilding, type StoreyWindows } from './kit-building';
-import { elevationOf } from './camera-angle';
+import { elevationOf, framing } from './camera-angle';
 import { LightMap, type SurfaceFade } from './light-map';
 import { Mist } from './mist';
 import type { CameraLook, Look, Mood, PropLook, Surroundings, WallFixture, WallLook, WaterLook } from './look';
@@ -50,7 +50,7 @@ export class SceneRenderer {
   private readonly scene = new THREE.Scene();
   private readonly camera: THREE.OrthographicCamera | THREE.PerspectiveCamera;
   private readonly elevation: number;
-  private readonly closeness: number;
+  private readonly cameraLook: CameraLook;
   /** From where the camera looks towards where it stands. */
   private readonly viewDirection: THREE.Vector3;
   /** How far the camera stands back from where it looks. */
@@ -114,7 +114,7 @@ export class SceneRenderer {
     const fieldOfView = cameraLook.fieldOfView ?? 0;
     this.camera = fieldOfView > 0 ? new THREE.PerspectiveCamera(fieldOfView) : new THREE.OrthographicCamera();
     this.elevation = elevationOf(cameraLook);
-    this.closeness = cameraLook.closeness ?? 1;
+    this.cameraLook = cameraLook;
     this.viewDirection = new THREE.Vector3(
       Math.cos(this.elevation) / Math.SQRT2,
       Math.sin(this.elevation),
@@ -163,11 +163,14 @@ export class SceneRenderer {
     this.height = height;
     this.renderer.setPixelRatio(Math.min(2, pixelRatio));
     this.renderer.setSize(width, height, false);
-    const zoom = clamp(Math.min(width, height) / 430, 0.78, 1.3) * this.closeness;
+    const { closeness, fieldOfView } = framing(this.cameraLook, width, height);
+    const zoom = clamp(Math.min(width, height) / 430, 0.78, 1.3) * closeness;
     this.pixelsPerUnit = (TILE_PIXELS * zoom) / Math.SQRT2;
     const halfW = width / 2 / this.pixelsPerUnit;
     const halfH = height / 2 / this.pixelsPerUnit;
     if (this.camera instanceof THREE.PerspectiveCamera) {
+      // A game with perspective keeps it, upright or not.
+      if (fieldOfView > 0) this.camera.fov = fieldOfView;
       // Far enough back that the ground where it looks is framed as without perspective.
       this.cameraDistance = halfH / Math.tan((this.camera.fov * Math.PI) / 360);
       Object.assign(this.camera, { aspect: width / height, near: Math.max(0.5, this.cameraDistance - 40), far: this.cameraDistance + 80 });
