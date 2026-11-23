@@ -52,10 +52,12 @@ export function coreGlow({ materials, colour, strength, spill }: {
   strength: number;
   spill?: { material: string; size: number; strength: number };
 }) {
-  const glows: { material: THREE.MeshBasicMaterial | THREE.SpriteMaterial; full: THREE.Color }[] = [];
+  /** Each glow added, and its colour at full brightness, until the figure wearing it is gone and it's disposed. */
+  const glows = new Map<THREE.MeshBasicMaterial | THREE.SpriteMaterial, THREE.Color>();
   let lit = 1;
   const glowing = <M extends THREE.MeshBasicMaterial | THREE.SpriteMaterial>(material: M): M => {
-    glows.push({ material, full: material.color.clone() });
+    glows.set(material, material.color.clone());
+    material.addEventListener('dispose', () => glows.delete(material));
     material.color.multiplyScalar(lit);
     return material;
   };
@@ -63,7 +65,7 @@ export function coreGlow({ materials, colour, strength, spill }: {
     const level = glowAfter(lit, dead, frameSeconds);
     if (level === lit) return lit;
     lit = level;
-    for (const { material, full } of glows) material.color.copy(full).multiplyScalar(lit);
+    for (const [material, full] of glows) material.color.copy(full).multiplyScalar(lit);
     return lit;
   };
   const dress = (model: THREE.Object3D, keep: (material: THREE.Material) => void): void => {
