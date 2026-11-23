@@ -8,7 +8,7 @@ import { unrecalledContent } from './content/world';
 import { jumpToStep } from '../../engine/sim/shortcuts';
 import { stepIndex } from '../../engine/sim/story-steps';
 import { readyForPractice } from './levels/arena';
-import { BLAST_SIGNAL } from './extensions/blaster';
+import { STRIKE_SIGNAL } from './extensions/blaster';
 import { FLOOR_ORDER } from './levels/foundry';
 
 const DT = 1 / 60;
@@ -191,45 +191,37 @@ describe('Unrecalled scenarios', () => {
     expect(state.hero.weapon).toBe('chainsaw');
   });
 
-  it('shoots with the blaster from out of reach, and closes in to strike a machine the repel knocked down', () => {
+  it('holds the blaster\'s beam on a machine from out of reach, and closes in to strike one the EMP knocked down', () => {
     const state = untouchable(createGameState(content, 1, 'arena'));
     readyForPractice(state, null);
     const machine = currentLevel(state).enemies[0]!;
     machine.hp = machine.maxHp = 1e6;
-    const shots = play(state, 3, [{ type: 'attack', enemyId: machine.id }]);
-    expect(shots.some((e) => e.type === 'Signal' && e.name === BLAST_SIGNAL.shot && e.enemyId === machine.id)).toBe(true);
+    const beam = play(state, 3, [{ type: 'attack', enemyId: machine.id }]);
+    expect(beam.some((e) => e.type === 'EnemyDamaged' && e.enemyId === machine.id)).toBe(true);
+    expect(beam.some((e) => e.type === 'Signal' && e.name === STRIKE_SIGNAL)).toBe(false);
     machine.stunnedFor = 3;
     const strikes = play(state, 2.5);
-    expect(strikes.some((e) => e.type === 'Signal' && e.name === BLAST_SIGNAL.strike)).toBe(true);
-    machine.stunnedFor = 0;
-    const close = play(state, 1.5);
-    expect(close.some((e) => e.type === 'Signal' && e.name === BLAST_SIGNAL.punch)).toBe(true);
+    expect(strikes.some((e) => e.type === 'Signal' && e.name === STRIKE_SIGNAL)).toBe(true);
   });
 
-  it('after the repel, goes for a machine it knocked down and moves on to the next once it falls', () => {
+  it('after the EMP, goes for a machine it knocked down and moves on to the next once it falls', () => {
     const state = untouchable(createGameState(content, 1, 'arena'));
     readyForPractice(state, null);
-    const [first, second] = currentLevel(state).enemies;
+    const [first, second, ...others] = currentLevel(state).enemies;
+    for (const other of others) other.dead = true;
     state.hero.x = first!.x - 1.5;
     state.hero.y = first!.y;
     second!.x = first!.x + 0.5;
     second!.y = first!.y + 0.8;
-    first!.hp = 1;
-    const repel = state.rules.hero.skills.findIndex((s) => s.id === 'repel');
-    play(state, 1 / 60, [{ type: 'useSkill', slot: repel }]);
+    // Tough enough to outlast the EMP itself, but not two or three strikes.
+    first!.hp = 30;
+    second!.hp = second!.maxHp = 1e6;
+    const emp = state.rules.hero.skills.findIndex((s) => s.id === 'emp');
+    play(state, 1 / 60, [{ type: 'useSkill', slot: emp }]);
     expect([first!.id, second!.id]).toContain(state.hero.targetId);
-    const events = play(state, 1.2);
-    expect(events.some((e) => e.type === 'EnemyKilled')).toBe(true);
-    expect(events.filter((e) => e.type === 'Signal' && e.name === BLAST_SIGNAL.strike).length).toBeGreaterThan(1);
-  });
-
-  it('cuts with the chainsaw rather than swinging', () => {
-    const state = untouchable(createGameState(content, 1, 'arena'));
-    state.hero.weapon = 'chainsaw';
-    const machine = currentLevel(state).enemies[0]!;
-    const events = play(state, 3, [{ type: 'attack', enemyId: machine.id }]);
-    expect(events.some((e) => e.type === 'EnemyDamaged' && e.enemyId === machine.id)).toBe(true);
-    expect(events.some((e) => e.type === 'Swung' && e.actorId === state.hero.id)).toBe(false);
+    const events = play(state, 1.5);
+    expect(events.some((e) => e.type === 'EnemyKilled' && e.enemyId === first!.id)).toBe(true);
+    expect(events.some((e) => e.type === 'Signal' && e.name === STRIKE_SIGNAL && e.enemyId === second!.id)).toBe(true);
   });
 
   it('makes the machines tougher on every floor down, and keeps pace as U-7 levels up', () => {

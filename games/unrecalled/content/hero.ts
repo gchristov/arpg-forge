@@ -3,25 +3,18 @@ import type { BlastSettings } from '../extensions/blaster';
 import type { CutSettings } from '../extensions/cutting';
 
 /**
- * Hits every machine around U-7 at once and throws them back, for when a floor's alarm brings a crowd. The
- * U-7 gets it from its old charging station.
+ * Hits every machine around U-7 at once, throws them back and knocks them down, and sends U-7 after one to finish it:
+ * for when machines close in. U-7 gets it from its old charging station.
  */
 export const EMP: AreaSkill = {
   type: 'area', id: 'emp',
-  cost: 20, cooldown: 12, radius: 2.6, damage: [16, 24], damagePerLevel: 3, critChance: 0.1, critMultiplier: 1.5, knockback: 1.6,
-  stun: 3, chaseStunned: true,
-};
-
-/** Both palms at once: throws the machines in front of U-7 back and knocks them down, for when they close in. */
-export const REPEL: AreaSkill = {
-  type: 'area', id: 'repel', arc: 55,
-  cost: 15, cooldown: 3, radius: 3, damage: [4, 7], damagePerLevel: 1, critChance: 0.05, critMultiplier: 1.5, knockback: 2.2,
+  cost: 20, cooldown: 5, radius: 3, damage: [10, 16], damagePerLevel: 2, critChance: 0.1, critMultiplier: 1.5, knockback: 2,
   stun: 2.5, chaseStunned: true,
 };
 
 /**
- * U-7's numbers. It fights with its hands until it gets Pell's chainsaw back; the resource is charge,
- * for the EMP once they have it, and healing items are patch kits.
+ * U-7's numbers. It fights with its blaster, and Pell's chainsaw once it gets it back; the resource is charge, for
+ * the blaster and the EMP, and healing items are patch kits.
  */
 export const HERO: HeroRules = {
   radius: 0.28,
@@ -44,23 +37,21 @@ export const HERO: HeroRules = {
   },
   startingWeapon: 'blaster',
   weapons: {
-    // Shoots, up close too, now and then punching back a machine within striking distance (1 tile), and dashes in to
-    // finish one that's down, holding still while it strikes so the strikes land one after another. It walks into
-    // range itself, so it takes over from further out than it shoots.
+    // A beam held on a machine from up to 6 tiles, at the damage a second of shooting every 0.4 s at 1.4 times a swing,
+    // and a dash in to finish one that's down. It walks into range itself, so it takes over from further out.
     blaster: {
       engageRange: 9, reach: 9,
       attack: {
         blast: {
-          range: 6, shotSeconds: 0.4, cost: 2, power: 1.4, knockback: 0.08,
-          punch: { within: 1, reach: 0.6, power: 0.5, knockback: 0.8, seconds: 0.55, cooldown: 2.5 },
-          strike: { reach: 0.6, power: 2.5, knockback: 0, seconds: 0.35, dash: 2 },
+          range: 6, power: 3.5, cost: 5, reportSeconds: 0.4,
+          strike: { reach: 0.6, power: 2.5, seconds: 0.35, dash: 2 },
         } satisfies BlastSettings,
       },
     },
     // Keeps cutting for as long as it's in contact, at nearly four times the damage a second of punching.
     chainsaw: { attack: { cut: { tickSeconds: 0.1, power: 3.7 } satisfies CutSettings } },
   },
-  skills: [{ ...EMP, fromStep: 'charged' }, REPEL],
+  skills: [{ ...EMP, fromStep: 'charged' }],
   heal: { amount: 60, maxItems: 9 },
   attackAssistRange: 7,
   deathGoldLoss: 0.5,

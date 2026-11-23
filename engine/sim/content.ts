@@ -202,11 +202,6 @@ export interface AreaSkill extends BurstDamage {
   cost: number;
   cooldown: number;
   knockback: number;
-  /**
-   * Only enemies within this many degrees either side of where the hero aims are hit, for a blast in front of them:
-   * aimed at their target, else the nearest enemy in reach, else straight ahead. All round them if not given.
-   */
-  arc?: number;
   /** Afterwards the hero goes for the nearest enemy it stunned, unless their target is already stunned. */
   chaseStunned?: boolean;
 }

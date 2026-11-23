@@ -112,26 +112,16 @@ export function hurtHero(state: GameState, amount: number, events: SimEvent[]): 
   }
 }
 
-/** Where a burst reaches: a unit direction and how many degrees either side of it. */
-export interface Cone {
-  dx: number;
-  dy: number;
-  arc: number;
-}
-
 /**
- * A hero's skill bursting at a point: every enemy in the radius, or in `cone` of it, is hurt, knocked `knockback` away
- * from the centre and stunned for the skill's `stun`. Only a burst all round is reported as an explosion.
+ * A hero's skill bursting at a point: every enemy in the radius is hurt, knocked `knockback` away from the centre and
+ * stunned for the skill's `stun`.
  */
-export function burst(state: GameState, skill: BurstDamage, x: number, y: number, knockback: number, events: SimEvent[], cone?: Cone): void {
-  if (!cone) events.push({ type: 'Exploded', x, y, radius: skill.radius });
-  const within = cone ? Math.cos((cone.arc * Math.PI) / 180) : -1;
+export function burst(state: GameState, skill: BurstDamage, x: number, y: number, knockback: number, events: SimEvent[]): void {
+  events.push({ type: 'Exploded', x, y, radius: skill.radius });
   for (const e of currentLevel(state).enemies) {
     if (e.dead) continue;
     const d = dist(x, y, e.x, e.y);
     if (d >= skill.radius + e.r) continue;
-    // Bodies right up against the centre are always in the cone.
-    if (cone && d > e.r && ((e.x - x) * cone.dx + (e.y - y) * cone.dy) / d < within) continue;
     if (skill.stun && !state.rules.enemies[e.kind]!.boss) e.stunnedFor = Math.max(e.stunnedFor, skill.stun);
     const crit = chance(state.rng, skill.critChance);
     let damage = int(state.rng, skill.damage[0], skill.damage[1]) + state.hero.level * skill.damagePerLevel;

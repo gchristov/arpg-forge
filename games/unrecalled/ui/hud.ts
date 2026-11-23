@@ -7,9 +7,8 @@ import { ShownValues } from '../../../engine/ui/shown-values';
 import { ENEMIES } from '../content/enemies';
 import { QUEST } from '../story/quest';
 
-/** The EMP's and the repel's skill slots. */
+/** The EMP's skill slot. */
 const EMP = 0;
-const REPEL = 1;
 
 const $ = (id: string): HTMLElement => document.getElementById(id)!;
 
@@ -42,7 +41,6 @@ export class Hud {
     });
     bindCommand($('bAttack'), { type: 'attackNearest' }, send);
     bindCommand($('bEmp'), { type: 'useSkill', slot: EMP }, send);
-    bindCommand($('bRepel'), { type: 'useSkill', slot: REPEL }, send);
     bindCommand($('bPatch'), { type: 'heal' }, send);
   }
 
@@ -68,10 +66,6 @@ export class Hud {
     const skill = state.rules.hero.skills[EMP];
     const emp = skill && (skill.fromStep === undefined || reached(state, skill.fromStep)) && !this.empWithheld ? skill : undefined;
     shown.set('hasEmp', Boolean(emp), (v) => ($('bEmp').hidden = !v));
-    const repel = state.rules.hero.skills[REPEL]!;
-    const repelling = hero.skillCooldowns[REPEL]! / repel.cooldown;
-    shown.set('repelOff', repelling > 0 || hero.resource < repel.cost, (v) => $('bRepel').classList.toggle('off', v));
-    shown.set('repelCharge', Math.round((1 - repelling) * 20), (v) => ($('repelCd').style.transform = `scaleX(${v / 20})`));
     if (emp) {
       const recharging = hero.skillCooldowns[EMP]! / emp.cooldown;
       shown.set('empOff', recharging > 0 || hero.resource < emp.cost, (v) => $('bEmp').classList.toggle('off', v));
