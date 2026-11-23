@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GROUND_MARK_ORDER } from './effects';
 
 /** Droplets and splats in flight or on the ground at once; the oldest give way to new ones. */
 const DROPLETS = 96;
@@ -58,13 +59,16 @@ export class Spatter {
   /** Stands in for a droplet when a puddle's blobs are laid down, giving each its colour and the way it's smeared. */
   private readonly flat: Droplet = { x: 0, y: 0, z: 0, vx: 1, vy: 0, vz: 0, size: 0, colour: new THREE.Color(), flying: false };
 
-  constructor(scene: THREE.Scene) {
+  /** `lit` makes a material take the light falling on it, so a spill under a light shows lit. */
+  constructor(scene: THREE.Scene, lit: (material: THREE.Material) => void) {
     this.dropletMesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshBasicMaterial(), DROPLETS);
     this.splatMesh = new THREE.InstancedMesh(
       new THREE.CircleGeometry(1, 10),
-      new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.88, depthWrite: false }),
+      new THREE.MeshLambertMaterial({ transparent: true, opacity: 0.88, depthWrite: false }),
       SPLATS,
     );
+    lit(this.splatMesh.material as THREE.Material);
+    this.splatMesh.renderOrder = GROUND_MARK_ORDER;
     for (const mesh of [this.dropletMesh, this.splatMesh]) {
       mesh.count = 0;
       mesh.frustumCulled = false;

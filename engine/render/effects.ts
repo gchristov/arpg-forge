@@ -44,7 +44,7 @@ export interface EffectColours {
 }
 
 interface Decal {
-  mesh: THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial>;
+  mesh: THREE.Mesh<THREE.CircleGeometry, THREE.MeshLambertMaterial>;
   age: number;
   life: number;
 }
@@ -61,6 +61,11 @@ interface Puff {
 /** Marks on the ground fade over their last few seconds. */
 const DECAL_FADE_SECONDS = 3;
 const DECAL_POOL = 48;
+/**
+ * Marks and spills on the ground are drawn before every other see-through thing, so glows, beams and flying shots
+ * above them always show over them.
+ */
+export const GROUND_MARK_ORDER = -1;
 const PUFF_POOL = 32;
 
 interface Flash {
@@ -88,7 +93,8 @@ export class Effects {
   private readonly decals: Decal[] = [];
   private readonly puffs: Puff[] = [];
 
-  constructor(scene: THREE.Scene, colours: EffectColours, cameraElevation: number) {
+  /** `lit` makes a material take the light falling on it, for the marks on the ground. */
+  constructor(scene: THREE.Scene, colours: EffectColours, cameraElevation: number, lit: (material: THREE.Material) => void) {
     const skillGeometry = new THREE.SphereGeometry(0.15, 12, 8);
     const skillMaterial = new THREE.MeshBasicMaterial({ color: colours.skill });
     const shotGeometry = new THREE.CylinderGeometry(0.025, 0.025, 0.55, 6).rotateX(Math.PI / 2);
@@ -97,10 +103,11 @@ export class Effects {
     const flashGeometry = new THREE.SphereGeometry(1, 16, 10);
     const itemGeometry = new THREE.CylinderGeometry(0.12, 0.12, 0.06, 14);
     for (let i = 0; i < DECAL_POOL; i++) {
-      this.decals.push({
-        mesh: hidden(scene, new THREE.Mesh(circleGeometry, new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false }))),
-        age: 0, life: 0,
-      });
+      const material = new THREE.MeshLambertMaterial({ transparent: true, depthWrite: false });
+      lit(material);
+      const mesh = hidden(scene, new THREE.Mesh(circleGeometry, material));
+      mesh.renderOrder = GROUND_MARK_ORDER;
+      this.decals.push({ mesh, age: 0, life: 0 });
     }
     const puffGeometry = new THREE.SphereGeometry(1, 10, 8);
     for (let i = 0; i < PUFF_POOL; i++) {

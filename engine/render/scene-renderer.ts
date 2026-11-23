@@ -143,8 +143,9 @@ export class SceneRenderer {
     const reflections = new THREE.PMREMGenerator(this.renderer);
     this.scene.environment = reflections.fromScene(new RoomEnvironment(), 0.04).texture;
     reflections.dispose();
-    this.effects = new Effects(this.scene, look.effects, this.elevation);
-    this.spatter = new Spatter(this.scene);
+    const lit = (material: THREE.Material): void => this.lightMap.light(material);
+    this.effects = new Effects(this.scene, look.effects, this.elevation, lit);
+    this.spatter = new Spatter(this.scene, lit);
   }
 
   /** How much the view is zoomed, 1 when a tile is 64 pixels wide. */
