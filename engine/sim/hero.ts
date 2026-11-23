@@ -67,7 +67,10 @@ export function applyCommand(state: GameState, command: Command, events: SimEven
       const e = findEnemy(state, hero.targetId) ?? nearestEnemy(state, state.rules.hero.attackAssistRange);
       if (e) target(state, e.id);
       else if (hero.attackCooldown <= 0 && hero.swing < 0) {
+        // Swinging at nothing, the hero stops where they are, rather than sliding along mid-swing.
         hero.targetId = null;
+        hero.path = null;
+        hero.moving = false;
         startSwing(state, events);
         hero.struck = true;
       }

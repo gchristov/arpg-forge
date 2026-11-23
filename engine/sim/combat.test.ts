@@ -52,6 +52,15 @@ describe('hero melee', () => {
     const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 });
     expect(ofType(run(state, 0.1, [{ type: 'attackNearest' }]), 'Swung')).toHaveLength(1);
   });
+
+  it('stops walking to swing at nothing, so it never slides along mid-swing', () => {
+    const state = arena(OPEN_ROOM, { x: 2.5, y: 5.5 });
+    run(state, 0.3, [{ type: 'walk', x: 15.5, y: 5.5 }]);
+    const at = state.hero.x;
+    run(state, 0.3, [{ type: 'attackNearest' }]);
+    expect(state.hero.x).toBeCloseTo(at, 1);
+    expect(state.hero.moving).toBe(false);
+  });
 });
 
 describe('area skill', () => {
