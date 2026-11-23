@@ -980,7 +980,7 @@
         "MI_Superhero_Male": {
           "colour": "#58626d",
           "plain": true,
-          "opacity": 0.25,
+          "opacity": 0.2,
           "metalness": 0,
           "roughness": 0.05
         },
