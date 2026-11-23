@@ -112,6 +112,35 @@ describe('ActorFigure animation', () => {
     expect(f.activeAnimations()).toEqual(['Run']);
   });
 
+  it('cuts an attack short to run when the actor starts moving', () => {
+    const f = figure();
+    f.play('attack', 0.5);
+    run(f, 0.05);
+    f.pose(true, false);
+    run(f, 0.2);
+    expect(f.activeAnimations()).toEqual(['Run']);
+  });
+
+  it('keeps running through a cast played on the move, so it never slides along casting', () => {
+    const f = figure();
+    f.pose(true, false);
+    run(f, 0.3);
+    f.play('cast', 0.45);
+    f.pose(true, false);
+    run(f, 0.2);
+    expect(f.activeAnimations()).toEqual(['Run']);
+  });
+
+  it('still plays an attack that starts the moment the actor stops', () => {
+    const f = figure();
+    f.pose(true, false);
+    run(f, 0.3);
+    f.play('attack', 0.5);
+    f.pose(false, false);
+    run(f, 0.1);
+    expect(f.activeAnimations()).toContain('Attack');
+  });
+
   it('dies cleanly in the middle of an attack', () => {
     const f = figure();
     f.pose(true, false);

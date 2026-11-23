@@ -118,6 +118,8 @@ export class ActorFigure {
   pose(moving: boolean, dead: boolean, speed?: number, channelling = false): void {
     this.channelling = channelling && !dead && !moving;
     this.setBase(dead ? 'death' : moving ? 'move' : this.channelling ? 'channel' : 'idle');
+    // Already on the move, as when casting while walking: the legs keep going rather than sliding along in the moment.
+    if (moving && !dead && this.moment && this.base === this.action('move')) this.runOutOf(this.moment);
     const move = this.action('move');
     if (move && speed && this.movePace) move.timeScale = THREE.MathUtils.clamp(speed / this.movePace, ...PACE_RANGE);
   }
@@ -273,18 +275,23 @@ export class ActorFigure {
     next.setLoop(dying ? THREE.LoopOnce : THREE.LoopRepeat, dying ? 1 : Infinity);
     next.clampWhenFinished = dying;
     const moment = this.moment;
-    // A flinch or a cast stops the legs, so starting to move cuts it short rather than sliding along in it.
-    const cutShort = dying || (name === 'move' && moment !== null && (moment === this.action('hit') || moment === this.action('cast')));
-    if (moment && !cutShort) {
-      previous?.stop();
-      return;
-    }
+    // Every moment stops the legs, so starting to move cuts it short rather than sliding along in it.
+    const cutShort = dying || name === 'move';
+    // The pose before is already fading out under the moment, and stops once it's gone; cut off now, the model would
+    // sag towards its rest pose while the moment is still fading in.
+    if (moment && !cutShort) return;
     this.moment = null;
     next.reset().play();
     if (moment) {
       next.crossFadeFrom(moment, BLEND_SECONDS, false);
       previous?.stop();
     } else if (previous) next.crossFadeFrom(previous, BLEND_SECONDS, false);
+  }
+
+  /** Cuts `moment` short, blending from it into the move animation. */
+  private runOutOf(moment: THREE.AnimationAction): void {
+    this.moment = null;
+    this.base!.reset().play().crossFadeFrom(moment, BLEND_SECONDS, false);
   }
 
   /**

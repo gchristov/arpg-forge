@@ -37,13 +37,19 @@ export const BLAST_SIGNAL = { shot: 'blast', punch: 'punch', strike: 'poweredStr
 
 /** How far round U-7 it looks for the next machine that's down, once it has finished one. */
 const NEXT_DOWNED_RANGE = 6;
+/** After a punch or a strike U-7 holds still this long, so the blow is seen before it moves on. */
+const HOLD_AFTER_BLOW = 0.25;
 
-/** Keeps `untilHit`, the seconds until it can shoot or hit again, in its memory. See EXTENSIONS.md. */
+/**
+ * Keeps `untilHit`, the seconds until it can shoot or hit again, in its memory, and holds U-7 still after a blow with
+ * the hero's `attackCooldown`, which outlasts a change of target. See EXTENSIONS.md.
+ */
 export const BLAST: WeaponAttack<BlastSettings> = {
   attack({ state, target, dt, events, settings, memory }) {
     const { hero } = state;
     const { map } = currentLevel(state).level;
     memory.untilHit = (memory.untilHit ?? 0) - dt;
+    if (hero.attackCooldown > 0) return;
     const d = dist(hero.x, hero.y, target.x, target.y);
     const closeIn = (speed: number): void => {
       steerTowards(map, hero, target.x, target.y, speed, dt);
@@ -56,13 +62,16 @@ export const BLAST: WeaponAttack<BlastSettings> = {
       if (!inReach(strike)) return closeIn(hero.speed * strike.dash);
       if (memory.untilHit > 0) return;
       blow(state, target, strike, BLAST_SIGNAL.strike, memory, events);
+      hero.attackCooldown = HOLD_AFTER_BLOW;
       if (target.dead) goForNextDowned(state);
       return;
     }
     const { punch } = settings;
     if (d <= punch.within + target.r + hero.r && !state.rules.enemies[target.kind]?.boss) {
       if (!inReach(punch)) return closeIn(hero.speed);
-      if (memory.untilHit <= 0) blow(state, target, punch, BLAST_SIGNAL.punch, memory, events);
+      if (memory.untilHit > 0) return;
+      blow(state, target, punch, BLAST_SIGNAL.punch, memory, events);
+      hero.attackCooldown = HOLD_AFTER_BLOW;
       return;
     }
     if (d > settings.range + target.r || !hasLineOfSight(map, hero.x, hero.y, target.x, target.y)) return closeIn(hero.speed);
