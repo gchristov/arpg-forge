@@ -51,7 +51,7 @@ export const HERO: HeroRules = {
       attack: {
         blast: {
           range: 6, shotSeconds: 0.4, cost: 2, power: 1.4, knockback: 0.08,
-          punch: { within: 1.5, reach: 0.6, power: 0.5, knockback: 1.3, seconds: 0.55 },
+          punch: { within: 1.5, reach: 0.6, power: 0.5, knockback: 0.8, seconds: 0.55 },
           strike: { reach: 0.6, power: 2.5, knockback: 0, seconds: 0.35, dash: 2 },
         } satisfies BlastSettings,
       },
