@@ -16,7 +16,7 @@ export function glareMap(): THREE.DataTexture {
       const [u, v] = [(x + 0.5) / SIZE * 2 - 1, (y + 0.5) / SIZE * 2 - 1];
       const out = Math.hypot(u, v);
       const above = 0.45 + 0.55 * Math.max(0, v / Math.max(out, 1e-6));
-      const rim = out > 1 ? 0 : smoothstep(0.78, 1, out) ** 3 * above;
+      const rim = out > 1 ? 0 : smoothstep(0.6, 1, out) ** 2 * above;
       const spark = Math.exp(-(((u + 0.35) / 0.07) ** 2 + ((v - 0.55) / 0.05) ** 2)) * 0.8;
       const light = Math.min(1, rim + spark);
       const i = (y * SIZE + x) * 4;
