@@ -9,7 +9,7 @@ import { ConversationView } from '../../engine/story/conversation-view';
 import { StoryRunner } from '../../engine/story/story-runner';
 import { DialogBox } from '../../engine/ui/dialog-box';
 import { PRINTING, SPEAKING } from '../../engine/ui/typewriter';
-import { heroGlow, MODEL_URLS, SCAN_COLOUR, SCANNER_EYES, unrecalledLook } from './art/look';
+import { CORE_COLOUR, heroGlow, MODEL_URLS, SCAN_COLOUR, SCANNER_EYES, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import { ENDING, levelUp, MACHINE_SCANS, scrapDropped } from './story/lines';
@@ -24,6 +24,8 @@ import { drawPortraits } from './ui/portrait-drawing';
 import { ARENA, readyForPractice } from './levels/arena';
 import type { GameAction } from './extensions/actions';
 import { AssemblyWakes } from './extensions/assembly-wakes';
+import { BlastEffects } from './extensions/blast-effects';
+import { BLAST_SIGNAL } from './extensions/blaster';
 import { CutSpray } from './extensions/cut-spray';
 import { MachineScans } from './extensions/machine-scans';
 import { Hud } from './ui/hud';
@@ -57,7 +59,7 @@ const hud = new Hud(
 // The practice arena, reached only by its address, is for fighting: no story runs there.
 const practising = state.levelId === ARENA;
 hud.objectiveShown = !practising;
-if (practising) readyForPractice(state);
+if (practising) readyForPractice(state, new URLSearchParams(location.search).get('weapon'));
 
 const synth = new Synth();
 // Sound starts off until the player turns it on.
@@ -101,6 +103,7 @@ const kindOf = (enemyId: number | undefined): string | undefined => currentLevel
 const scans = (enemyId: number | undefined): boolean => enemyId !== undefined && SCANNER_EYES[kindOf(enemyId) ?? ''] !== undefined;
 const machineScans = new MachineScans(game, unrecalledLook, SCANNER_EYES, SCAN_COLOUR);
 const cutSpray = new CutSpray(game, unrecalledLook);
+const blastEffects = new BlastEffects(game, CORE_COLOUR);
 
 /** Shows conversations and readings in the dialogue box, with a portrait for people and every page kept in the log. */
 const conversation = new ConversationView(dialog, {
@@ -239,7 +242,7 @@ function playSounds(events: SimEvent[]): void {
         break;
       case 'SkillUsed':
         if (e.skill === 'emp') sfx.emp();
-        else sfx.zap();
+        else sfx.crackle();
         break;
       case 'Exploded':
         sfx.crackle();
@@ -265,6 +268,8 @@ function playSounds(events: SimEvent[]): void {
         break;
       case 'Signal':
         if (e.name === 'alarm') sfx.siren();
+        if (e.name === BLAST_SIGNAL.shot) sfx.zap();
+        if (e.name === BLAST_SIGNAL.strike) sfx.slam();
         if (e.name === 'recognised' && scans(e.enemyId)) sfx.scan();
         break;
       case 'EnemyAlerted':
@@ -295,6 +300,7 @@ function playSounds(events: SimEvent[]): void {
 /** Unrecalled's words and banners for the rules' events; the engine shows the rest in the world. */
 function react(events: SimEvent[]): void {
   playSounds(events);
+  blastEffects.react(events);
   if (!practising) story.react(events);
   for (const e of events) {
     switch (e.type) {
@@ -355,6 +361,7 @@ game.run({
   draw: (alpha, frameSeconds) => {
     machineScans.draw(alpha);
     cutSpray.draw(frameSeconds);
+    blastEffects.draw(frameSeconds);
     // U-7's light is its core's, so it goes out with the core when U-7 falls.
     game.renderer.dimHeroLight(heroGlow.draw(state.hero.dead, frameSeconds));
   },

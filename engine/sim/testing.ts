@@ -35,8 +35,8 @@ export const TEST_ENEMIES: Record<string, EnemyType> = {
   },
 };
 
-/** An open room with `#` walls, the hero at `start` and the given enemies, plus an empty start level to respawn in. */
-export function arena(rows: string[], start: { x: number; y: number }, enemies: SpawnPoint[] = [], seed = 1): GameState {
+/** An open room with `#` walls, the hero at `start` with `hero`'s rules and the given enemies, plus an empty start level to respawn in. */
+export function arena(rows: string[], start: { x: number; y: number }, enemies: SpawnPoint[] = [], seed = 1, hero = TEST_HERO): GameState {
   const level = (id: string, r: string[], s: { x: number; y: number }): Level => ({
     id, name: id, subtitle: '', outdoor: false, map: mapFromRows(r), start: s, portals: [], lights: [], structures: [],
   });
@@ -46,7 +46,7 @@ export function arena(rows: string[], start: { x: number; y: number }, enemies: 
       { level: level('testRoom', rows, start), spawns: enemies, camps: [], npcs: [] },
     ],
     startLevel: 'home',
-    hero: TEST_HERO,
+    hero,
     enemies: TEST_ENEMIES,
     npcRadius: 0.32,
     npcs: {},

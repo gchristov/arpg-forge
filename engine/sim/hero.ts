@@ -3,7 +3,7 @@ import { chance, int } from '../core/rng';
 import { hasLineOfSight } from '../world/line-of-sight';
 import { planRoute } from '../world/pathfinding';
 import { tileIndex } from '../world/tile-map';
-import { burst, damageEnemy, findEnemy, nearestEnemy } from './combat';
+import { burst, damageEnemy, findEnemy, nearestEnemy, type Cone } from './combat';
 import { attacksItsOwnWay, attackWithWeapon, stopWeaponAttack } from './weapon-attacks';
 import { meleeOf } from './weapons';
 import { reached } from './story-steps';
@@ -153,10 +153,22 @@ function useSkill(state: GameState, slot: number, events: SimEvent[]): void {
     case 'area':
       hero.swing = CAST_SWING;
       hero.struck = true;
-      burst(state, skill, hero.x, hero.y, skill.knockback, events);
+      burst(state, skill, hero.x, hero.y, skill.knockback, events, skill.arc === undefined ? undefined : aimCone(state, skill.radius, skill.arc));
       break;
   }
   events.push({ type: 'SkillUsed', slot, skill: skill.id });
+}
+
+/** A cone aimed at the hero's target, else the nearest enemy within `radius`, else ahead; the hero turns to face it. */
+function aimCone(state: GameState, radius: number, arc: number): Cone {
+  const { hero } = state;
+  const t = findEnemy(state, hero.targetId) ?? nearestEnemy(state, radius + 1);
+  const dx = t ? t.x - hero.x : hero.facingX;
+  const dy = t ? t.y - hero.y : hero.facingY;
+  const d = Math.hypot(dx, dy) || 1;
+  hero.facingX = dx / d;
+  hero.facingY = dy / d;
+  return { dx: hero.facingX, dy: hero.facingY, arc };
 }
 
 function castProjectile(state: GameState, slot: number, skill: ProjectileSkill): void {

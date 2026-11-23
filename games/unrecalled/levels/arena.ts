@@ -55,10 +55,15 @@ export function buildArena(): LevelContent {
   return arena;
 }
 
-/** The story's step by which U-7 has the chainsaw and the EMP, which the arena starts at. */
+/** The story's step by which U-7 has the EMP, which the arena starts at. */
 const ARMED = 'charged';
 
-/** Readies U-7 for the arena: as far on as the story gives it the chainsaw and the EMP, unless a step was asked for. */
-export function readyForPractice(state: GameState): void {
+/**
+ * Readies U-7 for the arena: as far on as the story gives it the EMP, unless a step was asked for, holding `weapon` if
+ * given (such as the chainsaw), else the one it starts with.
+ */
+export function readyForPractice(state: GameState, weapon: string | null): void {
   if (state.quest < stepIndex(state.rules.quest, ARMED)) jumpToStep(state, stepIndex(state.rules.quest, ARMED));
+  const asked = weapon !== null && state.rules.hero.weapons?.[weapon] ? weapon : null;
+  state.hero.weapon = asked ?? state.rules.hero.startingWeapon ?? null;
 }

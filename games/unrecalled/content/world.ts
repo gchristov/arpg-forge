@@ -6,6 +6,7 @@ import { buildInterior, INTERIOR_IDS } from '../levels/interiors';
 import { buildRustbelt } from '../levels/rustbelt';
 import { buildUpriver } from '../levels/upriver';
 import { CALM, STEP_ACTIONS } from '../extensions/calm-machines';
+import { BLAST } from '../extensions/blaster';
 import { CUT } from '../extensions/cutting';
 import { ENEMIES } from './enemies';
 import { HERO } from './hero';
@@ -31,6 +32,6 @@ export function unrecalledContent(): GameContent {
     watch: watchFor(RULES),
     abilities: { calm: CALM },
     stepActions: STEP_ACTIONS,
-    weaponAttacks: { cut: CUT },
+    weaponAttacks: { cut: CUT, blast: BLAST },
   };
 }

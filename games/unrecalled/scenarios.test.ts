@@ -8,6 +8,7 @@ import { unrecalledContent } from './content/world';
 import { jumpToStep } from '../../engine/sim/shortcuts';
 import { stepIndex } from '../../engine/sim/story-steps';
 import { readyForPractice } from './levels/arena';
+import { BLAST_SIGNAL } from './extensions/blaster';
 import { FLOOR_ORDER } from './levels/foundry';
 
 const DT = 1 / 60;
@@ -180,12 +181,26 @@ describe('Unrecalled scenarios', () => {
     expect(events.some((e) => e.type === 'HeroHurt')).toBe(true);
   });
 
-  it('starts U-7 in the practice arena with the chainsaw and the EMP', () => {
+  it('starts U-7 in the practice arena with the blaster and the EMP, or the weapon asked for', () => {
     const state = untouchable(createGameState(content, 1, 'arena'));
-    readyForPractice(state);
-    expect(state.hero.weapon).toBe('chainsaw');
+    readyForPractice(state, null);
+    expect(state.hero.weapon).toBe('blaster');
     const events = play(state, 1 / 60, [{ type: 'useSkill', slot: 0 }]);
     expect(events.some((e) => e.type === 'SkillUsed' && e.skill === 'emp')).toBe(true);
+    readyForPractice(state, 'chainsaw');
+    expect(state.hero.weapon).toBe('chainsaw');
+  });
+
+  it('shoots with the blaster from out of reach, and closes in to strike a machine the repel knocked down', () => {
+    const state = untouchable(createGameState(content, 1, 'arena'));
+    readyForPractice(state, null);
+    const machine = currentLevel(state).enemies[0]!;
+    machine.hp = machine.maxHp = 1e6;
+    const shots = play(state, 3, [{ type: 'attack', enemyId: machine.id }]);
+    expect(shots.some((e) => e.type === 'Signal' && e.name === BLAST_SIGNAL.shot && e.enemyId === machine.id)).toBe(true);
+    machine.stunnedFor = 3;
+    const strikes = play(state, 2.5);
+    expect(strikes.some((e) => e.type === 'Signal' && e.name === BLAST_SIGNAL.strike)).toBe(true);
   });
 
   it('cuts with the chainsaw rather than swinging', () => {

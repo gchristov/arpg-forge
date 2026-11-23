@@ -80,9 +80,9 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .xp i{display:block;height:100%;width:0;background:#e8c870;transition:width .3s}
 #bPatch b{display:inline-block;min-width:1.2em;margin-left:4px;color:#7ae08a}
 #bPatch.off{opacity:.45}
-#bEmp{position:relative;overflow:hidden;border-color:#8ae8ff}
-#bEmp.off{opacity:.45}
-#bEmp .cooldown{position:absolute;left:0;bottom:0;height:3px;width:100%;background:#8ae8ff;transform-origin:left}
+#bEmp,#bRepel{position:relative;overflow:hidden;border-color:#8ae8ff}
+#bEmp.off,#bRepel.off{opacity:.45}
+#bEmp .cooldown,#bRepel .cooldown{position:absolute;left:0;bottom:0;height:3px;width:100%;background:#8ae8ff;transform-origin:left}
 #banner{position:fixed;left:50%;top:26%;transform:translate(-50%,-50%);width:calc(100% - 32px);text-align:center;pointer-events:none;opacity:0;transition:opacity .4s}
 #banner.show{opacity:1}
 #banner .t{font:800 clamp(24px,6.5vw,38px)/1.1 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--ink);text-shadow:0 2px 16px #000}

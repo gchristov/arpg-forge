@@ -13,7 +13,7 @@ import { glassShine } from '../extensions/glass-shine';
 const colour = new THREE.Color();
 
 /** The colour of U-7's core, and of the nodes in its brain: the blue glow of a reactor. */
-const CORE_COLOUR = 0x3ac8ff;
+export const CORE_COLOUR = 0x3ac8ff;
 
 /**
  * Plain, even light, like a model viewer's, on every level. The only light of the game's own is U-7's core, carried
@@ -180,6 +180,8 @@ const ACTORS: Record<string, ActorLook> = {
       name: 'hero',
       animations: { idle: 'Idle', move: 'Run', attack: 'Punch', cast: 'Shoot_OneHanded', hit: 'RecieveHit', death: 'Death' },
       armed: {
+        // Built into its hand: it aims the hand while it shoots, and strikes bare-handed.
+        blaster: { animations: { channel: 'PistolIdle' } },
         // At rest the chainsaw hangs at U-7's side; it's held out ahead in both hands while cutting, and
         // revved with a jab at thin air.
         chainsaw: {

@@ -77,6 +77,46 @@ describe('area skill', () => {
     expect(state.hero.resource).toBe(30);
     expect(state.hero.skillCooldowns[1]).toBe(5);
   });
+
+  it('with an arc, hits only what is in front of the hero, aimed at the nearest enemy, and reports no explosion', () => {
+    const state = arena(OPEN_ROOM, { x: 8.5, y: 8.5 }, [
+      { kind: 'dummy', x: 10, y: 8.5 },
+      { kind: 'dummy', x: 7, y: 8.5 },
+    ]);
+    withExtraSkill(state, { ...PULSE, arc: 45 });
+    const [ahead, behind] = enemiesOf(state);
+    const events = run(state, 1 / 60, [{ type: 'useSkill', slot: 1 }]);
+    expect(ofType(events, 'Exploded')).toEqual([]);
+    expect(ofType(events, 'EnemyDamaged').map((h) => h.enemyId)).toEqual([ahead!.id]);
+    expect(behind!.hp).toBe(behind!.maxHp);
+    expect(state.hero.facingX).toBeCloseTo(1);
+  });
+
+  it('stuns what it hits for its stun, which then neither moves nor attacks until it wears off', () => {
+    const state = arena(OPEN_ROOM, { x: 8.5, y: 8.5 }, [{ kind: 'brute', x: 9.6, y: 8.5 }]);
+    withExtraSkill(state, { ...PULSE, knockback: 0, damage: [1, 1], stun: 1 });
+    const brute = enemiesOf(state)[0]!;
+    run(state, 1 / 60, [{ type: 'useSkill', slot: 1 }]);
+    const at = brute.x;
+    expect(ofType(run(state, 0.95), 'HeroHurt')).toEqual([]);
+    expect(brute.x).toBe(at);
+    expect(ofType(run(state, 3), 'HeroHurt').length).toBeGreaterThan(0);
+  });
+
+  it('never stuns a boss', () => {
+    const state = arena(OPEN_ROOM, { x: 8.5, y: 8.5 }, [{ kind: 'lord', x: 10, y: 8.5 }]);
+    withExtraSkill(state, { ...PULSE, stun: 1 });
+    run(state, 1 / 60, [{ type: 'useSkill', slot: 1 }]);
+    expect(enemiesOf(state)[0]!.stunnedFor).toBe(0);
+  });
+});
+
+describe('starting weapon', () => {
+  it('puts the weapon in the hero\'s hand from the start', () => {
+    expect(arena(OPEN_ROOM, { x: 5.5, y: 5.5 }).hero.weapon).toBeNull();
+    const hero = { ...TEST_HERO, startingWeapon: 'stick', weapons: { stick: { reach: 2 } } };
+    expect(arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [], 1, hero).hero.weapon).toBe('stick');
+  });
 });
 
 describe('projectile skill', () => {

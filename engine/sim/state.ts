@@ -84,6 +84,8 @@ export interface Enemy extends Actor {
   memory: Record<string, number>;
   /** Seconds it can't move of its own accord, such as held by a weapon cutting into it; 0 when free. */
   rootedFor: number;
+  /** Seconds it can't move or attack at all, knocked down or stunned; 0 when up. */
+  stunnedFor: number;
   /** How fast it's sliding from a knock-back, in tiles a second. */
   slideX: number;
   slideY: number;

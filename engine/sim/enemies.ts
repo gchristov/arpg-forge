@@ -60,6 +60,12 @@ function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, eve
     e.swing += dt / SWING_SECONDS;
     if (e.swing >= 1) e.swing = -1;
   }
+  if (e.stunnedFor > 0) {
+    e.stunnedFor = Math.max(0, e.stunnedFor - dt);
+    e.windUp = -1;
+    e.moving = false;
+    return;
+  }
   // Rooted, it can't move of its own accord, though it still turns, attacks and can be knocked back.
   const rooted = e.rootedFor > 0;
   e.rootedFor = Math.max(0, e.rootedFor - dt);
