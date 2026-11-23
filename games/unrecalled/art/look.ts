@@ -154,7 +154,7 @@ const robot = (
 });
 
 /** U-7's body is drawn in its own material, painted as glass by its model build. */
-const glass = glassShine({ material: 'MI_Superhero_Male', strength: 0.4, reflects: 5 });
+const glass = glassShine({ material: 'MI_Superhero_Male', strength: 0.35, sharpness: 5 });
 
 /** U-7's core and brain nodes, drawn glowing through the glass over them, going out when it dies. */
 export const heroGlow = coreGlow({
@@ -163,7 +163,7 @@ export const heroGlow = coreGlow({
 });
 
 /**
- * What the game adds to U-7's model, in the world and in its portrait: a glossy glare and rim on its glass, and its
+ * What the game adds to U-7's model, in the world and in its portrait: its glass mirroring the room at its edges, and its
  * core and brain glowing through it.
  */
 export const dressHero = (model: THREE.Object3D, keep: (material: THREE.Material) => void): void => {

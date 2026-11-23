@@ -1,63 +1,41 @@
 import * as THREE from 'three';
 import { addTwin, partsIn } from './part-twins';
 
-const SIZE = 64;
+/** How smooth the glass is: a mirror, so what it reflects stays sharp. */
+const GLASS_ROUGHNESS = 0.04;
 
 /**
- * A reflection seen on glass, as a matcap: how bright the glass looks for each way its surface faces the camera. The
- * edges, which face away, catch a rim of light, and a soft window of glare sits up and to the left, where a lamp
- * above would show.
+ * Glass is clear where it faces the camera and turns into a mirror where it curves away. This scales a mirror's light
+ * by how far the surface turns away from the camera, from none face on to all of it edge on, `sharpness` keeping the
+ * shine to a thin band at the edge.
  */
-export function glareMap(): THREE.DataTexture {
-  const data = new Uint8Array(SIZE * SIZE * 4);
-  for (let y = 0; y < SIZE; y++) {
-    for (let x = 0; x < SIZE; x++) {
-      const [u, v] = [(x + 0.5) / SIZE * 2 - 1, (y + 0.5) / SIZE * 2 - 1];
-      const out = Math.hypot(u, v);
-      const rim = out > 1 ? 0 : smoothstep(0.55, 1, out) ** 2 * 0.55;
-      const glare = Math.exp(-(((u + 0.38) / 0.22) ** 2 + ((v - 0.42) / 0.12) ** 2)) * 0.9;
-      const spark = Math.exp(-(((u + 0.12) / 0.06) ** 2 + ((v - 0.58) / 0.06) ** 2));
-      const light = Math.min(1, rim + glare + spark);
-      const i = (y * SIZE + x) * 4;
-      data.set([light * 235, light * 245, 255 * light, 255], i);
-    }
-  }
-  const texture = new THREE.DataTexture(data, SIZE, SIZE);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.magFilter = THREE.LinearFilter;
-  texture.needsUpdate = true;
-  return texture;
+export function edgeShader(sharpness: number): (shader: { fragmentShader: string }) => void {
+  return (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <dithering_fragment>',
+      `#include <dithering_fragment>
+      float facing = clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);
+      gl_FragColor.rgb *= pow(1.0 - facing, ${sharpness.toFixed(1)});`,
+    );
+  };
 }
-
-function smoothstep(from: number, to: number, x: number): number {
-  const t = Math.min(1, Math.max(0, (x - from) / (to - from)));
-  return t * t * (3 - 2 * t);
-}
-
-let glare: THREE.DataTexture | null = null;
 
 /**
  * Makes every part of a model in the named material shine like glass: a twin of it, sharing its shape and skeleton,
- * adds a glare and a bright rim over it. The glare is a matcap rather than a reflection of the scene, so it costs one
- * draw and no lights. Glass, unlike metal, mirrors only a sliver of the room round it, and less still when it's
- * see-through, so beside chrome it looks dull; `reflects` times as much of the room's reflection makes it shine as it
- * turns, at no extra cost.
+ * mirrors the room and the lights round it at its edges, `strength` bright, fading to nothing where it faces the
+ * camera so the glass stays clear there. One extra draw.
  */
-export function glassShine({ material: name, strength, reflects = 1 }: { material: string; strength: number; reflects?: number }) {
+export function glassShine({ material: name, strength, sharpness }: { material: string; strength: number; sharpness: number }) {
   return (model: THREE.Object3D, keep: (material: THREE.Material) => void): void => {
     const meshes = partsIn(model, name);
     if (meshes.length === 0) return;
-    for (const mesh of meshes) {
-      for (const material of [mesh.material].flat()) {
-        if (material instanceof THREE.MeshStandardMaterial) material.envMapIntensity = reflects;
-      }
-    }
-    glare ??= glareMap();
-    const shine = new THREE.MeshMatcapMaterial({
-      matcap: glare, color: new THREE.Color(strength, strength, strength),
+    const mirror = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(strength, strength, strength), metalness: 1, roughness: GLASS_ROUGHNESS,
       transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
     });
-    keep(shine);
-    for (const mesh of meshes) addTwin(mesh, shine).castShadow = false;
+    mirror.onBeforeCompile = edgeShader(sharpness);
+    mirror.customProgramCacheKey = () => `glass-edge-${sharpness}`;
+    keep(mirror);
+    for (const mesh of meshes) addTwin(mesh, mirror).castShadow = false;
   };
 }
