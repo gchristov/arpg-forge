@@ -44,15 +44,15 @@ export const HERO: HeroRules = {
   },
   startingWeapon: 'blaster',
   weapons: {
-    // Shoots from out of a machine's reach, punches one that's close back out of it, and dashes in to finish one
-    // that's down. It walks into range itself, so it takes over from further out than it shoots.
+    // Shoots from out of a machine's reach, punches one that gets within 2 tiles back out to shooting distance, and
+    // dashes in to finish one that's down; holding still while it strikes, so the strikes land one after another. It walks into range itself, so it takes over from further out than it shoots.
     blaster: {
       engageRange: 9, reach: 9,
       attack: {
         blast: {
-          range: 4.5, shotSeconds: 0.4, cost: 2, power: 1.4, knockback: 0.08,
-          punch: { reach: 0.6, power: 0.5, knockback: 0.6, seconds: 0.55 },
-          strike: { reach: 0.6, power: 2.5, knockback: 0.15, seconds: 0.35, dash: 2 },
+          range: 6, shotSeconds: 0.4, cost: 2, power: 1.4, knockback: 0.08,
+          punch: { within: 2, reach: 0.6, power: 0.5, knockback: 3, seconds: 0.55 },
+          strike: { reach: 0.6, power: 2.5, knockback: 0, seconds: 0.35, dash: 2 },
         } satisfies BlastSettings,
       },
     },

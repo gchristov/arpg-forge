@@ -17,7 +17,8 @@ interface Blow {
 
 /**
  * U-7's hand blaster and fists. Within `range` of a machine it shoots, every `shotSeconds` for `cost` charge; once the
- * machine is up close it punches it back instead. A machine that's down (stunned) is open: U-7 dashes in at `dash`
+ * machine is within `punch.within` of it, it steps in and punches it back out to shooting distance instead (a boss,
+ * which can't be thrown back, is only ever shot). A machine that's down (stunned) is open: U-7 dashes in at `dash`
  * times its speed and keeps tearing at its core with powered strikes until it dies or gets up. The weapon's
  * `engageRange` should reach past `range`, so U-7 walks into range itself and can dash from further out.
  */
@@ -27,7 +28,7 @@ export interface BlastSettings {
   cost: number;
   power: number;
   knockback: number;
-  punch: Blow;
+  punch: Blow & { within: number };
   strike: Blow & { dash: number };
 }
 
@@ -58,8 +59,10 @@ export const BLAST: WeaponAttack<BlastSettings> = {
       if (target.dead) goForNextDowned(state);
       return;
     }
-    if (inReach(settings.punch)) {
-      if (memory.untilHit <= 0) blow(state, target, settings.punch, BLAST_SIGNAL.punch, memory, events);
+    const { punch } = settings;
+    if (d <= punch.within + target.r + hero.r && !state.rules.enemies[target.kind]?.boss) {
+      if (!inReach(punch)) return closeIn(hero.speed);
+      if (memory.untilHit <= 0) blow(state, target, punch, BLAST_SIGNAL.punch, memory, events);
       return;
     }
     if (d > settings.range + target.r || !hasLineOfSight(map, hero.x, hero.y, target.x, target.y)) return closeIn(hero.speed);

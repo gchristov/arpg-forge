@@ -273,7 +273,8 @@ export class ActorFigure {
     next.setLoop(dying ? THREE.LoopOnce : THREE.LoopRepeat, dying ? 1 : Infinity);
     next.clampWhenFinished = dying;
     const moment = this.moment;
-    const cutShort = dying || (name === 'move' && moment !== null && moment === this.action('hit'));
+    // A flinch or a cast stops the legs, so starting to move cuts it short rather than sliding along in it.
+    const cutShort = dying || (name === 'move' && moment !== null && (moment === this.action('hit') || moment === this.action('cast')));
     if (moment && !cutShort) {
       previous?.stop();
       return;
