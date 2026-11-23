@@ -11,7 +11,8 @@ import { hasLineOfSight } from '../../../engine/world/line-of-sight';
  * U-7's hand blaster. Within `range` of a machine it holds a beam on it, which burns `power` times a swing's damage a
  * second for `cost` charge a second, reported every `reportSeconds`. A machine that's down (stunned) is open: U-7
  * dashes in at `strike.dash` times its speed and keeps tearing at its core with powered strikes, `strike.power` times
- * a swing every `strike.seconds`, until it dies or gets up. The weapon's `engageRange` should reach past `range`, so
+ * a swing every `strike.seconds`, until it dies or gets up. Each strike drains `strike.charge` from the core into U-7,
+ * and the one that finishes it `strike.killCharge` more. The weapon's `engageRange` should reach past `range`, so
  * U-7 walks into range itself and can dash from further out.
  */
 export interface BlastSettings {
@@ -19,11 +20,13 @@ export interface BlastSettings {
   power: number;
   cost: number;
   reportSeconds: number;
-  strike: { reach: number; power: number; seconds: number; dash: number };
+  strike: { reach: number; power: number; seconds: number; dash: number; charge: number; killCharge: number };
 }
 
 /** The signal sent for a powered strike, for the game to draw and sound. */
 export const STRIKE_SIGNAL = 'poweredStrike';
+/** The signal sent when a strike drains charge out of a machine, for the game to show. */
+export const DRAINED_SIGNAL = 'chargeDrained';
 
 /** How far round U-7 it looks for the next machine that's down, once it has finished one. */
 const NEXT_DOWNED_RANGE = 6;
@@ -60,6 +63,9 @@ export const BLAST: WeaponAttack<BlastSettings> = {
       const { amount, crit } = roll(state, strike.power);
       const k = d || 1;
       damageEnemy(state, target, Math.max(1, Math.round(amount)), crit, (target.x - hero.x) / k, (target.y - hero.y) / k, 0, events);
+      const drained = strike.charge + (target.dead ? strike.killCharge : 0);
+      hero.resource = Math.min(hero.maxResource, hero.resource + drained);
+      events.push({ type: 'Signal', name: DRAINED_SIGNAL, x: target.x, y: target.y, enemyId: target.id });
       if (target.dead) goForNextDowned(state);
       return;
     }

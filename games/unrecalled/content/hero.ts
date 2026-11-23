@@ -8,7 +8,7 @@ import type { CutSettings } from '../extensions/cutting';
  */
 export const EMP: AreaSkill = {
   type: 'area', id: 'emp',
-  cost: 20, cooldown: 5, radius: 3, damage: [10, 16], damagePerLevel: 2, critChance: 0.1, critMultiplier: 1.5, knockback: 2,
+  cost: 30, cooldown: 5, radius: 3, damage: [10, 16], damagePerLevel: 2, critChance: 0.1, critMultiplier: 1.5, knockback: 2,
   stun: 2.5, chaseStunned: true,
 };
 
@@ -26,8 +26,9 @@ export const HERO: HeroRules = {
   damage: [5, 9],
   xpForLevel2: 60,
   healingItems: 3,
-  // Charge refills on its own for now; draining beaten machines' cores comes later.
-  resourceRegen: 6,
+  // Charge comes from tearing at downed machines' cores (the blaster's strikes); it only trickles back on its own, so
+  // U-7 is never left with nothing at all.
+  resourceRegen: 1,
   healthRegen: 2,
   healthRegenDelay: 5,
   levelUp: { xpGrowth: 1.5, health: 12, resource: 6, damage: [2, 3] },
@@ -44,7 +45,7 @@ export const HERO: HeroRules = {
       attack: {
         blast: {
           range: 6, power: 3.5, cost: 5, reportSeconds: 0.4,
-          strike: { reach: 0.6, power: 2.5, seconds: 0.35, dash: 2 },
+          strike: { reach: 0.6, power: 2.5, seconds: 0.35, dash: 2, charge: 5, killCharge: 10 },
         } satisfies BlastSettings,
       },
     },

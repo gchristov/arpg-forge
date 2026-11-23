@@ -25,7 +25,7 @@ import { ARENA, readyForPractice } from './levels/arena';
 import type { GameAction } from './extensions/actions';
 import { AssemblyWakes } from './extensions/assembly-wakes';
 import { BlastEffects } from './extensions/blast-effects';
-import { STRIKE_SIGNAL } from './extensions/blaster';
+import { DRAINED_SIGNAL, STRIKE_SIGNAL } from './extensions/blaster';
 import { CutSpray } from './extensions/cut-spray';
 import { MachineScans } from './extensions/machine-scans';
 import { Hud } from './ui/hud';
@@ -317,6 +317,7 @@ function react(events: SimEvent[]): void {
       case 'Signal': {
         const kind = kindOf(e.enemyId);
         if (e.name === 'recognised' && kind && scans(e.enemyId)) labels.text(e.x, e.y, 70 * PX * view.scaleOf(kind), MACHINE_SCANS, '#ff8a6a', 15);
+        if (e.name === DRAINED_SIGNAL) labels.text(state.hero.x, state.hero.y, 46 * PX, '+charge', '#8ae8ff', 14);
         break;
       }
       case 'HeroHurt':
