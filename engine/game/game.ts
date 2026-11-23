@@ -194,7 +194,7 @@ export class Game {
     const heroY = lerp(state.hero.prevY, state.hero.y, alpha);
     renderer.follow(this.cameraFocus?.x ?? heroX, this.cameraFocus?.y ?? heroY, frameSeconds, this.cutting);
     this.cutting = false;
-    renderer.lightHero(heroX, heroY, state.hero.dead, frameSeconds);
+    renderer.lightHero(heroX, heroY);
     renderer.render(now / 1000, frameSeconds);
     this.labels.update(this.project, frameSeconds);
     this.hooks?.update(state);

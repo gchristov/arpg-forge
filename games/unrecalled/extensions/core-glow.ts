@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { heroLightLevel } from '../../../engine/render/hero-light';
 import { addTwin, partsIn } from './part-twins';
 
 /**
@@ -8,6 +7,17 @@ import { addTwin, partsIn } from './part-twins';
  */
 const AFTER_GLASS = 1;
 const HALO_SIZE = 64;
+/** How long the glow takes to go out when its wearer dies, or to come back when they get up, in seconds. */
+export const FADE_SECONDS = 0.8;
+
+/**
+ * How bright, from 0 (out) to 1, a glow is `seconds` after it was at `level`, fading towards out while its wearer is
+ * `dead` and back to full while they're alive.
+ */
+export function glowAfter(level: number, dead: boolean, seconds: number): number {
+  const step = seconds / FADE_SECONDS;
+  return dead ? Math.max(0, level - step) : Math.min(1, level + step);
+}
 
 /** A soft round spot of light, brightest in the middle and fading to nothing at its edge. */
 function haloMap(): THREE.DataTexture {
@@ -34,7 +44,7 @@ let halo: THREE.DataTexture | null = null;
  * the light spilling out round it at `spill.strength`.
  *
  * `dress` adds the glow to a model; `draw` each frame fades every glow it added out while the one wearing it is dead,
- * and back in when they get up, as the light they carry does.
+ * and back in when they get up, and says how bright it is now, from 0 to 1, for the light they carry to follow.
  */
 export function coreGlow({ materials, colour, strength, spill }: {
   materials: string[];
@@ -49,11 +59,12 @@ export function coreGlow({ materials, colour, strength, spill }: {
     material.color.multiplyScalar(lit);
     return material;
   };
-  const draw = (dead: boolean, frameSeconds: number): void => {
-    const level = heroLightLevel(lit, dead, frameSeconds);
-    if (level === lit) return;
+  const draw = (dead: boolean, frameSeconds: number): number => {
+    const level = glowAfter(lit, dead, frameSeconds);
+    if (level === lit) return lit;
     lit = level;
     for (const { material, full } of glows) material.color.copy(full).multiplyScalar(lit);
+    return lit;
   };
   const dress = (model: THREE.Object3D, keep: (material: THREE.Material) => void): void => {
     const meshes = materials.flatMap((name) => partsIn(model, name));

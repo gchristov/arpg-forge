@@ -355,7 +355,8 @@ game.run({
   draw: (alpha, frameSeconds) => {
     machineScans.draw(alpha);
     cutSpray.draw(frameSeconds);
-    heroGlow.draw(state.hero.dead, frameSeconds);
+    // U-7's light is its core's, so it goes out with the core when U-7 falls.
+    game.renderer.dimHeroLight(heroGlow.draw(state.hero.dead, frameSeconds));
   },
   onStart() {
     synth.unlock();
