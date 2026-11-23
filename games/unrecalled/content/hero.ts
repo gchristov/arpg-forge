@@ -15,7 +15,7 @@ export const EMP: AreaSkill = {
 /** Both palms at once: throws the machines in front of U-7 back and knocks them down, for when they close in. */
 export const REPEL: AreaSkill = {
   type: 'area', id: 'repel', arc: 55,
-  cost: 15, cooldown: 5, radius: 3, damage: [4, 7], damagePerLevel: 1, critChance: 0.05, critMultiplier: 1.5, knockback: 2.2,
+  cost: 15, cooldown: 3, radius: 3, damage: [4, 7], damagePerLevel: 1, critChance: 0.05, critMultiplier: 1.5, knockback: 2.2,
   stun: 1.6,
 };
 
