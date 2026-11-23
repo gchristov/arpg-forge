@@ -12,9 +12,16 @@ import { glassShine } from '../extensions/glass-shine';
 
 const colour = new THREE.Color();
 
-/** Plain, even light, like a model viewer's, on every level. */
+/** The colour of U-7's core, and of the nodes in its brain: the blue glow of a reactor. */
+const CORE_COLOUR = 0x3ac8ff;
+
+/**
+ * Plain, even light, like a model viewer's, on every level. The only light of the game's own is U-7's core, carried
+ * at its chest, lighting the ground, walls and machines round it.
+ */
 const PLAIN_LIGHT: Mood = {
-  background: 0x22262c, ambient: 0x000000, ambientIntensity: 0, heroLightRadius: 0.001, reflections: 1,
+  background: 0x22262c, ambient: 0x000000, ambientIntensity: 0, reflections: 1,
+  heroLightRadius: 1.6, heroLight: { colour: CORE_COLOUR, height: 0.8, intensity: 1 },
   moon: { colour: 0xffffff, intensity: 2.2 },
   fill: { sky: 0xdfe7ee, ground: 0x3a3f46, intensity: 0.8 },
 };
@@ -147,31 +154,26 @@ const robot = (
 });
 
 /** U-7's body is drawn in its own material, painted as glass by its model build. */
-const glass = glassShine({ material: 'MI_Superhero_Male', strength: 0.4 });
+const glass = glassShine({ material: 'MI_Superhero_Male', strength: 1.1 });
 
-/** The colour of U-7's core, and of the nodes in its brain: the blue glow of a reactor. */
-const CORE_COLOUR = 0x3ac8ff;
-
-/** U-7's core and brain nodes, drawn glowing through the glass over them. */
-const glowing = coreGlow({
+/** U-7's core and brain nodes, drawn glowing through the glass over them, going out when it dies. */
+export const heroGlow = coreGlow({
   materials: ['CoreRod', 'CoreHalo', 'Synapse'], colour: CORE_COLOUR, strength: 2.6,
   spill: { material: 'CoreRod', size: 0.42, strength: 1.6 },
 });
 
 /**
- * What the game adds to U-7's model, in the world and in its portrait: a glossy glare and rim on its glass, and its
+ * What the game adds to U-7's model, in the world and in its portrait: a bright rim at the edges of its glass, and its
  * core and brain glowing through it.
  */
 export const dressHero = (model: THREE.Object3D, keep: (material: THREE.Material) => void): void => {
   glass(model, keep);
-  glowing(model, keep);
+  heroGlow.dress(model, keep);
 };
 
 const ACTORS: Record<string, ActorLook> = {
   hero: {
     colour: 0x9a8a70, height: 1.2, radius: 0.24, seenThrough: 0x8ae8ff,
-    // The core's glow, faint on the ground round U-7.
-    light: { colour: CORE_COLOUR, radius: 1.5, intensity: 0.45 },
     // Leaning into a cut, the chainsaw buzzing in its hands.
     channelPose: { lean: 0.18, buzz: 0.012 },
     model: {

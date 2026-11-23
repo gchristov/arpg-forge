@@ -35,11 +35,12 @@ describe('glassShine', () => {
     expect(kept).toHaveLength(0);
   });
 
-  it('is brightest at the glare and the rim, and dark facing the camera', () => {
+  it('is dark where the glass faces the camera and bright only at its rim, brightest along the top', () => {
     const data = glareMap().image.data as Uint8Array;
     const light = (u: number, v: number) => data[(Math.floor((v + 1) / 2 * 63) * 64 + Math.floor((u + 1) / 2 * 63)) * 4]!;
-    expect(light(0, 0)).toBeLessThan(20);
-    expect(light(-0.38, 0.42)).toBeGreaterThan(180);
-    expect(light(0.95, 0)).toBeGreaterThan(light(0.5, 0));
+    expect(light(0, 0)).toBe(0);
+    expect(light(0.5, 0)).toBe(0);
+    expect(light(0, 0.97)).toBeGreaterThan(150);
+    expect(light(0, 0.97)).toBeGreaterThan(light(0, -0.97));
   });
 });

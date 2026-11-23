@@ -163,6 +163,11 @@ export interface Mood {
   moon?: { colour: number; intensity: number };
   /** The light the hero carries, so the area around them is always visible. */
   heroLightRadius: number;
+  /**
+   * What the hero's light is like: its colour, how high above the ground it's carried, in tiles, and how bright. A warm
+   * white lantern at head height if not given.
+   */
+  heroLight?: { colour: number; height: number; intensity: number };
   /** Soft light from above and below that keeps figures readable in the dark without lighting the ground much. */
   fill?: { sky: number; ground: number; intensity: number };
   /**
