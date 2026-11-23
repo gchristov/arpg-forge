@@ -27,6 +27,13 @@ describe('glassShine', () => {
     expect(glass!.visible).toBe(true);
   });
 
+  it('makes the glass mirror more of the room round it', () => {
+    const model = modelIn('Skin');
+    glassShine({ material: 'Skin', strength: 0.6, reflects: 5 })(model, () => {});
+    const [glass] = meshesOf(model);
+    expect((glass!.material as THREE.MeshStandardMaterial).envMapIntensity).toBe(5);
+  });
+
   it('adds nothing when no part is glass', () => {
     const model = modelIn('Shell');
     const kept: THREE.Material[] = [];

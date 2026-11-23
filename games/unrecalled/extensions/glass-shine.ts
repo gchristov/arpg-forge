@@ -39,12 +39,19 @@ let glare: THREE.DataTexture | null = null;
 /**
  * Makes every part of a model in the named material shine like glass: a twin of it, sharing its shape and skeleton,
  * adds a glare and a bright rim over it. The glare is a matcap rather than a reflection of the scene, so it costs one
- * draw and no lights.
+ * draw and no lights. Glass, unlike metal, mirrors only a sliver of the room round it, and less still when it's
+ * see-through, so beside chrome it looks dull; `reflects` times as much of the room's reflection makes it shine as it
+ * turns, at no extra cost.
  */
-export function glassShine({ material: name, strength }: { material: string; strength: number }) {
+export function glassShine({ material: name, strength, reflects = 1 }: { material: string; strength: number; reflects?: number }) {
   return (model: THREE.Object3D, keep: (material: THREE.Material) => void): void => {
     const meshes = partsIn(model, name);
     if (meshes.length === 0) return;
+    for (const mesh of meshes) {
+      for (const material of [mesh.material].flat()) {
+        if (material instanceof THREE.MeshStandardMaterial) material.envMapIntensity = reflects;
+      }
+    }
     glare ??= glareMap();
     const shine = new THREE.MeshMatcapMaterial({
       matcap: glare, color: new THREE.Color(strength, strength, strength),
