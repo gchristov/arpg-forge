@@ -230,6 +230,11 @@ export interface Weapon extends Partial<MeleeRules> {
    * extensions and hands over in its content's `weaponAttacks`.
    */
   attack?: Record<string, unknown>;
+  /**
+   * One of the hero's skills, by id, used when attacking with no enemy near, in place of a swing at nothing: a gun
+   * firing straight ahead, say.
+   */
+  shot?: string;
 }
 
 export interface HeroRules {

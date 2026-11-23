@@ -71,8 +71,12 @@ export function applyCommand(state: GameState, command: Command, events: SimEven
         hero.targetId = null;
         hero.path = null;
         hero.moving = false;
-        startSwing(state, events);
-        hero.struck = true;
+        const shot = shotSlot(state);
+        if (shot >= 0) useSkill(state, shot, events);
+        else {
+          startSwing(state, events);
+          hero.struck = true;
+        }
       }
       break;
     }
@@ -114,6 +118,13 @@ function target(state: GameState, enemyId: number): void {
 function isPortalTile(state: GameState, index: number): boolean {
   const { level } = currentLevel(state);
   return level.portals.some((p) => tileIndex(level.map, p.tx, p.ty) === index);
+}
+
+/** The slot of the skill the weapon in hand uses when there's nothing to attack, or -1. */
+function shotSlot(state: GameState): number {
+  const { hero, rules } = state;
+  const shot = hero.weapon === null ? undefined : rules.hero.weapons?.[hero.weapon]?.shot;
+  return shot === undefined ? -1 : rules.hero.skills.findIndex((s) => s.id === shot);
 }
 
 function startSwing(state: GameState, events: SimEvent[]): void {

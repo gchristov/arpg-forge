@@ -1,4 +1,4 @@
-import type { AreaSkill, HeroRules } from '../../../engine/sim/content';
+import type { AreaSkill, HeroRules, ProjectileSkill } from '../../../engine/sim/content';
 import type { BlastSettings } from '../extensions/blaster';
 import type { CutSettings } from '../extensions/cutting';
 
@@ -8,8 +8,16 @@ import type { CutSettings } from '../extensions/cutting';
  */
 export const EMP: AreaSkill = {
   type: 'area', id: 'emp',
-  cost: 30, cooldown: 5, radius: 3, damage: [10, 16], damagePerLevel: 2, critChance: 0.1, critMultiplier: 1.5, knockback: 2,
+  // Only charge holds it back: the short cooldown just stops a double tap from spending twice.
+  cost: 30, cooldown: 0.5, radius: 3, damage: [10, 16], damagePerLevel: 2, critChance: 0.1, critMultiplier: 1.5, knockback: 2,
   stun: 2.5, chaseStunned: true,
+};
+
+/** A bolt of charge the blaster fires straight ahead when there's no machine near to hold its beam on. */
+export const BOLT: ProjectileSkill = {
+  type: 'projectile', id: 'bolt',
+  cost: 4, cooldown: 0.35, speed: 13, lifetime: 0.75, autoAimRange: 0,
+  radius: 0.7, damage: [8, 12], damagePerLevel: 1, critChance: 0.1, critMultiplier: 1.5,
 };
 
 /**
@@ -41,7 +49,7 @@ export const HERO: HeroRules = {
     // A beam held on a machine from up to 6 tiles, at the damage a second of shooting every 0.4 s at 1.4 times a swing,
     // and a dash in to finish one that's down. It walks into range itself, so it takes over from further out.
     blaster: {
-      engageRange: 9, reach: 9,
+      engageRange: 9, reach: 9, shot: 'bolt',
       attack: {
         blast: {
           range: 6, power: 3.5, cost: 5, reportSeconds: 0.4,
@@ -52,7 +60,8 @@ export const HERO: HeroRules = {
     // Keeps cutting for as long as it's in contact, at nearly four times the damage a second of punching.
     chainsaw: { attack: { cut: { tickSeconds: 0.1, power: 3.7 } satisfies CutSettings } },
   },
-  skills: [{ ...EMP, fromStep: 'charged' }],
+  // The EMP first: the HUD's button is for slot 0.
+  skills: [{ ...EMP, fromStep: 'charged' }, BOLT],
   heal: { amount: 60, maxItems: 9 },
   attackAssistRange: 7,
   deathGoldLoss: 0.5,

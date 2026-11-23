@@ -61,6 +61,18 @@ describe('hero melee', () => {
     expect(state.hero.x).toBeCloseTo(at, 1);
     expect(state.hero.moving).toBe(false);
   });
+
+  it('fires the weapon\'s shot straight ahead in place of swinging at nothing', () => {
+    const shot: ProjectileSkill = { ...BOLT, id: 'shot', autoAimRange: 0 };
+    const hero = { ...TEST_HERO, skills: [...TEST_HERO.skills, shot], startingWeapon: 'gun', weapons: { gun: { shot: 'shot' } } };
+    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [], 1, hero);
+    const events = run(state, 1 / 60, [{ type: 'attackNearest' }]);
+    expect(ofType(events, 'Swung')).toEqual([]);
+    expect(ofType(events, 'SkillUsed')).toEqual([{ type: 'SkillUsed', slot: 1, skill: 'shot' }]);
+    expect(state.projectiles).toHaveLength(1);
+    expect(state.projectiles[0]!.vx).toBeGreaterThan(0);
+    expect(state.projectiles[0]!.vy).toBeCloseTo(0);
+  });
 });
 
 describe('area skill', () => {

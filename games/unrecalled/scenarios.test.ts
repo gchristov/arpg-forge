@@ -204,6 +204,15 @@ describe('Unrecalled scenarios', () => {
     expect(strikes.some((e) => e.type === 'Signal' && e.name === STRIKE_SIGNAL)).toBe(true);
   });
 
+  it('fires a bolt straight ahead with the blaster when no machine is near', () => {
+    const state = untouchable(createGameState(content, 1, 'arena'));
+    readyForPractice(state, null);
+    for (const e of currentLevel(state).enemies) e.dead = true;
+    const shots = play(state, 0.1, [{ type: 'attackNearest' }]);
+    expect(shots.some((e) => e.type === 'SkillUsed' && e.skill === 'bolt')).toBe(true);
+    expect(state.projectiles).toHaveLength(1);
+  });
+
   it('after the EMP, goes for a machine it knocked down and moves on to the next once it falls', () => {
     const state = untouchable(createGameState(content, 1, 'arena'));
     readyForPractice(state, null);
