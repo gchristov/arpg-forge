@@ -17,10 +17,11 @@ interface Blow {
 
 /**
  * U-7's hand blaster and fists. Within `range` of a machine it shoots, every `shotSeconds` for `cost` charge; once the
- * machine is within `punch.within` of it, it steps in and punches it back out to shooting distance instead (a boss,
- * which can't be thrown back, is only ever shot). A machine that's down (stunned) is open: U-7 dashes in at `dash`
- * times its speed and keeps tearing at its core with powered strikes until it dies or gets up. The weapon's
- * `engageRange` should reach past `range`, so U-7 walks into range itself and can dash from further out.
+ * machine is within `punch.within` of it, it steps in and punches it back, at most once every `punch.cooldown`, and
+ * shoots it point-blank in between (a boss, which can't be thrown back, is only ever shot). A machine that's down
+ * (stunned) is open: U-7 dashes in at `dash` times its speed and keeps tearing at its core with powered strikes until
+ * it dies or gets up. The weapon's `engageRange` should reach past `range`, so U-7 walks into range itself and can
+ * dash from further out.
  */
 export interface BlastSettings {
   range: number;
@@ -28,7 +29,7 @@ export interface BlastSettings {
   cost: number;
   power: number;
   knockback: number;
-  punch: Blow & { within: number };
+  punch: Blow & { within: number; cooldown: number };
   strike: Blow & { dash: number };
 }
 
@@ -41,14 +42,16 @@ const NEXT_DOWNED_RANGE = 6;
 const HOLD_AFTER_BLOW = 0.25;
 
 /**
- * Keeps `untilHit`, the seconds until it can shoot or hit again, in its memory, and holds U-7 still after a blow with
- * the hero's `attackCooldown`, which outlasts a change of target. See EXTENSIONS.md.
+ * Keeps `untilHit`, the seconds until it can shoot or hit again, and `untilPunch`, until it can punch again, in its
+ * memory, and holds U-7 still after a blow with the hero's `attackCooldown`, which outlasts a change of target. See
+ * EXTENSIONS.md.
  */
 export const BLAST: WeaponAttack<BlastSettings> = {
   attack({ state, target, dt, events, settings, memory }) {
     const { hero } = state;
     const { map } = currentLevel(state).level;
     memory.untilHit = (memory.untilHit ?? 0) - dt;
+    memory.untilPunch = (memory.untilPunch ?? 0) - dt;
     if (hero.attackCooldown > 0) return;
     const d = dist(hero.x, hero.y, target.x, target.y);
     const closeIn = (speed: number): void => {
@@ -67,10 +70,11 @@ export const BLAST: WeaponAttack<BlastSettings> = {
       return;
     }
     const { punch } = settings;
-    if (d <= punch.within + target.r + hero.r && !state.rules.enemies[target.kind]?.boss) {
+    if (d <= punch.within + target.r + hero.r && memory.untilPunch <= 0 && !state.rules.enemies[target.kind]?.boss) {
       if (!inReach(punch)) return closeIn(hero.speed);
       if (memory.untilHit > 0) return;
       blow(state, target, punch, BLAST_SIGNAL.punch, memory, events);
+      memory.untilPunch = punch.cooldown;
       hero.attackCooldown = HOLD_AFTER_BLOW;
       return;
     }
