@@ -978,14 +978,14 @@
       },
       "paint": {
         "MI_Superhero_Male": {
-          "colour": "#3a434d",
+          "colour": "#6b7682",
           "plain": true,
-          "opacity": 0.5,
+          "opacity": 0.35,
           "metalness": 0,
           "roughness": 0.05
         },
         "Metal": {
-          "colour": "#8f959d",
+          "colour": "#737a82",
           "plain": true,
           "metalness": 1,
           "roughness": 0.22

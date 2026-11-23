@@ -19,7 +19,7 @@ import { playDistances, shadeArea, shadeAt } from './shade-map';
 import { Spatter } from './spatter';
 import { WaterSurface } from './water';
 import { isWallTile, kitPartitions, kitWalls, wallFaces, wallPanels, type KitCorner, type KitOpening } from './wall-panels';
-import { heroLightOf, LANTERN } from './hero-light';
+import { heroLightLevel, heroLightOf, LANTERN } from './hero-light';
 
 /** On-screen width of one tile at zoom 1. */
 const TILE_PIXELS = 64;
@@ -60,6 +60,9 @@ export class SceneRenderer {
   private readonly moon = new THREE.DirectionalLight();
   private readonly heroLight = new THREE.PointLight(LANTERN.colour, LANTERN.intensity, 6, 1);
   private heroLightHeight = LANTERN.height;
+  private heroLightIntensity = LANTERN.intensity;
+  private heroLightOutWhenDead = false;
+  private heroLightLit = 1;
   private readonly lightMap = new LightMap();
   private readonly glowColour = new THREE.Color();
   /** Kit corner pieces split into their arms, by model name, split once and kept for every level. */
@@ -199,7 +202,9 @@ export class SceneRenderer {
     }
     const heroLight = heroLightOf(mood);
     this.heroLight.color.set(heroLight.colour);
-    this.heroLight.intensity = heroLight.intensity;
+    this.heroLightIntensity = heroLight.intensity;
+    this.heroLightOutWhenDead = heroLight.outWhenDead;
+    this.heroLight.intensity = heroLight.intensity * this.heroLightLit;
     this.heroLight.distance = heroLight.distance;
     this.heroLightHeight = heroLight.height;
     this.fill.visible = Boolean(mood.fill);
@@ -374,8 +379,13 @@ export class SceneRenderer {
     this.target.z += (y - this.target.z) * k;
   }
 
-  /** Moves the light the hero carries to where they stand. */
-  lightHero(x: number, y: number): void {
+  /**
+   * Moves the light the hero carries to where they stand, fading it out over `frameSeconds` while they're `dead` if the
+   * mood's light goes out with them.
+   */
+  lightHero(x: number, y: number, dead: boolean, frameSeconds: number): void {
+    this.heroLightLit = heroLightLevel(this.heroLightLit, dead && this.heroLightOutWhenDead, frameSeconds);
+    this.heroLight.intensity = this.heroLightIntensity * this.heroLightLit;
     this.heroLight.position.set(x, this.heroLightHeight, y);
     this.lightMap.setHero(x, y);
   }

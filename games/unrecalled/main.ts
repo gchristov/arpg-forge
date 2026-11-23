@@ -9,7 +9,7 @@ import { ConversationView } from '../../engine/story/conversation-view';
 import { StoryRunner } from '../../engine/story/story-runner';
 import { DialogBox } from '../../engine/ui/dialog-box';
 import { PRINTING, SPEAKING } from '../../engine/ui/typewriter';
-import { MODEL_URLS, SCAN_COLOUR, SCANNER_EYES, unrecalledLook } from './art/look';
+import { heroGlow, MODEL_URLS, SCAN_COLOUR, SCANNER_EYES, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
 import { ENDING, levelUp, MACHINE_SCANS, scrapDropped } from './story/lines';
@@ -355,6 +355,7 @@ game.run({
   draw: (alpha, frameSeconds) => {
     machineScans.draw(alpha);
     cutSpray.draw(frameSeconds);
+    heroGlow.draw(state.hero.dead, frameSeconds);
   },
   onStart() {
     synth.unlock();

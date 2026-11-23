@@ -21,7 +21,7 @@ const CORE_COLOUR = 0x3ac8ff;
  */
 const PLAIN_LIGHT: Mood = {
   background: 0x22262c, ambient: 0x000000, ambientIntensity: 0, reflections: 1,
-  heroLightRadius: 1.6, heroLight: { colour: CORE_COLOUR, height: 0.8, intensity: 2.5 },
+  heroLightRadius: 1.6, heroLight: { colour: CORE_COLOUR, height: 0.8, intensity: 1, outWhenDead: true },
   moon: { colour: 0xffffff, intensity: 2.2 },
   fill: { sky: 0xdfe7ee, ground: 0x3a3f46, intensity: 0.8 },
 };
@@ -156,8 +156,8 @@ const robot = (
 /** U-7's body is drawn in its own material, painted as glass by its model build. */
 const glass = glassShine({ material: 'MI_Superhero_Male', strength: 0.4 });
 
-/** U-7's core and brain nodes, drawn glowing through the glass over them. */
-const glowing = coreGlow({
+/** U-7's core and brain nodes, drawn glowing through the glass over them, going out when it dies. */
+export const heroGlow = coreGlow({
   materials: ['CoreRod', 'CoreHalo', 'Synapse'], colour: CORE_COLOUR, strength: 2.6,
   spill: { material: 'CoreRod', size: 0.42, strength: 1.6 },
 });
@@ -168,7 +168,7 @@ const glowing = coreGlow({
  */
 export const dressHero = (model: THREE.Object3D, keep: (material: THREE.Material) => void): void => {
   glass(model, keep);
-  glowing(model, keep);
+  heroGlow.dress(model, keep);
 };
 
 const ACTORS: Record<string, ActorLook> = {

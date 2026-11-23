@@ -98,7 +98,7 @@ export class WorldView {
     const walls = this.blocksSight();
     renderer.spatter.clear((tx, ty) => !walls(tx, ty));
     renderer.follow(state.hero.x, state.hero.y, 0, true);
-    renderer.lightHero(state.hero.x, state.hero.y);
+    renderer.lightHero(state.hero.x, state.hero.y, state.hero.dead, 0);
     // Drawn afresh, the level shows everything until it's told again what's been found.
     this.exploredLevel = '';
   }

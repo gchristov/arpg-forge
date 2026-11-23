@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { heroLightLevel } from '../../../engine/render/hero-light';
 import { addTwin, partsIn } from './part-twins';
 
 /**
@@ -31,6 +32,9 @@ let halo: THREE.DataTexture | null = null;
  * each adds `colour` at `strength` over everything drawn before it, after the glass, though still hidden by anything
  * solid in front. Round the part in `spill.material`, a soft halo `spill.size` across, always facing the camera, adds
  * the light spilling out round it at `spill.strength`.
+ *
+ * `dress` adds the glow to a model; `draw` each frame fades every glow it added out while the one wearing it is dead,
+ * and back in when they get up, as the light they carry does.
  */
 export function coreGlow({ materials, colour, strength, spill }: {
   materials: string[];
@@ -38,13 +42,26 @@ export function coreGlow({ materials, colour, strength, spill }: {
   strength: number;
   spill?: { material: string; size: number; strength: number };
 }) {
-  return (model: THREE.Object3D, keep: (material: THREE.Material) => void): void => {
+  const glows: { material: THREE.MeshBasicMaterial | THREE.SpriteMaterial; full: THREE.Color }[] = [];
+  let lit = 1;
+  const glowing = <M extends THREE.MeshBasicMaterial | THREE.SpriteMaterial>(material: M): M => {
+    glows.push({ material, full: material.color.clone() });
+    material.color.multiplyScalar(lit);
+    return material;
+  };
+  const draw = (dead: boolean, frameSeconds: number): void => {
+    const level = heroLightLevel(lit, dead, frameSeconds);
+    if (level === lit) return;
+    lit = level;
+    for (const { material, full } of glows) material.color.copy(full).multiplyScalar(lit);
+  };
+  const dress = (model: THREE.Object3D, keep: (material: THREE.Material) => void): void => {
     const meshes = materials.flatMap((name) => partsIn(model, name));
     if (meshes.length === 0) return;
-    const glow = new THREE.MeshBasicMaterial({
+    const glow = glowing(new THREE.MeshBasicMaterial({
       color: new THREE.Color(colour).multiplyScalar(strength),
       transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false,
-    });
+    }));
     keep(glow);
     for (const mesh of meshes) {
       const twin = addTwin(mesh, glow);
@@ -53,10 +70,10 @@ export function coreGlow({ materials, colour, strength, spill }: {
     }
     if (!spill) return;
     halo ??= haloMap();
-    const light = new THREE.SpriteMaterial({
+    const light = glowing(new THREE.SpriteMaterial({
       map: halo, color: new THREE.Color(colour).multiplyScalar(spill.strength),
       transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false,
-    });
+    }));
     keep(light);
     model.updateMatrixWorld(true);
     const modelScale = model.getWorldScale(new THREE.Vector3()).x;
@@ -70,4 +87,5 @@ export function coreGlow({ materials, colour, strength, spill }: {
       mesh.add(sprite);
     }
   };
+  return { dress, draw };
 }

@@ -164,10 +164,11 @@ export interface Mood {
   /** The light the hero carries, so the area around them is always visible. */
   heroLightRadius: number;
   /**
-   * What the hero's light is like: its colour, how high above the ground it's carried, in tiles, and how bright. A warm
-   * white lantern at head height if not given.
+   * What the hero's light is like: its colour, how high above the ground it's carried, in tiles, how bright, and whether
+   * it goes out when the hero dies, as a light that is part of them does. A warm white lantern at head height, which
+   * stays lit, if not given.
    */
-  heroLight?: { colour: number; height: number; intensity: number };
+  heroLight?: { colour: number; height: number; intensity: number; outWhenDead?: boolean };
   /** Soft light from above and below that keeps figures readable in the dark without lighting the ground much. */
   fill?: { sky: number; ground: number; intensity: number };
   /**
