@@ -50,8 +50,8 @@ export const HERO: HeroRules = {
       engageRange: 9, reach: 9,
       attack: {
         blast: {
-          range: 4.5, shotSeconds: 0.4, cost: 2, power: 1, knockback: 0.08,
-          punch: { reach: 0.6, power: 1, knockback: 0.6, seconds: 0.55 },
+          range: 4.5, shotSeconds: 0.4, cost: 2, power: 1.4, knockback: 0.08,
+          punch: { reach: 0.6, power: 0.5, knockback: 0.6, seconds: 0.55 },
           strike: { reach: 0.6, power: 2.5, knockback: 0.15, seconds: 0.35, dash: 2 },
         } satisfies BlastSettings,
       },
