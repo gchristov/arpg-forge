@@ -154,7 +154,7 @@ const robot = (
 });
 
 /** U-7's body is drawn in its own material, painted as glass by its model build. */
-const glass = glassShine({ material: 'MI_Superhero_Male', strength: 0.85 });
+const glass = glassShine({ material: 'MI_Superhero_Male', strength: 1.1 });
 
 /** U-7's core and brain nodes, drawn glowing through the glass over them, going out when it dies. */
 export const heroGlow = coreGlow({
