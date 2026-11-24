@@ -45,13 +45,13 @@ export const HERO: HeroRules = {
   },
   startingWeapon: 'blaster',
   weapons: {
-    // A beam held on a machine from up to 6 tiles that builds charge as it burns, a dash in to finish one that's down,
+    // A beam held on a machine from up to 4.5 tiles that builds charge as it burns, a dash in to finish one that's down,
     // and a free bolt straight ahead with nothing near. It walks into range itself, so it takes over from further out.
     blaster: {
       engageRange: 9, reach: 9, shot: 'bolt',
       attack: {
         blast: {
-          range: 6, power: 3.5, charge: 5, reportSeconds: 0.4,
+          range: 4.5, power: 3.5, charge: 5, reportSeconds: 0.4,
           strike: { reach: 0.6, power: 2.5, seconds: 0.35, dash: 2 },
         } satisfies BlastSettings,
       },
