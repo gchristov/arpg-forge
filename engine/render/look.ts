@@ -72,7 +72,8 @@ export interface BuildingKit {
 export interface ActorAnimations {
   idle: string;
   move?: string;
-  attack?: string;
+  /** Several take turns, one per attack, such as a punch with each fist. */
+  attack?: string | string[];
   /** Looped while the actor keeps up a continuous attack, such as cutting with a chainsaw. */
   channel?: string;
   cast?: string;
@@ -159,6 +160,12 @@ export interface Mood {
    * were made to. It also brightens every surface a little, as light bouncing round the room would. Without it, nothing reflects.
    */
   reflections?: number;
+  /**
+   * How glossy spills on the ground are (`spatter`): their roughness and reflectivity, from 0 to 1, so they shine with
+   * the room's reflections and the lights over them, as a spill on polished metal would. Matt if not given, as a spill
+   * soaking into earth.
+   */
+  spills?: { roughness: number; reflectivity: number };
   /** A directional light that casts shadows, for outdoor levels. */
   moon?: { colour: number; intensity: number };
   /** The light the hero carries, so the area around them is always visible. */

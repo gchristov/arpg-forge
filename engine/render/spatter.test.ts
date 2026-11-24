@@ -51,4 +51,14 @@ describe('Spatter', () => {
     expect(splats.renderOrder).toBeLessThan(0);
     expect(lit).toEqual([splats.material]);
   });
+
+  it('lies matt until told to shine like the floor under it', () => {
+    const scene = new THREE.Scene();
+    const spatter = new Spatter(scene, () => {});
+    const splats = (scene.children[1] as THREE.InstancedMesh).material as THREE.MeshPhysicalMaterial;
+    expect(splats.roughness).toBe(1);
+    spatter.shine(0.1, 0.9);
+    expect(splats.roughness).toBe(0.1);
+    expect(splats.reflectivity).toBeCloseTo(0.9);
+  });
 });

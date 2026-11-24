@@ -196,6 +196,7 @@ export class SceneRenderer {
     this.ambientSwitched = false;
     this.scene.background = new THREE.Color(mood.background);
     this.scene.environmentIntensity = mood.reflections ?? 0;
+    this.spatter.shine(mood.spills?.roughness ?? 1, mood.spills?.reflectivity ?? 0.5);
     this.ambient.color.set(mood.ambient);
     this.ambient.intensity = mood.ambientIntensity;
     this.moon.visible = Boolean(mood.moon);

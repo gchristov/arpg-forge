@@ -25,6 +25,8 @@ const PLAIN_LIGHT: Mood = {
   moon: { colour: 0xffffff, intensity: 2.2 },
   fill: { sky: 0xdfe7ee, ground: 0x3a3f46, intensity: 0.8 },
 };
+/** On metal floors oil lies glossy, shining with the floor's reflections and U-7's light like the metal round it. */
+const ON_METAL: Mood = { ...PLAIN_LIGHT, spills: { roughness: 0.3, reflectivity: 0.6 } };
 
 const hsl = (h: number, s: number, l: number): number => colour.setHSL(h / 360, s / 100, l / 100).getHex();
 
@@ -180,8 +182,8 @@ const ACTORS: Record<string, ActorLook> = {
       name: 'hero',
       animations: { idle: 'Idle', move: 'Run', attack: 'Punch', cast: 'Shoot_OneHanded', hit: 'RecieveHit', death: 'Death' },
       armed: {
-        // Built into its hand: it aims the hand while it shoots, and strikes bare-handed.
-        blaster: { animations: { channel: 'PistolIdle' } },
+        // Built into its hand: it aims the hand while it shoots, and strikes bare-handed, one fist then the other.
+        blaster: { animations: { channel: 'PistolIdle', attack: ['Punch', 'PunchCross'] } },
         // At rest the chainsaw hangs at U-7's side; it's held out ahead in both hands while cutting, and
         // revved with a jab at thin air.
         chainsaw: {
@@ -237,7 +239,7 @@ export const unrecalledLook: Look = {
     explosion: { flash: 0x8ae8ff },
     slam: { flash: 0xffa050, scorch: 0x201008 },
   },
-  mood: () => PLAIN_LIGHT,
+  mood: (levelId) => (FLOOR_STYLES[levelId]?.plate ? ON_METAL : PLAIN_LIGHT),
   groundColour(kind, tx, ty) {
     const n = valueNoise(tx * 0.25, ty * 0.25);
     const h = hash2(tx, ty, 9);

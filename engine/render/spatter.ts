@@ -64,7 +64,7 @@ export class Spatter {
     this.dropletMesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshBasicMaterial(), DROPLETS);
     this.splatMesh = new THREE.InstancedMesh(
       new THREE.CircleGeometry(1, 10),
-      new THREE.MeshLambertMaterial({ transparent: true, opacity: 0.88, depthWrite: false }),
+      new THREE.MeshPhysicalMaterial({ transparent: true, opacity: 0.88, depthWrite: false, roughness: 1, reflectivity: 0.5 }),
       SPLATS,
     );
     lit(this.splatMesh.material as THREE.Material);
@@ -79,6 +79,16 @@ export class Spatter {
     for (let i = 0; i < SPLATS; i++) {
       this.splats.push({ x: 0, y: 0, size: 0, stretch: 1, facing: new THREE.Quaternion(), colour: new THREE.Color(), age: 0, lying: false });
     }
+  }
+
+  /**
+   * How glossy splats are: their `roughness` and `reflectivity` (0 to 1) as a physical material's, so a spill can
+   * shine with the room and the lights over it as a wet floor does. Matt until set.
+   */
+  shine(roughness: number, reflectivity: number): void {
+    const material = this.splatMesh.material as THREE.MeshPhysicalMaterial;
+    material.roughness = roughness;
+    material.reflectivity = reflectivity;
   }
 
   /**
