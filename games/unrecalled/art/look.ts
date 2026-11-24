@@ -26,7 +26,7 @@ const PLAIN_LIGHT: Mood = {
   fill: { sky: 0xdfe7ee, ground: 0x3a3f46, intensity: 0.8 },
 };
 /** On metal floors oil lies glossy, shining with the floor's reflections and U-7's light like the metal round it. */
-const ON_METAL: Mood = { ...PLAIN_LIGHT, spills: { roughness: 0.3, reflectivity: 0.6 } };
+const ON_METAL: Mood = { ...PLAIN_LIGHT, spills: { roughness: 0.35, reflectivity: 0.4 } };
 
 const hsl = (h: number, s: number, l: number): number => colour.setHSL(h / 360, s / 100, l / 100).getHex();
 
