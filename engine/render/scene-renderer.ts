@@ -327,11 +327,16 @@ export class SceneRenderer {
   actorBone(id: string, bone: string, out: { x: number; y: number; h: number }): boolean {
     const figure = this.actors.get(id);
     if (!figure?.bonePosition(bone, this.boneAt)) return false;
-    [out.x, out.h, out.y] = [this.boneAt.x, this.boneAt.y, this.boneAt.z];
+    out.x = this.boneAt.x;
+    out.y = this.boneAt.z;
+    out.h = this.boneAt.y;
     return true;
   }
 
-  /** Plays a one-off moment on an actor, such as an attack, stretched to `seconds` if given. */
+  /**
+   * Plays a one-off moment on an actor, such as an attack, stretched to `seconds` if given, as the model's animation
+   * named `clip` if given rather than its own for the moment.
+   */
   playActor(id: string, moment: ActorMoment, seconds?: number, clip?: string): void {
     this.actors.get(id)?.play(moment, seconds, clip);
   }

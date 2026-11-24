@@ -1,10 +1,9 @@
 import { dist } from '../../../engine/core/math';
-import { pick } from '../../../engine/core/rng';
+import { pick, range } from '../../../engine/core/rng';
 import type { EnemyAbility } from '../../../engine/sim/abilities';
-import { range } from '../../../engine/core/rng';
 import { makeEnemy } from '../../../engine/sim/spawning';
-import { isBlocked } from '../../../engine/world/collision';
 import type { GameState, LevelState, SimEvent } from '../../../engine/sim/state';
+import { isBlocked } from '../../../engine/world/collision';
 
 /**
  * Machines coming at U-7 in waves: once every machine on the level is down, the next wave arrives after `pause`

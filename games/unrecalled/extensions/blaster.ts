@@ -47,8 +47,9 @@ const HOLD_AFTER_STRIKE = 0.25;
 
 /**
  * Keeps in its memory `beaming` (1 while the beam is on the target, for the look), `untilStrike`, the seconds until it
- * can strike again, `blow`, the combo's next blow, and `comboOn`, the machine it's on, so a new one starts afresh, and like the chainsaw's cut, the beam's damage since it was last reported (`unreported`, `crit`)
- * and the seconds until it's next reported (`untilReport`). It holds U-7 still after a strike with the hero's
+ * can strike again, `blow`, the combo's next blow, and `comboOn`, the machine it's on, so a new one starts afresh, and
+ * like the chainsaw's cut, the beam's damage since it was last reported (`unreported`, `crit`) and the seconds until
+ * it's next reported (`untilReport`). It holds U-7 still after a strike with the hero's
  * `attackCooldown`, which outlasts a change of target. See EXTENSIONS.md.
  */
 export const BLAST: WeaponAttack<BlastSettings> = {

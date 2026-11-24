@@ -39,6 +39,7 @@ export class BlastEffects {
   /** The machine a blow is discharging into, and for how much longer. */
   private discharge = { enemyId: -1, seconds: 0 };
   private readonly hand = { x: 0, y: 0, h: 0 };
+  private readonly hit = { x: 0, y: 0, h: HIT_HEIGHT };
   private readonly lightning: ForkedLightning;
 
   constructor(private readonly game: Game, private readonly colour: number) {
@@ -86,9 +87,13 @@ export class BlastEffects {
     const hand = this.hand;
     if (!renderer.actorBone(String(hero.id), FIRING_HAND, hand)) {
       const d = Math.hypot(target.x - hero.x, target.y - hero.y) || 1;
-      [hand.x, hand.y, hand.h] = [hero.x + ((target.x - hero.x) / d) * HAND_AHEAD, hero.y + ((target.y - hero.y) / d) * HAND_AHEAD, HAND_HEIGHT];
+      hand.x = hero.x + ((target.x - hero.x) / d) * HAND_AHEAD;
+      hand.y = hero.y + ((target.y - hero.y) / d) * HAND_AHEAD;
+      hand.h = HAND_HEIGHT;
     }
-    const hit = { x: target.x, y: target.y, h: HIT_HEIGHT };
+    const hit = this.hit;
+    hit.x = target.x;
+    hit.y = target.y;
     this.lightning.bolt(hand, hit, this.colour, seconds);
     if (Math.random() < SECOND_STRAND) this.lightning.bolt(hand, hit, this.colour, seconds, 0.45);
     this.lightning.crawl(hit, target.r + 0.1, this.colour, seconds, 2);
