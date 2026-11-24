@@ -165,10 +165,9 @@ export interface Mood {
   heroLightRadius: number;
   /**
    * What the hero's light is like: its colour, how high above the ground it's carried, in tiles, and how bright. A warm
-   * white lantern at head height if not given. A `pool`, from 0 to 1, lays a soft glow of it over the ground within
-   * `heroLightRadius`, on top of whatever lies there, such as dark spills the light itself barely brightens.
+   * white lantern at head height if not given.
    */
-  heroLight?: { colour: number; height: number; intensity: number; pool?: number };
+  heroLight?: { colour: number; height: number; intensity: number };
   /** Soft light from above and below that keeps figures readable in the dark without lighting the ground much. */
   fill?: { sky: number; ground: number; intensity: number };
   /**

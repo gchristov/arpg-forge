@@ -7,6 +7,6 @@ export const LANTERN = { colour: 0xfff1dd, height: 1.2, intensity: 1.4 };
 const REACH = 1.6;
 
 /** The hero's light in `mood`: its colour, height above the ground in tiles, brightness and reach in tiles. */
-export function heroLightOf(mood: Mood): { colour: number; height: number; intensity: number; pool: number; distance: number } {
-  return { pool: 0, ...(mood.heroLight ?? LANTERN), distance: mood.heroLightRadius * REACH };
+export function heroLightOf(mood: Mood): { colour: number; height: number; intensity: number; distance: number } {
+  return { ...(mood.heroLight ?? LANTERN), distance: mood.heroLightRadius * REACH };
 }

@@ -21,7 +21,7 @@ export const CORE_COLOUR = 0x3ac8ff;
  */
 const PLAIN_LIGHT: Mood = {
   background: 0x22262c, ambient: 0x000000, ambientIntensity: 0, reflections: 1,
-  heroLightRadius: 1.6, heroLight: { colour: CORE_COLOUR, height: 0.8, intensity: 1, pool: 0.35 },
+  heroLightRadius: 1.6, heroLight: { colour: CORE_COLOUR, height: 0.8, intensity: 1 },
   moon: { colour: 0xffffff, intensity: 2.2 },
   fill: { sky: 0xdfe7ee, ground: 0x3a3f46, intensity: 0.8 },
 };
