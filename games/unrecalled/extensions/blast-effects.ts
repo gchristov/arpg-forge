@@ -15,9 +15,11 @@ const BEAM_SECONDS = 0.05;
  * How each blow of a combo looks, in turn: U-7's animation and how long it takes, how big its flash and burst of forks
  * are, and how hard the screen shakes.
  */
+// The punches play at about twice their pace, not squeezed to their gaps: their fists are out for only a quarter of
+// each, so faster they'd only flicker, and the next blow cuts in as the last fist pulls back.
 const BLOWS = [
-  { clip: 'Punch', seconds: 0.14, flash: 0.8, forks: 3, shake: 0.15 },
-  { clip: 'PunchCross', seconds: 0.16, flash: 0.9, forks: 4, shake: 0.2 },
+  { clip: 'Punch', seconds: 0.4, flash: 0.8, forks: 3, shake: 0.15 },
+  { clip: 'PunchCross', seconds: 0.45, flash: 0.9, forks: 4, shake: 0.2 },
   { clip: 'Shoot_OneHanded', seconds: 0.4, flash: 1.6, forks: 9, shake: 0.45 },
 ];
 /** A downed machine throws a spark about this often. */

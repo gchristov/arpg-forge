@@ -52,10 +52,10 @@ export const HERO: HeroRules = {
       attack: {
         blast: {
           range: 4.5, power: 3.5, charge: 5, reportSeconds: 0.4,
-          // Jab, jab, a beat, then a palm blast into the core that knocks the machine back.
+          // Left, right, a beat, then a palm blast into the core that knocks the machine back.
           strike: {
             reach: 0.6, dash: 2,
-            combo: [{ power: 1.8, seconds: 0.12 }, { power: 1.8, seconds: 0.5 }, { power: 4.5, seconds: 0.5, knockback: 1.2 }],
+            combo: [{ power: 1.8, seconds: 0.18 }, { power: 1.8, seconds: 0.5 }, { power: 4.5, seconds: 0.5, knockback: 1.2 }],
           },
         } satisfies BlastSettings,
       },
