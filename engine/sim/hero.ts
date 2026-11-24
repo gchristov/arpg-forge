@@ -4,7 +4,7 @@ import { hasLineOfSight } from '../world/line-of-sight';
 import { planRoute } from '../world/pathfinding';
 import { tileIndex } from '../world/tile-map';
 import { burst, damageEnemy, findEnemy, nearestEnemy } from './combat';
-import { attacksItsOwnWay, attackWithWeapon, stopWeaponAttack } from './weapon-attacks';
+import { attackNothingNear, attacksItsOwnWay, attackWithWeapon, stopWeaponAttack, tellWeaponOfSkill } from './weapon-attacks';
 import { meleeOf } from './weapons';
 import { reached } from './story-steps';
 import { reply, updateInteraction, useService, walkToContainer, walkToNpc, walkToReadable } from './interaction';
@@ -71,9 +71,7 @@ export function applyCommand(state: GameState, command: Command, events: SimEven
         hero.targetId = null;
         hero.path = null;
         hero.moving = false;
-        const shot = shotSlot(state);
-        if (shot >= 0) useSkill(state, shot, events);
-        else {
+        if (!attackNothingNear(state, events)) {
           startSwing(state, events);
           hero.struck = true;
         }
@@ -120,13 +118,6 @@ function isPortalTile(state: GameState, index: number): boolean {
   return level.portals.some((p) => tileIndex(level.map, p.tx, p.ty) === index);
 }
 
-/** The slot of the skill the weapon in hand uses when there's nothing to attack, or -1. */
-function shotSlot(state: GameState): number {
-  const { hero, rules } = state;
-  const shot = hero.weapon === null ? undefined : rules.hero.weapons?.[hero.weapon]?.shot;
-  return shot === undefined ? -1 : rules.hero.skills.findIndex((s) => s.id === shot);
-}
-
 function startSwing(state: GameState, events: SimEvent[]): void {
   const { hero } = state;
   hero.swing = 0;
@@ -150,7 +141,7 @@ function strike(state: GameState, events: SimEvent[]): void {
 }
 
 /** Uses the skill in a slot, if it's off cooldown and affordable. */
-function useSkill(state: GameState, slot: number, events: SimEvent[]): void {
+export function useSkill(state: GameState, slot: number, events: SimEvent[]): void {
   const { hero } = state;
   const skill = state.rules.hero.skills[slot];
   if (!skill || (skill.fromStep !== undefined && !reached(state, skill.fromStep)) || (hero.skillCooldowns[slot] ?? 0) > 0) return;
@@ -168,24 +159,10 @@ function useSkill(state: GameState, slot: number, events: SimEvent[]): void {
       hero.swing = CAST_SWING;
       hero.struck = true;
       burst(state, skill, hero.x, hero.y, skill.knockback, events);
-      if (skill.chaseStunned) chaseStunned(state);
       break;
   }
   events.push({ type: 'SkillUsed', slot, skill: skill.id });
-}
-
-/** Targets the nearest stunned enemy, unless the hero's target is stunned already. */
-function chaseStunned(state: GameState): void {
-  if ((findEnemy(state, state.hero.targetId)?.stunnedFor ?? 0) > 0) return;
-  const { hero } = state;
-  let best: number | null = null;
-  let bestDistance = Infinity;
-  for (const e of currentLevel(state).enemies) {
-    if (e.dead || e.stunnedFor <= 0) continue;
-    const d = dist(hero.x, hero.y, e.x, e.y);
-    if (d < bestDistance) [best, bestDistance] = [e.id, d];
-  }
-  if (best !== null) target(state, best);
+  tellWeaponOfSkill(state, skill.id, events);
 }
 
 function castProjectile(state: GameState, slot: number, skill: ProjectileSkill): void {

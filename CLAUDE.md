@@ -49,6 +49,12 @@ Local tools run in Docker, not on this machine: don't install Node, npm packages
   - **The game's `story/`**: who says what, quest steps, story rules and scenes, as data in the engine's story vocabulary (see `engine/story/README.md`).
   - **The game's content** (`levels/`, `content/`, `art/`): data in the engine's types.
   A game that doesn't use something shouldn't carry its code: if only one game uses a feature in `engine/`, it belongs in that game's extensions.
+- **How the engine grows.** A new mechanic goes in the game first, always, even when it looks general; there's no debating up front whether it's "basic". The engine grows only by:
+  - **hooks:** small neutral ways in, such as a weapon attack being asked what to do with nothing near. When a mechanic doesn't fit the hooks there are, add the hook in the same PR and name it in the description, without stopping to ask, unless it's more than a few lines;
+  - **look options:** what a game can choose about how things are drawn, such as how glossy spills are;
+  - **engine fixes:** fixes to how the engine already plays or draws;
+  - **mechanics a second game wants:** these move in from the first game's extensions.
+  When the only clean way is for the engine to do something itself, such as stopping an enemy acting, keep it small and neutral, off unless a game turns it on, and say so in the PR.
 - **Neutral engine words.** Use "melee skill", "resource", "healing item" and "vendor" in the engine; games give them their names.
 - **Rules separate from presentation.** Game rules run in `step(state, input, dt)` at a fixed rate with a seeded random generator, and emit events. Rendering, audio and HUD only listen; they never change the state. Dependencies point inwards (core, then simulation, then presentation and platform): `engine/core`, `engine/world` and `engine/sim` never import the browser, Three.js or a clock.
 - **Lights go through the light map.** Small lights (lamps, torches, fires, glowing projectiles) are glows in `engine/render/light-map.ts`'s top-down texture, which every lit material reads, so any number costs the same. Only the moon (shadows), the fill light and the hero's light are real Three.js lights; don't add more real lights. New materials for level objects and actors are lit automatically; add moving light with `SceneRenderer.glow`.
@@ -69,7 +75,7 @@ The user can't review every line, so the code has to stand on its own: testable,
 - **Readable.** One responsibility per file, named after what it holds, and files small enough to read in one go. Use names from the domain (hero, enemy, room, drop, cooldown) and keep functions small.
 - **Clear code over comments.** Let names and structure say what code does. Comment only what the code can't say: why a choice was made, an edge case, a browser quirk. No comments that restate the line below, no section markers, and no doc comments on self-explanatory functions and parameters. No comments that compare with code that will go away ("as in the prototype") or that name a stage, PR or ticket, because they go stale. State the rule itself instead. The same goes for docs (`CLAUDE.md`, READMEs): no ticket IDs and no comparisons with other projects.
 - **Consistent.** Follow the patterns already in the codebase before inventing new ones, and say so when a new pattern is needed.
-- **Ask before it grows.** When doing it properly needs a change beyond the PR's scope (a refactor of existing code, a new dependency, a new engine extension point, moving logic around after the fact), say what and why and wait for a go rather than folding it in.
+- **Ask before it grows.** When doing it properly needs a change beyond the PR's scope (a refactor of existing code, a new dependency, an engine hook of more than a few lines, moving logic around after the fact), say what and why and wait for a go rather than folding it in.
 - **Review before handing over.** Re-read the whole diff against these points before asking for a review or merge, and list what was checked and what was left.
 
 ## Branches and pull requests

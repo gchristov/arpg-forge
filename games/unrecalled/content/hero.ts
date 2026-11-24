@@ -3,14 +3,14 @@ import type { BlastSettings } from '../extensions/blaster';
 import type { CutSettings } from '../extensions/cutting';
 
 /**
- * Hits every machine around U-7 at once, throws them back and knocks them down, and sends U-7 after one to finish it:
+ * Hits every machine around U-7 at once, throws them back and knocks them down, for U-7's blaster to finish them:
  * for when machines close in. Expensive, so it's earned by holding the beam. U-7 gets it from its old charging station.
  */
 export const EMP: AreaSkill = {
   type: 'area', id: 'emp',
   // Only charge holds it back: the short cooldown just stops a double tap from spending twice.
   cost: 50, cooldown: 0.5, radius: 3.5, damage: [18, 26], damagePerLevel: 3, critChance: 0.1, critMultiplier: 1.5, knockback: 2,
-  stun: 3, chaseStunned: true,
+  stun: 3,
 };
 
 /** A bolt of charge the blaster fires straight ahead when there's no machine near to hold its beam on. */
@@ -48,10 +48,10 @@ export const HERO: HeroRules = {
     // A beam held on a machine from up to 4.5 tiles that builds charge as it burns, a dash in to finish one that's down,
     // and a free bolt straight ahead with nothing near. It walks into range itself, so it takes over from further out.
     blaster: {
-      engageRange: 9, reach: 9, shot: 'bolt',
+      engageRange: 9, reach: 9,
       attack: {
         blast: {
-          range: 4.5, power: 3.5, charge: 5, reportSeconds: 0.4,
+          range: 4.5, power: 3.5, charge: 5, reportSeconds: 0.4, shot: 'bolt',
           // Left, right, a beat, then a one-armed blast into the core that knocks the machine back.
           strike: {
             reach: 0.6, dash: 2,

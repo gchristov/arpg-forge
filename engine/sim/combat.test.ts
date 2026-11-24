@@ -61,18 +61,6 @@ describe('hero melee', () => {
     expect(state.hero.x).toBeCloseTo(at, 1);
     expect(state.hero.moving).toBe(false);
   });
-
-  it('fires the weapon\'s shot straight ahead in place of swinging at nothing', () => {
-    const shot: ProjectileSkill = { ...BOLT, id: 'shot', autoAimRange: 0 };
-    const hero = { ...TEST_HERO, skills: [...TEST_HERO.skills, shot], startingWeapon: 'gun', weapons: { gun: { shot: 'shot' } } };
-    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [], 1, hero);
-    const events = run(state, 1 / 60, [{ type: 'attackNearest' }]);
-    expect(ofType(events, 'Swung')).toEqual([]);
-    expect(ofType(events, 'SkillUsed')).toEqual([{ type: 'SkillUsed', slot: 1, skill: 'shot' }]);
-    expect(state.projectiles).toHaveLength(1);
-    expect(state.projectiles[0]!.vx).toBeGreaterThan(0);
-    expect(state.projectiles[0]!.vy).toBeCloseTo(0);
-  });
 });
 
 describe('area skill', () => {
@@ -108,23 +96,6 @@ describe('area skill', () => {
     expect(ofType(run(state, 0.95), 'HeroHurt')).toEqual([]);
     expect(brute.x).toBe(at);
     expect(ofType(run(state, 3), 'HeroHurt').length).toBeGreaterThan(0);
-  });
-
-  it('can send the hero after the nearest enemy it stunned, unless their target is stunned already', () => {
-    const state = arena(OPEN_ROOM, { x: 8.5, y: 8.5 }, [
-      { kind: 'dummy', x: 11, y: 8.5 },
-      { kind: 'dummy', x: 9.8, y: 8.5 },
-      { kind: 'dummy', x: 4, y: 8.5 },
-    ]);
-    withExtraSkill(state, { ...PULSE, knockback: 0, radius: 3, stun: 1, chaseStunned: true });
-    const [far, near, untouched] = enemiesOf(state);
-    state.hero.targetId = untouched!.id;
-    run(state, 1 / 60, [{ type: 'useSkill', slot: 1 }]);
-    expect(state.hero.targetId).toBe(near!.id);
-    state.hero.targetId = far!.id;
-    state.hero.skillCooldowns[1] = 0;
-    run(state, 1 / 60, [{ type: 'useSkill', slot: 1 }]);
-    expect(state.hero.targetId).toBe(far!.id);
   });
 
   it('never stuns a boss', () => {

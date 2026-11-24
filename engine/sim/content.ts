@@ -202,8 +202,6 @@ export interface AreaSkill extends BurstDamage {
   cost: number;
   cooldown: number;
   knockback: number;
-  /** Afterwards the hero goes for the nearest enemy it stunned, unless their target is already stunned. */
-  chaseStunned?: boolean;
 }
 
 /** A skill the hero can use, by engine type. Games pick and tune these; new types are added here as games need them. */
@@ -230,11 +228,6 @@ export interface Weapon extends Partial<MeleeRules> {
    * extensions and hands over in its content's `weaponAttacks`.
    */
   attack?: Record<string, unknown>;
-  /**
-   * One of the hero's skills, by id, used when attacking with no enemy near, in place of a swing at nothing: a gun
-   * firing straight ahead, say.
-   */
-  shot?: string;
 }
 
 export interface HeroRules {

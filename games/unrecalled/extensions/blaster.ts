@@ -1,6 +1,7 @@
 import { dist } from '../../../engine/core/math';
 import { chance, range } from '../../../engine/core/rng';
 import { damageEnemy, findEnemy, hurtEnemy } from '../../../engine/sim/combat';
+import { useSkill } from '../../../engine/sim/hero';
 import { currentLevel, type Enemy, type GameState, type SimEvent } from '../../../engine/sim/state';
 import type { WeaponAttack } from '../../../engine/sim/weapon-attacks';
 import { meleeOf } from '../../../engine/sim/weapons';
@@ -13,13 +14,16 @@ import { hasLineOfSight } from '../../../engine/world/line-of-sight';
  * charge up faster than the slow trickle. A machine that's down (stunned) is open: U-7 dashes in at `strike.dash`
  * times its speed and keeps tearing at its core with a combo of powered strikes until it dies or gets up, each blow
  * `power` times a swing, knocking it back `knockback` tiles, with `seconds` before the next. The weapon's
- * `engageRange` should reach past `range`, so U-7 walks into range itself and can dash from further out.
+ * `engageRange` should reach past `range`, so U-7 walks into range itself and can dash from further out. With no
+ * machine near, attacking uses the skill `shot` instead, such as a bolt fired straight ahead. Whenever U-7 uses a skill
+ * that leaves machines down, such as the EMP, it goes for the nearest one, unless it's on one already.
  */
 export interface BlastSettings {
   range: number;
   power: number;
   charge: number;
   reportSeconds: number;
+  shot: string;
   strike: { reach: number; dash: number; combo: Blow[] };
 }
 
@@ -102,6 +106,17 @@ export const BLAST: WeaponAttack<BlastSettings> = {
     const target = findEnemy(state, state.hero.engagedId);
     if (target) report(memory, target, events);
   },
+
+  nothingNear({ state, events, settings }) {
+    const slot = state.rules.hero.skills.findIndex((s) => s.id === settings.shot);
+    if (slot < 0) return false;
+    useSkill(state, slot, events);
+    return true;
+  },
+
+  skillUsed({ state }) {
+    if ((findEnemy(state, state.hero.targetId)?.stunnedFor ?? 0) <= 0) goForNextDowned(state);
+  },
 };
 
 /** `power` times a swing's damage, maybe a critical hit. */
@@ -130,5 +145,8 @@ function goForNextDowned(state: GameState): void {
     const d = dist(hero.x, hero.y, e.x, e.y);
     if (d < bestDistance) [best, bestDistance] = [e, d];
   }
-  if (best) hero.targetId = best.id;
+  if (!best) return;
+  hero.targetId = best.id;
+  hero.path = null;
+  hero.repathTimer = 0;
 }
