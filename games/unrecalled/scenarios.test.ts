@@ -8,7 +8,7 @@ import { unrecalledContent } from './content/world';
 import { jumpToStep } from '../../engine/sim/shortcuts';
 import { stepIndex } from '../../engine/sim/story-steps';
 import { readyForPractice } from './levels/arena';
-import { DRAINED_SIGNAL, STRIKE_SIGNAL, type BlastSettings } from './extensions/blaster';
+import { STRIKE_SIGNAL, type BlastSettings } from './extensions/blaster';
 import { FLOOR_ORDER } from './levels/foundry';
 
 const DT = 1 / 60;
@@ -233,7 +233,7 @@ describe('Unrecalled scenarios', () => {
     expect(events.some((e) => e.type === 'Signal' && e.name === STRIKE_SIGNAL && e.enemyId === second!.id)).toBe(true);
   });
 
-  it('siphons charge with the beam, and drains a machine\'s core into U-7 with the strike that finishes it', () => {
+  it('siphons charge with the beam, and none with strikes', () => {
     const state = untouchable(createGameState(content, 1, 'arena'));
     readyForPractice(state, null);
     const [machine, ...others] = currentLevel(state).enemies;
@@ -249,10 +249,9 @@ describe('Unrecalled scenarios', () => {
     machine!.stunnedFor = 3;
     machine!.hp = 1;
     const before = state.hero.resource;
-    const events = play(state, 0.6);
+    play(state, 0.6);
     expect(machine!.dead).toBe(true);
-    expect(events.some((e) => e.type === 'Signal' && e.name === DRAINED_SIGNAL)).toBe(true);
-    expect(state.hero.resource - before).toBeGreaterThanOrEqual(blast.strike.killCharge);
+    expect(state.hero.resource - before).toBeLessThanOrEqual(state.rules.hero.resourceRegen * 0.6 + 0.01);
   });
 
   it('makes the machines tougher on every floor down, and keeps pace as U-7 levels up', () => {

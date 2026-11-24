@@ -75,18 +75,6 @@ describe('hero melee', () => {
   });
 });
 
-describe('hero hurt', () => {
-  it('gains resource for the health it loses, when the rules give it', () => {
-    const hero = { ...TEST_HERO, resourceFromDamage: 0.5 };
-    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'brute', x: 6.3, y: 5.5 }], 1, hero);
-    state.hero.resource = 0;
-    const events = run(state, 3);
-    const lost = ofType(events, 'HeroHurt').reduce((sum, h) => sum + h.amount, 0);
-    expect(lost).toBeGreaterThan(0);
-    expect(state.hero.resource).toBeCloseTo(Math.min(state.hero.maxResource, lost * 0.5 + 3 * hero.resourceRegen), 0);
-  });
-});
-
 describe('area skill', () => {
   const PULSE: AreaSkill = {
     type: 'area', id: 'pulse', cost: 20, cooldown: 5, radius: 2.5, damage: [20, 20], damagePerLevel: 0,

@@ -9,10 +9,10 @@ import { hasLineOfSight } from '../../../engine/world/line-of-sight';
 
 /**
  * U-7's hand blaster. Within `range` of a machine it holds a beam on it, which burns `power` times a swing's damage a
- * second and siphons `charge` charge a second out of it into U-7, reported every `reportSeconds`. A machine that's
- * down (stunned) is open: U-7 dashes in at `strike.dash` times its speed and keeps tearing at its core with powered
- * strikes, `strike.power` times a swing every `strike.seconds`, until it dies or gets up; the strike that finishes it
- * drains `strike.killCharge` from its core into U-7. The weapon's `engageRange` should reach past `range`, so U-7
+ * second and siphons `charge` charge a second out of it into U-7, reported every `reportSeconds`: it's the way to
+ * charge up faster than the slow trickle. A machine that's down (stunned) is open: U-7 dashes in at `strike.dash`
+ * times its speed and keeps tearing at its core with powered strikes, `strike.power` times a swing every
+ * `strike.seconds`, until it dies or gets up. The weapon's `engageRange` should reach past `range`, so U-7
  * walks into range itself and can dash from further out.
  */
 export interface BlastSettings {
@@ -20,13 +20,11 @@ export interface BlastSettings {
   power: number;
   charge: number;
   reportSeconds: number;
-  strike: { reach: number; power: number; seconds: number; dash: number; killCharge: number };
+  strike: { reach: number; power: number; seconds: number; dash: number };
 }
 
 /** The signal sent for a powered strike, for the game to draw and sound. */
 export const STRIKE_SIGNAL = 'poweredStrike';
-/** The signal sent when the finishing strike drains charge out of a machine, for the game to show. */
-export const DRAINED_SIGNAL = 'chargeDrained';
 
 /** How far round U-7 it looks for the next machine that's down, once it has finished one. */
 const NEXT_DOWNED_RANGE = 6;
@@ -63,17 +61,14 @@ export const BLAST: WeaponAttack<BlastSettings> = {
       const { amount, crit } = roll(state, strike.power);
       const k = d || 1;
       damageEnemy(state, target, Math.max(1, Math.round(amount)), crit, (target.x - hero.x) / k, (target.y - hero.y) / k, 0, events);
-      if (!target.dead) return;
-      gainCharge(state, strike.killCharge);
-      events.push({ type: 'Signal', name: DRAINED_SIGNAL, x: target.x, y: target.y, enemyId: target.id });
-      goForNextDowned(state);
+      if (target.dead) goForNextDowned(state);
       return;
     }
     if (d > settings.range + target.r || !hasLineOfSight(map, hero.x, hero.y, target.x, target.y)) {
       report(memory, target, events);
       return closeIn(hero.speed);
     }
-    gainCharge(state, settings.charge * dt);
+    hero.resource = Math.min(hero.maxResource, hero.resource + settings.charge * dt);
     memory.beaming = 1;
     const { amount, crit } = roll(state, settings.power * dt);
     memory.unreported = (memory.unreported ?? 0) + amount;
@@ -93,11 +88,6 @@ export const BLAST: WeaponAttack<BlastSettings> = {
     if (target) report(memory, target, events);
   },
 };
-
-function gainCharge(state: GameState, amount: number): void {
-  const { hero } = state;
-  hero.resource = Math.min(hero.maxResource, hero.resource + amount);
-}
 
 /** `power` times a swing's damage, maybe a critical hit. */
 function roll(state: GameState, power: number): { amount: number; crit: boolean } {

@@ -4,13 +4,13 @@ import type { CutSettings } from '../extensions/cutting';
 
 /**
  * Hits every machine around U-7 at once, throws them back and knocks them down, and sends U-7 after one to finish it:
- * for when machines close in. U-7 gets it from its old charging station.
+ * for when machines close in. Expensive, so it's earned by holding the beam. U-7 gets it from its old charging station.
  */
 export const EMP: AreaSkill = {
   type: 'area', id: 'emp',
   // Only charge holds it back: the short cooldown just stops a double tap from spending twice.
-  cost: 40, cooldown: 0.5, radius: 3, damage: [10, 16], damagePerLevel: 2, critChance: 0.1, critMultiplier: 1.5, knockback: 2,
-  stun: 2.5, chaseStunned: true,
+  cost: 50, cooldown: 0.5, radius: 3.5, damage: [18, 26], damagePerLevel: 3, critChance: 0.1, critMultiplier: 1.5, knockback: 2,
+  stun: 3, chaseStunned: true,
 };
 
 /** A bolt of charge the blaster fires straight ahead when there's no machine near to hold its beam on. */
@@ -34,10 +34,8 @@ export const HERO: HeroRules = {
   damage: [5, 9],
   xpForLevel2: 60,
   healingItems: 3,
-  // The blaster's beam siphons charge out of machines and finishing one drains its core; blows taken charge U-7 up too,
-  // so the more trouble it's in, the sooner it can EMP its way out. It only trickles back on its own.
+  // Holding the blaster's beam on a machine siphons charge out of it; on its own charge only trickles back.
   resourceRegen: 1,
-  resourceFromDamage: 1,
   healthRegen: 2,
   healthRegenDelay: 5,
   levelUp: { xpGrowth: 1.5, health: 12, resource: 6, damage: [2, 3] },
@@ -53,8 +51,8 @@ export const HERO: HeroRules = {
       engageRange: 9, reach: 9, shot: 'bolt',
       attack: {
         blast: {
-          range: 6, power: 3.5, charge: 4, reportSeconds: 0.4,
-          strike: { reach: 0.6, power: 2.5, seconds: 0.35, dash: 2, killCharge: 8 },
+          range: 6, power: 3.5, charge: 5, reportSeconds: 0.4,
+          strike: { reach: 0.6, power: 2.5, seconds: 0.35, dash: 2 },
         } satisfies BlastSettings,
       },
     },
