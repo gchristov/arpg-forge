@@ -54,6 +54,23 @@ export interface CampRespawns {
   kinds: string[];
 }
 
+/**
+ * Enemies coming in waves: once every enemy on the level is down, the next wave arrives after `pause` seconds, its
+ * groups (each one of `kinds`, at random, as many as the kind's `groupSize`) gathering round places in `points` at
+ * least `minHeroDistance` tiles from the hero where there are any. The first wave has `groups` groups, each wave after
+ * `moreEachWave` more, and each is stronger than the last by `strengthEachWave` of the level's strength. A wave's
+ * enemies hunt the hero down wherever it is, and never give up.
+ */
+export interface Waves {
+  pause: number;
+  groups: number;
+  moreEachWave: number;
+  strengthEachWave: number;
+  kinds: string[];
+  points: { tx: number; ty: number }[];
+  minHeroDistance: number;
+}
+
 /** Something on a tile that opens once and spills its contents, such as a chest. */
 export interface Container {
   tx: number;
@@ -79,6 +96,7 @@ export interface LevelContent {
   spawns: EnemySpawn[];
   camps: Camp[];
   campRespawns?: CampRespawns;
+  waves?: Waves;
   npcs: NpcPlacement[];
   containers?: Container[];
   readables?: Readable[];

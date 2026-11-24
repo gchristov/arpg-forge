@@ -1,5 +1,6 @@
 import { updateProjectiles, updateTelegraphs } from './combat';
 import { updateCampRespawns, updateEnemies, updateNpcs } from './enemies';
+import { updateWaves } from './waves';
 import { applyCommand, updateHeroMovement, updateHeroTimers } from './hero';
 import { advanceQuest } from './interaction';
 import { updateItems } from './loot';
@@ -40,6 +41,7 @@ export function step(state: GameState, input: StepInput, dt: number): SimEvent[]
   updateTelegraphs(state, dt, events);
   updateItems(state, dt, events);
   updateCampRespawns(state, dt);
+  updateWaves(state, dt, events);
   return events;
 }
 

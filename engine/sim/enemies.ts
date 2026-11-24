@@ -73,6 +73,7 @@ function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, eve
   const sees = !hero.dead && d < type.aggro && hasLineOfSight(map, e.x, e.y, hero.x, hero.y);
   e.moving = false;
 
+  if (e.mode === 'idle' && e.hunting && !hero.dead) e.mode = 'chase';
   if (e.mode === 'idle') {
     const choice = idleWithAbilities(state, ls, e, type, d, sees, dt, events);
     if (choice === 'busy') return;
@@ -116,7 +117,7 @@ function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, eve
   }
 
   const leashed = !type.boss && dist(e.x, e.y, e.homeX, e.homeY) > LEASH;
-  if (hero.dead || d > type.aggro * GIVE_UP_AGGRO_MULTIPLE || leashed) {
+  if (hero.dead || (!e.hunting && (d > type.aggro * GIVE_UP_AGGRO_MULTIPLE || leashed))) {
     e.mode = 'return';
     e.path = null;
     events.push({ type: 'EnemyGaveUp', enemyId: e.id, boss: Boolean(type.boss) });

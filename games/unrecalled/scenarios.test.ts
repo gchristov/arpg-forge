@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { gainXp } from '../../engine/sim/combat';
 import { questGoal } from '../../engine/sim/quest-goal';
 import { createGameState } from '../../engine/sim/setup';
+import { makeEnemy } from '../../engine/sim/spawning';
 import { currentLevel, type Command, type GameState, type SimEvent } from '../../engine/sim/state';
 import { step } from '../../engine/sim/step';
 import { unrecalledContent } from './content/world';
@@ -21,6 +22,18 @@ function play(state: GameState, seconds: number, commands: Command[] = []): SimE
     events.push(...step(state, { commands: i === 0 ? commands : [], held: null }, DT));
   }
   return events;
+}
+
+const PACK = ['crawler', 'crawler', 'crawler', 'crawler', 'loader', 'loader'];
+
+/** The practice arena with no waves, and these machines standing together a few tiles from U-7, for trying one fight out. */
+function arenaWith(kinds: string[]): GameState {
+  const state = createGameState(content, 1, 'arena');
+  const ls = currentLevel(state);
+  delete ls.waves;
+  const { x, y } = state.hero;
+  kinds.forEach((kind, i) => ls.enemies.push(makeEnemy(state, kind, x + 4 + (i % 3) * 0.7, y + Math.floor(i / 3) * 0.8, ls.enemyStrength)));
+  return state;
 }
 
 /** A hero nothing can stop, so a test can walk the Foundry without fighting its way through. */
@@ -160,7 +173,7 @@ describe('Unrecalled scenarios', () => {
   });
 
   it('sets off the EMP among a pack of crawlers, hitting them all and turning them on U-7', () => {
-    const state = untouchable(createGameState(content, 1, 'arena'));
+    const state = untouchable(arenaWith(PACK));
     const emp = content.hero.skills[0]!;
     jumpToStep(state, emp.fromStep ? stepIndex(content.quest, emp.fromStep) : 0);
     const pack = currentLevel(state).enemies.filter((e) => e.kind === 'crawler').slice(0, 3);
@@ -174,15 +187,16 @@ describe('Unrecalled scenarios', () => {
     expect(pack.filter((e) => hit.has(e.id)).every((e) => e.mode === 'chase')).toBe(true);
   });
 
-  it('sends the practice arena\'s machines straight at U-7, without looking it over', () => {
+  it('sends the practice arena\'s machines at U-7 in waves, straight on, without looking it over', () => {
     const state = createGameState(content, 1, 'arena');
-    const events = play(state, 6);
+    const events = play(state, 10);
+    expect(events.some((e) => e.type === 'WaveArrived')).toBe(true);
     expect(events.some((e) => e.type === 'Signal' && e.name === 'recognised')).toBe(false);
     expect(events.some((e) => e.type === 'HeroHurt')).toBe(true);
   });
 
   it('starts U-7 in the practice arena with the blaster and the EMP, or the weapon asked for', () => {
-    const state = untouchable(createGameState(content, 1, 'arena'));
+    const state = untouchable(arenaWith(PACK));
     readyForPractice(state, null);
     expect(state.hero.weapon).toBe('blaster');
     const events = play(state, 1 / 60, [{ type: 'useSkill', slot: 0 }]);
@@ -192,7 +206,7 @@ describe('Unrecalled scenarios', () => {
   });
 
   it('holds the blaster\'s beam on a machine from out of reach, and closes in to strike one the EMP knocked down', () => {
-    const state = untouchable(createGameState(content, 1, 'arena'));
+    const state = untouchable(arenaWith(PACK));
     readyForPractice(state, null);
     const machine = currentLevel(state).enemies[0]!;
     machine.hp = machine.maxHp = 1e6;
@@ -205,7 +219,7 @@ describe('Unrecalled scenarios', () => {
   });
 
   it('fires a bolt straight ahead with the blaster when no machine is near', () => {
-    const state = untouchable(createGameState(content, 1, 'arena'));
+    const state = untouchable(arenaWith(PACK));
     readyForPractice(state, null);
     for (const e of currentLevel(state).enemies) e.dead = true;
     const shots = play(state, 0.1, [{ type: 'attackNearest' }]);
@@ -214,7 +228,7 @@ describe('Unrecalled scenarios', () => {
   });
 
   it('after the EMP, goes for a machine it knocked down and moves on to the next once it falls', () => {
-    const state = untouchable(createGameState(content, 1, 'arena'));
+    const state = untouchable(arenaWith(PACK));
     readyForPractice(state, null);
     const [first, second, ...others] = currentLevel(state).enemies;
     for (const other of others) other.dead = true;
@@ -234,7 +248,7 @@ describe('Unrecalled scenarios', () => {
   });
 
   it('strikes a machine that\'s down with a combo of blows in turn, starting afresh on the next machine', () => {
-    const state = untouchable(createGameState(content, 1, 'arena'));
+    const state = untouchable(arenaWith(PACK));
     readyForPractice(state, null);
     const [machine, ...others] = currentLevel(state).enemies;
     for (const other of others) other.dead = true;
@@ -248,7 +262,7 @@ describe('Unrecalled scenarios', () => {
   });
 
   it('siphons charge with the beam, and none with strikes', () => {
-    const state = untouchable(createGameState(content, 1, 'arena'));
+    const state = untouchable(arenaWith(PACK));
     readyForPractice(state, null);
     const [machine, ...others] = currentLevel(state).enemies;
     for (const other of others) other.dead = true;

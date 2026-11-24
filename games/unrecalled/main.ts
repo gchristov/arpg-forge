@@ -12,7 +12,7 @@ import { PRINTING, SPEAKING } from '../../engine/ui/typewriter';
 import { CORE_COLOUR, heroGlow, MODEL_URLS, SCAN_COLOUR, SCANNER_EYES, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
-import { ENDING, levelUp, MACHINE_SCANS, scrapDropped } from './story/lines';
+import { ENDING, levelUp, MACHINE_SCANS, scrapDropped, waveArrived } from './story/lines';
 import { NPCS, PEOPLE } from './story/people';
 import { UPRIVER } from './story/quest';
 import { RULES } from './story/rules';
@@ -328,6 +328,11 @@ function react(events: SimEvent[]): void {
       case 'Refused':
         labels.text(e.x, e.y, 50 * PX, REFUSALS[e.reason], '#8a98a6', 13);
         break;
+      case 'WaveArrived': {
+        const { title, subtitle } = waveArrived(e.wave);
+        hud.banner(title, subtitle, 1.5);
+        break;
+      }
       case 'LevelUp':
         labels.text(state.hero.x, state.hero.y, 70 * PX, levelUp(e.level), '#e8c870', 18);
         break;

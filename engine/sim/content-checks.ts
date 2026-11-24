@@ -125,6 +125,13 @@ function checkLevel(lc: LevelContent, content: GameContent, levels: Map<string, 
   for (const kind of lc.campRespawns?.kinds ?? []) {
     if (!content.enemies[kind]) problems.push(`camps respawn unknown enemy kind "${kind}"`);
   }
+  for (const kind of lc.waves?.kinds ?? []) {
+    if (!content.enemies[kind]) problems.push(`waves bring unknown enemy kind "${kind}"`);
+  }
+  for (const p of lc.waves?.points ?? []) {
+    if (!campHasRoom(map, reached, p.tx, p.ty)) problems.push(`waves gather at ${where(p.tx, p.ty)}, which has no open ground around it that can be reached from the start`);
+  }
+  if (lc.waves && lc.waves.points.length === 0) problems.push('waves have no places to gather');
   for (const n of lc.npcs) {
     if (!content.npcs[n.kind]) problems.push(`NPC "${n.name}" has unknown kind "${n.kind}"`);
     mustReach(`NPC "${n.name}"`, ...tileOf(n));
@@ -195,7 +202,7 @@ function unreachableLevels(content: GameContent, levels: Map<string, LevelConten
 function checkQuest(content: GameContent, levels: Map<string, LevelContent>): string[] {
   const npcKinds = new Set(content.levels.flatMap((l) => l.npcs.map((n) => n.kind)));
   const enemyKinds = new Set(content.levels.flatMap((l) => [
-    ...l.spawns.map((s) => s.kind), ...l.camps.map((c) => c.kind), ...(l.campRespawns?.kinds ?? []),
+    ...l.spawns.map((s) => s.kind), ...l.camps.map((c) => c.kind), ...(l.campRespawns?.kinds ?? []), ...(l.waves?.kinds ?? []),
   ]));
   for (const type of Object.values(content.enemies)) {
     for (const [name, settings] of Object.entries(type.abilities ?? {})) {
