@@ -16,11 +16,12 @@ const BEAM_SECONDS = 0.05;
  * are, and how hard the screen shakes.
  */
 // The punches play at about three times their pace, not squeezed to their gaps: their fists are out for only a quarter of
-// each, so faster they'd only flicker, and the next blow cuts in as the last fist pulls back.
+// each, so faster they'd only flicker, and the next blow cuts in as the last fist pulls back. The last blow snaps into
+// the pose U-7 holds the beam in, one arm thrust out at the machine.
 const BLOWS = [
   { clip: 'Punch', seconds: 0.28, flash: 0.8, forks: 3, shake: 0.15 },
   { clip: 'PunchCross', seconds: 0.32, flash: 0.9, forks: 4, shake: 0.2 },
-  { clip: 'Shoot_OneHanded', seconds: 0.4, flash: 1.6, forks: 9, shake: 0.45 },
+  { clip: 'PistolIdle', seconds: 0.4, flash: 1.6, forks: 9, shake: 0.45 },
 ];
 /** A downed machine throws a spark about this often. */
 const SPARK_SECONDS = 0.18;
