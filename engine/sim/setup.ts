@@ -47,9 +47,6 @@ export function createGameState(content: GameContent, seed: number, startLevel =
       memory: {},
       ...(lc.campRespawns ? { campRespawns: lc.campRespawns } : {}),
       campTimer: lc.campRespawns?.everySeconds ?? 0,
-      ...(lc.waves ? { waves: lc.waves } : {}),
-      wave: 0,
-      waveTimer: lc.waves?.pause ?? 0,
       enemyStrength: lc.enemyStrength ?? 1,
     };
     for (const s of lc.spawns) if (!s.fromStep) spawnEnemy(state, ls, s);

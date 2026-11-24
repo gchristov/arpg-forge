@@ -26,6 +26,7 @@ import type { GameAction } from './extensions/actions';
 import { AssemblyWakes } from './extensions/assembly-wakes';
 import { BlastEffects } from './extensions/blast-effects';
 import { isBlow } from './extensions/blaster';
+import { WAVE_MARK, WAVE_SIGNAL } from './extensions/waves';
 import { CutSpray } from './extensions/cut-spray';
 import { MachineScans } from './extensions/machine-scans';
 import { Hud } from './ui/hud';
@@ -317,6 +318,10 @@ function react(events: SimEvent[]): void {
       case 'Signal': {
         const kind = kindOf(e.enemyId);
         if (e.name === 'recognised' && kind && scans(e.enemyId)) labels.text(e.x, e.y, 70 * PX * view.scaleOf(kind), MACHINE_SCANS, '#ff8a6a', 15);
+        if (e.name === WAVE_SIGNAL) {
+          const { title, subtitle } = waveArrived(currentLevel(state).memory[WAVE_MARK] ?? 1);
+          hud.banner(title, subtitle, 1.5);
+        }
         break;
       }
       case 'HeroHurt':
@@ -328,11 +333,6 @@ function react(events: SimEvent[]): void {
       case 'Refused':
         labels.text(e.x, e.y, 50 * PX, REFUSALS[e.reason], '#8a98a6', 13);
         break;
-      case 'WaveArrived': {
-        const { title, subtitle } = waveArrived(e.wave);
-        hud.banner(title, subtitle, 1.5);
-        break;
-      }
       case 'LevelUp':
         labels.text(state.hero.x, state.hero.y, 70 * PX, levelUp(e.level), '#e8c870', 18);
         break;

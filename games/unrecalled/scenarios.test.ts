@@ -8,9 +8,10 @@ import { step } from '../../engine/sim/step';
 import { unrecalledContent } from './content/world';
 import { jumpToStep } from '../../engine/sim/shortcuts';
 import { stepIndex } from '../../engine/sim/story-steps';
-import { readyForPractice } from './levels/arena';
+import { ARENA_WAVES, readyForPractice } from './levels/arena';
 import { BLOW_SIGNALS, isBlow, type BlastSettings } from './extensions/blaster';
 import { FLOOR_ORDER } from './levels/foundry';
+import { WAVE_MARK, WAVE_SIGNAL } from './extensions/waves';
 
 const DT = 1 / 60;
 const content = unrecalledContent();
@@ -30,7 +31,7 @@ const PACK = ['crawler', 'crawler', 'crawler', 'crawler', 'loader', 'loader'];
 function arenaWith(kinds: string[]): GameState {
   const state = createGameState(content, 1, 'arena');
   const ls = currentLevel(state);
-  delete ls.waves;
+  // Waves only come once these are down.
   const { x, y } = state.hero;
   kinds.forEach((kind, i) => ls.enemies.push(makeEnemy(state, kind, x + 4 + (i % 3) * 0.7, y + Math.floor(i / 3) * 0.8, ls.enemyStrength)));
   return state;
@@ -190,9 +191,24 @@ describe('Unrecalled scenarios', () => {
   it('sends the practice arena\'s machines at U-7 in waves, straight on, without looking it over', () => {
     const state = createGameState(content, 1, 'arena');
     const events = play(state, 10);
-    expect(events.some((e) => e.type === 'WaveArrived')).toBe(true);
+    expect(events.some((e) => e.type === 'Signal' && e.name === WAVE_SIGNAL)).toBe(true);
     expect(events.some((e) => e.type === 'Signal' && e.name === 'recognised')).toBe(false);
     expect(events.some((e) => e.type === 'HeroHurt')).toBe(true);
+  });
+
+  it('sends the arena\'s waves after a pause, the next only once the last is down, each bigger and tougher', () => {
+    const state = untouchable(createGameState(content, 1, 'arena'));
+    const waveIn = (seconds: number) => play(state, seconds).filter((e) => e.type === 'Signal' && e.name === WAVE_SIGNAL).length;
+    expect(waveIn(ARENA_WAVES.pause - 0.1)).toBe(0);
+    expect(waveIn(0.2)).toBe(1);
+    const first = currentLevel(state).enemies.filter((e) => !e.dead);
+    expect(first.every((e) => e.hunting)).toBe(true);
+    expect(waveIn(5)).toBe(0);
+    for (const e of first) e.dead = true;
+    expect(waveIn(ARENA_WAVES.pause + 0.1)).toBe(1);
+    const second = currentLevel(state).enemies.filter((e) => !e.dead);
+    expect(currentLevel(state).memory[WAVE_MARK]).toBe(2);
+    expect(Math.min(...second.map((e) => e.strength))).toBeGreaterThan(Math.max(...first.map((e) => e.strength)));
   });
 
   it('starts U-7 in the practice arena with the blaster and the EMP, or the weapon asked for', () => {

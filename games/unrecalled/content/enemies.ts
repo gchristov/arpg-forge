@@ -12,15 +12,15 @@ export interface UnrecalledEnemy extends EnemyType {
 export const ENEMIES: Record<string, UnrecalledEnemy> = {
   crawler: {
     name: 'Crawler', hp: 36, damage: [3, 7], speed: 2.8, range: 0.8, cooldown: 0.9, windUp: 0.28, aggro: 6,
-    xp: 10, drops: { gold: [2, 7], healingChance: 0.04 }, radius: 0.24, groupSize: 4, abilities: { calm: {} },
+    xp: 10, drops: { gold: [2, 7], healingChance: 0.04 }, radius: 0.24, groupSize: 4, abilities: { calm: {}, waves: {} },
   },
   loader: {
     name: 'Loader', hp: 130, damage: [12, 18], speed: 1.5, range: 1.0, cooldown: 1.6, windUp: 0.55, aggro: 6,
-    xp: 24, drops: { gold: [6, 14], healingChance: 0.1 }, radius: 0.4, groupSize: 2, abilities: { calm: {} },
+    xp: 24, drops: { gold: [6, 14], healingChance: 0.1 }, radius: 0.4, groupSize: 2, abilities: { calm: {}, waves: {} },
   },
   sentry: {
     name: 'Sentry', hp: 55, damage: [7, 12], speed: 1.8, range: 6.5, ranged: true, cooldown: 2.0, windUp: 0.5,
-    aggro: 8, xp: 20, drops: { gold: [5, 12], healingChance: 0.08 }, radius: 0.3, groupSize: 2, abilities: { calm: {} },
+    aggro: 8, xp: 20, drops: { gold: [5, 12], healingChance: 0.08 }, radius: 0.3, groupSize: 2, abilities: { calm: {}, waves: {} },
   },
   // For now a short fight with one attack, so the story is what's tried: it comes for U-7 on sight, and
   // neither slams nor calls in help.

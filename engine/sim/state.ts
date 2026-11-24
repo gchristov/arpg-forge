@@ -2,7 +2,7 @@ import type { Vec2 } from '../core/math';
 import type { Rng } from '../core/rng';
 import type { Level } from '../world/level';
 import type {
-  Camp, CampRespawns, Container, EnemySpawn, EnemyType, HeroRules, NpcPlacement, NpcType, QuestStep, Readable, Watch, Waves,
+  Camp, CampRespawns, Container, EnemySpawn, EnemyType, HeroRules, NpcPlacement, NpcType, QuestStep, Readable, Watch,
 } from './content';
 import type { Walker } from './walking';
 
@@ -93,7 +93,7 @@ export interface Enemy extends Actor {
   strength: number;
   /** Names this one enemy, for a quest step reached by defeating it. */
   tag?: string;
-  /** Hunts the hero down wherever it is and never gives up, as a wave's enemies do. */
+  /** Hunts the hero down wherever it is on the level and never gives up the chase, once a game sets it to. */
   hunting?: boolean;
   /** A weapon of the hero's it drops when defeated. */
   carries?: string;
@@ -157,10 +157,6 @@ export interface LevelState {
   camps: Camp[];
   campRespawns?: CampRespawns;
   campTimer: number;
-  waves?: Waves;
-  /** The last wave to arrive, 0 before the first, and the seconds until the next can. */
-  wave: number;
-  waveTimer: number;
   /** The strength of enemies that turn up here later, such as a boss's summons or a camp refilling. */
   enemyStrength: number;
 }
@@ -250,8 +246,6 @@ export type SimEvent =
   | { type: 'Signal'; name: string; x: number; y: number; enemyId?: number }
   /** The last enemy on the level fell. */
   | { type: 'LevelCleared'; levelId: string }
-  /** The next wave of enemies arrived, numbered from 1. */
-  | { type: 'WaveArrived'; wave: number }
   | { type: 'PortalSealed'; x: number; y: number }
   /** The hero stepped onto a door the story hasn't opened yet. */
   /** The hero walked into a doorway the story keeps locked; told once each time. */

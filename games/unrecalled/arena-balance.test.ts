@@ -6,6 +6,7 @@ import { currentLevel, type Command, type GameState, type SimEvent } from '../..
 import { step } from '../../engine/sim/step';
 import { unrecalledContent } from './content/world';
 import { readyForPractice } from './levels/arena';
+import { WAVE_SIGNAL } from './extensions/waves';
 
 /**
  * Plays U-7 in the practice arena on its own, as a player holding attack would, wave after wave until it falls, and
@@ -58,7 +59,7 @@ function playArena(seed: number, level: number): Run {
       if (e.type === 'EnemyKilled') run.kills[kinds.get(e.enemyId)!] = (run.kills[kinds.get(e.enemyId)!] ?? 0) + 1;
       if (e.type === 'SkillUsed' && e.skill === 'emp') run.emps++;
       if (e.type === 'PickedUp' && e.kind === 'healingItem') run.picked++;
-      if (e.type === 'WaveArrived') waveFrom = t;
+      if (e.type === 'Signal' && e.name === WAVE_SIGNAL) waveFrom = t;
       if (e.type === 'HeroDied') {
         run.survived = t;
         return run;

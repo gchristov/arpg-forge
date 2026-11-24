@@ -46,11 +46,10 @@ function defeatedAlready(state: GameState, tag: string): void {
   }
 }
 
-/** Takes every enemy out of the game and stops camps refilling and waves coming, for walking a place without being attacked. */
+/** Takes every enemy out of the game and stops camps refilling, for walking a place without being attacked. */
 export function removeEnemies(state: GameState): void {
   for (const ls of Object.values(state.levels)) {
     ls.enemies.length = 0;
     delete ls.campRespawns;
-    delete ls.waves;
   }
 }

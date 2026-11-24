@@ -1,6 +1,6 @@
 import type { GameContent } from '../../../engine/sim/content';
 import { watchFor } from '../../../engine/story/story-runner';
-import { buildArena } from '../levels/arena';
+import { ARENA, ARENA_WAVES, buildArena } from '../levels/arena';
 import { buildFloor, FLOOR_ORDER } from '../levels/foundry';
 import { buildInterior, INTERIOR_IDS } from '../levels/interiors';
 import { buildRustbelt } from '../levels/rustbelt';
@@ -8,6 +8,7 @@ import { buildUpriver } from '../levels/upriver';
 import { CALM, STEP_ACTIONS } from '../extensions/calm-machines';
 import { BLAST } from '../extensions/blaster';
 import { CUT } from '../extensions/cutting';
+import { waves } from '../extensions/waves';
 import { ENEMIES } from './enemies';
 import { HERO } from './hero';
 import { NPCS } from '../story/people';
@@ -30,7 +31,7 @@ export function unrecalledContent(): GameContent {
     // Machines keep pace with U-7, so a level gained makes fights easier without making them trivial.
     enemyGrowthPerHeroLevel: 0.05,
     watch: watchFor(RULES),
-    abilities: { calm: CALM },
+    abilities: { calm: CALM, waves: waves({ [ARENA]: ARENA_WAVES }) },
     stepActions: STEP_ACTIONS,
     weaponAttacks: { cut: CUT, blast: BLAST },
   };

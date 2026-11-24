@@ -4,6 +4,7 @@ import { jumpToStep } from '../../../engine/sim/shortcuts';
 import type { GameState } from '../../../engine/sim/state';
 import { stepIndex } from '../../../engine/sim/story-steps';
 import { Ground, Prop } from '../content/tiles';
+import type { WaveSettings } from '../extensions/waves';
 
 /**
  * A practice arena for trying combat out, reached only at `#arena`: an open hall on the wall kit's grid, U-7 in the
@@ -46,11 +47,16 @@ export const ARENA = 'arena';
 
 const KINDS = ['crawler', 'loader', 'sentry'];
 
+/** Where waves gather in the arena. */
+const WAVE_POINTS = ROWS.flatMap((row, ty) => [...row].flatMap((ch, tx) => (ch === 'C' ? [{ tx, ty }] : [])));
+
+/** The arena's waves (`extensions/waves.ts`): two groups first, one more each wave, each a tenth tougher. */
+export const ARENA_WAVES: WaveSettings = {
+  pause: 3, groups: 2, moreEachWave: 1, strengthEachWave: 0.1, kinds: KINDS, points: WAVE_POINTS, minHeroDistance: 6,
+};
+
 export function buildArena(): LevelContent {
   const arena = roomFromRows({ id: ARENA, name: 'Practice Arena', subtitle: 'Machines come in waves', floor: Ground.Plate, rows: ROWS, key: KEY });
-  const points = ROWS.flatMap((row, ty) => [...row].flatMap((ch, tx) => (ch === 'C' ? [{ tx, ty }] : [])));
-  // Two groups first, one more each wave, each a tenth tougher.
-  arena.waves = { pause: 3, groups: 2, moreEachWave: 1, strengthEachWave: 0.1, kinds: KINDS, points, minHeroDistance: 6 };
   arena.practice = true;
   return arena;
 }
