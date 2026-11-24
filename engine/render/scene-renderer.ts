@@ -20,6 +20,7 @@ import { Spatter } from './spatter';
 import { WaterSurface } from './water';
 import { isWallTile, kitPartitions, kitWalls, wallFaces, wallPanels, type KitCorner, type KitOpening } from './wall-panels';
 import { heroLightOf, LANTERN } from './hero-light';
+import { LightPool } from './light-pool';
 
 /** On-screen width of one tile at zoom 1. */
 const TILE_PIXELS = 64;
@@ -59,6 +60,7 @@ export class SceneRenderer {
   private readonly fill = new THREE.HemisphereLight();
   private readonly moon = new THREE.DirectionalLight();
   private readonly heroLight = new THREE.PointLight(LANTERN.colour, LANTERN.intensity, 6, 1);
+  private readonly heroLightPool: LightPool;
   private heroLightHeight = LANTERN.height;
   private heroLightIntensity = LANTERN.intensity;
   private heroLightShare = 1;
@@ -146,6 +148,7 @@ export class SceneRenderer {
     const lit = (material: THREE.Material): void => this.lightMap.light(material);
     this.effects = new Effects(this.scene, look.effects, this.elevation, lit);
     this.spatter = new Spatter(this.scene, lit);
+    this.heroLightPool = new LightPool(this.scene);
   }
 
   /** How much the view is zoomed, 1 when a tile is 64 pixels wide. */
@@ -209,6 +212,8 @@ export class SceneRenderer {
     this.heroLight.intensity = heroLight.intensity * this.heroLightShare;
     this.heroLight.distance = heroLight.distance;
     this.heroLightHeight = heroLight.height;
+    this.heroLightPool.set(heroLight.colour, mood.heroLightRadius, heroLight.pool);
+    this.heroLightPool.dim(this.heroLightShare);
     this.fill.visible = Boolean(mood.fill);
     if (mood.fill) {
       this.fill.color.set(mood.fill.sky);
@@ -388,11 +393,13 @@ export class SceneRenderer {
   dimHeroLight(share: number): void {
     this.heroLightShare = share;
     this.heroLight.intensity = this.heroLightIntensity * share;
+    this.heroLightPool.dim(share);
   }
 
   /** Moves the light the hero carries to where they stand. */
   lightHero(x: number, y: number): void {
     this.heroLight.position.set(x, this.heroLightHeight, y);
+    this.heroLightPool.place(x, y);
     this.lightMap.setHero(x, y);
   }
 
