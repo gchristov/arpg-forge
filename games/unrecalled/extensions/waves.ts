@@ -1,7 +1,9 @@
 import { dist } from '../../../engine/core/math';
 import { pick } from '../../../engine/core/rng';
 import type { EnemyAbility } from '../../../engine/sim/abilities';
-import { spawnCamp } from '../../../engine/sim/spawning';
+import { range } from '../../../engine/core/rng';
+import { makeEnemy } from '../../../engine/sim/spawning';
+import { isBlocked } from '../../../engine/world/collision';
 import type { GameState, LevelState, SimEvent } from '../../../engine/sim/state';
 
 /**
@@ -23,6 +25,9 @@ export interface WaveSettings {
 /** The signal sent as a wave arrives, for the HUD; the level's memory holds its number under `WAVE_MARK`. */
 export const WAVE_SIGNAL = 'waveArrived';
 export const WAVE_MARK = 'wave';
+/** How far round its gathering place a wave's machines are spread, and how far clear of walls each stands, in tiles. */
+const GATHER_SPREAD = 1.8;
+const WALL_CLEARANCE = 0.5;
 /** The level's memory holds the game time the next wave comes at under this. */
 const NEXT_WAVE_AT = 'nextWaveAt';
 
@@ -55,14 +60,28 @@ function sendWave(state: GameState, level: LevelState, settings: WaveSettings, e
   memory[WAVE_MARK] = wave;
   const far = settings.points.filter((p) => dist(hero.x, hero.y, p.tx + 0.5, p.ty + 0.5) >= settings.minHeroDistance);
   const strength = level.enemyStrength * (1 + settings.strengthEachWave * (wave - 1));
-  const first = level.enemies.length;
   for (let g = 0; g < settings.groups + settings.moreEachWave * (wave - 1); g++) {
     const at = pick(state.rng, far.length > 0 ? far : settings.points);
-    spawnCamp(state, level, pick(state.rng, settings.kinds), { ...at, kind: '', strength });
-  }
-  for (const e of level.enemies.slice(first)) {
-    e.hunting = true;
-    e.mode = 'chase';
+    const kind = pick(state.rng, settings.kinds);
+    for (let k = 0; k < (state.rules.enemies[kind]?.groupSize ?? 1); k++) placeHunter(state, level, kind, at.tx + 0.5, at.ty + 0.5, strength);
   }
   events.push({ type: 'Signal', name: WAVE_SIGNAL, x: hero.x, y: hero.y });
+}
+
+/**
+ * Puts one machine near (x, y), clear of walls by `WALL_CLEARANCE` tiles past its own size, so none starts pressed
+ * into one, where it would stick; hunting U-7 from the start.
+ */
+function placeHunter(state: GameState, level: LevelState, kind: string, x: number, y: number, strength: number): void {
+  const r = (state.rules.enemies[kind]?.radius ?? 0.3) + WALL_CLEARANCE;
+  for (let tries = 0; tries < 20; tries++) {
+    const ex = x + range(state.rng, -GATHER_SPREAD, GATHER_SPREAD);
+    const ey = y + range(state.rng, -GATHER_SPREAD, GATHER_SPREAD);
+    if (isBlocked(level.level.map, ex, ey, r)) continue;
+    const e = makeEnemy(state, kind, ex, ey, strength);
+    e.hunting = true;
+    e.mode = 'chase';
+    level.enemies.push(e);
+    return;
+  }
 }

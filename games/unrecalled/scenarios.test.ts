@@ -3,6 +3,7 @@ import { gainXp } from '../../engine/sim/combat';
 import { questGoal } from '../../engine/sim/quest-goal';
 import { createGameState } from '../../engine/sim/setup';
 import { makeEnemy } from '../../engine/sim/spawning';
+import { isBlocked } from '../../engine/world/collision';
 import { currentLevel, type Command, type GameState, type SimEvent } from '../../engine/sim/state';
 import { step } from '../../engine/sim/step';
 import { unrecalledContent } from './content/world';
@@ -209,6 +210,18 @@ describe('Unrecalled scenarios', () => {
     const second = currentLevel(state).enemies.filter((e) => !e.dead);
     expect(currentLevel(state).memory[WAVE_MARK]).toBe(2);
     expect(Math.min(...second.map((e) => e.strength))).toBeGreaterThan(Math.max(...first.map((e) => e.strength)));
+  });
+
+  it('gathers each wave\'s machines clear of the arena\'s walls, so none starts stuck in one', () => {
+    const state = untouchable(createGameState(content, 3, 'arena'));
+    const level = currentLevel(state);
+    for (let wave = 0; wave < 6; wave++) {
+      play(state, ARENA_WAVES.pause + 0.1);
+      for (const e of level.enemies.filter((m) => !m.dead)) {
+        expect(isBlocked(level.level.map, e.x, e.y, e.r + 0.4)).toBe(false);
+        e.dead = true;
+      }
+    }
   });
 
   it('starts U-7 in the practice arena with the blaster and the EMP, or the weapon asked for', () => {
