@@ -182,8 +182,8 @@ const ACTORS: Record<string, ActorLook> = {
       name: 'hero',
       animations: { idle: 'Idle', move: 'Run', attack: 'Punch', cast: 'Shoot_OneHanded', hit: 'RecieveHit', death: 'Death' },
       armed: {
-        // Built into its hand: it aims the hand while it shoots, and strikes bare-handed (`blast-effects.ts`).
-        blaster: { animations: { channel: 'PistolIdle' } },
+        // Built into its hand: it holds one arm out at the machine while it shoots, and strikes bare-handed (`blast-effects.ts`).
+        blaster: { animations: { channel: 'AimOneHanded' } },
         // At rest the chainsaw hangs at U-7's side; it's held out ahead in both hands while cutting, and
         // revved with a jab at thin air.
         chainsaw: {

@@ -21,7 +21,7 @@ const BEAM_SECONDS = 0.05;
 const BLOWS = [
   { clip: 'Punch', seconds: 0.28, flash: 0.8, forks: 3, shake: 0.15 },
   { clip: 'PunchCross', seconds: 0.32, flash: 0.9, forks: 4, shake: 0.2 },
-  { clip: 'PistolIdle', seconds: 0.4, flash: 1.6, forks: 9, shake: 0.45 },
+  { clip: 'AimOneHanded', seconds: 0.4, flash: 1.6, forks: 9, shake: 0.45 },
 ];
 /** A downed machine throws a spark about this often. */
 const SPARK_SECONDS = 0.18;

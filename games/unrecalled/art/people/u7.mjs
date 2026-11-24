@@ -20,7 +20,7 @@ mergeDocuments(doc, library);
 /** The game's name for each animation, and the library's. */
 const ANIMATIONS = {
   Idle: 'Idle_Loop', Run: 'Sprint_Loop', Punch: 'Punch_Jab', Shoot_OneHanded: 'Spell_Simple_Shoot', RecieveHit: 'Hit_Chest',
-  Death: 'Death01', PistolIdle: 'Pistol_Idle_Loop', PunchCross: 'Punch_Cross', IdleLoop: 'Idle_Loop',
+  Death: 'Death01', PistolIdle: 'Pistol_Idle_Loop', PunchCross: 'Punch_Cross', IdleLoop: 'Idle_Loop', AimOneHanded: 'Spell_Simple_Idle_Loop',
 };
 const sources = new Map(root.listAnimations().map((a) => [a.getName(), a]));
 for (const [name, from] of Object.entries(ANIMATIONS)) {
