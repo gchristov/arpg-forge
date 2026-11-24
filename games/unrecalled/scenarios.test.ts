@@ -233,26 +233,26 @@ describe('Unrecalled scenarios', () => {
     expect(events.some((e) => e.type === 'Signal' && e.name === STRIKE_SIGNAL && e.enemyId === second!.id)).toBe(true);
   });
 
-  it('drains charge out of the machines it strikes, more for the one it finishes', () => {
+  it('siphons charge with the beam, and drains a machine\'s core into U-7 with the strike that finishes it', () => {
     const state = untouchable(createGameState(content, 1, 'arena'));
     readyForPractice(state, null);
     const [machine, ...others] = currentLevel(state).enemies;
     for (const other of others) other.dead = true;
-    state.hero.x = machine!.x - 0.9;
+    state.hero.x = machine!.x - 3;
     state.hero.y = machine!.y;
     machine!.hp = machine!.maxHp = 1e6;
-    machine!.stunnedFor = 3;
     state.hero.resource = 0;
     state.hero.targetId = machine!.id;
-    const events = play(state, 0.1);
-    const { strike } = (state.rules.hero.weapons!.blaster!.attack as { blast: BlastSettings }).blast;
-    expect(events.some((e) => e.type === 'Signal' && e.name === DRAINED_SIGNAL)).toBe(true);
-    expect(state.hero.resource).toBeGreaterThanOrEqual(strike.charge);
+    const { blast } = state.rules.hero.weapons!.blaster!.attack as { blast: BlastSettings };
+    play(state, 1);
+    expect(state.hero.resource).toBeGreaterThanOrEqual(blast.charge * 0.8);
+    machine!.stunnedFor = 3;
     machine!.hp = 1;
     const before = state.hero.resource;
-    play(state, 0.6);
+    const events = play(state, 0.6);
     expect(machine!.dead).toBe(true);
-    expect(state.hero.resource - before).toBeGreaterThanOrEqual(strike.charge + strike.killCharge);
+    expect(events.some((e) => e.type === 'Signal' && e.name === DRAINED_SIGNAL)).toBe(true);
+    expect(state.hero.resource - before).toBeGreaterThanOrEqual(blast.strike.killCharge);
   });
 
   it('makes the machines tougher on every floor down, and keeps pace as U-7 levels up', () => {

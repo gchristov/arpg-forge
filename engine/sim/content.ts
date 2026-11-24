@@ -249,6 +249,8 @@ export interface HeroRules {
   healingItems: number;
   /** Resource regained a second. */
   resourceRegen: number;
+  /** Resource gained for each point of health the hero loses. None if not given. */
+  resourceFromDamage?: number;
   /** Health regained a second, once `healthRegenDelay` seconds have passed without being hurt. */
   healthRegen: number;
   healthRegenDelay: number;

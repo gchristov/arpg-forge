@@ -9,14 +9,14 @@ import type { CutSettings } from '../extensions/cutting';
 export const EMP: AreaSkill = {
   type: 'area', id: 'emp',
   // Only charge holds it back: the short cooldown just stops a double tap from spending twice.
-  cost: 30, cooldown: 0.5, radius: 3, damage: [10, 16], damagePerLevel: 2, critChance: 0.1, critMultiplier: 1.5, knockback: 2,
+  cost: 40, cooldown: 0.5, radius: 3, damage: [10, 16], damagePerLevel: 2, critChance: 0.1, critMultiplier: 1.5, knockback: 2,
   stun: 2.5, chaseStunned: true,
 };
 
 /** A bolt of charge the blaster fires straight ahead when there's no machine near to hold its beam on. */
 export const BOLT: ProjectileSkill = {
   type: 'projectile', id: 'bolt',
-  cost: 4, cooldown: 0.35, speed: 13, lifetime: 0.75, autoAimRange: 0,
+  cost: 0, cooldown: 0.35, speed: 13, lifetime: 0.75, autoAimRange: 0,
   radius: 0.7, damage: [8, 12], damagePerLevel: 1, critChance: 0.1, critMultiplier: 1.5,
 };
 
@@ -30,13 +30,14 @@ export const HERO: HeroRules = {
   facingX: 0.6,
   facingY: -0.8,
   health: 100,
-  resource: 60,
+  resource: 100,
   damage: [5, 9],
   xpForLevel2: 60,
   healingItems: 3,
-  // Charge comes from tearing at downed machines' cores (the blaster's strikes); it only trickles back on its own, so
-  // U-7 is never left with nothing at all.
+  // The blaster's beam siphons charge out of machines and finishing one drains its core; blows taken charge U-7 up too,
+  // so the more trouble it's in, the sooner it can EMP its way out. It only trickles back on its own.
   resourceRegen: 1,
+  resourceFromDamage: 1,
   healthRegen: 2,
   healthRegenDelay: 5,
   levelUp: { xpGrowth: 1.5, health: 12, resource: 6, damage: [2, 3] },
@@ -46,14 +47,14 @@ export const HERO: HeroRules = {
   },
   startingWeapon: 'blaster',
   weapons: {
-    // A beam held on a machine from up to 6 tiles, at the damage a second of shooting every 0.4 s at 1.4 times a swing,
-    // and a dash in to finish one that's down. It walks into range itself, so it takes over from further out.
+    // A beam held on a machine from up to 6 tiles that builds charge as it burns, a dash in to finish one that's down,
+    // and a free bolt straight ahead with nothing near. It walks into range itself, so it takes over from further out.
     blaster: {
       engageRange: 9, reach: 9, shot: 'bolt',
       attack: {
         blast: {
-          range: 6, power: 3.5, cost: 5, reportSeconds: 0.4,
-          strike: { reach: 0.6, power: 2.5, seconds: 0.35, dash: 2, charge: 5, killCharge: 10 },
+          range: 6, power: 3.5, charge: 4, reportSeconds: 0.4,
+          strike: { reach: 0.6, power: 2.5, seconds: 0.35, dash: 2, killCharge: 8 },
         } satisfies BlastSettings,
       },
     },

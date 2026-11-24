@@ -102,6 +102,7 @@ export function hurtHero(state: GameState, amount: number, events: SimEvent[]): 
   const damage = Math.max(1, Math.round(amount));
   hero.hp -= damage;
   hero.lastHurtAt = state.time;
+  hero.resource = Math.min(hero.maxResource, hero.resource + damage * (state.rules.hero.resourceFromDamage ?? 0));
   events.push({ type: 'HeroHurt', amount: damage, x: hero.x, y: hero.y });
   if (hero.hp <= 0) {
     hero.hp = 0;

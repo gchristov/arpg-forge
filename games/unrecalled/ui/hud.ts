@@ -65,8 +65,10 @@ export class Hud {
     });
     const skill = state.rules.hero.skills[EMP];
     const emp = skill && (skill.fromStep === undefined || reached(state, skill.fromStep)) && !this.empWithheld ? skill : undefined;
-    shown.set('hasEmp', Boolean(emp), (v) => ($('bEmp').hidden = !v));
+    shown.set('hasEmp', Boolean(emp), (v) => ($('bEmp').hidden = $('empMark').hidden = !v));
     if (emp) {
+      // A mark on the charge bar where there's enough for an EMP.
+      shown.set('empMark', Math.round((emp.cost / hero.maxResource) * 1000), (v) => ($('empMark').style.left = `${v / 10}%`));
       const recharging = hero.skillCooldowns[EMP]! / emp.cooldown;
       shown.set('empOff', recharging > 0 || hero.resource < emp.cost, (v) => $('bEmp').classList.toggle('off', v));
       // The bar along the button's foot fills back up as the EMP recharges.
