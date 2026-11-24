@@ -8,7 +8,7 @@ import { unrecalledContent } from './content/world';
 import { jumpToStep } from '../../engine/sim/shortcuts';
 import { stepIndex } from '../../engine/sim/story-steps';
 import { readyForPractice } from './levels/arena';
-import { STRIKE_SIGNAL, type BlastSettings } from './extensions/blaster';
+import { BLOW_SIGNALS, isBlow, type BlastSettings } from './extensions/blaster';
 import { FLOOR_ORDER } from './levels/foundry';
 
 const DT = 1 / 60;
@@ -198,10 +198,10 @@ describe('Unrecalled scenarios', () => {
     machine.hp = machine.maxHp = 1e6;
     const beam = play(state, 3, [{ type: 'attack', enemyId: machine.id }]);
     expect(beam.some((e) => e.type === 'EnemyDamaged' && e.enemyId === machine.id)).toBe(true);
-    expect(beam.some((e) => e.type === 'Signal' && e.name === STRIKE_SIGNAL)).toBe(false);
+    expect(beam.some((e) => e.type === 'Signal' && isBlow(e.name))).toBe(false);
     machine.stunnedFor = 3;
     const strikes = play(state, 2.5);
-    expect(strikes.some((e) => e.type === 'Signal' && e.name === STRIKE_SIGNAL)).toBe(true);
+    expect(strikes.some((e) => e.type === 'Signal' && isBlow(e.name))).toBe(true);
   });
 
   it('fires a bolt straight ahead with the blaster when no machine is near', () => {
@@ -230,7 +230,21 @@ describe('Unrecalled scenarios', () => {
     expect([first!.id, second!.id]).toContain(state.hero.targetId);
     const events = play(state, 1.5);
     expect(events.some((e) => e.type === 'EnemyKilled' && e.enemyId === first!.id)).toBe(true);
-    expect(events.some((e) => e.type === 'Signal' && e.name === STRIKE_SIGNAL && e.enemyId === second!.id)).toBe(true);
+    expect(events.some((e) => e.type === 'Signal' && isBlow(e.name) && e.enemyId === second!.id)).toBe(true);
+  });
+
+  it('strikes a machine that\'s down with a combo of blows in turn, starting afresh on the next machine', () => {
+    const state = untouchable(createGameState(content, 1, 'arena'));
+    readyForPractice(state, null);
+    const [machine, ...others] = currentLevel(state).enemies;
+    for (const other of others) other.dead = true;
+    state.hero.x = machine!.x - 0.8;
+    state.hero.y = machine!.y;
+    machine!.hp = machine!.maxHp = 1e6;
+    machine!.stunnedFor = 10;
+    state.hero.targetId = machine!.id;
+    const blows = play(state, 3).flatMap((e) => (e.type === 'Signal' && isBlow(e.name) ? [e.name] : []));
+    expect(blows.slice(0, 6)).toEqual([...BLOW_SIGNALS, ...BLOW_SIGNALS]);
   });
 
   it('siphons charge with the beam, and none with strikes', () => {

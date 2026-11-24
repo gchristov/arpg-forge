@@ -320,8 +320,8 @@ export class SceneRenderer {
   }
 
   /** Plays a one-off moment on an actor, such as an attack, stretched to `seconds` if given. */
-  playActor(id: string, moment: ActorMoment, seconds?: number): void {
-    this.actors.get(id)?.play(moment, seconds);
+  playActor(id: string, moment: ActorMoment, seconds?: number, clip?: string): void {
+    this.actors.get(id)?.play(moment, seconds, clip);
   }
 
   /** Removes every actor's figure, for example when a different level is shown. */

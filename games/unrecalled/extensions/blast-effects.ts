@@ -1,6 +1,6 @@
 import type { Game } from '../../../engine/game/game';
 import { currentLevel, type SimEvent } from '../../../engine/sim/state';
-import { STRIKE_SIGNAL } from './blaster';
+import { BLOW_SIGNALS } from './blaster';
 import { ForkedLightning } from './forked-lightning';
 
 /** How high U-7's hand is when it fires, how far ahead of its middle, and how high on a machine the beam lands, in tiles. */
@@ -11,12 +11,21 @@ const HIT_HEIGHT = 0.5;
 const SECOND_STRAND = 0.4;
 /** The beam is redrawn as a fresh crackling stroke this often, each lasting a little longer, so it never gaps. */
 const BEAM_SECONDS = 0.05;
+/**
+ * How each blow of a combo looks, in turn: U-7's animation and how long it takes, how big its flash and burst of forks
+ * are, and how hard the screen shakes.
+ */
+const BLOWS = [
+  { clip: 'Punch', seconds: 0.22, flash: 0.8, forks: 3, shake: 0.15 },
+  { clip: 'PunchCross', seconds: 0.28, flash: 0.9, forks: 4, shake: 0.2 },
+  { clip: 'Shoot_OneHanded', seconds: 0.4, flash: 1.6, forks: 9, shake: 0.45 },
+];
 /** A downed machine throws a spark about this often. */
 const SPARK_SECONDS = 0.18;
 
 /**
  * Draws U-7's blaster (`blaster.ts`): a forked, crackling beam from its hand to the machine it's held on, crawling over
- * it where it lands, a burst of forks with a flash and a jolt for a powered strike, and sparks off machines that are
+ * it where it lands, a punch with a burst of forks, a flash and a jolt for each blow of a combo, the last the biggest, and sparks off machines that are
  * down.
  */
 export class BlastEffects {
@@ -32,11 +41,13 @@ export class BlastEffects {
   react(events: SimEvent[]): void {
     const { renderer, state } = this.game;
     for (const e of events) {
-      if (e.type !== 'Signal' || e.name !== STRIKE_SIGNAL) continue;
-      renderer.effects.flash(e.x, e.y, 1.1, this.colour, 0.25);
-      this.lightning.burst({ x: e.x, y: e.y, h: HIT_HEIGHT }, this.colour, 0.2, 5 + Math.floor(Math.random() * 3));
-      renderer.shake(0.3);
-      renderer.playActor(String(state.hero.id), 'attack', 0.35);
+      if (e.type !== 'Signal') continue;
+      const blow = BLOWS[BLOW_SIGNALS.indexOf(e.name)];
+      if (!blow) continue;
+      renderer.effects.flash(e.x, e.y, blow.flash, this.colour, 0.25);
+      this.lightning.burst({ x: e.x, y: e.y, h: HIT_HEIGHT }, this.colour, 0.2, blow.forks, blow === BLOWS[2] ? 1.3 : 1);
+      renderer.shake(blow.shake);
+      renderer.playActor(String(state.hero.id), 'attack', blow.seconds, blow.clip);
     }
   }
 

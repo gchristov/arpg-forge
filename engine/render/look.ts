@@ -72,8 +72,7 @@ export interface BuildingKit {
 export interface ActorAnimations {
   idle: string;
   move?: string;
-  /** Several take turns, one per attack, such as a punch with each fist. */
-  attack?: string | string[];
+  attack?: string;
   /** Looped while the actor keeps up a continuous attack, such as cutting with a chainsaw. */
   channel?: string;
   cast?: string;

@@ -52,7 +52,11 @@ export const HERO: HeroRules = {
       attack: {
         blast: {
           range: 4.5, power: 3.5, charge: 5, reportSeconds: 0.4,
-          strike: { reach: 0.6, power: 2.5, seconds: 0.35, dash: 2 },
+          // A quick jab and cross, then a wind-up and a palm blast into the core that knocks the machine back.
+          strike: {
+            reach: 0.6, dash: 2,
+            combo: [{ power: 1.8, seconds: 0.2 }, { power: 1.8, seconds: 0.35 }, { power: 4.5, seconds: 0.5, knockback: 1.2 }],
+          },
         } satisfies BlastSettings,
       },
     },

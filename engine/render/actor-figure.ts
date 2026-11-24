@@ -52,8 +52,6 @@ export class ActorFigure {
   private channelling = false;
   /** The weapon it's drawn holding, by the rules' weapon id, or null for its own hands. */
   private armedWith: string | null = null;
-  /** How many attacks it has played, to take turns between its attack animations. */
-  private attacks = 0;
   private baseName: BaseName = 'idle';
   private model: THREE.Object3D | null = null;
 
@@ -127,14 +125,14 @@ export class ActorFigure {
   }
 
   /**
-   * Plays a one-off moment, stretched to last `seconds` if given, such as an attack timed to its wind-up. A flinch
+   * Plays a one-off moment, stretched to last `seconds` if given, such as an attack timed to its wind-up, as the
+   * model's animation named `clip` if given, in place of its own for the moment, such as the next blow of a combo. A flinch
    * stops the legs, so it's skipped while moving rather than sliding along, and while keeping up a continuous attack
    * rather than breaking it off; the hit flash still shows.
    */
-  play(moment: ActorMoment, seconds?: number): void {
+  play(moment: ActorMoment, seconds?: number, clip?: string): void {
     if (moment === 'hit' && (this.moment || this.channelling || this.base === this.action('move'))) return;
-    const action = this.action(moment);
-    if (moment === 'attack') this.attacks++;
+    const action = clip === undefined ? this.action(moment) : this.actions.get(clip);
     if (!action || this.base === this.action('death')) return;
     const from = this.moment ?? this.base;
     this.moment = action;
@@ -259,8 +257,7 @@ export class ActorFigure {
 
   private action(name: keyof NonNullable<ActorLook['model']>['animations']): THREE.AnimationAction | undefined {
     const armed = this.armedWith === null ? undefined : this.look.model?.armed?.[this.armedWith]?.animations;
-    const clips = armed?.[name] ?? this.look.model?.animations[name];
-    const clip = Array.isArray(clips) ? clips[this.attacks % clips.length] : clips;
+    const clip = armed?.[name] ?? this.look.model?.animations[name];
     return clip ? this.actions.get(clip) : undefined;
   }
 

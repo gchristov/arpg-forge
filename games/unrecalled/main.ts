@@ -25,7 +25,7 @@ import { ARENA, readyForPractice } from './levels/arena';
 import type { GameAction } from './extensions/actions';
 import { AssemblyWakes } from './extensions/assembly-wakes';
 import { BlastEffects } from './extensions/blast-effects';
-import { STRIKE_SIGNAL } from './extensions/blaster';
+import { isBlow } from './extensions/blaster';
 import { CutSpray } from './extensions/cut-spray';
 import { MachineScans } from './extensions/machine-scans';
 import { Hud } from './ui/hud';
@@ -268,7 +268,7 @@ function playSounds(events: SimEvent[]): void {
         break;
       case 'Signal':
         if (e.name === 'alarm') sfx.siren();
-        if (e.name === STRIKE_SIGNAL) sfx.slam();
+        if (isBlow(e.name)) sfx.slam();
         if (e.name === 'recognised' && scans(e.enemyId)) sfx.scan();
         break;
       case 'EnemyAlerted':

@@ -26,7 +26,7 @@ const PLAIN_LIGHT: Mood = {
   fill: { sky: 0xdfe7ee, ground: 0x3a3f46, intensity: 0.8 },
 };
 /** On metal floors oil lies glossy, shining with the floor's reflections and U-7's light like the metal round it. */
-const ON_METAL: Mood = { ...PLAIN_LIGHT, spills: { roughness: 0.35, reflectivity: 0.4 } };
+const ON_METAL: Mood = { ...PLAIN_LIGHT, spills: { roughness: 0.2, reflectivity: 0.25 } };
 
 const hsl = (h: number, s: number, l: number): number => colour.setHSL(h / 360, s / 100, l / 100).getHex();
 
@@ -151,7 +151,7 @@ const robot = (
 ): ActorLook => ({
   colour: 0x8a8a8a, height, radius: 0.3 * scale, scale,
   // Machines bleed oil when cut into, and leave a puddle of it where they fall.
-  spatter: { colour: 0x16110b },
+  spatter: { colour: 0x070605 },
   model: { name, animations, matchPace: true },
 });
 
@@ -182,8 +182,8 @@ const ACTORS: Record<string, ActorLook> = {
       name: 'hero',
       animations: { idle: 'Idle', move: 'Run', attack: 'Punch', cast: 'Shoot_OneHanded', hit: 'RecieveHit', death: 'Death' },
       armed: {
-        // Built into its hand: it aims the hand while it shoots, and strikes bare-handed, one fist then the other.
-        blaster: { animations: { channel: 'PistolIdle', attack: ['Punch', 'PunchCross'] } },
+        // Built into its hand: it aims the hand while it shoots, and strikes bare-handed (`blast-effects.ts`).
+        blaster: { animations: { channel: 'PistolIdle' } },
         // At rest the chainsaw hangs at U-7's side; it's held out ahead in both hands while cutting, and
         // revved with a jab at thin air.
         chainsaw: {

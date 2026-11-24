@@ -11,20 +11,30 @@ import { hasLineOfSight } from '../../../engine/world/line-of-sight';
  * U-7's hand blaster. Within `range` of a machine it holds a beam on it, which burns `power` times a swing's damage a
  * second and siphons `charge` charge a second out of it into U-7, reported every `reportSeconds`: it's the way to
  * charge up faster than the slow trickle. A machine that's down (stunned) is open: U-7 dashes in at `strike.dash`
- * times its speed and keeps tearing at its core with powered strikes, `strike.power` times a swing every
- * `strike.seconds`, until it dies or gets up. The weapon's `engageRange` should reach past `range`, so U-7
- * walks into range itself and can dash from further out.
+ * times its speed and keeps tearing at its core with a combo of powered strikes until it dies or gets up, each blow
+ * `power` times a swing, knocking it back `knockback` tiles, with `seconds` before the next. The weapon's
+ * `engageRange` should reach past `range`, so U-7 walks into range itself and can dash from further out.
  */
 export interface BlastSettings {
   range: number;
   power: number;
   charge: number;
   reportSeconds: number;
-  strike: { reach: number; power: number; seconds: number; dash: number };
+  strike: { reach: number; dash: number; combo: Blow[] };
 }
 
-/** The signal sent for a powered strike, for the game to draw and sound. */
-export const STRIKE_SIGNAL = 'poweredStrike';
+export interface Blow {
+  power: number;
+  seconds: number;
+  knockback?: number;
+}
+
+/** The signals sent for each blow of a combo in turn, for the game to draw and sound. */
+export const BLOW_SIGNALS = ['poweredJab', 'poweredCross', 'poweredFinish'];
+
+export function isBlow(signal: string): boolean {
+  return BLOW_SIGNALS.includes(signal);
+}
 
 /** How far round U-7 it looks for the next machine that's down, once it has finished one. */
 const NEXT_DOWNED_RANGE = 6;
@@ -33,7 +43,7 @@ const HOLD_AFTER_STRIKE = 0.25;
 
 /**
  * Keeps in its memory `beaming` (1 while the beam is on the target, for the look), `untilStrike`, the seconds until it
- * can strike again, and like the chainsaw's cut, the beam's damage since it was last reported (`unreported`, `crit`)
+ * can strike again, `blow`, the combo's next blow, and `comboOn`, the machine it's on, so a new one starts afresh, and like the chainsaw's cut, the beam's damage since it was last reported (`unreported`, `crit`)
  * and the seconds until it's next reported (`untilReport`). It holds U-7 still after a strike with the hero's
  * `attackCooldown`, which outlasts a change of target. See EXTENSIONS.md.
  */
@@ -55,15 +65,20 @@ export const BLAST: WeaponAttack<BlastSettings> = {
       report(memory, target, events);
       if (d > strike.reach + target.r + hero.r) return closeIn(hero.speed * strike.dash);
       if (memory.untilStrike > 0) return;
-      memory.untilStrike = strike.seconds;
-      hero.attackCooldown = HOLD_AFTER_STRIKE;
-      events.push({ type: 'Signal', name: STRIKE_SIGNAL, x: target.x, y: target.y, enemyId: target.id });
-      const { amount, crit } = roll(state, strike.power);
+      if (memory.comboOn !== target.id) [memory.comboOn, memory.blow] = [target.id, 0];
+      const index = (memory.blow ?? 0) % strike.combo.length;
+      const blow = strike.combo[index]!;
+      memory.blow = index + 1;
+      memory.untilStrike = blow.seconds;
+      hero.attackCooldown = Math.min(HOLD_AFTER_STRIKE, blow.seconds);
+      events.push({ type: 'Signal', name: BLOW_SIGNALS[index % BLOW_SIGNALS.length]!, x: target.x, y: target.y, enemyId: target.id });
+      const { amount, crit } = roll(state, blow.power);
       const k = d || 1;
-      damageEnemy(state, target, Math.max(1, Math.round(amount)), crit, (target.x - hero.x) / k, (target.y - hero.y) / k, 0, events);
+      damageEnemy(state, target, Math.max(1, Math.round(amount)), crit, (target.x - hero.x) / k, (target.y - hero.y) / k, blow.knockback ?? 0, events);
       if (target.dead) goForNextDowned(state);
       return;
     }
+    memory.comboOn = -1;
     if (d > settings.range + target.r || !hasLineOfSight(map, hero.x, hero.y, target.x, target.y)) {
       report(memory, target, events);
       return closeIn(hero.speed);
