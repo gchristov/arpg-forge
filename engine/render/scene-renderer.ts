@@ -75,6 +75,7 @@ export class SceneRenderer {
   private readonly target = new THREE.Vector3();
   private readonly cameraUp = new THREE.Vector3();
   private readonly actors = new Map<string, ActorFigure>();
+  private readonly boneAt = new THREE.Vector3();
   private readonly projected = new THREE.Vector3();
   private shakeAmount = 0;
   private frame = 0;
@@ -317,6 +318,17 @@ export class SceneRenderer {
     figure.arm(pose.armed ?? null);
     figure.pose(pose.moving, pose.dead, pose.speed, pose.channelling);
     figure.setLookOf(pose.flash, pose.fade);
+  }
+
+  /**
+   * Where an actor's bone named `bone` is, such as a hand something comes out of, in tiles along the ground (`x`, `y`)
+   * and up (`h`), as of the last frame drawn; false if the actor isn't shown or has no such bone.
+   */
+  actorBone(id: string, bone: string, out: { x: number; y: number; h: number }): boolean {
+    const figure = this.actors.get(id);
+    if (!figure?.bonePosition(bone, this.boneAt)) return false;
+    [out.x, out.h, out.y] = [this.boneAt.x, this.boneAt.y, this.boneAt.z];
+    return true;
   }
 
   /** Plays a one-off moment on an actor, such as an attack, stretched to `seconds` if given. */

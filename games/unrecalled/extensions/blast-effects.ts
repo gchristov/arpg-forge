@@ -3,37 +3,42 @@ import { currentLevel, type SimEvent } from '../../../engine/sim/state';
 import { BLOW_SIGNALS } from './blaster';
 import { ForkedLightning } from './forked-lightning';
 
-/** How high U-7's hand is when it fires, how far ahead of its middle, and how high on a machine the beam lands, in tiles. */
-const HAND_HEIGHT = 0.75;
-const HAND_AHEAD = 0.3;
+/** The hand U-7 holds out at a machine to fire, by its bone's name, and how high on a machine the beam lands, in tiles. */
+const FIRING_HAND = 'hand_l';
 const HIT_HEIGHT = 0.5;
+/** Where the beam leaves from until U-7's model has loaded: ahead of its middle and up, in tiles. */
+const HAND_AHEAD = 0.3;
+const HAND_HEIGHT = 0.75;
 /** Chance each redraw that a thinner second strand runs alongside the beam. */
 const SECOND_STRAND = 0.4;
 /** The beam is redrawn as a fresh crackling stroke this often, each lasting a little longer, so it never gaps. */
 const BEAM_SECONDS = 0.05;
 /**
  * How each blow of a combo looks, in turn: U-7's animation and how long it takes, how big its flash and burst of forks
- * are, and how hard the screen shakes.
+ * are, how hard the screen shakes, and for how long a discharge runs from the firing hand into the machine. The
+ * punches play at about three times their pace, not squeezed to their gaps: their fists are out for only a quarter of
+ * each, so faster they'd only flicker, and the next blow cuts in as the last fist pulls back. The last blow snaps into
+ * the pose U-7 holds the beam in, one arm thrust out at the machine, and discharges into it.
  */
-// The punches play at about three times their pace, not squeezed to their gaps: their fists are out for only a quarter of
-// each, so faster they'd only flicker, and the next blow cuts in as the last fist pulls back. The last blow snaps into
-// the pose U-7 holds the beam in, one arm thrust out at the machine.
 const BLOWS = [
-  { clip: 'Punch', seconds: 0.28, flash: 0.8, forks: 3, shake: 0.15 },
-  { clip: 'PunchCross', seconds: 0.32, flash: 0.9, forks: 4, shake: 0.2 },
-  { clip: 'AimOneHanded', seconds: 0.4, flash: 1.6, forks: 9, shake: 0.45 },
+  { clip: 'Punch', seconds: 0.28, flash: 0.8, forks: 3, shake: 0.15, discharge: 0 },
+  { clip: 'PunchCross', seconds: 0.32, flash: 0.9, forks: 4, shake: 0.2, discharge: 0 },
+  { clip: 'AimOneHanded', seconds: 0.4, flash: 1.6, forks: 9, shake: 0.45, discharge: 0.3 },
 ];
 /** A downed machine throws a spark about this often. */
 const SPARK_SECONDS = 0.18;
 
 /**
  * Draws U-7's blaster (`blaster.ts`): a forked, crackling beam from its hand to the machine it's held on, crawling over
- * it where it lands, a punch with a burst of forks, a flash and a jolt for each blow of a combo, the last the biggest, and sparks off machines that are
- * down.
+ * it where it lands, a punch with a burst of forks, a flash and a jolt for each blow of a combo, the last the biggest
+ * and discharging from the hand like the beam, and sparks off machines that are down.
  */
 export class BlastEffects {
   private untilBeam = 0;
   private untilSpark = 0;
+  /** The machine a blow is discharging into, and for how much longer. */
+  private discharge = { enemyId: -1, seconds: 0 };
+  private readonly hand = { x: 0, y: 0, h: 0 };
   private readonly lightning: ForkedLightning;
 
   constructor(private readonly game: Game, private readonly colour: number) {
@@ -51,6 +56,7 @@ export class BlastEffects {
       this.lightning.burst({ x: e.x, y: e.y, h: HIT_HEIGHT }, this.colour, 0.2, blow.forks, blow === BLOWS[2] ? 1.3 : 1);
       renderer.shake(blow.shake);
       renderer.playActor(String(state.hero.id), 'attack', blow.seconds, blow.clip);
+      if (blow.discharge > 0 && e.enemyId !== undefined) this.discharge = { enemyId: e.enemyId, seconds: blow.discharge };
     }
   }
 
@@ -70,13 +76,18 @@ export class BlastEffects {
   private drawBeam(frameSeconds: number): void {
     const { state, renderer } = this.game;
     const { hero } = state;
-    const target = hero.attackMemory.beaming ? currentLevel(state).enemies.find((e) => e.id === hero.engagedId) : undefined;
+    this.discharge.seconds -= frameSeconds;
+    const into = this.discharge.seconds > 0 ? this.discharge.enemyId : hero.attackMemory.beaming ? hero.engagedId : null;
+    const target = into === null ? undefined : currentLevel(state).enemies.find((e) => e.id === into && !e.dead);
     this.untilBeam -= frameSeconds;
     if (!target || this.untilBeam > 0) return;
     this.untilBeam = BEAM_SECONDS;
     const seconds = BEAM_SECONDS * 1.6;
-    const d = Math.hypot(target.x - hero.x, target.y - hero.y) || 1;
-    const hand = { x: hero.x + ((target.x - hero.x) / d) * HAND_AHEAD, y: hero.y + ((target.y - hero.y) / d) * HAND_AHEAD, h: HAND_HEIGHT };
+    const hand = this.hand;
+    if (!renderer.actorBone(String(hero.id), FIRING_HAND, hand)) {
+      const d = Math.hypot(target.x - hero.x, target.y - hero.y) || 1;
+      [hand.x, hand.y, hand.h] = [hero.x + ((target.x - hero.x) / d) * HAND_AHEAD, hero.y + ((target.y - hero.y) / d) * HAND_AHEAD, HAND_HEIGHT];
+    }
     const hit = { x: target.x, y: target.y, h: HIT_HEIGHT };
     this.lightning.bolt(hand, hit, this.colour, seconds);
     if (Math.random() < SECOND_STRAND) this.lightning.bolt(hand, hit, this.colour, seconds, 0.45);

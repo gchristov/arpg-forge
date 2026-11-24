@@ -162,6 +162,19 @@ describe('ActorFigure animation', () => {
   });
 });
 
+describe('ActorFigure bones', () => {
+  it('finds where one of its model\'s bones is in the world, and nothing for a bone it doesn\'t have', () => {
+    const f = figure();
+    f.root.position.set(3, 0, 4);
+    f.update(1 / 60);
+    const at = new THREE.Vector3();
+    expect(f.bonePosition('bone', at)).toBe(true);
+    expect(at.x).toBeGreaterThan(2.9);
+    expect(at.z).toBeCloseTo(4);
+    expect(f.bonePosition('tail', at)).toBe(false);
+  });
+});
+
 describe('ActorFigure hovering', () => {
   const parts = (f: ActorFigure) => {
     const isShadow = (o: THREE.Object3D) => o instanceof THREE.Mesh && o.geometry instanceof THREE.CircleGeometry;

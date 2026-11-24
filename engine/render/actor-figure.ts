@@ -52,6 +52,7 @@ export class ActorFigure {
   private channelling = false;
   /** The weapon it's drawn holding, by the rules' weapon id, or null for its own hands. */
   private armedWith: string | null = null;
+  private readonly bones = new Map<string, THREE.Object3D | null>();
   private baseName: BaseName = 'idle';
   private model: THREE.Object3D | null = null;
 
@@ -200,6 +201,18 @@ export class ActorFigure {
     const held = (weapon === null ? undefined : this.look.model.armed?.[weapon]?.weapon) ?? this.look.model.weapon;
     if (held) this.holdWeapon(this.model, held, this.library);
     this.setBase(this.baseName);
+  }
+
+  /**
+   * Where the model's bone named `bone` is in the world, as of the last frame drawn, into `out`; false if the model
+   * has no such bone, as when it's still a stand-in shape.
+   */
+  bonePosition(bone: string, out: THREE.Vector3): boolean {
+    if (!this.bones.has(bone)) this.bones.set(bone, this.model?.getObjectByName(bone) ?? null);
+    const found = this.bones.get(bone);
+    if (!found) return false;
+    found.getWorldPosition(out);
+    return true;
   }
 
   /** Names of the animations currently showing, for tests and debugging. */
