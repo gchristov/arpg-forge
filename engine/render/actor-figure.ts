@@ -52,6 +52,8 @@ export class ActorFigure {
   private channelling = false;
   /** The weapon it's drawn holding, by the rules' weapon id, or null for its own hands. */
   private armedWith: string | null = null;
+  /** How many attacks it has played, to take turns between its attack animations. */
+  private attacks = 0;
   private baseName: BaseName = 'idle';
   private model: THREE.Object3D | null = null;
 
@@ -132,6 +134,7 @@ export class ActorFigure {
   play(moment: ActorMoment, seconds?: number): void {
     if (moment === 'hit' && (this.moment || this.channelling || this.base === this.action('move'))) return;
     const action = this.action(moment);
+    if (moment === 'attack') this.attacks++;
     if (!action || this.base === this.action('death')) return;
     const from = this.moment ?? this.base;
     this.moment = action;
@@ -256,7 +259,8 @@ export class ActorFigure {
 
   private action(name: keyof NonNullable<ActorLook['model']>['animations']): THREE.AnimationAction | undefined {
     const armed = this.armedWith === null ? undefined : this.look.model?.armed?.[this.armedWith]?.animations;
-    const clip = armed?.[name] ?? this.look.model?.animations[name];
+    const clips = armed?.[name] ?? this.look.model?.animations[name];
+    const clip = Array.isArray(clips) ? clips[this.attacks % clips.length] : clips;
     return clip ? this.actions.get(clip) : undefined;
   }
 

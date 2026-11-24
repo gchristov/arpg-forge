@@ -141,6 +141,22 @@ describe('ActorFigure animation', () => {
     expect(f.activeAnimations()).toContain('Attack');
   });
 
+  it('takes turns between its attack animations, one per attack', () => {
+    const f = figure({
+      colour: 0, height: 1, radius: 0.3,
+      model: { name: 'm', animations: { idle: 'Idle', attack: ['Attack', 'Cast'] } },
+    });
+    f.pose(false, false);
+    const played: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      f.play('attack');
+      run(f, 0.2);
+      played.push(f.activeAnimations().find((name) => name !== 'Idle')!);
+      run(f, 0.6);
+    }
+    expect(played).toEqual(['Attack', 'Cast', 'Attack']);
+  });
+
   it('dies cleanly in the middle of an attack', () => {
     const f = figure();
     f.pose(true, false);
