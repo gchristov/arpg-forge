@@ -8,6 +8,11 @@ export function unrecalledSounds(s: Synth) {
       s.tone(70, 0.4, 'sawtooth', 0.05, 2.4);
       s.noise(0.3, 0.06, 1800, 1.2);
     },
+    /** A weapon taken in hand: a latch clicking home and a servo whirring. */
+    swap: () => {
+      s.noise(0.04, 0.16, 3800, 5);
+      s.tone(420, 0.14, 'square', 0.03, 1.8, 0.04);
+    },
     /** The wrench, or a bolt, on a machine's casing. */
     clank: () => {
       s.tone(880, 0.08, 'square', 0.035, 0.7);

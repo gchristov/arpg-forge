@@ -1,11 +1,12 @@
 import type { GameState } from './state';
 import { doStepActions } from './step-actions';
 import { castForStep } from './story-cast';
+import { carry } from './weapons';
 
 /**
- * Moves the story straight to `step`, as if every step before it had been reached: a weapon that reached one is in the
- * hero's hand, an enemy defeated or killed to reach one is gone (and what it carried is in the hero's hand, as if picked
- * up), and what each step does (its `does`) is done. For trying one part of a game without playing up to it.
+ * Moves the story straight to `step`, as if every step before it had been reached: a weapon that reached one is
+ * carried and in the hero's hand, an enemy defeated or killed to reach one is gone (and what it carried is in the
+ * hero's hand, as if picked up), and what each step does (its `does`) is done. For trying one part of a game without playing up to it.
  */
 export function jumpToStep(state: GameState, step: number): void {
   const steps = state.rules.quest;
@@ -33,7 +34,7 @@ function killedAlready(state: GameState, kind: string): void {
 
 /** Puts the weapon in the hero's hand, and takes it off the ground if it was dropped there. */
 function armedAlready(state: GameState, weapon: string): void {
-  state.hero.weapon = weapon;
+  carry(state, weapon);
   for (const ls of Object.values(state.levels)) ls.items = ls.items.filter((i) => i.weapon !== weapon);
 }
 

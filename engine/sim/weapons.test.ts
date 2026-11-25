@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { currentLevel } from './state';
 import { arena, ofType, OPEN_ROOM, run } from './testing';
 import { useWeaponAttacks, type WeaponAttackTurn } from './weapon-attacks';
-import { meleeOf } from './weapons';
+import { arm, meleeOf } from './weapons';
 
 describe('weapons', () => {
   it("fights bare-handed until a weapon is in hand, then with its numbers in place of bare hands' own", () => {
@@ -63,15 +63,51 @@ describe('weapons', () => {
     expect(ofType(run(state, 1 / 60, [{ type: 'attackNearest' }]), 'Swung')).toHaveLength(1);
   });
 
-  it('puts a weapon found in a container in hand, says so, and moves the quest on', () => {
+  it('drops a weapon found in a container beside it, which goes in hand once picked up, says so, and moves the quest on', () => {
     const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 });
     state.rules.hero = { ...state.rules.hero, weapons: { saw: { knockback: 0 } } };
     state.rules.quest = [{}, { reachedBy: { type: 'arm', weapon: 'saw' } }];
     currentLevel(state).containers.push({ tx: 5, ty: 3, gold: 0, healingItems: 0, weapon: 'saw', opened: false });
-    const events = run(state, 4, [{ type: 'open', index: 0 }]);
+    const opened = run(state, 4, [{ type: 'open', index: 0 }]);
+    expect(ofType(opened, 'ContainerOpened')).toHaveLength(1);
+    const saw = currentLevel(state).items.find((i) => i.weapon === 'saw')!;
+    expect(saw).toBeDefined();
+    const events = run(state, 2, [{ type: 'walk', x: saw.x, y: saw.y }]);
+    expect(ofType(events, 'PickedUp').map((p) => p.weapon)).toEqual(['saw']);
     expect(state.hero.weapon).toBe('saw');
     expect(ofType(events, 'Armed')).toHaveLength(1);
     expect(state.quest).toBe(1);
+  });
+
+  it('carries every weapon it gets, starting with the first, and swaps through them in the order they came', () => {
+    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 });
+    state.rules.hero = { ...state.rules.hero, weapons: { club: {}, saw: {} }, startingWeapon: 'club' };
+    state.hero.weapon = 'club';
+    state.hero.weapons = ['club'];
+    expect(ofType(run(state, 0.1, [{ type: 'swapWeapon' }]), 'WeaponSwapped')).toHaveLength(0);
+    arm(state, 'saw', 5.5, 5.5, []);
+    expect([state.hero.weapon, state.hero.weapons]).toEqual(['saw', ['club', 'saw']]);
+    const swapped = run(state, 0.1, [{ type: 'swapWeapon' }]);
+    expect(ofType(swapped, 'WeaponSwapped').map((s) => s.weapon)).toEqual(['club']);
+    run(state, 0.1, [{ type: 'swapWeapon' }]);
+    expect(state.hero.weapon).toBe('saw');
+    arm(state, 'club', 5.5, 5.5, []);
+    expect(state.hero.weapons).toEqual(['club', 'saw']);
+  });
+
+  it("stops the weapon's own attack on a swap, and keeps at the target with the next", () => {
+    let stops = 0;
+    useWeaponAttacks({ press: { attack: () => {}, stop: () => void stops++ } });
+    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'dummy', x: 6.3, y: 5.5 }]);
+    state.rules.hero = { ...state.rules.hero, weapons: { press: { attack: { press: {} } }, club: {} } };
+    state.hero.weapon = 'press';
+    state.hero.weapons = ['press', 'club'];
+    const dummy = currentLevel(state).enemies[0]!;
+    run(state, 1, [{ type: 'attack', enemyId: dummy.id }]);
+    expect(state.hero.engagedId).toBe(dummy.id);
+    const events = run(state, 1, [{ type: 'swapWeapon' }]);
+    expect([stops, state.hero.engagedId, state.hero.targetId]).toEqual([1, null, dummy.id]);
+    expect(ofType(events, 'Swung').some((s) => s.actorId === state.hero.id)).toBe(true);
   });
 
   it('moves the quest on when something is used', () => {

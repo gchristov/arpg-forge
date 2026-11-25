@@ -118,8 +118,9 @@ export class Game {
     this.view = new WorldView(this.state, this.renderer, setup.look, this.labels, fade, this.project);
 
     if (debugMode) Object.assign(window, { game: { state: this.state, send: (c: Command) => this.send(c), start: () => this.start() } });
-    // 1 heals, 2 and space attack, and 3 onwards use the skills in order.
+    // 1 heals, 2 and space attack, 3 onwards use the skills in order, and Q swaps weapons.
     bindKeys({
+      q: () => this.send({ type: 'swapWeapon' }),
       '1': () => this.send({ type: 'heal' }),
       '2': () => this.send({ type: 'attackNearest' }),
       ' ': () => this.send({ type: 'attackNearest' }),

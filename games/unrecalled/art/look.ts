@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { hash2, valueNoise } from '../../../engine/core/math';
 import type { ActorLook, BuildingKit, Look, Mood, PropLook, StructureLook } from '../../../engine/render/look';
+import { WEAPON_NAMES } from '../content/hero';
 import { Ground, Prop } from '../content/tiles';
 import { coreGlow } from '../extensions/core-glow';
 import { glassShine } from '../extensions/glass-shine';
@@ -219,8 +220,6 @@ export const MODEL_URLS: Record<string, string> = Object.fromEntries(
   ),
 );
 
-const WEAPON_NAMES: Record<string, string> = { chainsaw: 'Chainsaw' };
-
 /** The machines that look U-7 over (`extensions/calm-machines.ts`): the height of the eye each one's beam comes from, in tiles. */
 export const SCANNER_EYES: Readonly<Record<string, number>> = { loader: 0.75, sentry: 1.15, orderEngine: 1.8 };
 /** The colour of their scanning beams. */
@@ -269,7 +268,7 @@ export const unrecalledLook: Look = {
   },
   floorModel: (kind, levelId) => (kind === Ground.Plate ? styleOf(levelId).plate : null),
   prop: (kind) => PROPS[kind] ?? null,
-  weaponName: (weapon) => WEAPON_NAMES[weapon] ?? weapon,
+  weaponName: (weapon) => WEAPON_NAMES[weapon]?.name ?? weapon,
   walls: (levelId) => ({
     props: [Prop.Wall, Prop.WallLow, Prop.WallLight, Prop.WallAlarm], panel: styleOf(levelId).panel, span: 3, front: { name: 'wall-front', height: 0.3 },
     // Every doorway gets the kit's frame, so the ways in and out are clear.

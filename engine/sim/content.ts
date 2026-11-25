@@ -60,7 +60,7 @@ export interface Container {
   ty: number;
   gold: number;
   healingItems: number;
-  /** One of the hero's weapons, put in their hand when it's opened. */
+  /** One of the hero's weapons, dropped beside it when it's opened, for the hero to pick up. */
   weapon?: string;
 }
 

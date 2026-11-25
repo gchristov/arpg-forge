@@ -7,6 +7,7 @@ import type { WeaponAttack } from '../../../engine/sim/weapon-attacks';
 import { meleeOf } from '../../../engine/sim/weapons';
 import { steerTowards } from '../../../engine/sim/walking';
 import { hasLineOfSight } from '../../../engine/world/line-of-sight';
+import { goForNextDowned } from './downed';
 
 /**
  * U-7's hand blaster. Within `range` of a machine it holds a beam on it, which burns `power` times a swing's damage a
@@ -40,8 +41,6 @@ export function isBlow(signal: string): boolean {
   return BLOW_SIGNALS.includes(signal);
 }
 
-/** How far round U-7 it looks for the next machine that's down, once it has finished one. */
-const NEXT_DOWNED_RANGE = 6;
 /** After a strike U-7 holds still this long, so the blow is seen before it moves on. */
 const HOLD_AFTER_STRIKE = 0.25;
 
@@ -134,20 +133,4 @@ function report(memory: Record<string, number>, e: Enemy, events: SimEvent[]): v
   events.push({ type: 'EnemyDamaged', enemyId: e.id, amount: Math.max(1, Math.round(memory.unreported)), crit: Boolean(memory.crit), x: e.x, y: e.y });
   memory.unreported = 0;
   memory.crit = 0;
-}
-
-/** Moves straight on to the nearest machine that's still down, if there is one. */
-function goForNextDowned(state: GameState): void {
-  const { hero } = state;
-  let best: Enemy | null = null;
-  let bestDistance = NEXT_DOWNED_RANGE;
-  for (const e of currentLevel(state).enemies) {
-    if (e.dead || e.stunnedFor <= 0) continue;
-    const d = dist(hero.x, hero.y, e.x, e.y);
-    if (d < bestDistance) [best, bestDistance] = [e, d];
-  }
-  if (!best) return;
-  hero.targetId = best.id;
-  hero.path = null;
-  hero.repathTimer = 0;
 }

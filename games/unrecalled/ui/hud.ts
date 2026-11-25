@@ -5,6 +5,7 @@ import { bindCommand } from '../../../engine/ui/command-button';
 import { type FeedOptions, MessageFeed, type Speaker } from '../../../engine/ui/message-feed';
 import { ShownValues } from '../../../engine/ui/shown-values';
 import { ENEMIES } from '../content/enemies';
+import { WEAPON_NAMES } from '../content/hero';
 import { QUEST } from '../story/quest';
 
 /** The EMP's skill slot. */
@@ -15,7 +16,7 @@ const $ = (id: string): HTMLElement => document.getElementById(id)!;
 /**
  * Unrecalled's HUD: the objective at the top left, scrap, level and sound at the top right, the story's lines one at a
  * time above the buttons (where dialogue opens too, so the lines wait for it), health, charge and XP with the buttons
- * along the bottom, the boss bar, and banners for places.
+ * along the bottom (attack, named for the weapon in hand, a swap to the next weapon U-7 carries, the EMP and patch kits), the boss bar, and banners for places.
  */
 export class Hud {
   private readonly shown = new ShownValues();
@@ -40,6 +41,7 @@ export class Hud {
       if (!(e.target as HTMLElement).closest('#logLines')) $('log').hidden = true;
     });
     bindCommand($('bAttack'), { type: 'attackNearest' }, send);
+    bindCommand($('bSwap'), { type: 'swapWeapon' }, send);
     bindCommand($('bEmp'), { type: 'useSkill', slot: EMP }, send);
     bindCommand($('bPatch'), { type: 'heal' }, send);
   }
@@ -62,6 +64,14 @@ export class Hud {
     shown.set('patches', hero.healingItems, (v) => {
       $('patchN').textContent = String(v);
       $('bPatch').classList.toggle('off', v <= 0);
+    });
+    const weapon = hero.weapon === null ? undefined : WEAPON_NAMES[hero.weapon];
+    shown.set('attack', weapon?.attack ?? 'Punch', (v) => ($('bAttack').textContent = v));
+    // The swap button names the weapon it swaps to, and shows only once U-7 carries more than one.
+    const next = hero.weapons.length > 1 ? hero.weapons[(hero.weapons.indexOf(hero.weapon ?? '') + 1) % hero.weapons.length]! : '';
+    shown.set('swapTo', next, (v) => {
+      $('bSwap').hidden = v === '';
+      $('swapTo').textContent = WEAPON_NAMES[v]?.name ?? v;
     });
     const skill = state.rules.hero.skills[EMP];
     const emp = skill && (skill.fromStep === undefined || reached(state, skill.fromStep)) && !this.empWithheld ? skill : undefined;

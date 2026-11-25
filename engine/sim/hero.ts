@@ -5,7 +5,7 @@ import { planRoute } from '../world/pathfinding';
 import { tileIndex } from '../world/tile-map';
 import { burst, damageEnemy, findEnemy, nearestEnemy } from './combat';
 import { attackNothingNear, attacksItsOwnWay, attackWithWeapon, stopWeaponAttack, tellWeaponOfSkill } from './weapon-attacks';
-import { meleeOf } from './weapons';
+import { meleeOf, swapWeapon } from './weapons';
 import { reached } from './story-steps';
 import { reply, updateInteraction, useService, walkToContainer, walkToNpc, walkToReadable } from './interaction';
 import { placeAt } from './setup';
@@ -32,7 +32,7 @@ export function applyCommand(state: GameState, command: Command, events: SimEven
   }
   if (hero.dead) return;
   const { level } = currentLevel(state);
-  if (command.type !== 'useSkill' && command.type !== 'heal' && command.type !== 'useService') hero.interact = null;
+  if (command.type !== 'useSkill' && command.type !== 'heal' && command.type !== 'useService' && command.type !== 'swapWeapon') hero.interact = null;
   switch (command.type) {
     case 'walk': {
       hero.targetId = null;
@@ -83,6 +83,9 @@ export function applyCommand(state: GameState, command: Command, events: SimEven
       break;
     case 'heal':
       heal(state, events);
+      break;
+    case 'swapWeapon':
+      swapWeapon(state, events);
       break;
     case 'talk':
       walkToNpc(state, command.npcId);

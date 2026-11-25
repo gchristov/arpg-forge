@@ -21,9 +21,15 @@ export const BOLT: ProjectileSkill = {
 };
 
 /**
- * U-7's numbers. It fights with its blaster, and Pell's chainsaw once it gets it back; the resource is charge, for
- * the blaster and the EMP, and healing items are patch kits.
+ * U-7's numbers. It fights with its blaster, and Pell's chainsaw too once it has it, swapping between them; the
+ * resource is charge, for the EMP, and healing items are patch kits.
  */
+/** What U-7's weapons are called, and what attacking with each is called, on the HUD and over a dropped one. */
+export const WEAPON_NAMES: Record<string, { name: string; attack: string }> = {
+  blaster: { name: 'Blaster', attack: 'Blast' },
+  chainsaw: { name: 'Chainsaw', attack: 'Cut' },
+};
+
 export const HERO: HeroRules = {
   radius: 0.28,
   speed: 3.7,
@@ -60,8 +66,9 @@ export const HERO: HeroRules = {
         } satisfies BlastSettings,
       },
     },
-    // Keeps cutting for as long as it's in contact, at nearly four times the damage a second of punching.
-    chainsaw: { attack: { cut: { tickSeconds: 0.1, power: 3.7 } satisfies CutSettings } },
+    // Keeps cutting for as long as it's in contact, at nearly four times the damage a second of punching, building
+    // charge more slowly than the beam, and tearing twice as hard into a machine the EMP has knocked down.
+    chainsaw: { attack: { cut: { tickSeconds: 0.1, power: 3.7, charge: 3, downedPower: 2 } satisfies CutSettings } },
   },
   // The EMP first: the HUD's button is for slot 0.
   skills: [{ ...EMP, fromStep: 'charged' }, BOLT],
