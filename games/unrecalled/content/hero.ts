@@ -67,8 +67,8 @@ export const HERO: HeroRules = {
       },
     },
     // Keeps cutting for as long as it's in contact, at nearly four times the damage a second of punching, building
-    // charge more slowly than the beam, and tearing twice as hard into a machine the EMP has knocked down.
-    chainsaw: { attack: { cut: { tickSeconds: 0.1, power: 3.7, charge: 3, downedPower: 2 } satisfies CutSettings } },
+    // charge more slowly than the beam, and running in at twice its speed and tearing twice as hard into a machine the EMP has knocked down.
+    chainsaw: { attack: { cut: { tickSeconds: 0.1, power: 3.7, charge: 3, downedPower: 2, downedDash: 2 } satisfies CutSettings } },
   },
   // The EMP first: the HUD's button is for slot 0.
   skills: [{ ...EMP, fromStep: 'charged' }, BOLT],

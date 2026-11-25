@@ -5,7 +5,7 @@ import { useWeaponAttacks } from '../../../engine/sim/weapon-attacks';
 import { CUT, CUT_REPORT_SECONDS, type CutSettings } from './cutting';
 
 /** A saw that cuts ten times a second, at a swing's damage a second, building no charge and no harder into a machine that's down. */
-const PLAIN: CutSettings = { tickSeconds: 0.1, power: 1, charge: 0, downedPower: 1 };
+const PLAIN: CutSettings = { tickSeconds: 0.1, power: 1, charge: 0, downedPower: 1, downedDash: 1 };
 
 /**
  * The test hero with a saw in hand, and no critical hits.
@@ -123,5 +123,16 @@ describe('cutting', () => {
     run(state, 2, [{ type: 'attack', enemyId: first!.id }]);
     expect(first!.dead).toBe(true);
     expect(state.hero.targetId).toBe(second!.id);
+  });
+
+  it('runs in at `downedDash` times its speed at a machine that\'s down, and at its own speed otherwise', () => {
+    const covered = (stunned: boolean): number => {
+      const state = holdingSaw(arena(OPEN_ROOM, { x: 2.5, y: 5.5 }, [{ kind: 'dummy', x: 9.5, y: 5.5 }]), { ...PLAIN, downedDash: 2 });
+      const dummy = currentLevel(state).enemies[0]!;
+      dummy.stunnedFor = stunned ? 10 : 0;
+      run(state, 0.5, [{ type: 'attack', enemyId: dummy.id }]);
+      return state.hero.x - 2.5;
+    };
+    expect(covered(true) / covered(false)).toBeGreaterThan(1.7);
   });
 });

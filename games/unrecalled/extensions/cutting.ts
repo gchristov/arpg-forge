@@ -15,7 +15,7 @@ export const CUT_REPORT_SECONDS = 0.4;
  * Cutting rather than swinging, like Pell's chainsaw: while U-7 holds it against the target, a tick of damage lands
  * every `tickSeconds`, without knockback, and the blade holds the target where it is, so it can't back away. Over a
  * second it deals `power` times what swinging every `cooldown` would, and builds `charge` charge for the EMP. A
- * machine that's down (stunned) is torn into for `downedPower` times the damage, and once one falls, or the EMP goes
+ * machine that's down (stunned) is run at `downedDash` times U-7's speed and torn into for `downedPower` times the damage, and once one falls, or the EMP goes
  * off, U-7 goes straight for the next machine that's down.
  */
 export interface CutSettings {
@@ -23,6 +23,8 @@ export interface CutSettings {
   power: number;
   charge: number;
   downedPower: number;
+  /** How many times its speed U-7 runs in at a machine that's down, as the blaster dashes in. */
+  downedDash: number;
 }
 
 /**
@@ -57,6 +59,8 @@ export const CUT: WeaponAttack<CutSettings> = {
     if (target.dead) goForNextDowned(state);
     else if (memory.untilReport! <= 0) report(memory, target, events);
   },
+
+  approachSpeed: ({ target, settings }) => (target.stunnedFor > 0 ? settings.downedDash : 1),
 
   skillUsed({ state }) {
     if ((findEnemy(state, state.hero.targetId)?.stunnedFor ?? 0) <= 0) goForNextDowned(state);
