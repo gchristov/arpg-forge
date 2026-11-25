@@ -4,7 +4,7 @@ import { hasLineOfSight } from '../world/line-of-sight';
 import { planRoute } from '../world/pathfinding';
 import { tileIndex } from '../world/tile-map';
 import { burst, damageEnemy, findEnemy, nearestEnemy } from './combat';
-import { attacksItsOwnWay, attackWithWeapon, stopWeaponAttack } from './weapon-attacks';
+import { attackNothingNear, attacksItsOwnWay, attackWithWeapon, stopWeaponAttack, tellWeaponOfSkill } from './weapon-attacks';
 import { meleeOf } from './weapons';
 import { reached } from './story-steps';
 import { reply, updateInteraction, useService, walkToContainer, walkToNpc, walkToReadable } from './interaction';
@@ -67,9 +67,14 @@ export function applyCommand(state: GameState, command: Command, events: SimEven
       const e = findEnemy(state, hero.targetId) ?? nearestEnemy(state, state.rules.hero.attackAssistRange);
       if (e) target(state, e.id);
       else if (hero.attackCooldown <= 0 && hero.swing < 0) {
+        // Swinging at nothing, the hero stops where they are, rather than sliding along mid-swing.
         hero.targetId = null;
-        startSwing(state, events);
-        hero.struck = true;
+        hero.path = null;
+        hero.moving = false;
+        if (!attackNothingNear(state, events)) {
+          startSwing(state, events);
+          hero.struck = true;
+        }
       }
       break;
     }
@@ -136,7 +141,7 @@ function strike(state: GameState, events: SimEvent[]): void {
 }
 
 /** Uses the skill in a slot, if it's off cooldown and affordable. */
-function useSkill(state: GameState, slot: number, events: SimEvent[]): void {
+export function useSkill(state: GameState, slot: number, events: SimEvent[]): void {
   const { hero } = state;
   const skill = state.rules.hero.skills[slot];
   if (!skill || (skill.fromStep !== undefined && !reached(state, skill.fromStep)) || (hero.skillCooldowns[slot] ?? 0) > 0) return;
@@ -157,6 +162,7 @@ function useSkill(state: GameState, slot: number, events: SimEvent[]): void {
       break;
   }
   events.push({ type: 'SkillUsed', slot, skill: skill.id });
+  tellWeaponOfSkill(state, skill.id, events);
 }
 
 function castProjectile(state: GameState, slot: number, skill: ProjectileSkill): void {

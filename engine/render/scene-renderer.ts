@@ -9,7 +9,7 @@ import { Effects } from './effects';
 import { Flames, type FlameSpot } from './flames';
 import { blendedGround } from './ground-blend';
 import { kitBuilding, type StoreyWindows } from './kit-building';
-import { elevationOf } from './camera-angle';
+import { elevationOf, framing } from './camera-angle';
 import { LightMap, type SurfaceFade } from './light-map';
 import { Mist } from './mist';
 import type { CameraLook, Look, Mood, PropLook, Surroundings, WallFixture, WallLook, WaterLook } from './look';
@@ -50,7 +50,7 @@ export class SceneRenderer {
   private readonly scene = new THREE.Scene();
   private readonly camera: THREE.OrthographicCamera | THREE.PerspectiveCamera;
   private readonly elevation: number;
-  private readonly closeness: number;
+  private readonly cameraLook: CameraLook;
   /** From where the camera looks towards where it stands. */
   private readonly viewDirection: THREE.Vector3;
   /** How far the camera stands back from where it looks. */
@@ -75,6 +75,7 @@ export class SceneRenderer {
   private readonly target = new THREE.Vector3();
   private readonly cameraUp = new THREE.Vector3();
   private readonly actors = new Map<string, ActorFigure>();
+  private readonly boneAt = new THREE.Vector3();
   private readonly projected = new THREE.Vector3();
   private shakeAmount = 0;
   private frame = 0;
@@ -114,7 +115,7 @@ export class SceneRenderer {
     const fieldOfView = cameraLook.fieldOfView ?? 0;
     this.camera = fieldOfView > 0 ? new THREE.PerspectiveCamera(fieldOfView) : new THREE.OrthographicCamera();
     this.elevation = elevationOf(cameraLook);
-    this.closeness = cameraLook.closeness ?? 1;
+    this.cameraLook = cameraLook;
     this.viewDirection = new THREE.Vector3(
       Math.cos(this.elevation) / Math.SQRT2,
       Math.sin(this.elevation),
@@ -143,8 +144,9 @@ export class SceneRenderer {
     const reflections = new THREE.PMREMGenerator(this.renderer);
     this.scene.environment = reflections.fromScene(new RoomEnvironment(), 0.04).texture;
     reflections.dispose();
-    this.effects = new Effects(this.scene, look.effects, this.elevation);
-    this.spatter = new Spatter(this.scene);
+    const lit = (material: THREE.Material): void => this.lightMap.light(material);
+    this.effects = new Effects(this.scene, look.effects, this.elevation, lit);
+    this.spatter = new Spatter(this.scene, lit);
   }
 
   /** How much the view is zoomed, 1 when a tile is 64 pixels wide. */
@@ -163,11 +165,14 @@ export class SceneRenderer {
     this.height = height;
     this.renderer.setPixelRatio(Math.min(2, pixelRatio));
     this.renderer.setSize(width, height, false);
-    const zoom = clamp(Math.min(width, height) / 430, 0.78, 1.3) * this.closeness;
+    const { closeness, fieldOfView } = framing(this.cameraLook, width, height);
+    const zoom = clamp(Math.min(width, height) / 430, 0.78, 1.3) * closeness;
     this.pixelsPerUnit = (TILE_PIXELS * zoom) / Math.SQRT2;
     const halfW = width / 2 / this.pixelsPerUnit;
     const halfH = height / 2 / this.pixelsPerUnit;
     if (this.camera instanceof THREE.PerspectiveCamera) {
+      // A game with perspective keeps it, upright or not.
+      if (fieldOfView > 0) this.camera.fov = fieldOfView;
       // Far enough back that the ground where it looks is framed as without perspective.
       this.cameraDistance = halfH / Math.tan((this.camera.fov * Math.PI) / 360);
       Object.assign(this.camera, { aspect: width / height, near: Math.max(0.5, this.cameraDistance - 40), far: this.cameraDistance + 80 });
@@ -192,6 +197,7 @@ export class SceneRenderer {
     this.ambientSwitched = false;
     this.scene.background = new THREE.Color(mood.background);
     this.scene.environmentIntensity = mood.reflections ?? 0;
+    this.spatter.shine(mood.spills?.roughness ?? 1, mood.spills?.reflectivity ?? 0.5);
     this.ambient.color.set(mood.ambient);
     this.ambient.intensity = mood.ambientIntensity;
     this.moon.visible = Boolean(mood.moon);
@@ -314,9 +320,25 @@ export class SceneRenderer {
     figure.setLookOf(pose.flash, pose.fade);
   }
 
-  /** Plays a one-off moment on an actor, such as an attack, stretched to `seconds` if given. */
-  playActor(id: string, moment: ActorMoment, seconds?: number): void {
-    this.actors.get(id)?.play(moment, seconds);
+  /**
+   * Where an actor's bone named `bone` is, such as a hand something comes out of, in tiles along the ground (`x`, `y`)
+   * and up (`h`), as of the last frame drawn; false if the actor isn't shown or has no such bone.
+   */
+  actorBone(id: string, bone: string, out: { x: number; y: number; h: number }): boolean {
+    const figure = this.actors.get(id);
+    if (!figure?.bonePosition(bone, this.boneAt)) return false;
+    out.x = this.boneAt.x;
+    out.y = this.boneAt.z;
+    out.h = this.boneAt.y;
+    return true;
+  }
+
+  /**
+   * Plays a one-off moment on an actor, such as an attack, stretched to `seconds` if given, as the model's animation
+   * named `clip` if given rather than its own for the moment.
+   */
+  playActor(id: string, moment: ActorMoment, seconds?: number, clip?: string): void {
+    this.actors.get(id)?.play(moment, seconds, clip);
   }
 
   /** Removes every actor's figure, for example when a different level is shown. */

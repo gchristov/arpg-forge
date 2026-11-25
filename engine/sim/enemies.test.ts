@@ -40,6 +40,16 @@ describe('enemy behaviour', () => {
     expect(dist(brute.x, brute.y, 9.5, 2.5)).toBeLessThan(0.5);
   });
 
+  it('hunts the hero down from out of sight when set to, and never gives up', () => {
+    const state = arena(Array.from({ length: 6 }, () => '.'.repeat(40)), { x: 2.5, y: 2.5 }, [{ kind: 'brute', x: 37.5, y: 2.5 }]);
+    state.hero.hp = state.hero.maxHp = 1e9;
+    const brute = enemiesOf(state)[0]!;
+    brute.hunting = true;
+    const events = run(state, 15);
+    expect(ofType(events, 'EnemyGaveUp')).toEqual([]);
+    expect(ofType(events, 'HeroHurt').length).toBeGreaterThan(0);
+  });
+
   it('wakes up and chases when hit', () => {
     const state = arena(OPEN_ROOM, { x: 2.5, y: 5.5 }, [{ kind: 'brute', x: 12.5, y: 5.5 }]);
     run(state, 1.5, [{ type: 'useSkill', slot: 0 }]);

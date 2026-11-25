@@ -159,6 +159,12 @@ export interface Mood {
    * were made to. It also brightens every surface a little, as light bouncing round the room would. Without it, nothing reflects.
    */
   reflections?: number;
+  /**
+   * How glossy spills on the ground are (`spatter`): their roughness and reflectivity, from 0 to 1, so they shine with
+   * the room's reflections and the lights over them, as a spill on polished metal would. Matt if not given, as a spill
+   * soaking into earth.
+   */
+  spills?: { roughness: number; reflectivity: number };
   /** A directional light that casts shadows, for outdoor levels. */
   moon?: { colour: number; intensity: number };
   /** The light the hero carries, so the area around them is always visible. */
@@ -319,6 +325,11 @@ export interface CameraLook {
   fieldOfView?: number;
   /** How close the camera stands: 1 when a tile is 64 pixels wide on a typical screen, more to see the world larger. */
   closeness?: number;
+  /**
+   * In place of `closeness` and `fieldOfView` while the screen is taller than it is wide, such as a phone held upright,
+   * whose narrow width would otherwise show little either side of the hero. The same as on a wide screen if not given.
+   */
+  portrait?: { closeness?: number; fieldOfView?: number };
 }
 
 export interface Look {

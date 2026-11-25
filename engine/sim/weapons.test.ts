@@ -40,6 +40,29 @@ describe('weapons', () => {
     expect([state.hero.engagedId, state.hero.attackMemory, stops]).toEqual([null, {}, 1]);
   });
 
+  it('lets the weapon in hand act in place of a swing at nothing, and tells it of each skill the hero uses', () => {
+    const told: string[] = [];
+    useWeaponAttacks({
+      gun: {
+        attack: () => {},
+        nothingNear: ({ state }) => {
+          told.push('nothingNear');
+          return state.hero.weapon === 'gun';
+        },
+        skillUsed: ({ skill }) => void told.push(skill),
+      },
+    });
+    const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 });
+    state.rules.hero = { ...state.rules.hero, weapons: { gun: { attack: { gun: {} } } } };
+    state.hero.weapon = 'gun';
+    expect(ofType(run(state, 1 / 60, [{ type: 'attackNearest' }]), 'Swung')).toEqual([]);
+    run(state, 1 / 60, [{ type: 'useSkill', slot: 0 }]);
+    expect(told).toEqual(['nothingNear', state.rules.hero.skills[0]!.id]);
+    state.hero.weapon = null;
+    run(state, 1);
+    expect(ofType(run(state, 1 / 60, [{ type: 'attackNearest' }]), 'Swung')).toHaveLength(1);
+  });
+
   it('puts a weapon found in a container in hand, says so, and moves the quest on', () => {
     const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 });
     state.rules.hero = { ...state.rules.hero, weapons: { saw: { knockback: 0 } } };

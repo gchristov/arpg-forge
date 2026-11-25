@@ -52,6 +52,15 @@ describe('hero melee', () => {
     const state = arena(OPEN_ROOM, { x: 5.5, y: 5.5 });
     expect(ofType(run(state, 0.1, [{ type: 'attackNearest' }]), 'Swung')).toHaveLength(1);
   });
+
+  it('stops walking to swing at nothing, so it never slides along mid-swing', () => {
+    const state = arena(OPEN_ROOM, { x: 2.5, y: 5.5 });
+    run(state, 0.3, [{ type: 'walk', x: 15.5, y: 5.5 }]);
+    const at = state.hero.x;
+    run(state, 0.3, [{ type: 'attackNearest' }]);
+    expect(state.hero.x).toBeCloseTo(at, 1);
+    expect(state.hero.moving).toBe(false);
+  });
 });
 
 describe('area skill', () => {
@@ -76,6 +85,32 @@ describe('area skill', () => {
     expect(far!.hp).toBe(far!.maxHp);
     expect(state.hero.resource).toBe(30);
     expect(state.hero.skillCooldowns[1]).toBe(5);
+  });
+
+  it('stuns what it hits for its stun, which then neither moves nor attacks until it wears off', () => {
+    const state = arena(OPEN_ROOM, { x: 8.5, y: 8.5 }, [{ kind: 'brute', x: 9.6, y: 8.5 }]);
+    withExtraSkill(state, { ...PULSE, knockback: 0, damage: [1, 1], stun: 1 });
+    const brute = enemiesOf(state)[0]!;
+    run(state, 1 / 60, [{ type: 'useSkill', slot: 1 }]);
+    const at = brute.x;
+    expect(ofType(run(state, 0.95), 'HeroHurt')).toEqual([]);
+    expect(brute.x).toBe(at);
+    expect(ofType(run(state, 3), 'HeroHurt').length).toBeGreaterThan(0);
+  });
+
+  it('never stuns a boss', () => {
+    const state = arena(OPEN_ROOM, { x: 8.5, y: 8.5 }, [{ kind: 'lord', x: 10, y: 8.5 }]);
+    withExtraSkill(state, { ...PULSE, stun: 1 });
+    run(state, 1 / 60, [{ type: 'useSkill', slot: 1 }]);
+    expect(enemiesOf(state)[0]!.stunnedFor).toBe(0);
+  });
+});
+
+describe('starting weapon', () => {
+  it('puts the weapon in the hero\'s hand from the start', () => {
+    expect(arena(OPEN_ROOM, { x: 5.5, y: 5.5 }).hero.weapon).toBeNull();
+    const hero = { ...TEST_HERO, startingWeapon: 'stick', weapons: { stick: { reach: 2 } } };
+    expect(arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [], 1, hero).hero.weapon).toBe('stick');
   });
 });
 

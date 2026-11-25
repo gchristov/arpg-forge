@@ -43,12 +43,12 @@ describe('Unrecalled content', () => {
     expect(missing).toEqual([]);
   });
 
-  it('draws U-7 holding every weapon it can come to hold, with a model that was built', () => {
+  it('draws U-7 with every weapon it can come to hold, and any it holds in a hand with a model that was built', () => {
     const armed = unrecalledLook.actor('hero').model?.armed ?? {};
     const missing = Object.keys(content.hero.weapons ?? {}).filter((id) => {
       const held = armed[id]?.weapon;
       const name = typeof held === 'string' ? held : held?.name;
-      return !name || !MODEL_URLS[name];
+      return !armed[id] || (name !== undefined && !MODEL_URLS[name]);
     });
     expect(missing).toEqual([]);
   });

@@ -14,13 +14,13 @@ function figure(changes: Partial<ActorLook> = {}): ActorFigure {
   scene.add(bone);
   const template: ModelTemplate = {
     scene,
-    animations: [clip('Idle', 1), clip('Run', 0.8), clip('Attack', 0.5), clip('Cut', 0.7), clip('Hit', 0.6), clip('Death', 1)],
+    animations: [clip('Idle', 1), clip('Run', 0.8), clip('Attack', 0.5), clip('Cut', 0.7), clip('Hit', 0.6), clip('Cast', 0.5), clip('Death', 1)],
     height: 1,
   };
   const library = { get: () => template, instantiate: () => scene.clone() } as unknown as ModelLibrary;
   const look: ActorLook = {
     colour: 0, height: 1, radius: 0.3,
-    model: { name: 'm', animations: { idle: 'Idle', move: 'Run', attack: 'Attack', channel: 'Cut', hit: 'Hit', death: 'Death' } },
+    model: { name: 'm', animations: { idle: 'Idle', move: 'Run', attack: 'Attack', channel: 'Cut', hit: 'Hit', cast: 'Cast', death: 'Death' } },
     ...changes,
   };
   return new ActorFigure(look, library);
@@ -103,6 +103,53 @@ describe('ActorFigure animation', () => {
     expect(f.activeAnimations()).toEqual(['Run']);
   });
 
+  it('cuts a cast short to run when the actor starts moving, so it never slides along casting', () => {
+    const f = figure();
+    f.play('cast', 0.45);
+    run(f, 0.05);
+    f.pose(true, false);
+    run(f, 0.3);
+    expect(f.activeAnimations()).toEqual(['Run']);
+  });
+
+  it('cuts an attack short to run when the actor starts moving', () => {
+    const f = figure();
+    f.play('attack', 0.5);
+    run(f, 0.05);
+    f.pose(true, false);
+    run(f, 0.2);
+    expect(f.activeAnimations()).toEqual(['Run']);
+  });
+
+  it('keeps running through a cast played on the move, so it never slides along casting', () => {
+    const f = figure();
+    f.pose(true, false);
+    run(f, 0.3);
+    f.play('cast', 0.45);
+    f.pose(true, false);
+    run(f, 0.2);
+    expect(f.activeAnimations()).toEqual(['Run']);
+  });
+
+  it('still plays an attack that starts the moment the actor stops', () => {
+    const f = figure();
+    f.pose(true, false);
+    run(f, 0.3);
+    f.play('attack', 0.5);
+    f.pose(false, false);
+    run(f, 0.1);
+    expect(f.activeAnimations()).toContain('Attack');
+  });
+
+  it('plays a moment as another of the model\'s animations when told which', () => {
+    const f = figure();
+    f.pose(false, false);
+    f.play('attack', undefined, 'Cast');
+    run(f, 0.2);
+    expect(f.activeAnimations()).toContain('Cast');
+    expect(f.activeAnimations()).not.toContain('Attack');
+  });
+
   it('dies cleanly in the middle of an attack', () => {
     const f = figure();
     f.pose(true, false);
@@ -112,6 +159,19 @@ describe('ActorFigure animation', () => {
     f.pose(true, true);
     run(f, 1.5);
     expect(f.activeAnimations()).toEqual(['Death']);
+  });
+});
+
+describe('ActorFigure bones', () => {
+  it('finds where one of its model\'s bones is in the world, and nothing for a bone it doesn\'t have', () => {
+    const f = figure();
+    f.root.position.set(3, 0, 4);
+    f.update(1 / 60);
+    const at = new THREE.Vector3();
+    expect(f.bonePosition('bone', at)).toBe(true);
+    expect(at.x).toBeGreaterThan(2.9);
+    expect(at.z).toBeCloseTo(4);
+    expect(f.bonePosition('tail', at)).toBe(false);
   });
 });
 

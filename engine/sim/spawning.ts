@@ -25,7 +25,7 @@ export function makeEnemy(state: GameState, kind: string, x: number, y: number, 
     homeX: x, homeY: y, hp, maxHp: hp, mode: 'idle',
     attackCooldown: range(state.rng, 0.4, 1), windUp: -1, swing: -1,
     wanderTimer: range(state.rng, 1, 4), wanderX: x, wanderY: y, repathTimer: 0,
-    dead: false, deadFor: 0, memory: {}, rootedFor: 0, slideX: 0, slideY: 0,
+    dead: false, deadFor: 0, memory: {}, rootedFor: 0, stunnedFor: 0, slideX: 0, slideY: 0,
     strength: own,
   };
 }

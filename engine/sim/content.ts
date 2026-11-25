@@ -176,6 +176,8 @@ export interface BurstDamage {
   damagePerLevel: number;
   critChance: number;
   critMultiplier: number;
+  /** Seconds each enemy hit can't move or attack, knocked down or stunned. Bosses shrug it off. None if not given. */
+  stun?: number;
 }
 
 /**
@@ -246,6 +248,8 @@ export interface HeroRules {
   levelUp: { xpGrowth: number; health: number; resource: number; damage: Range };
   /** The bare-handed melee attack. */
   melee: MeleeRules;
+  /** The weapon in the hero's hand from the start, by its id in `weapons`; bare hands if not given. */
+  startingWeapon?: string;
   /** Weapons the hero can come to hold, by id, each changing parts of the bare-handed melee attack. */
   weapons?: Record<string, Weapon>;
   /** Skills on top of the melee attack, by slot, each costing resource and with its own cooldown. */

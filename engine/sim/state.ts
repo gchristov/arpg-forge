@@ -84,6 +84,8 @@ export interface Enemy extends Actor {
   memory: Record<string, number>;
   /** Seconds it can't move of its own accord, such as held by a weapon cutting into it; 0 when free. */
   rootedFor: number;
+  /** Seconds it can't move or attack at all, knocked down or stunned; 0 when up. */
+  stunnedFor: number;
   /** How fast it's sliding from a knock-back, in tiles a second. */
   slideX: number;
   slideY: number;
@@ -91,6 +93,8 @@ export interface Enemy extends Actor {
   strength: number;
   /** Names this one enemy, for a quest step reached by defeating it. */
   tag?: string;
+  /** Hunts the hero down wherever it is on the level and never gives up the chase, once a game sets it to. */
+  hunting?: boolean;
   /** A weapon of the hero's it drops when defeated. */
   carries?: string;
 }

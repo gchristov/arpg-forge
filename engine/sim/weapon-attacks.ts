@@ -22,6 +22,13 @@ export interface WeaponAttack<Settings = never> {
   attack(turn: WeaponAttackTurn<Settings>): void;
   /** When the hero stops attacking, by walking off, losing the target, falling or changing weapon, before the memory is emptied. */
   stop?(turn: Omit<WeaponAttackTurn<Settings>, 'target' | 'dt'>): void;
+  /**
+   * When the hero attacks with no enemy near: whether the weapon did something of its own, such as firing straight
+   * ahead, in place of a swing at nothing.
+   */
+  nothingNear?(turn: Omit<WeaponAttackTurn<Settings>, 'target' | 'dt'>): boolean;
+  /** Just after the hero uses one of their skills, by its id, with the weapon in hand. */
+  skillUsed?(turn: Omit<WeaponAttackTurn<Settings>, 'target' | 'dt'> & { skill: string }): void;
 }
 
 // The rules state is plain data, so the attacks' code is kept here, by name, rather than in it.
@@ -63,6 +70,18 @@ export function stopWeaponAttack(state: GameState, events: SimEvent[]): void {
   own?.attack.stop?.({ state, events, settings: own.settings, memory: hero.attackMemory });
   hero.engagedId = null;
   hero.attackMemory = {};
+}
+
+/** Asks the weapon in hand what it does when the hero attacks with nothing near: whether it did anything. */
+export function attackNothingNear(state: GameState, events: SimEvent[]): boolean {
+  const own = attackInHand(state);
+  return own?.attack.nothingNear?.({ state, events, settings: own.settings, memory: state.hero.attackMemory }) ?? false;
+}
+
+/** Tells the weapon in hand the hero just used the skill `skill`. */
+export function tellWeaponOfSkill(state: GameState, skill: string, events: SimEvent[]): void {
+  const own = attackInHand(state);
+  own?.attack.skillUsed?.({ state, events, settings: own.settings, memory: state.hero.attackMemory, skill });
 }
 
 /** The weapon attack with this name, if a game has made it available. */

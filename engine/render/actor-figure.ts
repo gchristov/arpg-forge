@@ -52,6 +52,7 @@ export class ActorFigure {
   private channelling = false;
   /** The weapon it's drawn holding, by the rules' weapon id, or null for its own hands. */
   private armedWith: string | null = null;
+  private readonly bones = new Map<string, THREE.Object3D | null>();
   private baseName: BaseName = 'idle';
   private model: THREE.Object3D | null = null;
 
@@ -118,18 +119,21 @@ export class ActorFigure {
   pose(moving: boolean, dead: boolean, speed?: number, channelling = false): void {
     this.channelling = channelling && !dead && !moving;
     this.setBase(dead ? 'death' : moving ? 'move' : this.channelling ? 'channel' : 'idle');
+    // Already on the move, as when casting while walking: the legs keep going rather than sliding along in the moment.
+    if (moving && !dead && this.moment && this.base === this.action('move')) this.runOutOf(this.moment);
     const move = this.action('move');
     if (move && speed && this.movePace) move.timeScale = THREE.MathUtils.clamp(speed / this.movePace, ...PACE_RANGE);
   }
 
   /**
-   * Plays a one-off moment, stretched to last `seconds` if given, such as an attack timed to its wind-up. A flinch
+   * Plays a one-off moment, stretched to last `seconds` if given, such as an attack timed to its wind-up, as the
+   * model's animation named `clip` if given, in place of its own for the moment, such as the next blow of a combo. A flinch
    * stops the legs, so it's skipped while moving rather than sliding along, and while keeping up a continuous attack
    * rather than breaking it off; the hit flash still shows.
    */
-  play(moment: ActorMoment, seconds?: number): void {
+  play(moment: ActorMoment, seconds?: number, clip?: string): void {
     if (moment === 'hit' && (this.moment || this.channelling || this.base === this.action('move'))) return;
-    const action = this.action(moment);
+    const action = clip === undefined ? this.action(moment) : this.actions.get(clip);
     if (!action || this.base === this.action('death')) return;
     const from = this.moment ?? this.base;
     this.moment = action;
@@ -197,6 +201,18 @@ export class ActorFigure {
     const held = (weapon === null ? undefined : this.look.model.armed?.[weapon]?.weapon) ?? this.look.model.weapon;
     if (held) this.holdWeapon(this.model, held, this.library);
     this.setBase(this.baseName);
+  }
+
+  /**
+   * Where the model's bone named `bone` is in the world, as of the last frame drawn, into `out`; false if the model
+   * has no such bone, as when it's still a stand-in shape.
+   */
+  bonePosition(bone: string, out: THREE.Vector3): boolean {
+    if (!this.bones.has(bone)) this.bones.set(bone, this.model?.getObjectByName(bone) ?? null);
+    const found = this.bones.get(bone);
+    if (!found) return false;
+    found.getWorldPosition(out);
+    return true;
   }
 
   /** Names of the animations currently showing, for tests and debugging. */
@@ -273,17 +289,23 @@ export class ActorFigure {
     next.setLoop(dying ? THREE.LoopOnce : THREE.LoopRepeat, dying ? 1 : Infinity);
     next.clampWhenFinished = dying;
     const moment = this.moment;
-    const cutShort = dying || (name === 'move' && moment !== null && moment === this.action('hit'));
-    if (moment && !cutShort) {
-      previous?.stop();
-      return;
-    }
+    // Every moment stops the legs, so starting to move cuts it short rather than sliding along in it.
+    const cutShort = dying || name === 'move';
+    // The pose before is already fading out under the moment, and stops once it's gone; cut off now, the model would
+    // sag towards its rest pose while the moment is still fading in.
+    if (moment && !cutShort) return;
     this.moment = null;
     next.reset().play();
     if (moment) {
       next.crossFadeFrom(moment, BLEND_SECONDS, false);
       previous?.stop();
     } else if (previous) next.crossFadeFrom(previous, BLEND_SECONDS, false);
+  }
+
+  /** Cuts `moment` short, blending from it into the move animation. */
+  private runOutOf(moment: THREE.AnimationAction): void {
+    this.moment = null;
+    this.base!.reset().play().crossFadeFrom(moment, BLEND_SECONDS, false);
   }
 
   /**

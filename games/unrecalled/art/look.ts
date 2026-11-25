@@ -13,7 +13,7 @@ import { glassShine } from '../extensions/glass-shine';
 const colour = new THREE.Color();
 
 /** The colour of U-7's core, and of the nodes in its brain: the blue glow of a reactor. */
-const CORE_COLOUR = 0x3ac8ff;
+export const CORE_COLOUR = 0x3ac8ff;
 
 /**
  * Plain, even light, like a model viewer's, on every level. The only light of the game's own is U-7's core, carried
@@ -25,6 +25,8 @@ const PLAIN_LIGHT: Mood = {
   moon: { colour: 0xffffff, intensity: 2.2 },
   fill: { sky: 0xdfe7ee, ground: 0x3a3f46, intensity: 0.8 },
 };
+/** On metal floors oil lies glossy, shining with the floor's reflections and U-7's light like the metal round it. */
+const ON_METAL: Mood = { ...PLAIN_LIGHT, spills: { roughness: 0.2, reflectivity: 0.25 } };
 
 const hsl = (h: number, s: number, l: number): number => colour.setHSL(h / 360, s / 100, l / 100).getHex();
 
@@ -149,7 +151,7 @@ const robot = (
 ): ActorLook => ({
   colour: 0x8a8a8a, height, radius: 0.3 * scale, scale,
   // Machines bleed oil when cut into, and leave a puddle of it where they fall.
-  spatter: { colour: 0x16110b },
+  spatter: { colour: 0x070605 },
   model: { name, animations, matchPace: true },
 });
 
@@ -180,6 +182,8 @@ const ACTORS: Record<string, ActorLook> = {
       name: 'hero',
       animations: { idle: 'Idle', move: 'Run', attack: 'Punch', cast: 'Shoot_OneHanded', hit: 'RecieveHit', death: 'Death' },
       armed: {
+        // Built into its hand: it holds one arm out at the machine while it shoots, and strikes bare-handed (`blast-effects.ts`).
+        blaster: { animations: { channel: 'AimOneHanded' } },
         // At rest the chainsaw hangs at U-7's side; it's held out ahead in both hands while cutting, and
         // revved with a jab at thin air.
         chainsaw: {
@@ -224,7 +228,8 @@ export const SCAN_COLOUR = 0xff3a2a;
 
 export const unrecalledLook: Look = {
   // Close to the action, looking steeply down so the ground fills the screen, with mild perspective for depth.
-  camera: { pitch: 50, fieldOfView: 32, closeness: 2.2 },
+  // Held upright, a phone is narrow, so the camera stands further back to show what U-7 can shoot either side of it.
+  camera: { pitch: 50, fieldOfView: 32, closeness: 2.2, portrait: { closeness: 1.65 } },
   effects: {
     skill: 0x8ae8ff, shot: 0xffd070, telegraph: 0xff7a3a, items: { gold: 0xd8c070, healingItem: 0x50d070, weapon: 0xe0782a },
     walkMarker: 0x9ad8e8, targetMarker: 0xff7a3a,
@@ -234,7 +239,7 @@ export const unrecalledLook: Look = {
     explosion: { flash: 0x8ae8ff },
     slam: { flash: 0xffa050, scorch: 0x201008 },
   },
-  mood: () => PLAIN_LIGHT,
+  mood: (levelId) => (FLOOR_STYLES[levelId]?.plate ? ON_METAL : PLAIN_LIGHT),
   groundColour(kind, tx, ty) {
     const n = valueNoise(tx * 0.25, ty * 0.25);
     const h = hash2(tx, ty, 9);

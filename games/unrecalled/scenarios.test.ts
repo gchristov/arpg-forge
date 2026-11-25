@@ -2,13 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { gainXp } from '../../engine/sim/combat';
 import { questGoal } from '../../engine/sim/quest-goal';
 import { createGameState } from '../../engine/sim/setup';
+import { makeEnemy } from '../../engine/sim/spawning';
+import { isBlocked } from '../../engine/world/collision';
 import { currentLevel, type Command, type GameState, type SimEvent } from '../../engine/sim/state';
 import { step } from '../../engine/sim/step';
 import { unrecalledContent } from './content/world';
 import { jumpToStep } from '../../engine/sim/shortcuts';
 import { stepIndex } from '../../engine/sim/story-steps';
-import { readyForPractice } from './levels/arena';
+import { ARENA_WAVES, readyForPractice } from './levels/arena';
+import { BLOW_SIGNALS, isBlow, type BlastSettings } from './extensions/blaster';
 import { FLOOR_ORDER } from './levels/foundry';
+import { WAVE_MARK, WAVE_SIGNAL } from './extensions/waves';
 
 const DT = 1 / 60;
 const content = unrecalledContent();
@@ -20,6 +24,18 @@ function play(state: GameState, seconds: number, commands: Command[] = []): SimE
     events.push(...step(state, { commands: i === 0 ? commands : [], held: null }, DT));
   }
   return events;
+}
+
+const PACK = ['crawler', 'crawler', 'crawler', 'crawler', 'loader', 'loader'];
+
+/** The practice arena with no waves, and these machines standing together a few tiles from U-7, for trying one fight out. */
+function arenaWith(kinds: string[]): GameState {
+  const state = createGameState(content, 1, 'arena');
+  const ls = currentLevel(state);
+  // Waves only come once these are down.
+  const { x, y } = state.hero;
+  kinds.forEach((kind, i) => ls.enemies.push(makeEnemy(state, kind, x + 4 + (i % 3) * 0.7, y + Math.floor(i / 3) * 0.8, ls.enemyStrength)));
+  return state;
 }
 
 /** A hero nothing can stop, so a test can walk the Foundry without fighting its way through. */
@@ -159,7 +175,7 @@ describe('Unrecalled scenarios', () => {
   });
 
   it('sets off the EMP among a pack of crawlers, hitting them all and turning them on U-7', () => {
-    const state = untouchable(createGameState(content, 1, 'arena'));
+    const state = untouchable(arenaWith(PACK));
     const emp = content.hero.skills[0]!;
     jumpToStep(state, emp.fromStep ? stepIndex(content.quest, emp.fromStep) : 0);
     const pack = currentLevel(state).enemies.filter((e) => e.kind === 'crawler').slice(0, 3);
@@ -173,28 +189,126 @@ describe('Unrecalled scenarios', () => {
     expect(pack.filter((e) => hit.has(e.id)).every((e) => e.mode === 'chase')).toBe(true);
   });
 
-  it('sends the practice arena\'s machines straight at U-7, without looking it over', () => {
+  it('sends the practice arena\'s machines at U-7 in waves, straight on, without looking it over', () => {
     const state = createGameState(content, 1, 'arena');
-    const events = play(state, 6);
+    const events = play(state, 10);
+    expect(events.some((e) => e.type === 'Signal' && e.name === WAVE_SIGNAL)).toBe(true);
     expect(events.some((e) => e.type === 'Signal' && e.name === 'recognised')).toBe(false);
     expect(events.some((e) => e.type === 'HeroHurt')).toBe(true);
   });
 
-  it('starts U-7 in the practice arena with the chainsaw and the EMP', () => {
+  it('sends the arena\'s waves after a pause, the next only once the last is down, each bigger and tougher', () => {
     const state = untouchable(createGameState(content, 1, 'arena'));
-    readyForPractice(state);
-    expect(state.hero.weapon).toBe('chainsaw');
-    const events = play(state, 1 / 60, [{ type: 'useSkill', slot: 0 }]);
-    expect(events.some((e) => e.type === 'SkillUsed' && e.skill === 'emp')).toBe(true);
+    const waveIn = (seconds: number) => play(state, seconds).filter((e) => e.type === 'Signal' && e.name === WAVE_SIGNAL).length;
+    expect(waveIn(ARENA_WAVES.pause - 0.1)).toBe(0);
+    expect(waveIn(0.2)).toBe(1);
+    const first = currentLevel(state).enemies.filter((e) => !e.dead);
+    expect(first.every((e) => e.hunting)).toBe(true);
+    expect(waveIn(5)).toBe(0);
+    for (const e of first) e.dead = true;
+    expect(waveIn(ARENA_WAVES.pause + 0.1)).toBe(1);
+    const second = currentLevel(state).enemies.filter((e) => !e.dead);
+    expect(currentLevel(state).memory[WAVE_MARK]).toBe(2);
+    expect(Math.min(...second.map((e) => e.strength))).toBeGreaterThan(Math.max(...first.map((e) => e.strength)));
   });
 
-  it('cuts with the chainsaw rather than swinging', () => {
-    const state = untouchable(createGameState(content, 1, 'arena'));
-    state.hero.weapon = 'chainsaw';
+  it('gathers each wave\'s machines clear of the arena\'s walls, so none starts stuck in one', () => {
+    const state = untouchable(createGameState(content, 3, 'arena'));
+    const level = currentLevel(state);
+    for (let wave = 0; wave < 6; wave++) {
+      play(state, ARENA_WAVES.pause + 0.1);
+      for (const e of level.enemies.filter((m) => !m.dead)) {
+        expect(isBlocked(level.level.map, e.x, e.y, e.r + 0.4)).toBe(false);
+        e.dead = true;
+      }
+    }
+  });
+
+  it('starts U-7 in the practice arena with the blaster and the EMP, or the weapon asked for', () => {
+    const state = untouchable(arenaWith(PACK));
+    readyForPractice(state, null);
+    expect(state.hero.weapon).toBe('blaster');
+    const events = play(state, 1 / 60, [{ type: 'useSkill', slot: 0 }]);
+    expect(events.some((e) => e.type === 'SkillUsed' && e.skill === 'emp')).toBe(true);
+    readyForPractice(state, 'chainsaw');
+    expect(state.hero.weapon).toBe('chainsaw');
+  });
+
+  it('holds the blaster\'s beam on a machine from out of reach, and closes in to strike one the EMP knocked down', () => {
+    const state = untouchable(arenaWith(PACK));
+    readyForPractice(state, null);
     const machine = currentLevel(state).enemies[0]!;
-    const events = play(state, 3, [{ type: 'attack', enemyId: machine.id }]);
-    expect(events.some((e) => e.type === 'EnemyDamaged' && e.enemyId === machine.id)).toBe(true);
-    expect(events.some((e) => e.type === 'Swung' && e.actorId === state.hero.id)).toBe(false);
+    machine.hp = machine.maxHp = 1e6;
+    const beam = play(state, 3, [{ type: 'attack', enemyId: machine.id }]);
+    expect(beam.some((e) => e.type === 'EnemyDamaged' && e.enemyId === machine.id)).toBe(true);
+    expect(beam.some((e) => e.type === 'Signal' && isBlow(e.name))).toBe(false);
+    machine.stunnedFor = 3;
+    const strikes = play(state, 2.5);
+    expect(strikes.some((e) => e.type === 'Signal' && isBlow(e.name))).toBe(true);
+  });
+
+  it('fires a bolt straight ahead with the blaster when no machine is near', () => {
+    const state = untouchable(arenaWith(PACK));
+    readyForPractice(state, null);
+    for (const e of currentLevel(state).enemies) e.dead = true;
+    const shots = play(state, 0.1, [{ type: 'attackNearest' }]);
+    expect(shots.some((e) => e.type === 'SkillUsed' && e.skill === 'bolt')).toBe(true);
+    expect(state.projectiles).toHaveLength(1);
+  });
+
+  it('after the EMP, goes for a machine it knocked down and moves on to the next once it falls', () => {
+    const state = untouchable(arenaWith(PACK));
+    readyForPractice(state, null);
+    const [first, second, ...others] = currentLevel(state).enemies;
+    for (const other of others) other.dead = true;
+    state.hero.x = first!.x - 1.5;
+    state.hero.y = first!.y;
+    second!.x = first!.x + 0.5;
+    second!.y = first!.y + 0.8;
+    // Tough enough to outlast the EMP itself, but not two or three strikes.
+    first!.hp = 30;
+    second!.hp = second!.maxHp = 1e6;
+    const emp = state.rules.hero.skills.findIndex((s) => s.id === 'emp');
+    play(state, 1 / 60, [{ type: 'useSkill', slot: emp }]);
+    expect([first!.id, second!.id]).toContain(state.hero.targetId);
+    const events = play(state, 1.5);
+    expect(events.some((e) => e.type === 'EnemyKilled' && e.enemyId === first!.id)).toBe(true);
+    expect(events.some((e) => e.type === 'Signal' && isBlow(e.name) && e.enemyId === second!.id)).toBe(true);
+  });
+
+  it('strikes a machine that\'s down with a combo of blows in turn, starting afresh on the next machine', () => {
+    const state = untouchable(arenaWith(PACK));
+    readyForPractice(state, null);
+    const [machine, ...others] = currentLevel(state).enemies;
+    for (const other of others) other.dead = true;
+    state.hero.x = machine!.x - 0.8;
+    state.hero.y = machine!.y;
+    machine!.hp = machine!.maxHp = 1e6;
+    machine!.stunnedFor = 10;
+    state.hero.targetId = machine!.id;
+    const blows = play(state, 3).flatMap((e) => (e.type === 'Signal' && isBlow(e.name) ? [e.name] : []));
+    expect(blows.slice(0, 6)).toEqual([...BLOW_SIGNALS, ...BLOW_SIGNALS]);
+  });
+
+  it('siphons charge with the beam, and none with strikes', () => {
+    const state = untouchable(arenaWith(PACK));
+    readyForPractice(state, null);
+    const [machine, ...others] = currentLevel(state).enemies;
+    for (const other of others) other.dead = true;
+    state.hero.x = machine!.x - 3;
+    state.hero.y = machine!.y;
+    machine!.hp = machine!.maxHp = 1e6;
+    state.hero.resource = 0;
+    state.hero.targetId = machine!.id;
+    const { blast } = state.rules.hero.weapons!.blaster!.attack as { blast: BlastSettings };
+    play(state, 1);
+    expect(state.hero.resource).toBeGreaterThanOrEqual(blast.charge * 0.8);
+    machine!.stunnedFor = 3;
+    machine!.hp = 1;
+    const before = state.hero.resource;
+    play(state, 0.6);
+    expect(machine!.dead).toBe(true);
+    expect(state.hero.resource - before).toBeLessThanOrEqual(state.rules.hero.resourceRegen * 0.6 + 0.01);
   });
 
   it('makes the machines tougher on every floor down, and keeps pace as U-7 levels up', () => {

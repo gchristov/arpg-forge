@@ -112,13 +112,17 @@ export function hurtHero(state: GameState, amount: number, events: SimEvent[]): 
   }
 }
 
-/** A hero's skill bursting at a point: every enemy in the radius is hurt and knocked `knockback` away from the centre. */
+/**
+ * A hero's skill bursting at a point: every enemy in the radius is hurt, knocked `knockback` away from the centre and
+ * stunned for the skill's `stun`.
+ */
 export function burst(state: GameState, skill: BurstDamage, x: number, y: number, knockback: number, events: SimEvent[]): void {
   events.push({ type: 'Exploded', x, y, radius: skill.radius });
   for (const e of currentLevel(state).enemies) {
     if (e.dead) continue;
     const d = dist(x, y, e.x, e.y);
     if (d >= skill.radius + e.r) continue;
+    if (skill.stun && !state.rules.enemies[e.kind]!.boss) e.stunnedFor = Math.max(e.stunnedFor, skill.stun);
     const crit = chance(state.rng, skill.critChance);
     let damage = int(state.rng, skill.damage[0], skill.damage[1]) + state.hero.level * skill.damagePerLevel;
     if (crit) damage = Math.round(damage * skill.critMultiplier);

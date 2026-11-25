@@ -65,11 +65,7 @@ export class Hud {
     });
     const skill = state.rules.hero.skills[EMP];
     const emp = skill && (skill.fromStep === undefined || reached(state, skill.fromStep)) && !this.empWithheld ? skill : undefined;
-    // Charge only powers the EMP, so neither shows until U-7 has it.
-    shown.set('hasEmp', Boolean(emp), (v) => {
-      $('bEmp').hidden = !v;
-      ($('chargeFill').parentElement as HTMLElement).hidden = !v;
-    });
+    shown.set('hasEmp', Boolean(emp), (v) => ($('bEmp').hidden = !v));
     if (emp) {
       const recharging = hero.skillCooldowns[EMP]! / emp.cooldown;
       shown.set('empOff', recharging > 0 || hero.resource < emp.cost, (v) => $('bEmp').classList.toggle('off', v));

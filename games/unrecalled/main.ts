@@ -9,10 +9,10 @@ import { ConversationView } from '../../engine/story/conversation-view';
 import { StoryRunner } from '../../engine/story/story-runner';
 import { DialogBox } from '../../engine/ui/dialog-box';
 import { PRINTING, SPEAKING } from '../../engine/ui/typewriter';
-import { heroGlow, MODEL_URLS, SCAN_COLOUR, SCANNER_EYES, unrecalledLook } from './art/look';
+import { CORE_COLOUR, heroGlow, MODEL_URLS, SCAN_COLOUR, SCANNER_EYES, unrecalledLook } from './art/look';
 import { chainsawEngine } from './audio/chainsaw';
 import { unrecalledSounds } from './audio/sounds';
-import { ENDING, levelUp, MACHINE_SCANS, scrapDropped } from './story/lines';
+import { ENDING, levelUp, MACHINE_SCANS, scrapDropped, waveArrived } from './story/lines';
 import { NPCS, PEOPLE } from './story/people';
 import { UPRIVER } from './story/quest';
 import { RULES } from './story/rules';
@@ -24,6 +24,9 @@ import { drawPortraits } from './ui/portrait-drawing';
 import { ARENA, readyForPractice } from './levels/arena';
 import type { GameAction } from './extensions/actions';
 import { AssemblyWakes } from './extensions/assembly-wakes';
+import { BlastEffects } from './extensions/blast-effects';
+import { isBlow } from './extensions/blaster';
+import { WAVE_MARK, WAVE_SIGNAL } from './extensions/waves';
 import { CutSpray } from './extensions/cut-spray';
 import { MachineScans } from './extensions/machine-scans';
 import { Hud } from './ui/hud';
@@ -57,7 +60,7 @@ const hud = new Hud(
 // The practice arena, reached only by its address, is for fighting: no story runs there.
 const practising = state.levelId === ARENA;
 hud.objectiveShown = !practising;
-if (practising) readyForPractice(state);
+if (practising) readyForPractice(state, new URLSearchParams(location.search).get('weapon'));
 
 const synth = new Synth();
 // Sound starts off until the player turns it on.
@@ -101,6 +104,7 @@ const kindOf = (enemyId: number | undefined): string | undefined => currentLevel
 const scans = (enemyId: number | undefined): boolean => enemyId !== undefined && SCANNER_EYES[kindOf(enemyId) ?? ''] !== undefined;
 const machineScans = new MachineScans(game, unrecalledLook, SCANNER_EYES, SCAN_COLOUR);
 const cutSpray = new CutSpray(game, unrecalledLook);
+const blastEffects = new BlastEffects(game, CORE_COLOUR);
 
 /** Shows conversations and readings in the dialogue box, with a portrait for people and every page kept in the log. */
 const conversation = new ConversationView(dialog, {
@@ -265,6 +269,7 @@ function playSounds(events: SimEvent[]): void {
         break;
       case 'Signal':
         if (e.name === 'alarm') sfx.siren();
+        if (isBlow(e.name)) sfx.slam();
         if (e.name === 'recognised' && scans(e.enemyId)) sfx.scan();
         break;
       case 'EnemyAlerted':
@@ -295,6 +300,7 @@ function playSounds(events: SimEvent[]): void {
 /** Unrecalled's words and banners for the rules' events; the engine shows the rest in the world. */
 function react(events: SimEvent[]): void {
   playSounds(events);
+  blastEffects.react(events);
   if (!practising) story.react(events);
   for (const e of events) {
     switch (e.type) {
@@ -312,6 +318,10 @@ function react(events: SimEvent[]): void {
       case 'Signal': {
         const kind = kindOf(e.enemyId);
         if (e.name === 'recognised' && kind && scans(e.enemyId)) labels.text(e.x, e.y, 70 * PX * view.scaleOf(kind), MACHINE_SCANS, '#ff8a6a', 15);
+        if (e.name === WAVE_SIGNAL) {
+          const { title, subtitle } = waveArrived(currentLevel(state).memory[WAVE_MARK] ?? 1);
+          hud.banner(title, subtitle, 1.5);
+        }
         break;
       }
       case 'HeroHurt':
@@ -355,6 +365,7 @@ game.run({
   draw: (alpha, frameSeconds) => {
     machineScans.draw(alpha);
     cutSpray.draw(frameSeconds);
+    blastEffects.draw(frameSeconds);
     // U-7's light is its core's, so it goes out with the core when U-7 falls.
     game.renderer.dimHeroLight(heroGlow.draw(state.hero.dead, frameSeconds));
   },

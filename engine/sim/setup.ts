@@ -68,7 +68,7 @@ function newHero(rules: HeroRules): Hero {
     hp: rules.health, maxHp: rules.health, resource: rules.resource, maxResource: rules.resource,
     level: 1, xp: 0, xpNext: rules.xpForLevel2, gold: 0, healingItems: rules.healingItems,
     damage: [...rules.damage], bonusDamage: 0,
-    attackCooldown: 0, skillCooldowns: rules.skills.map(() => 0), swing: -1, struck: true, engagedId: null, attackMemory: {}, weapon: null,
+    attackCooldown: 0, skillCooldowns: rules.skills.map(() => 0), swing: -1, struck: true, engagedId: null, attackMemory: {}, weapon: rules.startingWeapon ?? null,
     lastHurtAt: -Infinity, dead: false, targetId: null, repathTimer: 0,
     interact: null, meleeUpgrades: 0,
   };

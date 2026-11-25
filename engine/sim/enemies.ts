@@ -60,6 +60,12 @@ function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, eve
     e.swing += dt / SWING_SECONDS;
     if (e.swing >= 1) e.swing = -1;
   }
+  if (e.stunnedFor > 0) {
+    e.stunnedFor = Math.max(0, e.stunnedFor - dt);
+    e.windUp = -1;
+    e.moving = false;
+    return;
+  }
   // Rooted, it can't move of its own accord, though it still turns, attacks and can be knocked back.
   const rooted = e.rootedFor > 0;
   e.rootedFor = Math.max(0, e.rootedFor - dt);
@@ -67,6 +73,7 @@ function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, eve
   const sees = !hero.dead && d < type.aggro && hasLineOfSight(map, e.x, e.y, hero.x, hero.y);
   e.moving = false;
 
+  if (e.mode === 'idle' && e.hunting && !hero.dead) e.mode = 'chase';
   if (e.mode === 'idle') {
     const choice = idleWithAbilities(state, ls, e, type, d, sees, dt, events);
     if (choice === 'busy') return;
@@ -110,7 +117,7 @@ function updateEnemy(state: GameState, ls: LevelState, e: Enemy, dt: number, eve
   }
 
   const leashed = !type.boss && dist(e.x, e.y, e.homeX, e.homeY) > LEASH;
-  if (hero.dead || d > type.aggro * GIVE_UP_AGGRO_MULTIPLE || leashed) {
+  if (hero.dead || (!e.hunting && (d > type.aggro * GIVE_UP_AGGRO_MULTIPLE || leashed))) {
     e.mode = 'return';
     e.path = null;
     events.push({ type: 'EnemyGaveUp', enemyId: e.id, boss: Boolean(type.boss) });

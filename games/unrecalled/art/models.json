@@ -46,7 +46,8 @@
         "Death",
         "PistolIdle",
         "PunchCross",
-        "IdleLoop"
+        "IdleLoop",
+        "AimOneHanded"
       ],
       "keepMaterials": [
         "MI_Superhero_Male"
