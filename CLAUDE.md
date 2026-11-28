@@ -4,7 +4,7 @@ One shared engine for small isometric action RPGs (tap or click to move, real-ti
 
 The roadmap and the engine's design live in Notion: the [Roadmap](https://app.notion.com/p/418662113da8813dafd0f41bae11f782) page under the ARPG Forge project. It's the source of truth for the order of work, the architecture, the shipping plan and what a game provides. Read it before starting a stage, and update it when the plan changes. Don't add plans or business notes to the repo.
 
-Where the work stands lives only in the status callout at the top of the [ARPG Forge project page](https://app.notion.com/p/418662113da881da95e3d997d55b3081) in Notion, not in this file: update that callout as work lands.
+Where the work stands lives only in the status callout at the top of the [ARPG Forge project page](https://app.notion.com/p/418662113da881da95e3d997d55b3081) in Notion, not in this file. Keep it a short, high-level overview, enough to pick the work back up later (the code holds the detail), and update it as work lands.
 
 ## Layout
 
