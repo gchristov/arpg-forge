@@ -29,6 +29,8 @@ export interface WeaponAttack<Settings = never> {
   nothingNear?(turn: Omit<WeaponAttackTurn<Settings>, 'target' | 'dt'>): boolean;
   /** Just after the hero uses one of their skills, by its id, with the weapon in hand. */
   skillUsed?(turn: Omit<WeaponAttackTurn<Settings>, 'target' | 'dt'> & { skill: string }): void;
+  /** While the hero closes in on their target: how many times their speed to move at, such as a dash; 1 if not given. */
+  approachSpeed?(turn: Omit<WeaponAttackTurn<Settings>, 'events' | 'dt'>): number;
 }
 
 // The rules state is plain data, so the attacks' code is kept here, by name, rather than in it.
@@ -76,6 +78,12 @@ export function stopWeaponAttack(state: GameState, events: SimEvent[]): void {
 export function attackNothingNear(state: GameState, events: SimEvent[]): boolean {
   const own = attackInHand(state);
   return own?.attack.nothingNear?.({ state, events, settings: own.settings, memory: state.hero.attackMemory }) ?? false;
+}
+
+/** How many times their speed the hero closes in on `target` at, as the weapon in hand would have it. */
+export function approachSpeed(state: GameState, target: Enemy): number {
+  const own = attackInHand(state);
+  return own?.attack.approachSpeed?.({ state, target, settings: own.settings, memory: state.hero.attackMemory }) ?? 1;
 }
 
 /** Tells the weapon in hand the hero just used the skill `skill`. */

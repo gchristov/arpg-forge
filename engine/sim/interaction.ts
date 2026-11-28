@@ -6,7 +6,6 @@ import { currentLevel, type GameState, type Hero, type SimEvent } from './state'
 import { doStepActions } from './step-actions';
 import { castForStep } from './story-cast';
 import { travel } from './travel';
-import { arm } from './weapons';
 
 /** The hero talks or opens once this close. */
 const INTERACT_REACH = 1.45;
@@ -86,8 +85,8 @@ function openContainer(state: GameState, index: number, events: SimEvent[]): voi
   const y = c.ty + 0.5;
   if (c.gold) dropItem(state, ls, x, y + 0.6, 'gold', c.gold);
   for (let i = 0; i < c.healingItems; i++) dropItem(state, ls, x, y + 0.6, 'healingItem', 1);
+  if (c.weapon) dropItem(state, ls, x, y + 0.6, 'weapon', 1, c.weapon);
   events.push({ type: 'ContainerOpened', index, x, y });
-  if (c.weapon) arm(state, c.weapon, x, y, events);
 }
 
 /** The price of a service right now, or 0 if it's free. */

@@ -4,10 +4,13 @@ import { arena, ofType, OPEN_ROOM, run } from '../../../engine/sim/testing';
 import { useWeaponAttacks } from '../../../engine/sim/weapon-attacks';
 import { CUT, CUT_REPORT_SECONDS, type CutSettings } from './cutting';
 
+/** A saw that cuts ten times a second, at a swing's damage a second, building no charge and no harder into a machine that's down. */
+const PLAIN: CutSettings = { tickSeconds: 0.1, power: 1, charge: 0, downedPower: 1, downedDash: 1 };
+
 /**
- * The test hero with a saw in hand that cuts ten times a second, and no critical hits.
+ * The test hero with a saw in hand, and no critical hits.
  */
-function holdingSaw(state: GameState, settings: CutSettings = { tickSeconds: 0.1, power: 1 }): GameState {
+function holdingSaw(state: GameState, settings: CutSettings = PLAIN): GameState {
   useWeaponAttacks({ cut: CUT });
   const { hero } = state.rules;
   state.rules.hero = { ...hero, melee: { ...hero.melee, critChance: 0 }, weapons: { saw: { attack: { cut: settings } } } };
@@ -35,7 +38,7 @@ describe('cutting', () => {
   });
 
   it('deals `power` times the damage a second of swinging', () => {
-    const state = cutting({ tickSeconds: 0.1, power: 2 });
+    const state = cutting({ ...PLAIN, power: 2 });
     const brute = currentLevel(state).enemies[0]!;
     run(state, 5.5, [{ type: 'attack', enemyId: brute.id }]);
     expect(brute.maxHp - brute.hp).toBeGreaterThan(170);
@@ -66,7 +69,7 @@ describe('cutting', () => {
   });
 
   it('holds a ranged machine it\'s cutting into, so it can\'t back away', () => {
-    const state = holdingSaw(arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'shooter', x: 7.5, y: 5.5 }]), { tickSeconds: 0.1, power: 0.01 });
+    const state = holdingSaw(arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'shooter', x: 7.5, y: 5.5 }]), { ...PLAIN, power: 0.01 });
     const shooter = currentLevel(state).enemies[0]!;
     shooter.mode = 'chase';
     run(state, 2, [{ type: 'attack', enemyId: shooter.id }]);
@@ -85,5 +88,51 @@ describe('cutting', () => {
     expect(kill).toBeGreaterThan(0);
     expect(events[kill - 1]!.type).toBe('EnemyDamaged');
     expect(state.hero.engagedId).toBeNull();
+  });
+
+  it('builds `charge` charge a second while it cuts', () => {
+    const state = cutting({ ...PLAIN, charge: 3 });
+    state.rules.hero.resourceRegen = 0;
+    state.hero.resource = 0;
+    const brute = currentLevel(state).enemies[0]!;
+    run(state, 0.5, [{ type: 'attack', enemyId: brute.id }]);
+    const at = state.hero.resource;
+    run(state, 2);
+    expect(state.hero.resource - at).toBeCloseTo(6, 0);
+  });
+
+  it('tears `downedPower` times as hard into a machine that\'s down', () => {
+    const dealt = (stunned: boolean): number => {
+      const state = cutting({ ...PLAIN, downedPower: 2 });
+      const brute = currentLevel(state).enemies[0]!;
+      run(state, 0.5, [{ type: 'attack', enemyId: brute.id }]);
+      brute.stunnedFor = stunned ? 10 : 0;
+      const hp = brute.hp;
+      run(state, 3);
+      return hp - brute.hp;
+    };
+    expect(dealt(true) / dealt(false)).toBeGreaterThan(1.6);
+    expect(dealt(true) / dealt(false)).toBeLessThan(2.4);
+  });
+
+  it('goes straight on to the next machine that\'s down once one falls', () => {
+    const state = holdingSaw(arena(OPEN_ROOM, { x: 5.5, y: 5.5 }, [{ kind: 'dummy', x: 6.3, y: 5.5 }, { kind: 'dummy', x: 8.5, y: 7.5 }]));
+    const [first, second] = currentLevel(state).enemies;
+    first!.hp = first!.maxHp = 5;
+    second!.stunnedFor = 10;
+    run(state, 2, [{ type: 'attack', enemyId: first!.id }]);
+    expect(first!.dead).toBe(true);
+    expect(state.hero.targetId).toBe(second!.id);
+  });
+
+  it('runs in at `downedDash` times its speed at a machine that\'s down, and at its own speed otherwise', () => {
+    const covered = (stunned: boolean): number => {
+      const state = holdingSaw(arena(OPEN_ROOM, { x: 2.5, y: 5.5 }, [{ kind: 'dummy', x: 9.5, y: 5.5 }]), { ...PLAIN, downedDash: 2 });
+      const dummy = currentLevel(state).enemies[0]!;
+      dummy.stunnedFor = stunned ? 10 : 0;
+      run(state, 0.5, [{ type: 'attack', enemyId: dummy.id }]);
+      return state.hero.x - 2.5;
+    };
+    expect(covered(true) / covered(false)).toBeGreaterThan(1.7);
   });
 });

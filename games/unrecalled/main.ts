@@ -18,6 +18,7 @@ import { UPRIVER } from './story/quest';
 import { RULES } from './story/rules';
 import { THINGS } from './story/things';
 import { VOICES } from './story/voices';
+import { WEAPON_NAMES } from './content/hero';
 import { placeOf, type Place } from './content/places';
 import { unrecalledContent } from './content/world';
 import { drawPortraits } from './ui/portrait-drawing';
@@ -251,6 +252,10 @@ function playSounds(events: SimEvent[]): void {
       case 'PickedUp':
         if (e.kind === 'gold') sfx.scrap();
         else if (e.kind === 'healingItem') sfx.patch();
+        else sfx.swap();
+        break;
+      case 'WeaponSwapped':
+        sfx.swap();
         break;
       case 'Healed':
         sfx.patch();
@@ -339,6 +344,10 @@ function react(events: SimEvent[]): void {
       case 'PickedUp':
         if (e.kind === 'gold') labels.text(e.x, e.y, 30 * PX, `+${e.amount} scrap`, '#e8c870', 13);
         else if (e.kind === 'healingItem') labels.text(e.x, e.y, 30 * PX, '+1 patch kit', '#7ae08a', 13);
+        else labels.text(e.x, e.y, 30 * PX, `+ ${WEAPON_NAMES[e.weapon!]?.name ?? e.weapon}`, '#e8c870', 15);
+        break;
+      case 'WeaponSwapped':
+        labels.text(e.x, e.y, 60 * PX, WEAPON_NAMES[e.weapon]?.name ?? e.weapon, '#e8c870', 14);
         break;
       case 'HeroDied':
         dialog.close();

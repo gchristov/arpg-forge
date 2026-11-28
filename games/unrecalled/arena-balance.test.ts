@@ -9,7 +9,7 @@ import { readyForPractice } from './levels/arena';
 import { WAVE_SIGNAL } from './extensions/waves';
 
 /**
- * Plays U-7 in the practice arena on its own, as a player holding attack would, wave after wave until it falls, and
+ * Plays U-7 in the practice arena on its own, with each of its weapons, as a player holding attack would, wave after wave until it falls, and
  * prints how far it gets, for tuning combat by numbers. It decides nothing, so it's skipped unless asked for:
  * `BALANCE=1 ./tools/node/run.sh npx vitest run games/unrecalled/arena-balance.test.ts`.
  */
@@ -18,6 +18,7 @@ const DT = 1 / 60;
 const THINK_SECONDS = 0.1;
 const SECONDS = 600;
 const SEEDS = [1, 2, 3, 4, 5];
+const WEAPONS = ['blaster', 'chainsaw'];
 /** It heals below this share of its health, and uses the EMP once this many machines are this close, or a loader is. */
 const HEAL_BELOW = 0.4;
 const CROWD = { count: 2, within: 3 };
@@ -36,9 +37,9 @@ interface Run {
   heals: number;
 }
 
-function playArena(seed: number, level: number): Run {
+function playArena(seed: number, level: number, weapon: string): Run {
   const state = createGameState(unrecalledContent(), seed, 'arena');
-  readyForPractice(state, 'blaster');
+  readyForPractice(state, weapon);
   while (state.hero.level < level) gainXp(state, state.hero.xpNext, []);
   state.hero.hp = state.hero.maxHp;
   state.hero.resource = state.hero.maxResource;
@@ -92,11 +93,11 @@ function think(state: GameState, emp: number): Command[] {
   return nearest ? [{ type: 'attack', enemyId: nearest.id }] : [];
 }
 
-function report(level: number, runs: Run[]): string {
+function report(weapon: string, level: number, runs: Run[]): string {
   const mean = (f: (r: Run) => number) => runs.reduce((sum, r) => sum + f(r), 0) / runs.length;
   const clears = runs.flatMap((r) => r.clearSeconds.slice(0, 3));
   const cells = [
-    `level ${level}`,
+    `${weapon}, level ${level}`,
     runs.map((r) => r.cleared).join(', '),
     `${Math.round(mean((r) => r.survived))}s`,
     clears.length ? `${(clears.reduce((x, y) => x + y, 0) / clears.length).toFixed(0)}s` : '–',
@@ -109,12 +110,14 @@ function report(level: number, runs: Run[]): string {
 }
 
 describe.skipIf(!process.env.BALANCE)('arena balance', () => {
-  it('prints how far U-7 gets through the arena\'s waves at each level', () => {
+  it('prints how far U-7 gets through the arena\'s waves with each weapon at each level', () => {
     const rows = [
       '| U-7 | waves cleared, each run | survived | first 3 waves, s each | damage dealt /s | damage taken /s | EMPs /min | kits used |',
       '|---|---|---|---|---|---|---|---|',
     ];
-    for (const level of [1, 3, 5]) rows.push(report(level, SEEDS.map((seed) => playArena(seed, level))));
+    for (const weapon of WEAPONS) {
+      for (const level of [1, 3, 5]) rows.push(report(weapon, level, SEEDS.map((seed) => playArena(seed, level, weapon))));
+    }
     console.log(rows.join('\n'));
-  }, 120_000);
+  }, 240_000);
 });

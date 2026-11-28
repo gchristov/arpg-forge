@@ -3,12 +3,13 @@ import { roomFromRows, type RoomKey } from '../../../engine/sim/rooms';
 import { jumpToStep } from '../../../engine/sim/shortcuts';
 import type { GameState } from '../../../engine/sim/state';
 import { stepIndex } from '../../../engine/sim/story-steps';
+import { carry } from '../../../engine/sim/weapons';
 import { Ground, Prop } from '../content/tiles';
 import type { WaveSettings } from '../extensions/waves';
 
 /**
  * A practice arena for trying combat out, reached only at `#arena`: an open hall on the wall kit's grid, U-7 in the
- * middle with the blaster and the EMP, and a cache of patch kits (S). Machines come in waves from the places marked C,
+ * middle with the blaster and the EMP, and a cache (S) of patch kits and Pell's chainsaw, to swap to. Machines come in waves from the places marked C,
  * each wave bigger and tougher than the last, and hunt U-7 down. No story runs here.
  */
 const ROWS = [
@@ -38,7 +39,7 @@ const KEY: Record<string, RoomKey> = {
   '.': {},
   C: {},
   '@': { heroStart: true },
-  S: { prop: Prop.Cache, solid: true, container: { gold: 0, healingItems: 3 } },
+  S: { prop: Prop.Cache, solid: true, container: { gold: 0, healingItems: 3, weapon: 'chainsaw' } },
   '#': { prop: Prop.Wall, frontProp: Prop.WallLow, solid: true },
   L: { prop: Prop.WallLight, solid: true, light: { radius: 3.6, intensity: 0.9, colour: 'cyan', flicker: 0.3, lean: 0.7 } },
 };
@@ -65,11 +66,17 @@ export function buildArena(): LevelContent {
 const ARMED = 'charged';
 
 /**
- * Readies U-7 for the arena: as far on as the story gives it the EMP, unless a step was asked for, holding `weapon` if
- * given (such as the chainsaw), else the one it starts with.
+ * Readies U-7 for the arena: as far on as the story gives it the EMP, unless a step was asked for, with only the
+ * weapon it starts with, whatever the story gave it on the way, and `weapon` too, in hand, if given (such as the
+ * chainsaw, which is otherwise in the arena's cache).
  */
 export function readyForPractice(state: GameState, weapon: string | null): void {
   if (state.quest < stepIndex(state.rules.quest, ARMED)) jumpToStep(state, stepIndex(state.rules.quest, ARMED));
-  const asked = weapon !== null && state.rules.hero.weapons?.[weapon] ? weapon : null;
-  state.hero.weapon = asked ?? state.rules.hero.startingWeapon ?? null;
+  const { hero } = state;
+  const start = state.rules.hero.startingWeapon ?? null;
+  hero.weapon = start;
+  hero.weapons = start === null ? [] : [start];
+  if (weapon === null || !state.rules.hero.weapons?.[weapon]) return;
+  carry(state, weapon);
+  for (const ls of Object.values(state.levels)) for (const c of ls.containers) if (c.weapon === weapon) delete c.weapon;
 }

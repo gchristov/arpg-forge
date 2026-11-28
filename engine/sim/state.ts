@@ -46,6 +46,8 @@ export interface Hero extends Actor {
   attackMemory: Record<string, number>;
   /** The weapon in hand, by its id in the hero's rules, or null for bare hands. */
   weapon: string | null;
+  /** Every weapon the hero carries, by its id, in the order they came; the hero swaps between them. */
+  weapons: string[];
   lastHurtAt: number;
   dead: boolean;
   targetId: number | null;
@@ -215,6 +217,8 @@ export type Command =
   | { type: 'attackNearest' }
   | { type: 'useSkill'; slot: number }
   | { type: 'heal' }
+  /** Takes the next weapon the hero carries in hand. */
+  | { type: 'swapWeapon' }
   | { type: 'respawn' }
   | { type: 'talk'; npcId: number }
   | { type: 'open'; index: number }
@@ -254,6 +258,8 @@ export type SimEvent =
   | { type: 'Approached'; id: string; within: number }
   /** A weapon came into the hero's hand, bought or found. */
   | { type: 'Armed'; weapon: string; x: number; y: number }
+  /** The hero swapped to another weapon they carry. */
+  | { type: 'WeaponSwapped'; weapon: string; x: number; y: number }
   | { type: 'EnemyGaveUp'; enemyId: number; boss: boolean }
   | { type: 'HeroHurt'; amount: number; x: number; y: number }
   | { type: 'HeroDied' }

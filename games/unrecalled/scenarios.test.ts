@@ -231,7 +231,40 @@ describe('Unrecalled scenarios', () => {
     const events = play(state, 1 / 60, [{ type: 'useSkill', slot: 0 }]);
     expect(events.some((e) => e.type === 'SkillUsed' && e.skill === 'emp')).toBe(true);
     readyForPractice(state, 'chainsaw');
+    expect([state.hero.weapon, state.hero.weapons]).toEqual(['chainsaw', ['blaster', 'chainsaw']]);
+  });
+
+  it("takes the chainsaw from the arena's cache, swaps to the blaster and back, and tears into a machine the EMP knocked down", () => {
+    const state = untouchable(arenaWith([]));
+    readyForPractice(state, null);
+    expect(state.hero.weapons).toEqual(['blaster']);
+    const cache = currentLevel(state).containers.findIndex((c) => c.weapon === 'chainsaw');
+    // It drops beside the cache, maybe close enough to be picked up at once; if not, U-7 walks over to it.
+    const picked = play(state, 6, [{ type: 'open', index: cache }]);
+    const saw = currentLevel(state).items.find((i) => i.weapon === 'chainsaw');
+    if (saw) picked.push(...play(state, 3, [{ type: 'walk', x: saw.x, y: saw.y }]));
+    expect(picked.some((e) => e.type === 'PickedUp' && e.weapon === 'chainsaw')).toBe(true);
+    expect([state.hero.weapon, state.hero.weapons]).toEqual(['chainsaw', ['blaster', 'chainsaw']]);
+    play(state, 0.1, [{ type: 'swapWeapon' }]);
+    expect(state.hero.weapon).toBe('blaster');
+    play(state, 0.1, [{ type: 'swapWeapon' }]);
     expect(state.hero.weapon).toBe('chainsaw');
+
+    const ls = currentLevel(state);
+    const { x, y } = state.hero;
+    const machine = makeEnemy(state, 'loader', x + 1.2, y, ls.enemyStrength);
+    machine.hp = machine.maxHp = 1e6;
+    ls.enemies.push(machine);
+    state.hero.resource = 0;
+    play(state, 2, [{ type: 'attack', enemyId: machine.id }]);
+    // More than the trickle of charge alone would bring back.
+    expect(state.hero.resource).toBeGreaterThan(state.rules.hero.resourceRegen * 2 + 2);
+    state.hero.resource = state.hero.maxResource;
+    const before = machine.hp;
+    play(state, 1, [{ type: 'useSkill', slot: 0 }]);
+    expect(machine.stunnedFor).toBeGreaterThan(0);
+    expect(state.hero.targetId).toBe(machine.id);
+    expect(machine.hp).toBeLessThan(before);
   });
 
   it('holds the blaster\'s beam on a machine from out of reach, and closes in to strike one the EMP knocked down', () => {
